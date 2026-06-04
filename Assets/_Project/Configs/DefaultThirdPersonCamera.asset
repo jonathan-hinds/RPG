@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50b751e5c9a42874cbf4b696fd309abb, type: 3}
+  m_Name: DefaultThirdPersonCamera
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Player.MMOThirdPersonCameraConfig
+  defaultDistance: 8.5
+  minDistance: 2.2
+  maxDistance: 16
+  targetHeight: 1.45
+  defaultPitch: 18
+  minPitch: -18
+  maxPitch: 66
+  mouseYawSensitivity: 0.12
+  mousePitchSensitivity: 0.1
+  zoomUnitsPerScrollUnit: 0.02
+  idleYawFollowSharpness: 8
+  positionSharpness: 18
+  collisionRadius: 0.28
+  collisionPadding: 0.18
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295

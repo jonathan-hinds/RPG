@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17e31634cf29cd646bcd11549e695b30, type: 3}
+  m_Name: Bristleback_Trash_Loot
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Loot.MMOLootTable
+  entries:
+  - item: {fileID: 11400000, guid: 4789a63672a8c61469ebbb426a145cfe, type: 2}
+    dropChance: 0.42
+    minQuantity: 1
+    maxQuantity: 2
+  - item: {fileID: 11400000, guid: e2bc1e4ebc2b53b4b8c2f88b53ac3ddf, type: 2}
+    dropChance: 0.32
+    minQuantity: 1
+    maxQuantity: 1
+  - item: {fileID: 11400000, guid: 4aa2d87df99ed184c95e511a480b6f9f, type: 2}
+    dropChance: 0.28
+    minQuantity: 1
+    maxQuantity: 3
+  - item: {fileID: 11400000, guid: d0829154cffc0fd4ea59f873987fdfe7, type: 2}
+    dropChance: 0.18
+    minQuantity: 1
+    maxQuantity: 1
+  - item: {fileID: 11400000, guid: 911977f7e009d344fa98eaab781e7101, type: 2}
+    dropChance: 0.08
+    minQuantity: 1
+    maxQuantity: 1

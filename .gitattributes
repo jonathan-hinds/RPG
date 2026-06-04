@@ -1,0 +1,20 @@
+*.cs text diff=csharp
+*.shader text
+*.cginc text
+*.hlsl text
+*.asmdef text
+*.asmref text
+*.unity text
+*.prefab text
+*.mat text
+*.asset text
+*.meta text
+*.controller text
+*.anim text
+*.overrideController text
+*.physicMaterial text
+*.physicsMaterial2D text
+*.playable text
+*.mask text
+*.spriteatlas text
+*.terrainlayer text

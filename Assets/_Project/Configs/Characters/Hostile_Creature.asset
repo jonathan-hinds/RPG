@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb8c593811fb25438e7596430f0a789, type: 3}
+  m_Name: Hostile_Creature
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterProfile
+  displayName: Bristleback
+  level: 3
+  portrait: {fileID: 0}
+  portraitTint: {r: 0.72, g: 0.18, b: 0.16, a: 1}
+  maxHealth: 90
+  maxMana: 45
+  faction: 3
+  baseStats:
+    stamina: 9
+    strength: 11
+    agility: 8
+    intellect: 4
+    spirit: 5
+    armor: 8
+    attackPower: 10
+    spellPower: 0
+    meleeMinDamage: 4
+    meleeMaxDamage: 7
+    meleeAttackSpeed: 2.4
+    meleeRange: 3
+  selectable: 1

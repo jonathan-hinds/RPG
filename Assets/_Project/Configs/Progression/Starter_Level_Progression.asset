@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69ce8f0a7d6f9e64c88c23b7abf3f430, type: 3}
+  m_Name: Starter_Level_Progression
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOLevelProgressionDefinition
+  maxLevel: 60
+  baseExperienceRequired: 400
+  experienceAddedPerLevel: 110
+  experienceGrowthMultiplier: 1.12
+  defaultStatGainsPerLevel:
+    stamina: 2
+    strength: 1
+    agility: 1
+    intellect: 1
+    spirit: 1
+    armor: 1
+    attackPower: 1
+    spellPower: 1
+    meleeMinDamage: 0.2
+    meleeMaxDamage: 0.3
+  levelOverrides: []
