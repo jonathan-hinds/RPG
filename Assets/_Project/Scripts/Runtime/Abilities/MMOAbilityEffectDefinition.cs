@@ -12,12 +12,22 @@ namespace RPGClone.Abilities
         [SerializeField] private MMODamageSchool damageSchool = MMODamageSchool.Physical;
         [SerializeField, Min(0f)] private float flatAmount = 1f;
         [SerializeField, Min(0f)] private float coefficient = 1f;
+        [SerializeField, Min(0f)] private float durationSeconds;
+        [SerializeField, Min(0)] private int attackPowerBonus;
+        [SerializeField, Min(1f)] private float attackPowerMultiplier = 1f;
+        [SerializeField, Min(1f)] private float attackSpeedMultiplier = 1f;
+        [SerializeField, Min(1f)] private float healthRegenMultiplier = 1f;
 
         public MMOAbilityEffectType EffectType => effectType;
         public MMOAbilityAmountSource AmountSource => amountSource;
         public MMODamageSchool DamageSchool => damageSchool;
         public float FlatAmount => flatAmount;
         public float Coefficient => coefficient;
+        public float DurationSeconds => durationSeconds;
+        public int AttackPowerBonus => attackPowerBonus;
+        public float AttackPowerMultiplier => attackPowerMultiplier;
+        public float AttackSpeedMultiplier => attackSpeedMultiplier;
+        public float HealthRegenMultiplier => healthRegenMultiplier;
 
         public int CalculateAmount(MMOCharacterIdentity caster)
         {
@@ -50,6 +60,25 @@ namespace RPGClone.Abilities
             damageSchool = newDamageSchool;
             flatAmount = Mathf.Max(0f, newFlatAmount);
             coefficient = Mathf.Max(0f, newCoefficient);
+        }
+
+        public void ConfigureTemporaryStatModifier(
+            float newDurationSeconds,
+            int newAttackPowerBonus,
+            float newAttackPowerMultiplier,
+            float newAttackSpeedMultiplier,
+            float newHealthRegenMultiplier)
+        {
+            effectType = MMOAbilityEffectType.TemporaryStatModifier;
+            amountSource = MMOAbilityAmountSource.Flat;
+            damageSchool = MMODamageSchool.Physical;
+            flatAmount = 0f;
+            coefficient = 0f;
+            durationSeconds = Mathf.Max(0.1f, newDurationSeconds);
+            attackPowerBonus = Mathf.Max(0, newAttackPowerBonus);
+            attackPowerMultiplier = Mathf.Max(1f, newAttackPowerMultiplier);
+            attackSpeedMultiplier = Mathf.Max(1f, newAttackSpeedMultiplier);
+            healthRegenMultiplier = Mathf.Max(1f, newHealthRegenMultiplier);
         }
     }
 }

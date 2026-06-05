@@ -92,6 +92,29 @@ namespace RPGClone.Inventory
                 : TryAddItem(null, 0, out remainingQuantity);
         }
 
+        public void Clear()
+        {
+            EnsureSlotList();
+            for (int i = 0; i < slots.Count; i++)
+            {
+                slots[i].Clear();
+            }
+
+            Changed?.Invoke();
+        }
+
+        public void SetSlot(int index, MMOItemDefinition item, int quantity)
+        {
+            EnsureSlotList();
+            if (index < 0 || index >= slots.Count)
+            {
+                return;
+            }
+
+            slots[index].Configure(item, quantity);
+            Changed?.Invoke();
+        }
+
         private void EnsureSlotList()
         {
             slots ??= new List<MMOItemStack>();

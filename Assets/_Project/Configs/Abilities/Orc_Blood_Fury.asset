@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a4c6e6fb7e37634a9d9ad2a12dc7533, type: 3}
+  m_Name: Orc_Blood_Fury
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Abilities.MMOAbilityDefinition
+  abilityId: orc_blood_fury
+  displayName: Blood Fury
+  description: Increases attack power and attack speed for a short time.
+  icon: {fileID: 0}
+  targetType: 0
+  autoAttack: 0
+  toggled: 0
+  range: 0
+  cooldownSeconds: 120
+  manaCost: 0
+  castTimeSeconds: 0
+  interruptOnMovement: 0
+  castOnSelfWhenFriendlyTargetInvalid: 0
+  effects:
+  - effectType: 2
+    amountSource: 0
+    damageSchool: 0
+    flatAmount: 0
+    coefficient: 0
+    durationSeconds: 15
+    attackPowerBonus: 20
+    attackPowerMultiplier: 1.15
+    attackSpeedMultiplier: 1.1
+    healthRegenMultiplier: 1

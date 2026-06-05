@@ -159,6 +159,9 @@ namespace RPGClone.UI
 
             MMOSpellBookAbilityView dragView = buttonObject.AddComponent<MMOSpellBookAbilityView>();
             dragView.Configure(ability);
+
+            MMOAbilityTooltipTrigger tooltipTrigger = buttonObject.AddComponent<MMOAbilityTooltipTrigger>();
+            tooltipTrigger.Configure(ability);
         }
     }
 }

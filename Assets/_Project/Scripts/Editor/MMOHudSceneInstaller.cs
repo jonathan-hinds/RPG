@@ -414,6 +414,7 @@ namespace RPGClone.EditorTools
             EnsureExperienceBar(canvas.transform, experience);
             EnsureLootWindow(canvas.transform);
             EnsureItemTooltip(canvas.transform);
+            EnsureAbilityTooltip(canvas.transform);
             EnsureBottomHud(canvas.transform, actionBar, characterPanel, inventoryPanel, spellBookPanel);
             EnsureCombatFeedback(canvas.transform, playerAbilitySystem, gameplayCamera);
 
@@ -719,6 +720,22 @@ namespace RPGClone.EditorTools
             if (presenter == null)
             {
                 presenter = panelObject.AddComponent<MMOItemTooltipPresenter>();
+            }
+
+            EditorUtility.SetDirty(presenter);
+            return presenter;
+        }
+
+        private static MMOAbilityTooltipPresenter EnsureAbilityTooltip(Transform canvas)
+        {
+            Transform existing = canvas.Find("Ability Tooltip");
+            GameObject panelObject = existing != null ? existing.gameObject : new GameObject("Ability Tooltip", typeof(RectTransform));
+            panelObject.transform.SetParent(canvas, false);
+
+            MMOAbilityTooltipPresenter presenter = panelObject.GetComponent<MMOAbilityTooltipPresenter>();
+            if (presenter == null)
+            {
+                presenter = panelObject.AddComponent<MMOAbilityTooltipPresenter>();
             }
 
             EditorUtility.SetDirty(presenter);

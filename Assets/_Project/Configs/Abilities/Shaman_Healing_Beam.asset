@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a4c6e6fb7e37634a9d9ad2a12dc7533, type: 3}
+  m_Name: Shaman_Healing_Beam
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Abilities.MMOAbilityDefinition
+  abilityId: shaman_healing_beam
+  displayName: Healing Beam
+  description: Channels restorative energy into a friendly target. Hostile targets
+    redirect the heal to self.
+  icon: {fileID: 0}
+  targetType: 1
+  autoAttack: 0
+  toggled: 0
+  range: 30
+  cooldownSeconds: 0
+  manaCost: 18
+  castTimeSeconds: 2
+  interruptOnMovement: 1
+  castOnSelfWhenFriendlyTargetInvalid: 1
+  effects:
+  - effectType: 1
+    amountSource: 3
+    damageSchool: 6
+    flatAmount: 30
+    coefficient: 0.8
+    durationSeconds: 0
+    attackPowerBonus: 0
+    attackPowerMultiplier: 1
+    attackSpeedMultiplier: 1
+    healthRegenMultiplier: 1

@@ -22,9 +22,17 @@ MonoBehaviour:
   range: 3
   cooldownSeconds: 0
   manaCost: 0
+  castTimeSeconds: 0
+  interruptOnMovement: 0
+  castOnSelfWhenFriendlyTargetInvalid: 0
   effects:
   - effectType: 0
     amountSource: 1
     damageSchool: 0
     flatAmount: 0
     coefficient: 1
+    durationSeconds: 0
+    attackPowerBonus: 0
+    attackPowerMultiplier: 1
+    attackSpeedMultiplier: 1
+    healthRegenMultiplier: 1

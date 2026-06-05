@@ -25,9 +25,12 @@ namespace RPGClone.UI
         private readonly List<Button> buttons = new();
         private readonly List<Text> labels = new();
         private readonly List<Text> keyLabels = new();
+        private readonly List<Text> cooldownLabels = new();
         private readonly List<Image> iconImages = new();
         private readonly List<Image> backgrounds = new();
+        private readonly List<Image> cooldownOverlays = new();
         private readonly List<MMOActionBarSlotView> slotViews = new();
+        private readonly List<MMOAbilityTooltipTrigger> tooltipTriggers = new();
         private static Font cachedFont;
 
         private void Awake()
@@ -57,6 +60,8 @@ namespace RPGClone.UI
                     ActivateSlot(i);
                 }
             }
+
+            UpdateCooldowns();
         }
 
         public void Configure(
@@ -98,6 +103,49 @@ namespace RPGClone.UI
             abilitySystem?.TryUseAbility(ability, target, out _);
         }
 
+        public void FillEmptySlotsFromKnownAbilities()
+        {
+            if (abilitySystem == null)
+            {
+                return;
+            }
+
+            EnsureSlotState();
+            foreach (MMOAbilityDefinition ability in abilitySystem.KnownAbilities)
+            {
+                if (ability == null || SlotsContain(ability))
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < slots.Count; i++)
+                {
+                    if (slots[i].ability != null)
+                    {
+                        continue;
+                    }
+
+                    slots[i].ability = ability;
+                    break;
+                }
+            }
+
+            Refresh();
+        }
+
+        private bool SlotsContain(MMOAbilityDefinition ability)
+        {
+            foreach (MMOActionBarSlot slot in slots)
+            {
+                if (slot.ability == ability)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public bool BeginSlotDrag(int index, PointerEventData eventData, Transform owner)
         {
             if (index < 0 || index >= slots.Count)
@@ -111,6 +159,7 @@ namespace RPGClone.UI
                 return false;
             }
 
+            MMOAbilityTooltipPresenter.HideAbility(ability);
             return MMOAbilityDragState.BeginDrag(
                 new MMOAbilityDragPayload(ability, this, index),
                 eventData,
@@ -224,6 +273,17 @@ namespace RPGClone.UI
             iconImage.gameObject.SetActive(false);
             iconImage.transform.SetAsFirstSibling();
 
+            Image cooldownOverlay = MMOUiFactory.CreateImage("Cooldown Overlay", buttonObject.transform, new Color(0f, 0f, 0f, 0.62f), false);
+            cooldownOverlay.rectTransform.anchorMin = Vector2.zero;
+            cooldownOverlay.rectTransform.anchorMax = Vector2.one;
+            cooldownOverlay.rectTransform.offsetMin = new Vector2(3f, 3f);
+            cooldownOverlay.rectTransform.offsetMax = new Vector2(-3f, -3f);
+            cooldownOverlay.type = Image.Type.Filled;
+            cooldownOverlay.fillMethod = Image.FillMethod.Radial360;
+            cooldownOverlay.fillOrigin = 2;
+            cooldownOverlay.fillClockwise = false;
+            cooldownOverlay.gameObject.SetActive(false);
+
             Text keyLabel = CreateText("Key Label", buttonObject.transform, 10, FontStyle.Bold, TextAnchor.UpperLeft);
             keyLabel.rectTransform.anchorMin = Vector2.zero;
             keyLabel.rectTransform.anchorMax = Vector2.one;
@@ -231,15 +291,27 @@ namespace RPGClone.UI
             keyLabel.rectTransform.offsetMax = new Vector2(-4f, -2f);
             keyLabel.color = new Color(0.98f, 0.82f, 0.36f, 1f);
 
+            Text cooldownLabel = CreateText("Cooldown Label", buttonObject.transform, 15, FontStyle.Bold, TextAnchor.MiddleCenter);
+            cooldownLabel.rectTransform.anchorMin = Vector2.zero;
+            cooldownLabel.rectTransform.anchorMax = Vector2.one;
+            cooldownLabel.rectTransform.offsetMin = Vector2.zero;
+            cooldownLabel.rectTransform.offsetMax = Vector2.zero;
+            cooldownLabel.color = Color.white;
+            cooldownLabel.gameObject.SetActive(false);
+
             MMOActionBarSlotView slotView = buttonObject.AddComponent<MMOActionBarSlotView>();
             slotView.Configure(this, index);
+            MMOAbilityTooltipTrigger tooltipTrigger = buttonObject.AddComponent<MMOAbilityTooltipTrigger>();
 
             buttons.Add(button);
             labels.Add(label);
             keyLabels.Add(keyLabel);
+            cooldownLabels.Add(cooldownLabel);
             iconImages.Add(iconImage);
             backgrounds.Add(background);
+            cooldownOverlays.Add(cooldownOverlay);
             slotViews.Add(slotView);
+            tooltipTriggers.Add(tooltipTrigger);
         }
 
         private void Refresh()
@@ -257,6 +329,35 @@ namespace RPGClone.UI
                     : new Color(0.04f, 0.036f, 0.034f, 0.78f);
                 iconImages[i].sprite = hasAbility ? ability.Icon : null;
                 iconImages[i].gameObject.SetActive(hasAbility && ability.Icon != null);
+                tooltipTriggers[i].Configure(ability);
+            }
+
+            UpdateCooldowns();
+        }
+
+        private void UpdateCooldowns()
+        {
+            if (abilitySystem == null)
+            {
+                return;
+            }
+
+            int count = Mathf.Min(slots.Count, cooldownOverlays.Count);
+            for (int i = 0; i < count; i++)
+            {
+                MMOAbilityDefinition ability = slots[i].ability;
+                float remaining = abilitySystem.GetCooldownRemaining(ability);
+                bool coolingDown = ability != null && remaining > 0f;
+
+                cooldownOverlays[i].gameObject.SetActive(coolingDown);
+                cooldownLabels[i].gameObject.SetActive(coolingDown);
+                if (!coolingDown)
+                {
+                    continue;
+                }
+
+                cooldownOverlays[i].fillAmount = abilitySystem.GetCooldownNormalized(ability);
+                cooldownLabels[i].text = FormatCooldown(remaining);
             }
         }
 
@@ -284,6 +385,11 @@ namespace RPGClone.UI
         {
             string value = key.ToString();
             return value.StartsWith("Digit") ? value["Digit".Length..] : value;
+        }
+
+        private static string FormatCooldown(float seconds)
+        {
+            return seconds >= 10f ? Mathf.CeilToInt(seconds).ToString() : seconds.ToString("0.0");
         }
 
         private static Text CreateText(string objectName, Transform parent, int fontSize, FontStyle style, TextAnchor alignment)

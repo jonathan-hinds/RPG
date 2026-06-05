@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae403df41fc83d94e92e7fd6f56fab3f, type: 3}
+  m_Name: Troll_Shaman
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterArchetypeDefinition
+  race: 1
+  characterClass: 2
+  displayName: Troll Shaman
+  raceDescription: Trolls are resilient survivors. Regeneration greatly increases
+    health recovery for a short time.
+  classDescription: Shaman mix melee and magic growth and can cast Healing Beam on
+    allies or themselves.
+  modelTint: {r: 0.3208, g: 0.564, b: 0.7556, a: 1}
+  startingProfile: {fileID: 11400000, guid: 4651e02c69959414da0703e75664385f, type: 2}
+  progression: {fileID: 11400000, guid: 67c3d9d542442c14396475ba295412bb, type: 2}
+  racialAbility: {fileID: 11400000, guid: 646844a572f8142489442eaf9b243b39, type: 2}
+  classAbility: {fileID: 11400000, guid: 9fb6ae801310b1241af686c8059f4ef2, type: 2}
+  startingAbilities:
+  - {fileID: 11400000, guid: 3c1aade4e9bf68c4c9c6ac4e85e35f96, type: 2}
+  - {fileID: 11400000, guid: 646844a572f8142489442eaf9b243b39, type: 2}
+  - {fileID: 11400000, guid: 9fb6ae801310b1241af686c8059f4ef2, type: 2}

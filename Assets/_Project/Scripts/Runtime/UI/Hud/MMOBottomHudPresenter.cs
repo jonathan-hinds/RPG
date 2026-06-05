@@ -1,3 +1,4 @@
+using RPGClone.CharacterSelection;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -12,6 +13,7 @@ namespace RPGClone.UI
         [SerializeField] private MMOCharacterPanelPresenter characterPanel;
         [SerializeField] private MMOInventoryPresenter inventoryPanel;
         [SerializeField] private MMOSpellBookPresenter spellBookPanel;
+        [SerializeField] private MMOReturnToCharacterSelectionController returnToCharacterSelectionController;
 
         private RectTransform menuButtons;
 
@@ -51,12 +53,14 @@ namespace RPGClone.UI
             MMOActionBarPresenter newActionBar,
             MMOCharacterPanelPresenter newCharacterPanel,
             MMOInventoryPresenter newInventoryPanel,
-            MMOSpellBookPresenter newSpellBookPanel)
+            MMOSpellBookPresenter newSpellBookPanel,
+            MMOReturnToCharacterSelectionController newReturnToCharacterSelectionController = null)
         {
             actionBar = newActionBar;
             characterPanel = newCharacterPanel;
             inventoryPanel = newInventoryPanel;
             spellBookPanel = newSpellBookPanel;
+            returnToCharacterSelectionController = newReturnToCharacterSelectionController;
             BuildIfNeeded();
         }
 
@@ -67,7 +71,7 @@ namespace RPGClone.UI
             root.anchorMax = new Vector2(0.5f, 0f);
             root.pivot = new Vector2(0.5f, 0f);
             root.anchoredPosition = new Vector2(0f, 18f);
-            root.sizeDelta = new Vector2(870f, 96f);
+            root.sizeDelta = new Vector2(940f, 96f);
 
             Image background = gameObject.GetComponent<Image>();
             if (background == null)
@@ -85,9 +89,10 @@ namespace RPGClone.UI
                 menuButtons.anchorMax = new Vector2(1f, 0.5f);
                 menuButtons.pivot = new Vector2(1f, 0.5f);
                 menuButtons.anchoredPosition = new Vector2(-12f, 0f);
-                menuButtons.sizeDelta = new Vector2(162f, 48f);
-                BuildMenuButtons();
+                menuButtons.sizeDelta = new Vector2(250f, 48f);
             }
+
+            BuildMenuButtons();
 
             if (actionBar != null)
             {
@@ -103,21 +108,31 @@ namespace RPGClone.UI
         private void BuildMenuButtons()
         {
             MMOUiFactory.DestroyChildren(menuButtons);
-            CreateMenuButton("Character", "C", 0, () => characterPanel?.Toggle());
-            CreateMenuButton("Inventory", "B", 1, () => inventoryPanel?.Toggle());
-            CreateMenuButton("Spellbook", "P", 2, () => spellBookPanel?.Toggle());
+            if (returnToCharacterSelectionController == null)
+            {
+                GameObject player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null)
+                {
+                    returnToCharacterSelectionController = player.GetComponent<MMOReturnToCharacterSelectionController>();
+                }
+            }
+
+            CreateMenuButton("Character", "Char", 0, () => characterPanel?.Toggle());
+            CreateMenuButton("Inventory", "Bag", 1, () => inventoryPanel?.Toggle());
+            CreateMenuButton("Spellbook", "Book", 2, () => spellBookPanel?.Toggle());
+            CreateMenuButton("Exit", "Exit", 3, () => returnToCharacterSelectionController?.ReturnToCharacterSelection());
         }
 
         private void CreateMenuButton(string objectName, string label, int index, UnityEngine.Events.UnityAction onClick)
         {
-            Button button = MMOUiFactory.CreateTextButton(objectName, menuButtons, label, new Vector2(46f, 42f), new Color(0.09f, 0.07f, 0.052f, 0.95f));
+            Button button = MMOUiFactory.CreateTextButton(objectName, menuButtons, label, new Vector2(58f, 42f), new Color(0.09f, 0.07f, 0.052f, 0.95f));
             button.onClick.AddListener(onClick);
 
             RectTransform rectTransform = button.GetComponent<RectTransform>();
             rectTransform.anchorMin = new Vector2(0f, 0.5f);
             rectTransform.anchorMax = new Vector2(0f, 0.5f);
             rectTransform.pivot = new Vector2(0f, 0.5f);
-            rectTransform.anchoredPosition = new Vector2(index * 52f, 0f);
+            rectTransform.anchoredPosition = new Vector2(index * 64f, 0f);
         }
     }
 }

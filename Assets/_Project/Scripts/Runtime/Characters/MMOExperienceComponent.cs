@@ -43,6 +43,18 @@ namespace RPGClone.Characters
             Changed?.Invoke(this);
         }
 
+        public void SetExperienceState(int newCurrentExperience, int newTotalExperienceEarned)
+        {
+            currentExperience = Mathf.Max(0, newCurrentExperience);
+            totalExperienceEarned = Mathf.Max(currentExperience, newTotalExperienceEarned);
+            if (IsAtMaxLevel)
+            {
+                currentExperience = 0;
+            }
+
+            Changed?.Invoke(this);
+        }
+
         public void AddExperience(int amount)
         {
             EnsureReferences();

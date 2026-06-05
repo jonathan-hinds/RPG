@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb8c593811fb25438e7596430f0a789, type: 3}
+  m_Name: Troll_Shaman
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterProfile
+  displayName: Troll Shaman
+  level: 1
+  portrait: {fileID: 0}
+  portraitTint: {r: 0.3208, g: 0.564, b: 0.7556, a: 1}
+  maxHealth: 105
+  maxMana: 30
+  faction: 1
+  baseStats:
+    stamina: 12
+    strength: 10
+    agility: 10
+    intellect: 6
+    spirit: 9
+    armor: 12
+    attackPower: 8
+    spellPower: 5
+    meleeMinDamage: 4
+    meleeMaxDamage: 7.1
+    meleeAttackSpeed: 2.2
+    meleeRange: 3
+  selectable: 1

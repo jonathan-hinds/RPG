@@ -20,6 +20,7 @@ namespace RPGClone.UI
                 return;
             }
 
+            MMOAbilityTooltipPresenter.HideAbility(ability);
             MMOAbilityDragState.BeginDrag(
                 new MMOAbilityDragPayload(ability),
                 eventData,
