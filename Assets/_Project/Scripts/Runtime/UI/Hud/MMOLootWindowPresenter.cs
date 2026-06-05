@@ -14,7 +14,7 @@ namespace RPGClone.UI
         private RectTransform root;
         private RectTransform rowsRoot;
         private Text titleText;
-        private MMOLootableCorpse corpse;
+        private IMMOLootSource lootSource;
         private Coroutine autoLootRoutine;
         private Canvas canvas;
 
@@ -38,19 +38,29 @@ namespace RPGClone.UI
 
         public static void Open(MMOLootableCorpse corpse, Vector2 screenPosition)
         {
+            Open((IMMOLootSource)corpse, screenPosition);
+        }
+
+        public static void Open(IMMOLootSource lootSource, Vector2 screenPosition)
+        {
             MMOLootWindowPresenter presenter = Instance != null ? Instance : FindAnyObjectByType<MMOLootWindowPresenter>();
-            presenter?.OpenCorpse(corpse, screenPosition);
+            presenter?.OpenLootSource(lootSource, screenPosition);
         }
 
         public void OpenCorpse(MMOLootableCorpse newCorpse, Vector2 screenPosition)
         {
-            if (newCorpse == null || !newCorpse.HasLoot)
+            OpenLootSource(newCorpse, screenPosition);
+        }
+
+        public void OpenLootSource(IMMOLootSource newLootSource, Vector2 screenPosition)
+        {
+            if (newLootSource == null || !newLootSource.HasLoot)
             {
                 return;
             }
 
             BuildIfNeeded();
-            corpse = newCorpse;
+            lootSource = newLootSource;
             gameObject.SetActive(true);
             PositionAt(screenPosition);
             Refresh();
@@ -72,7 +82,7 @@ namespace RPGClone.UI
                 autoLootRoutine = null;
             }
 
-            corpse = null;
+            lootSource = null;
             MMOItemTooltipPresenter.HideItem(null);
             gameObject.SetActive(false);
         }
@@ -85,7 +95,7 @@ namespace RPGClone.UI
 
         private void LootAll()
         {
-            if (corpse == null)
+            if (lootSource == null)
             {
                 Close();
                 return;
@@ -94,7 +104,7 @@ namespace RPGClone.UI
             MMOInventoryContainer inventory = ResolvePlayerInventory();
             if (inventory != null)
             {
-                corpse.TryLootToInventory(inventory);
+                lootSource.TryLootToInventory(inventory);
             }
 
             Close();
@@ -102,7 +112,7 @@ namespace RPGClone.UI
 
         private void LootSingle(int index)
         {
-            if (corpse == null)
+            if (lootSource == null)
             {
                 Close();
                 return;
@@ -114,8 +124,8 @@ namespace RPGClone.UI
                 return;
             }
 
-            corpse.TryLootStackToInventory(index, inventory);
-            if (corpse.HasLoot)
+            lootSource.TryLootStackToInventory(index, inventory);
+            if (lootSource.HasLoot)
             {
                 Refresh();
             }
@@ -177,15 +187,16 @@ namespace RPGClone.UI
         private void Refresh()
         {
             MMOUiFactory.DestroyChildren(rowsRoot);
-            if (corpse == null)
+            if (lootSource == null)
             {
                 return;
             }
 
+            titleText.text = string.IsNullOrWhiteSpace(lootSource.DisplayName) ? "Loot" : lootSource.DisplayName;
             int visibleRows = 0;
-            for (int i = 0; i < corpse.Loot.Count; i++)
+            for (int i = 0; i < lootSource.Loot.Count; i++)
             {
-                MMOItemStack stack = corpse.Loot[i];
+                MMOItemStack stack = lootSource.Loot[i];
                 if (stack == null || stack.IsEmpty)
                 {
                     continue;

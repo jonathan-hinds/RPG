@@ -1,4 +1,5 @@
 using UnityEngine;
+using RPGClone.Characters;
 
 namespace RPGClone.Inventory
 {
@@ -13,6 +14,10 @@ namespace RPGClone.Inventory
         [SerializeField] private Sprite icon;
         [SerializeField, Min(1)] private int maxStackSize = 20;
         [SerializeField, Min(0)] private int vendorValueCopper;
+        [Header("Equipment")]
+        [SerializeField] private MMOEquipmentSlotType equipmentSlot = MMOEquipmentSlotType.Chest;
+        [SerializeField] private MMOArmorWeight armorWeight = MMOArmorWeight.Cloth;
+        [SerializeField] private MMOCharacterStats statBonuses = new();
 
         public string ItemId => string.IsNullOrWhiteSpace(itemId) ? name : itemId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? name : displayName;
@@ -22,6 +27,10 @@ namespace RPGClone.Inventory
         public Sprite Icon => icon;
         public int MaxStackSize => Mathf.Max(1, maxStackSize);
         public int VendorValueCopper => vendorValueCopper;
+        public MMOEquipmentSlotType EquipmentSlot => equipmentSlot;
+        public MMOArmorWeight ArmorWeight => armorWeight;
+        public MMOCharacterStats StatBonuses => statBonuses;
+        public bool IsEquipment => itemType == MMOItemType.Equipment;
 
         public void Configure(
             string newItemId,
@@ -41,6 +50,27 @@ namespace RPGClone.Inventory
             maxStackSize = Mathf.Max(1, newMaxStackSize);
             vendorValueCopper = Mathf.Max(0, newVendorValueCopper);
             icon = newIcon;
+        }
+
+        public void ConfigureEquipment(
+            string newItemId,
+            string newDisplayName,
+            string newDescription,
+            MMOItemQuality newQuality,
+            MMOEquipmentSlotType newEquipmentSlot,
+            MMOArmorWeight newArmorWeight,
+            MMOCharacterStats newStatBonuses,
+            int newVendorValueCopper,
+            Sprite newIcon = null)
+        {
+            Configure(newItemId, newDisplayName, newDescription, MMOItemType.Equipment, newQuality, 1, newVendorValueCopper, newIcon);
+            equipmentSlot = newEquipmentSlot;
+            armorWeight = newArmorWeight;
+            statBonuses ??= new MMOCharacterStats();
+            if (newStatBonuses != null)
+            {
+                statBonuses.CopyFrom(newStatBonuses);
+            }
         }
     }
 }

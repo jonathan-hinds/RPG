@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17e31634cf29cd646bcd11549e695b30, type: 3}
+  m_Name: Ash_Canyon_Quest_Loot
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Loot.MMOLootTable
+  entries:
+  - item: {fileID: 11400000, guid: 4789a63672a8c61469ebbb426a145cfe, type: 2}
+    dropChance: 0.18
+    minQuantity: 1
+    maxQuantity: 1
+    requiredQuest: {fileID: 0}
+    onlyDropWhileQuestNeedsItem: 0
+  - item: {fileID: 11400000, guid: b941ec5dc85d1f64fb7ff8e6039c1cec, type: 2}
+    dropChance: 0.85
+    minQuantity: 1
+    maxQuantity: 1
+    requiredQuest: {fileID: 11400000, guid: b0cb2116b73dfb94fadd278b54016980, type: 2}
+    onlyDropWhileQuestNeedsItem: 1

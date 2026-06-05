@@ -1,5 +1,6 @@
 using RPGClone.Abilities;
 using RPGClone.Characters;
+using RPGClone.Quests;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,12 +10,14 @@ namespace RPGClone.UI
     public sealed class MMOCastBarPresenter : MonoBehaviour
     {
         [SerializeField] private MMOAbilitySystem abilitySystem;
+        [SerializeField] private MMOInteractionCastController interactionCastController;
         [SerializeField] private bool autoBuild = true;
 
         private Image fill;
         private Text label;
         private CanvasGroup canvasGroup;
         private MMOAbilityDefinition currentAbility;
+        private string currentInteractionLabel;
 
         private void Awake()
         {
@@ -39,15 +42,21 @@ namespace RPGClone.UI
 
         public void Configure(MMOAbilitySystem newAbilitySystem)
         {
+            Configure(newAbilitySystem, null);
+        }
+
+        public void Configure(MMOAbilitySystem newAbilitySystem, MMOInteractionCastController newInteractionCastController)
+        {
             Unsubscribe();
             abilitySystem = newAbilitySystem;
+            interactionCastController = newInteractionCastController;
             BuildIfNeeded();
             Subscribe();
         }
 
         private void ResolveAbilitySystem()
         {
-            if (abilitySystem != null)
+            if (abilitySystem != null && interactionCastController != null)
             {
                 return;
             }
@@ -55,38 +64,67 @@ namespace RPGClone.UI
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
             {
-                abilitySystem = player.GetComponent<MMOAbilitySystem>();
+                if (abilitySystem == null)
+                {
+                    abilitySystem = player.GetComponent<MMOAbilitySystem>();
+                }
+
+                if (interactionCastController == null)
+                {
+                    interactionCastController = player.GetComponent<MMOInteractionCastController>();
+                }
             }
         }
 
         private void Subscribe()
         {
-            if (abilitySystem == null)
+            if (abilitySystem == null && interactionCastController == null)
             {
                 return;
             }
 
-            abilitySystem.CastStarted -= OnCastStarted;
-            abilitySystem.CastProgressed -= OnCastProgressed;
-            abilitySystem.CastInterrupted -= OnCastInterrupted;
-            abilitySystem.CastCompleted -= OnCastCompleted;
-            abilitySystem.CastStarted += OnCastStarted;
-            abilitySystem.CastProgressed += OnCastProgressed;
-            abilitySystem.CastInterrupted += OnCastInterrupted;
-            abilitySystem.CastCompleted += OnCastCompleted;
+            if (abilitySystem != null)
+            {
+                abilitySystem.CastStarted -= OnCastStarted;
+                abilitySystem.CastProgressed -= OnCastProgressed;
+                abilitySystem.CastInterrupted -= OnCastInterrupted;
+                abilitySystem.CastCompleted -= OnCastCompleted;
+                abilitySystem.CastStarted += OnCastStarted;
+                abilitySystem.CastProgressed += OnCastProgressed;
+                abilitySystem.CastInterrupted += OnCastInterrupted;
+                abilitySystem.CastCompleted += OnCastCompleted;
+            }
+
+            if (interactionCastController != null)
+            {
+                interactionCastController.CastStarted -= OnInteractionCastStarted;
+                interactionCastController.CastProgressed -= OnInteractionCastProgressed;
+                interactionCastController.CastInterrupted -= OnInteractionCastInterrupted;
+                interactionCastController.CastCompleted -= OnInteractionCastCompleted;
+                interactionCastController.CastStarted += OnInteractionCastStarted;
+                interactionCastController.CastProgressed += OnInteractionCastProgressed;
+                interactionCastController.CastInterrupted += OnInteractionCastInterrupted;
+                interactionCastController.CastCompleted += OnInteractionCastCompleted;
+            }
         }
 
         private void Unsubscribe()
         {
-            if (abilitySystem == null)
+            if (abilitySystem != null)
             {
-                return;
+                abilitySystem.CastStarted -= OnCastStarted;
+                abilitySystem.CastProgressed -= OnCastProgressed;
+                abilitySystem.CastInterrupted -= OnCastInterrupted;
+                abilitySystem.CastCompleted -= OnCastCompleted;
             }
 
-            abilitySystem.CastStarted -= OnCastStarted;
-            abilitySystem.CastProgressed -= OnCastProgressed;
-            abilitySystem.CastInterrupted -= OnCastInterrupted;
-            abilitySystem.CastCompleted -= OnCastCompleted;
+            if (interactionCastController != null)
+            {
+                interactionCastController.CastStarted -= OnInteractionCastStarted;
+                interactionCastController.CastProgressed -= OnInteractionCastProgressed;
+                interactionCastController.CastInterrupted -= OnInteractionCastInterrupted;
+                interactionCastController.CastCompleted -= OnInteractionCastCompleted;
+            }
         }
 
         private void BuildIfNeeded()
@@ -127,6 +165,7 @@ namespace RPGClone.UI
         private void OnCastStarted(MMOAbilitySystem system, MMOAbilityDefinition ability, MMOCharacterIdentity target, float duration)
         {
             currentAbility = ability;
+            currentInteractionLabel = string.Empty;
             SetVisible(true);
             label.text = ability != null ? ability.DisplayName : "Casting";
             SetFill(0f);
@@ -152,9 +191,39 @@ namespace RPGClone.UI
             Hide();
         }
 
+        private void OnInteractionCastStarted(MMOInteractionCastController controller, string castLabel, float duration)
+        {
+            currentAbility = null;
+            currentInteractionLabel = castLabel;
+            SetVisible(true);
+            label.text = castLabel;
+            SetFill(0f);
+        }
+
+        private void OnInteractionCastProgressed(MMOInteractionCastController controller, string castLabel, float normalizedProgress)
+        {
+            if (castLabel != currentInteractionLabel)
+            {
+                return;
+            }
+
+            SetFill(normalizedProgress);
+        }
+
+        private void OnInteractionCastInterrupted(MMOInteractionCastController controller, string castLabel, string reason)
+        {
+            Hide();
+        }
+
+        private void OnInteractionCastCompleted(MMOInteractionCastController controller, string castLabel)
+        {
+            Hide();
+        }
+
         private void Hide()
         {
             currentAbility = null;
+            currentInteractionLabel = string.Empty;
             SetFill(0f);
             SetVisible(false);
         }

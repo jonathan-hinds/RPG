@@ -171,6 +171,14 @@ namespace RPGClone.UI
 
             tooltipTrigger.Configure(itemStack.Item);
 
+            MMOInventoryItemUseTrigger useTrigger = slot.gameObject.GetComponent<MMOInventoryItemUseTrigger>();
+            if (useTrigger == null)
+            {
+                useTrigger = slot.gameObject.AddComponent<MMOInventoryItemUseTrigger>();
+            }
+
+            useTrigger.Configure(inventory, index);
+
             Text itemName = MMOUiFactory.CreateText("Item Name", rectTransform, 9, FontStyle.Bold, TextAnchor.MiddleCenter);
             itemName.text = itemStack.Item.DisplayName;
             itemName.color = Color.white;

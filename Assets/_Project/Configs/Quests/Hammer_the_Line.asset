@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e7c6418b419fe042ac03a47abbb3689, type: 3}
+  m_Name: Hammer_the_Line
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
+  questId: ancestral_watch_02
+  displayName: Hammer the Line
+  minimumLevel: 1
+  offeredByNpcId: seer_mahka
+  turnedInToNpcId: seer_mahka
+  prerequisiteQuests:
+  - {fileID: 11400000, guid: 381e4b7f2a8f6fb47b06614533a1ad7e, type: 2}
+  offerText: A memory is worth little if the camp falls around it. Take this hammer
+    and set the fence posts firm again.
+  progressText: Use the hammer from your pack, then work the damaged posts.
+  completionText: The line will hold a little longer.
+  objectiveSummary: Use the Razorcrag Repair Hammer on 5 damaged fence posts.
+  objectives:
+  - objectiveId: fence_posts
+    objectiveType: 3
+    summary: Fence posts repaired
+    requiredCount: 5
+    requiredItem: {fileID: 0}
+    usableItem: {fileID: 11400000, guid: c280170f533700141a79a7884362e537, type: 2}
+    requiredCreature: {fileID: 0}
+    requiredCreatureId: 
+    requiredWorldObjectId: damaged_fence_post
+    requiredNpcId: 
+    consumeRequiredItemsOnTurnIn: 1
+  startItems:
+  - item: {fileID: 11400000, guid: c280170f533700141a79a7884362e537, type: 2}
+    quantity: 1
+  rewards:
+    experience: 75
+    moneyCopper: 45
+    guaranteedItems: []
+    choiceItems: []

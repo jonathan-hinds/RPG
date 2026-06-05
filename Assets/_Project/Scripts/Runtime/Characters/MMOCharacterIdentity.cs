@@ -107,6 +107,14 @@ namespace RPGClone.Characters
             Changed?.Invoke(this);
         }
 
+        public void RemoveStatGains(MMOCharacterStats statGains, bool restoreResources)
+        {
+            stats ??= new MMOCharacterStats();
+            stats.Subtract(statGains);
+            RecalculateResourceMaximums(restoreResources);
+            Changed?.Invoke(this);
+        }
+
         public void ApplyStatGrowth(MMOCharacterStatGrowth statGrowth, bool restoreResources)
         {
             stats ??= new MMOCharacterStats();

@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e7c6418b419fe042ac03a47abbb3689, type: 3}
+  m_Name: Find_the_Canyon_Scout
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
+  questId: ember_watch_01
+  displayName: Find the Canyon Scout
+  minimumLevel: 1
+  offeredByNpcId: warchief_korga
+  turnedInToNpcId: canyon_scout_rakka
+  prerequisiteQuests:
+  - {fileID: 11400000, guid: 7cc3ee4cdbb2f1f4399e5a99514773b4, type: 2}
+  - {fileID: 11400000, guid: 9a4429df4c396f84cb4838ce7f3249ec, type: 2}
+  offerText: If Mahka is right, the ash canyon is waking. Find Rakka at the canyon
+    edge and hear what she has seen.
+  progressText: Rakka watches the canyon trail.
+  completionText: Korga sent you? Then listen closely.
+  objectiveSummary: Speak to Canyon Scout Rakka.
+  objectives:
+  - objectiveId: speak_rakka
+    objectiveType: 4
+    summary: Canyon Scout Rakka spoken to
+    requiredCount: 1
+    requiredItem: {fileID: 0}
+    usableItem: {fileID: 0}
+    requiredCreature: {fileID: 0}
+    requiredCreatureId: 
+    requiredWorldObjectId: 
+    requiredNpcId: canyon_scout_rakka
+    consumeRequiredItemsOnTurnIn: 1
+  startItems: []
+  rewards:
+    experience: 80
+    moneyCopper: 55
+    guaranteedItems: []
+    choiceItems: []

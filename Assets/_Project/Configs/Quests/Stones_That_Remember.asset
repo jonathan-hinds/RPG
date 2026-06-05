@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e7c6418b419fe042ac03a47abbb3689, type: 3}
+  m_Name: Stones_That_Remember
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
+  questId: ancestral_watch_01
+  displayName: Stones That Remember
+  minimumLevel: 1
+  offeredByNpcId: seer_mahka
+  turnedInToNpcId: seer_mahka
+  prerequisiteQuests: []
+  offerText: The valley remembers old oaths. Its rune stones are broken and scattered.
+    Gather the shards before the ash wind buries them.
+  progressText: Listen for the stone hum.
+  completionText: The old marks still have a voice.
+  objectiveSummary: Collect 4 Valley Rune Shards.
+  objectives:
+  - objectiveId: rune_shards
+    objectiveType: 0
+    summary: Rune Shards
+    requiredCount: 4
+    requiredItem: {fileID: 11400000, guid: fbc59e2a20ba90d4ea119d7fc86ca52d, type: 2}
+    usableItem: {fileID: 0}
+    requiredCreature: {fileID: 0}
+    requiredCreatureId: 
+    requiredWorldObjectId: valley_rune_shard
+    requiredNpcId: 
+    consumeRequiredItemsOnTurnIn: 1
+  startItems: []
+  rewards:
+    experience: 60
+    moneyCopper: 35
+    guaranteedItems: []
+    choiceItems: []

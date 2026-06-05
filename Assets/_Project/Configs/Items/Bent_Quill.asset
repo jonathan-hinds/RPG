@@ -20,3 +20,18 @@ MonoBehaviour:
   icon: {fileID: 0}
   maxStackSize: 20
   vendorValueCopper: 4
+  equipmentSlot: 4
+  armorWeight: 0
+  statBonuses:
+    stamina: 10
+    strength: 10
+    agility: 10
+    intellect: 10
+    spirit: 10
+    armor: 0
+    attackPower: 8
+    spellPower: 0
+    meleeMinDamage: 4
+    meleeMaxDamage: 7
+    meleeAttackSpeed: 2
+    meleeRange: 3

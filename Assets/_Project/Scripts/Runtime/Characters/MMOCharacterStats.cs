@@ -132,6 +132,28 @@ namespace RPGClone.Characters
                 meleeRange);
         }
 
+        public void Subtract(MMOCharacterStats source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            Configure(
+                stamina - source.stamina,
+                strength - source.strength,
+                agility - source.agility,
+                intellect - source.intellect,
+                spirit - source.spirit,
+                armor - source.armor,
+                attackPower - source.attackPower,
+                spellPower - source.spellPower,
+                meleeMinDamage - source.meleeMinDamage,
+                meleeMaxDamage - source.meleeMaxDamage,
+                meleeAttackSpeed,
+                meleeRange);
+        }
+
         public void AddValues(
             int staminaBonus,
             int strengthBonus,

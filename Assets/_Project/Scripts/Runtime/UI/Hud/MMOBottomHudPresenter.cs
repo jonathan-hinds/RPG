@@ -13,6 +13,7 @@ namespace RPGClone.UI
         [SerializeField] private MMOCharacterPanelPresenter characterPanel;
         [SerializeField] private MMOInventoryPresenter inventoryPanel;
         [SerializeField] private MMOSpellBookPresenter spellBookPanel;
+        [SerializeField] private MMOQuestLogPresenter questLogPanel;
         [SerializeField] private MMOReturnToCharacterSelectionController returnToCharacterSelectionController;
 
         private RectTransform menuButtons;
@@ -47,6 +48,11 @@ namespace RPGClone.UI
             {
                 spellBookPanel?.Toggle();
             }
+
+            if (keyboard.lKey.wasPressedThisFrame)
+            {
+                questLogPanel?.Toggle();
+            }
         }
 
         public void Configure(
@@ -54,12 +60,14 @@ namespace RPGClone.UI
             MMOCharacterPanelPresenter newCharacterPanel,
             MMOInventoryPresenter newInventoryPanel,
             MMOSpellBookPresenter newSpellBookPanel,
+            MMOQuestLogPresenter newQuestLogPanel = null,
             MMOReturnToCharacterSelectionController newReturnToCharacterSelectionController = null)
         {
             actionBar = newActionBar;
             characterPanel = newCharacterPanel;
             inventoryPanel = newInventoryPanel;
             spellBookPanel = newSpellBookPanel;
+            questLogPanel = newQuestLogPanel;
             returnToCharacterSelectionController = newReturnToCharacterSelectionController;
             BuildIfNeeded();
         }
@@ -71,7 +79,7 @@ namespace RPGClone.UI
             root.anchorMax = new Vector2(0.5f, 0f);
             root.pivot = new Vector2(0.5f, 0f);
             root.anchoredPosition = new Vector2(0f, 18f);
-            root.sizeDelta = new Vector2(940f, 96f);
+            root.sizeDelta = new Vector2(1080f, 96f);
 
             Image background = gameObject.GetComponent<Image>();
             if (background == null)
@@ -89,7 +97,7 @@ namespace RPGClone.UI
                 menuButtons.anchorMax = new Vector2(1f, 0.5f);
                 menuButtons.pivot = new Vector2(1f, 0.5f);
                 menuButtons.anchoredPosition = new Vector2(-12f, 0f);
-                menuButtons.sizeDelta = new Vector2(250f, 48f);
+                menuButtons.sizeDelta = new Vector2(314f, 48f);
             }
 
             BuildMenuButtons();
@@ -120,7 +128,8 @@ namespace RPGClone.UI
             CreateMenuButton("Character", "Char", 0, () => characterPanel?.Toggle());
             CreateMenuButton("Inventory", "Bag", 1, () => inventoryPanel?.Toggle());
             CreateMenuButton("Spellbook", "Book", 2, () => spellBookPanel?.Toggle());
-            CreateMenuButton("Exit", "Exit", 3, () => returnToCharacterSelectionController?.ReturnToCharacterSelection());
+            CreateMenuButton("Quest Log", "Quest", 3, () => questLogPanel?.Toggle());
+            CreateMenuButton("Exit", "Exit", 4, () => returnToCharacterSelectionController?.ReturnToCharacterSelection());
         }
 
         private void CreateMenuButton(string objectName, string label, int index, UnityEngine.Events.UnityAction onClick)

@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e7c6418b419fe042ac03a47abbb3689, type: 3}
+  m_Name: Cores_in_the_Ash
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
+  questId: ember_watch_02
+  displayName: Cores in the Ash
+  minimumLevel: 1
+  offeredByNpcId: canyon_scout_rakka
+  turnedInToNpcId: canyon_scout_rakka
+  prerequisiteQuests:
+  - {fileID: 11400000, guid: 06b503f7571d69d4795478e351024f29, type: 2}
+  offerText: The canyon beasts burn from inside. Bring me their ember cores and I
+    can tell whether this is sickness or sorcery.
+  progressText: The cores cool quickly. Keep moving.
+  completionText: These embers are wrong. They pulse like a drumbeat.
+  objectiveSummary: Collect 3 Ember Cores from ash canyon creatures.
+  objectives:
+  - objectiveId: ember_cores
+    objectiveType: 0
+    summary: Ember Cores
+    requiredCount: 3
+    requiredItem: {fileID: 11400000, guid: b941ec5dc85d1f64fb7ff8e6039c1cec, type: 2}
+    usableItem: {fileID: 0}
+    requiredCreature: {fileID: 11400000, guid: 7321c7d8091065b4eb2f6c571954af57, type: 2}
+    requiredCreatureId: 
+    requiredWorldObjectId: 
+    requiredNpcId: 
+    consumeRequiredItemsOnTurnIn: 1
+  startItems: []
+  rewards:
+    experience: 105
+    moneyCopper: 80
+    guaranteedItems: []
+    choiceItems: []

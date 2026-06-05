@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 
 namespace RPGClone.Loot
 {
-    public sealed class MMOLootableCorpse : MonoBehaviour
+    public sealed class MMOLootableCorpse : MonoBehaviour, IMMOLootSource
     {
         [SerializeField] private List<MMOItemStack> loot = new();
         [SerializeField, Min(1f)] private float interactionDistance = 5f;
@@ -17,6 +17,7 @@ namespace RPGClone.Loot
         private ParticleSystem sparkle;
 
         public event Action<MMOLootableCorpse> LootEmptied;
+        public string DisplayName => "Corpse";
         public IReadOnlyList<MMOItemStack> Loot => loot;
         public bool HasLoot => loot.Exists(stack => stack != null && !stack.IsEmpty);
 

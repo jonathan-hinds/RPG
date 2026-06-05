@@ -5,6 +5,7 @@ using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Inventory;
 using RPGClone.Loot;
+using RPGClone.Quests;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -325,9 +326,16 @@ namespace RPGClone.Enemies
                 agent.enabled = false;
             }
 
+            GameObject looter = lastDamageSource != null && lastDamageSource.Identity != null ? lastDamageSource.Identity.gameObject : null;
             List<MMOItemStack> droppedLoot = definition != null && definition.LootTable != null
-                ? definition.LootTable.GenerateLoot()
+                ? definition.LootTable.GenerateLoot(looter)
                 : new List<MMOItemStack>();
+
+            if (looter != null)
+            {
+                MMOQuestLog questLog = looter.GetComponent<MMOQuestLog>();
+                questLog?.RecordCreatureKilled(definition, definition != null ? definition.name : gameObject.name);
+            }
 
             lootableCorpse.LootEmptied -= OnCorpseLooted;
             lootableCorpse.SetLoot(droppedLoot);

@@ -4,6 +4,7 @@ using System.IO;
 using RPGClone.Abilities;
 using RPGClone.CharacterSelection;
 using RPGClone.Characters;
+using RPGClone.Quests;
 using RPGClone.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -415,7 +416,14 @@ namespace RPGClone.EditorTools
 
             if (player != null)
             {
-                castBar.Configure(player.GetComponent<MMOAbilitySystem>());
+                MMOInteractionCastController interactionCastController = player.GetComponent<MMOInteractionCastController>();
+                if (interactionCastController == null)
+                {
+                    interactionCastController = player.AddComponent<MMOInteractionCastController>();
+                    EditorUtility.SetDirty(interactionCastController);
+                }
+
+                castBar.Configure(player.GetComponent<MMOAbilitySystem>(), interactionCastController);
             }
 
             EditorUtility.SetDirty(castBar);

@@ -87,6 +87,12 @@ namespace RPGClone.UI
                 character.Changed -= OnCharacterChanged;
                 character.Changed += OnCharacterChanged;
             }
+
+            if (equipment != null)
+            {
+                equipment.Changed -= OnEquipmentChanged;
+                equipment.Changed += OnEquipmentChanged;
+            }
         }
 
         private void Unsubscribe()
@@ -95,9 +101,19 @@ namespace RPGClone.UI
             {
                 character.Changed -= OnCharacterChanged;
             }
+
+            if (equipment != null)
+            {
+                equipment.Changed -= OnEquipmentChanged;
+            }
         }
 
         private void OnCharacterChanged(MMOCharacterIdentity changedCharacter)
+        {
+            Refresh();
+        }
+
+        private void OnEquipmentChanged(MMOCharacterEquipment changedEquipment)
         {
             Refresh();
         }
@@ -225,8 +241,12 @@ namespace RPGClone.UI
             rectTransform.sizeDelta = horizontal ? new Vector2(62f, 58f) : new Vector2(120f, 38f);
 
             Text label = MMOUiFactory.CreateText("Label", rectTransform, 10, FontStyle.Bold, TextAnchor.MiddleCenter);
-            label.text = MMOUiFactory.FormatEnumLabel(slotType);
+            MMOItemDefinition equippedItem = equipment != null ? equipment.GetEquippedItem(slotType) : null;
+            label.text = equippedItem != null ? equippedItem.DisplayName : MMOUiFactory.FormatEnumLabel(slotType);
             label.color = new Color(0.78f, 0.7f, 0.52f, 1f);
+            label.resizeTextForBestFit = true;
+            label.resizeTextMinSize = 6;
+            label.resizeTextMaxSize = 10;
             MMOUiFactory.Stretch(label.rectTransform);
             label.rectTransform.offsetMin = new Vector2(4f, 2f);
             label.rectTransform.offsetMax = new Vector2(-4f, -2f);

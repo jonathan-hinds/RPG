@@ -3,6 +3,7 @@ using RPGClone.Abilities;
 using RPGClone.Combat;
 using RPGClone.Inventory;
 using RPGClone.Player;
+using RPGClone.Quests;
 using RPGClone.Targeting;
 using RPGClone.UI;
 using UnityEditor;
@@ -22,6 +23,7 @@ namespace RPGClone.EditorTools
         private const string CharacterProfileFolder = ConfigFolder + "/Characters";
         private const string AbilityFolder = ConfigFolder + "/Abilities";
         private const string ProgressionFolder = ConfigFolder + "/Progression";
+        private const string QuestFolder = ConfigFolder + "/Quests";
 
         [MenuItem("Tools/RPG Clone/Install HUD And Target Frames")]
         public static void InstallIntoOpenScene()
@@ -52,9 +54,12 @@ namespace RPGClone.EditorTools
             MMOExperienceComponent experience = EnsureExperience(player, levelProgression);
             MMOInventoryContainer inventory = EnsureInventory(player);
             MMOCharacterEquipment equipment = EnsureEquipment(player);
+            EnsureCurrencyWallet(player);
+            MMOInteractionCastController interactionCastController = EnsureInteractionCastController(player);
+            MMOQuestLog questLog = EnsureQuestLog(player);
 
             InstallTargetIdentities(player, profiles, autoAttackAbility);
-            EnsureHud(playerIdentity, selectionController, playerAbilitySystem, autoAttackController, autoAttackAbility, gameplayCamera, inventory, equipment, experience);
+            EnsureHud(playerIdentity, selectionController, playerAbilitySystem, autoAttackController, autoAttackAbility, gameplayCamera, inventory, equipment, experience, questLog, interactionCastController);
 
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
             AssetDatabase.SaveAssets();
@@ -74,6 +79,7 @@ namespace RPGClone.EditorTools
             CreateFolderIfMissing(CharacterProfileFolder);
             CreateFolderIfMissing(AbilityFolder);
             CreateFolderIfMissing(ProgressionFolder);
+            CreateFolderIfMissing(QuestFolder);
         }
 
         private static void CreateFolderIfMissing(string assetPath)
@@ -382,6 +388,44 @@ namespace RPGClone.EditorTools
             return equipment;
         }
 
+        private static MMOCurrencyWallet EnsureCurrencyWallet(GameObject player)
+        {
+            MMOCurrencyWallet wallet = player.GetComponent<MMOCurrencyWallet>();
+            if (wallet == null)
+            {
+                wallet = player.AddComponent<MMOCurrencyWallet>();
+            }
+
+            EditorUtility.SetDirty(wallet);
+            return wallet;
+        }
+
+        private static MMOInteractionCastController EnsureInteractionCastController(GameObject player)
+        {
+            MMOInteractionCastController castController = player.GetComponent<MMOInteractionCastController>();
+            if (castController == null)
+            {
+                castController = player.AddComponent<MMOInteractionCastController>();
+            }
+
+            EditorUtility.SetDirty(castController);
+            return castController;
+        }
+
+        private static MMOQuestLog EnsureQuestLog(GameObject player)
+        {
+            MMOQuestLog questLog = player.GetComponent<MMOQuestLog>();
+            if (questLog == null)
+            {
+                questLog = player.AddComponent<MMOQuestLog>();
+            }
+
+            MMOQuestCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOQuestCatalog>($"{QuestFolder}/Starter_Quest_Catalog.asset");
+            questLog.Configure(catalog);
+            EditorUtility.SetDirty(questLog);
+            return questLog;
+        }
+
         private static void EnsureHud(
             MMOCharacterIdentity playerIdentity,
             MMOTargetSelectionController selectionController,
@@ -391,7 +435,9 @@ namespace RPGClone.EditorTools
             Camera gameplayCamera,
             MMOInventoryContainer inventory,
             MMOCharacterEquipment equipment,
-            MMOExperienceComponent experience)
+            MMOExperienceComponent experience,
+            MMOQuestLog questLog,
+            MMOInteractionCastController interactionCastController)
         {
             Canvas canvas = EnsureCanvas();
             EnsureEventSystem();
@@ -410,12 +456,17 @@ namespace RPGClone.EditorTools
             MMOCharacterPanelPresenter characterPanel = EnsureCharacterPanel(canvas.transform, playerIdentity, equipment);
             MMOInventoryPresenter inventoryPanel = EnsureInventoryPanel(canvas.transform, inventory);
             MMOSpellBookPresenter spellBookPanel = EnsureSpellBookPanel(canvas.transform, playerAbilitySystem);
+            MMOQuestLogPresenter questLogPanel = EnsureQuestLogPanel(canvas.transform, questLog);
             MMOActionBarPresenter actionBar = EnsureActionBar(canvas.transform, playerAbilitySystem, autoAttackController, selectionController, autoAttackAbility);
             EnsureExperienceBar(canvas.transform, experience);
             EnsureLootWindow(canvas.transform);
+            EnsureQuestDialog(canvas.transform);
+            EnsureQuestTracker(canvas.transform, questLog);
             EnsureItemTooltip(canvas.transform);
             EnsureAbilityTooltip(canvas.transform);
-            EnsureBottomHud(canvas.transform, actionBar, characterPanel, inventoryPanel, spellBookPanel);
+            EnsureCastBar(canvas.transform, playerAbilitySystem, interactionCastController);
+            EnsureWorldHoverTooltip(canvas.transform, gameplayCamera, questLog);
+            EnsureBottomHud(canvas.transform, actionBar, characterPanel, inventoryPanel, spellBookPanel, questLogPanel);
             EnsureCombatFeedback(canvas.transform, playerAbilitySystem, gameplayCamera);
 
             EditorUtility.SetDirty(playerFrame);
@@ -610,7 +661,8 @@ namespace RPGClone.EditorTools
             MMOActionBarPresenter actionBar,
             MMOCharacterPanelPresenter characterPanel,
             MMOInventoryPresenter inventoryPanel,
-            MMOSpellBookPresenter spellBookPanel)
+            MMOSpellBookPresenter spellBookPanel,
+            MMOQuestLogPresenter questLogPanel)
         {
             Transform existing = canvas.Find("Bottom HUD");
             GameObject bottomHudObject = existing != null ? existing.gameObject : new GameObject("Bottom HUD", typeof(RectTransform));
@@ -623,7 +675,7 @@ namespace RPGClone.EditorTools
                 presenter = bottomHudObject.AddComponent<MMOBottomHudPresenter>();
             }
 
-            presenter.Configure(actionBar, characterPanel, inventoryPanel, spellBookPanel);
+            presenter.Configure(actionBar, characterPanel, inventoryPanel, spellBookPanel, questLogPanel);
             EditorUtility.SetDirty(presenter);
             return presenter;
         }
@@ -710,6 +762,64 @@ namespace RPGClone.EditorTools
             return presenter;
         }
 
+        private static MMOQuestDialogPresenter EnsureQuestDialog(Transform canvas)
+        {
+            Transform existing = canvas.Find("Quest Dialog");
+            GameObject panelObject = existing != null ? existing.gameObject : new GameObject("Quest Dialog", typeof(RectTransform));
+            panelObject.transform.SetParent(canvas, false);
+
+            MMOQuestDialogPresenter presenter = panelObject.GetComponent<MMOQuestDialogPresenter>();
+            if (presenter == null)
+            {
+                presenter = panelObject.AddComponent<MMOQuestDialogPresenter>();
+            }
+
+            EditorUtility.SetDirty(presenter);
+            return presenter;
+        }
+
+        private static MMOQuestLogPresenter EnsureQuestLogPanel(Transform canvas, MMOQuestLog questLog)
+        {
+            Transform existing = canvas.Find("Quest Log Panel");
+            GameObject panelObject = existing != null ? existing.gameObject : new GameObject("Quest Log Panel", typeof(RectTransform));
+            panelObject.transform.SetParent(canvas, false);
+
+            RectTransform rectTransform = (RectTransform)panelObject.transform;
+            rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.anchoredPosition = new Vector2(0f, 32f);
+
+            MMOQuestLogPresenter presenter = panelObject.GetComponent<MMOQuestLogPresenter>();
+            if (presenter == null)
+            {
+                presenter = panelObject.AddComponent<MMOQuestLogPresenter>();
+            }
+
+            presenter.Configure(questLog);
+            panelObject.SetActive(false);
+            EditorUtility.SetDirty(presenter);
+            return presenter;
+        }
+
+        private static MMOQuestTrackerPresenter EnsureQuestTracker(Transform canvas, MMOQuestLog questLog)
+        {
+            Transform existing = canvas.Find("Quest Tracker");
+            GameObject trackerObject = existing != null ? existing.gameObject : new GameObject("Quest Tracker", typeof(RectTransform));
+            trackerObject.transform.SetParent(canvas, false);
+            trackerObject.SetActive(true);
+
+            MMOQuestTrackerPresenter presenter = trackerObject.GetComponent<MMOQuestTrackerPresenter>();
+            if (presenter == null)
+            {
+                presenter = trackerObject.AddComponent<MMOQuestTrackerPresenter>();
+            }
+
+            presenter.Configure(questLog);
+            EditorUtility.SetDirty(presenter);
+            return presenter;
+        }
+
         private static MMOItemTooltipPresenter EnsureItemTooltip(Transform canvas)
         {
             Transform existing = canvas.Find("Item Tooltip");
@@ -738,6 +848,45 @@ namespace RPGClone.EditorTools
                 presenter = panelObject.AddComponent<MMOAbilityTooltipPresenter>();
             }
 
+            EditorUtility.SetDirty(presenter);
+            return presenter;
+        }
+
+        private static MMOCastBarPresenter EnsureCastBar(Transform canvas, MMOAbilitySystem abilitySystem, MMOInteractionCastController interactionCastController)
+        {
+            Transform existing = canvas.Find("Cast Bar");
+            GameObject castBarObject = existing != null ? existing.gameObject : new GameObject("Cast Bar", typeof(RectTransform));
+            castBarObject.transform.SetParent(canvas, false);
+            castBarObject.SetActive(true);
+
+            MMOCastBarPresenter presenter = castBarObject.GetComponent<MMOCastBarPresenter>();
+            if (presenter == null)
+            {
+                presenter = castBarObject.AddComponent<MMOCastBarPresenter>();
+            }
+
+            presenter.Configure(abilitySystem, interactionCastController);
+            EditorUtility.SetDirty(presenter);
+            return presenter;
+        }
+
+        private static MMOWorldHoverTooltipPresenter EnsureWorldHoverTooltip(Transform canvas, Camera gameplayCamera, MMOQuestLog questLog)
+        {
+            Transform existing = canvas.Find("World Hover Tooltip");
+            if (existing != null)
+            {
+                Object.DestroyImmediate(existing.gameObject);
+            }
+
+            GameObject tooltipObject = new("World Hover Tooltip", typeof(RectTransform));
+            tooltipObject.transform.SetParent(canvas, false);
+            tooltipObject.SetActive(true);
+
+            MMOWorldHoverTooltipPresenter presenter = tooltipObject.AddComponent<MMOWorldHoverTooltipPresenter>();
+
+            presenter.Configure(gameplayCamera, questLog);
+            presenter.RebuildVisuals();
+            EditorUtility.SetDirty(tooltipObject);
             EditorUtility.SetDirty(presenter);
             return presenter;
         }

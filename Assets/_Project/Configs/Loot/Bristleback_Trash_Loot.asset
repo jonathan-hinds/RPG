@@ -17,19 +17,29 @@ MonoBehaviour:
     dropChance: 0.42
     minQuantity: 1
     maxQuantity: 2
+    requiredQuest: {fileID: 0}
+    onlyDropWhileQuestNeedsItem: 0
   - item: {fileID: 11400000, guid: e2bc1e4ebc2b53b4b8c2f88b53ac3ddf, type: 2}
     dropChance: 0.32
     minQuantity: 1
     maxQuantity: 1
+    requiredQuest: {fileID: 0}
+    onlyDropWhileQuestNeedsItem: 0
   - item: {fileID: 11400000, guid: 4aa2d87df99ed184c95e511a480b6f9f, type: 2}
     dropChance: 0.28
     minQuantity: 1
     maxQuantity: 3
+    requiredQuest: {fileID: 0}
+    onlyDropWhileQuestNeedsItem: 0
   - item: {fileID: 11400000, guid: d0829154cffc0fd4ea59f873987fdfe7, type: 2}
     dropChance: 0.18
     minQuantity: 1
     maxQuantity: 1
+    requiredQuest: {fileID: 0}
+    onlyDropWhileQuestNeedsItem: 0
   - item: {fileID: 11400000, guid: 911977f7e009d344fa98eaab781e7101, type: 2}
     dropChance: 0.08
     minQuantity: 1
     maxQuantity: 1
+    requiredQuest: {fileID: 0}
+    onlyDropWhileQuestNeedsItem: 0
