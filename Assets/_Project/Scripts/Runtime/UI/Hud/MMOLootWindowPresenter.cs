@@ -228,13 +228,7 @@ namespace RPGClone.UI
             label.rectTransform.offsetMin = new Vector2(8f, 0f);
             label.rectTransform.offsetMax = new Vector2(-8f, 0f);
 
-            MMOItemTooltipTrigger tooltipTrigger = row.gameObject.GetComponent<MMOItemTooltipTrigger>();
-            if (tooltipTrigger == null)
-            {
-                tooltipTrigger = row.gameObject.AddComponent<MMOItemTooltipTrigger>();
-            }
-
-            tooltipTrigger.Configure(stack.Item);
+            MMOItemTooltipTrigger.Bind(row.gameObject, stack.Item);
         }
 
         private void PositionAt(Vector2 screenPosition)

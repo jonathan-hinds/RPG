@@ -35,9 +35,21 @@ namespace RPGClone.UI
                 return;
             }
 
+            if (MMOVendorPresenter.TrySellInventorySlot(inventory, slotIndex))
+            {
+                return;
+            }
+
             MMOCharacterEquipment equipment = player.GetComponent<MMOCharacterEquipment>();
             if (equipment != null && stack.Item.IsEquipment && equipment.TryEquipFromInventory(inventory, slotIndex))
             {
+                return;
+            }
+
+            MMOConsumableEffectController consumables = player.GetComponent<MMOConsumableEffectController>();
+            if (consumables != null && stack.Item.IsConsumable && consumables.TryConsume(stack.Item))
+            {
+                inventory.TryRemoveItem(stack.Item, 1);
                 return;
             }
 

@@ -371,15 +371,17 @@ namespace RPGClone.EditorTools
 
         private static Vector3 GetGroundedPosition(GameObject source)
         {
-            if (NavMesh.SamplePosition(source.transform.position, out NavMeshHit hit, 4f, NavMesh.AllAreas))
+            Vector3 position = source.transform.position;
+            Terrain terrain = Terrain.activeTerrain;
+            if (terrain != null)
             {
-                return hit.position;
+                position.y = terrain.SampleHeight(position) + terrain.transform.position.y;
+                return position;
             }
 
             Collider collider = source.GetComponent<Collider>();
             if (collider != null)
             {
-                Vector3 position = source.transform.position;
                 position.y = collider.bounds.min.y;
                 return position;
             }

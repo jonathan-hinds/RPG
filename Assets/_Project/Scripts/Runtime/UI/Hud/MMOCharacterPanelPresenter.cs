@@ -250,6 +250,11 @@ namespace RPGClone.UI
             MMOUiFactory.Stretch(label.rectTransform);
             label.rectTransform.offsetMin = new Vector2(4f, 2f);
             label.rectTransform.offsetMax = new Vector2(-4f, -2f);
+
+            if (equippedItem != null)
+            {
+                MMOItemTooltipTrigger.Bind(slot.gameObject, equippedItem);
+            }
         }
 
         private static string FormatStats(MMOCharacterStats stats)

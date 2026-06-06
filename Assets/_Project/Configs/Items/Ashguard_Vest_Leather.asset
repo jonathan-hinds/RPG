@@ -15,11 +15,16 @@ MonoBehaviour:
   itemId: ashguard_vest_leather
   displayName: Ashguard Vest (Leather)
   description: Supple leather chest armor for scouts and shamans.
-  itemType: 2
+  itemType: 3
   quality: 1
   icon: {fileID: 0}
   maxStackSize: 1
   vendorValueCopper: 20
+  consumableType: 0
+  restoreHealthAmount: 0
+  restoreManaAmount: 0
+  consumeDurationSeconds: 10
+  requiresStationary: 1
   equipmentSlot: 4
   armorWeight: 1
   statBonuses:

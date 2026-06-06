@@ -20,6 +20,7 @@ namespace RPGClone.UI
 
         private Image background;
         private Text nameText;
+        private Text titleText;
         private Text levelText;
         private Image healthBackground;
         private Image healthFill;
@@ -58,6 +59,7 @@ namespace RPGClone.UI
         {
             MMOUiFactory.DestroyChildren(transform);
             nameText = null;
+            titleText = null;
             levelText = null;
             healthBackground = null;
             healthFill = null;
@@ -146,6 +148,7 @@ namespace RPGClone.UI
             HoverTooltipData tooltipData = new()
             {
                 Name = identity.DisplayName,
+                Title = GetCharacterTitle(identity),
                 LevelText = $"Level {identity.Level}",
                 HasHealth = identity.Health.MaxValue > 0,
                 HealthCurrent = identity.Health.CurrentValue,
@@ -357,6 +360,8 @@ namespace RPGClone.UI
         {
             BuildIfNeeded();
             nameText.text = tooltipData.Name;
+            titleText.text = tooltipData.Title;
+            titleText.enabled = !string.IsNullOrWhiteSpace(tooltipData.Title);
             levelText.text = tooltipData.LevelText;
             levelText.enabled = !string.IsNullOrWhiteSpace(tooltipData.LevelText);
 
@@ -375,7 +380,7 @@ namespace RPGClone.UI
             questText.enabled = !string.IsNullOrWhiteSpace(tooltipData.QuestContext);
 
             int questLineCount = string.IsNullOrWhiteSpace(tooltipData.QuestContext) ? 0 : tooltipData.QuestContext.Split('\n').Length;
-            float height = 58f + (hasHealth ? 28f : 0f) + questLineCount * 18f;
+            float height = 58f + (!string.IsNullOrWhiteSpace(tooltipData.Title) ? 18f : 0f) + (hasHealth ? 28f : 0f) + questLineCount * 18f;
             ((RectTransform)transform).sizeDelta = new Vector2(330f, Mathf.Clamp(height, 58f, 220f));
             SetVisible(true);
         }
@@ -410,6 +415,7 @@ namespace RPGClone.UI
             if (nameText == null && transform.childCount > 0)
             {
                 MMOUiFactory.DestroyChildren(transform);
+                titleText = null;
                 levelText = null;
                 healthBackground = null;
                 healthFill = null;
@@ -427,10 +433,16 @@ namespace RPGClone.UI
                 levelText = CreateText("Level", 12, FontStyle.Bold, TextAnchor.UpperLeft, new Vector2(10f, -30f), new Vector2(-20f, 18f));
             }
 
+            if (titleText == null)
+            {
+                titleText = CreateText("Title", 12, FontStyle.Italic, TextAnchor.UpperLeft, new Vector2(10f, -48f), new Vector2(-20f, 18f));
+                titleText.color = new Color(1f, 0.82f, 0.34f, 1f);
+            }
+
             if (healthBackground == null)
             {
                 healthBackground = MMOUiFactory.CreateImage("Health Bar Background", transform, new Color(0.12f, 0.025f, 0.02f, 1f), false);
-                ConfigureRect(healthBackground.rectTransform, new Vector2(10f, -54f), new Vector2(-20f, 18f));
+                ConfigureRect(healthBackground.rectTransform, new Vector2(10f, -70f), new Vector2(-20f, 18f));
             }
 
             if (healthFill == null)
@@ -444,13 +456,26 @@ namespace RPGClone.UI
 
             if (healthText == null)
             {
-                healthText = CreateText("Health Text", 11, FontStyle.Bold, TextAnchor.MiddleCenter, new Vector2(10f, -54f), new Vector2(-20f, 18f));
+                healthText = CreateText("Health Text", 11, FontStyle.Bold, TextAnchor.MiddleCenter, new Vector2(10f, -70f), new Vector2(-20f, 18f));
             }
 
             if (questText == null)
             {
-                questText = CreateText("Quest Context", 12, FontStyle.Normal, TextAnchor.UpperLeft, new Vector2(10f, -80f), new Vector2(-20f, 128f));
+                questText = CreateText("Quest Context", 12, FontStyle.Normal, TextAnchor.UpperLeft, new Vector2(10f, -96f), new Vector2(-20f, 128f));
             }
+        }
+
+        private static string GetCharacterTitle(MMOCharacterIdentity identity)
+        {
+            MMOStandardNpcIdentity standardNpc = identity.GetComponent<MMOStandardNpcIdentity>();
+            if (standardNpc == null)
+            {
+                return string.Empty;
+            }
+
+            return standardNpc.Role == MMONpcIdentityRole.Vendor || standardNpc.Role == MMONpcIdentityRole.Trainer
+                ? standardNpc.Title
+                : string.Empty;
         }
 
         private Text CreateText(string objectName, int fontSize, FontStyle style, TextAnchor alignment, Vector2 anchoredPosition, Vector2 sizeDelta)
@@ -475,16 +500,18 @@ namespace RPGClone.UI
             BuildIfNeeded();
             canvasGroup.alpha = visible ? 1f : 0f;
             background.enabled = visible;
-            nameText.enabled = visible;
+                nameText.enabled = visible;
             if (!visible)
             {
                 levelText.enabled = false;
+                titleText.enabled = false;
                 healthBackground.enabled = false;
                 healthFill.enabled = false;
                 healthText.enabled = false;
                 questText.enabled = false;
                 nameText.text = string.Empty;
                 levelText.text = string.Empty;
+                titleText.text = string.Empty;
                 healthText.text = string.Empty;
                 questText.text = string.Empty;
             }
@@ -493,6 +520,7 @@ namespace RPGClone.UI
         private struct HoverTooltipData
         {
             public string Name;
+            public string Title;
             public string LevelText;
             public bool HasHealth;
             public int HealthCurrent;

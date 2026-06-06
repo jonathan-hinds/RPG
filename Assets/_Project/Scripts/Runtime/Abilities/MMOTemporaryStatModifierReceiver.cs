@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RPGClone.Buffs;
 using RPGClone.Characters;
 using UnityEngine;
 
@@ -62,7 +63,7 @@ namespace RPGClone.Abilities
                 healthRegenMultiplier *= modifier.HealthRegenMultiplier;
             }
 
-            identity.Stats.SetRuntimeModifiers(attackPowerBonus, attackPowerMultiplier, attackSpeedMultiplier, healthRegenMultiplier);
+            identity.Stats.SetRuntimeModifiers(attackPowerBonus, attackPowerMultiplier, attackSpeedMultiplier, healthRegenMultiplier, 1f);
         }
 
         private sealed class RuntimeModifier

@@ -14,6 +14,12 @@ namespace RPGClone.Inventory
         [SerializeField] private Sprite icon;
         [SerializeField, Min(1)] private int maxStackSize = 20;
         [SerializeField, Min(0)] private int vendorValueCopper;
+        [Header("Consumable")]
+        [SerializeField] private MMOConsumableType consumableType = MMOConsumableType.None;
+        [SerializeField, Min(0)] private int restoreHealthAmount;
+        [SerializeField, Min(0)] private int restoreManaAmount;
+        [SerializeField, Min(0.1f)] private float consumeDurationSeconds = 10f;
+        [SerializeField] private bool requiresStationary = true;
         [Header("Equipment")]
         [SerializeField] private MMOEquipmentSlotType equipmentSlot = MMOEquipmentSlotType.Chest;
         [SerializeField] private MMOArmorWeight armorWeight = MMOArmorWeight.Cloth;
@@ -27,10 +33,16 @@ namespace RPGClone.Inventory
         public Sprite Icon => icon;
         public int MaxStackSize => Mathf.Max(1, maxStackSize);
         public int VendorValueCopper => vendorValueCopper;
+        public MMOConsumableType ConsumableType => consumableType;
+        public int RestoreHealthAmount => Mathf.Max(0, restoreHealthAmount);
+        public int RestoreManaAmount => Mathf.Max(0, restoreManaAmount);
+        public float ConsumeDurationSeconds => Mathf.Max(0.1f, consumeDurationSeconds);
+        public bool RequiresStationary => requiresStationary;
         public MMOEquipmentSlotType EquipmentSlot => equipmentSlot;
         public MMOArmorWeight ArmorWeight => armorWeight;
         public MMOCharacterStats StatBonuses => statBonuses;
         public bool IsEquipment => itemType == MMOItemType.Equipment;
+        public bool IsConsumable => itemType == MMOItemType.Consumable && consumableType != MMOConsumableType.None;
 
         public void Configure(
             string newItemId,
@@ -50,6 +62,34 @@ namespace RPGClone.Inventory
             maxStackSize = Mathf.Max(1, newMaxStackSize);
             vendorValueCopper = Mathf.Max(0, newVendorValueCopper);
             icon = newIcon;
+            if (itemType != MMOItemType.Consumable)
+            {
+                consumableType = MMOConsumableType.None;
+                restoreHealthAmount = 0;
+                restoreManaAmount = 0;
+            }
+        }
+
+        public void ConfigureConsumable(
+            string newItemId,
+            string newDisplayName,
+            string newDescription,
+            MMOItemQuality newQuality,
+            int newMaxStackSize,
+            int newVendorValueCopper,
+            MMOConsumableType newConsumableType,
+            int newRestoreHealthAmount,
+            int newRestoreManaAmount,
+            float newConsumeDurationSeconds,
+            bool newRequiresStationary = true,
+            Sprite newIcon = null)
+        {
+            Configure(newItemId, newDisplayName, newDescription, MMOItemType.Consumable, newQuality, newMaxStackSize, newVendorValueCopper, newIcon);
+            consumableType = newConsumableType;
+            restoreHealthAmount = Mathf.Max(0, newRestoreHealthAmount);
+            restoreManaAmount = Mathf.Max(0, newRestoreManaAmount);
+            consumeDurationSeconds = Mathf.Max(0.1f, newConsumeDurationSeconds);
+            requiresStationary = newRequiresStationary;
         }
 
         public void ConfigureEquipment(

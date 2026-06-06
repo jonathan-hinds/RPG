@@ -17,6 +17,10 @@ namespace RPGClone.Abilities
         [SerializeField, Min(1f)] private float attackPowerMultiplier = 1f;
         [SerializeField, Min(1f)] private float attackSpeedMultiplier = 1f;
         [SerializeField, Min(1f)] private float healthRegenMultiplier = 1f;
+        [SerializeField, Min(1f)] private float manaRegenMultiplier = 1f;
+        [SerializeField, Range(0f, 1f)] private float damageTakenAsManaPercent;
+        [SerializeField, Min(0.1f)] private float chargeSpeed = 18f;
+        [SerializeField, Min(0.1f)] private float chargeStopDistance = 2.5f;
 
         public MMOAbilityEffectType EffectType => effectType;
         public MMOAbilityAmountSource AmountSource => amountSource;
@@ -28,6 +32,10 @@ namespace RPGClone.Abilities
         public float AttackPowerMultiplier => attackPowerMultiplier;
         public float AttackSpeedMultiplier => attackSpeedMultiplier;
         public float HealthRegenMultiplier => healthRegenMultiplier;
+        public float ManaRegenMultiplier => Mathf.Max(1f, manaRegenMultiplier);
+        public float DamageTakenAsManaPercent => Mathf.Clamp01(damageTakenAsManaPercent);
+        public float ChargeSpeed => Mathf.Max(0.1f, chargeSpeed);
+        public float ChargeStopDistance => Mathf.Max(0.1f, chargeStopDistance);
 
         public int CalculateAmount(MMOCharacterIdentity caster)
         {
@@ -69,6 +77,25 @@ namespace RPGClone.Abilities
             float newAttackSpeedMultiplier,
             float newHealthRegenMultiplier)
         {
+            ConfigureTemporaryStatModifier(
+                newDurationSeconds,
+                newAttackPowerBonus,
+                newAttackPowerMultiplier,
+                newAttackSpeedMultiplier,
+                newHealthRegenMultiplier,
+                1f,
+                0f);
+        }
+
+        public void ConfigureTemporaryStatModifier(
+            float newDurationSeconds,
+            int newAttackPowerBonus,
+            float newAttackPowerMultiplier,
+            float newAttackSpeedMultiplier,
+            float newHealthRegenMultiplier,
+            float newManaRegenMultiplier,
+            float newDamageTakenAsManaPercent)
+        {
             effectType = MMOAbilityEffectType.TemporaryStatModifier;
             amountSource = MMOAbilityAmountSource.Flat;
             damageSchool = MMODamageSchool.Physical;
@@ -79,6 +106,21 @@ namespace RPGClone.Abilities
             attackPowerMultiplier = Mathf.Max(1f, newAttackPowerMultiplier);
             attackSpeedMultiplier = Mathf.Max(1f, newAttackSpeedMultiplier);
             healthRegenMultiplier = Mathf.Max(1f, newHealthRegenMultiplier);
+            manaRegenMultiplier = Mathf.Max(1f, newManaRegenMultiplier);
+            damageTakenAsManaPercent = Mathf.Clamp01(newDamageTakenAsManaPercent);
+        }
+
+        public void ConfigureCharge(
+            float newSpeed,
+            float newStopDistance,
+            MMOAbilityAmountSource newAmountSource,
+            MMODamageSchool newDamageSchool,
+            float newFlatAmount,
+            float newCoefficient)
+        {
+            Configure(MMOAbilityEffectType.Charge, newAmountSource, newDamageSchool, newFlatAmount, newCoefficient);
+            chargeSpeed = Mathf.Max(0.1f, newSpeed);
+            chargeStopDistance = Mathf.Max(0.1f, newStopDistance);
         }
     }
 }

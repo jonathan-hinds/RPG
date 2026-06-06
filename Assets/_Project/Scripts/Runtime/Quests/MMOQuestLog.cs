@@ -22,6 +22,7 @@ namespace RPGClone.Quests
         private MMOExperienceComponent experience;
 
         public event Action<MMOQuestLog> Changed;
+        public MMOQuestCatalog QuestCatalog => questCatalog;
         public IReadOnlyList<MMOQuestRuntimeState> ActiveQuests => activeQuests;
         public IReadOnlyList<MMOQuestDefinition> CompletedQuests => completedQuests;
         public MMOItemDefinition PendingUsableItem => pendingUsableItem;
@@ -53,6 +54,15 @@ namespace RPGClone.Quests
         public void Configure(MMOQuestCatalog newQuestCatalog)
         {
             questCatalog = newQuestCatalog;
+            RefreshCollectionObjectives();
+            Changed?.Invoke(this);
+        }
+
+        public void RestoreState(IEnumerable<MMOQuestRuntimeState> restoredActiveQuests, IEnumerable<MMOQuestDefinition> restoredCompletedQuests, MMOItemDefinition restoredPendingUsableItem)
+        {
+            activeQuests = restoredActiveQuests != null ? new List<MMOQuestRuntimeState>(restoredActiveQuests) : new List<MMOQuestRuntimeState>();
+            completedQuests = restoredCompletedQuests != null ? new List<MMOQuestDefinition>(restoredCompletedQuests) : new List<MMOQuestDefinition>();
+            pendingUsableItem = restoredPendingUsableItem;
             RefreshCollectionObjectives();
             Changed?.Invoke(this);
         }

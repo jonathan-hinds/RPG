@@ -1,11 +1,14 @@
 using RPGClone.Characters;
 using RPGClone.Abilities;
+using RPGClone.Buffs;
 using RPGClone.Combat;
 using RPGClone.Inventory;
 using RPGClone.Player;
 using RPGClone.Quests;
 using RPGClone.Targeting;
+using RPGClone.Trainers;
 using RPGClone.UI;
+using RPGClone.Vendors;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -55,6 +58,8 @@ namespace RPGClone.EditorTools
             MMOInventoryContainer inventory = EnsureInventory(player);
             MMOCharacterEquipment equipment = EnsureEquipment(player);
             EnsureCurrencyWallet(player);
+            EnsureBuffController(player);
+            EnsureConsumableController(player);
             MMOInteractionCastController interactionCastController = EnsureInteractionCastController(player);
             MMOQuestLog questLog = EnsureQuestLog(player);
 
@@ -255,9 +260,14 @@ namespace RPGClone.EditorTools
                 }
 
                 string objectName = sceneObject.name;
-                if (objectName.StartsWith("Quest Giver"))
+                if (objectName.StartsWith("Quest Giver") || objectName.StartsWith("Vendor") || objectName.StartsWith("Trainer"))
                 {
-                    EnsureIdentity(sceneObject, profiles.FriendlyNpc, CleanDisplayName(objectName), true);
+                    MMONpcIdentityRole role = objectName.StartsWith("Vendor")
+                        ? MMONpcIdentityRole.Vendor
+                        : objectName.StartsWith("Trainer")
+                            ? MMONpcIdentityRole.Trainer
+                            : MMONpcIdentityRole.QuestGiver;
+                    EnsureStandardNpcIdentity(sceneObject, profiles.FriendlyNpc, ResolveConfiguredDisplayName(sceneObject), role, true);
                     EnsureCombatSetup(sceneObject, autoAttackAbility);
                 }
                 else if (objectName.StartsWith("Bristleback Creature") || objectName.StartsWith("Ash Canyon Creature"))
@@ -286,6 +296,25 @@ namespace RPGClone.EditorTools
             return identity;
         }
 
+        private static MMOCharacterIdentity EnsureStandardNpcIdentity(
+            GameObject target,
+            MMOCharacterProfile profile,
+            string displayNameOverride,
+            MMONpcIdentityRole role,
+            bool resetResources)
+        {
+            MMOStandardNpcIdentity standardIdentity = target.GetComponent<MMOStandardNpcIdentity>();
+            if (standardIdentity == null)
+            {
+                standardIdentity = target.AddComponent<MMOStandardNpcIdentity>();
+            }
+
+            standardIdentity.Configure(profile, displayNameOverride, role, resetResources);
+            EditorUtility.SetDirty(standardIdentity);
+            EditorUtility.SetDirty(standardIdentity.Identity);
+            return standardIdentity.Identity;
+        }
+
         private static MMOAbilitySystem EnsureCombatSetup(GameObject target, MMOAbilityDefinition autoAttackAbility)
         {
             MMOCombatant combatant = target.GetComponent<MMOCombatant>();
@@ -301,10 +330,23 @@ namespace RPGClone.EditorTools
             }
 
             abilitySystem.LearnAbility(autoAttackAbility);
+            EnsureBuffController(target);
             EnsureRegeneration(target);
             EditorUtility.SetDirty(combatant);
             EditorUtility.SetDirty(abilitySystem);
             return abilitySystem;
+        }
+
+        private static MMOCharacterBuffController EnsureBuffController(GameObject target)
+        {
+            MMOCharacterBuffController controller = target.GetComponent<MMOCharacterBuffController>();
+            if (controller == null)
+            {
+                controller = target.AddComponent<MMOCharacterBuffController>();
+            }
+
+            EditorUtility.SetDirty(controller);
+            return controller;
         }
 
         private static MMOExperienceComponent EnsureExperience(GameObject player, MMOLevelProgressionDefinition progression)
@@ -388,6 +430,18 @@ namespace RPGClone.EditorTools
             return equipment;
         }
 
+        private static MMOConsumableEffectController EnsureConsumableController(GameObject player)
+        {
+            MMOConsumableEffectController controller = player.GetComponent<MMOConsumableEffectController>();
+            if (controller == null)
+            {
+                controller = player.AddComponent<MMOConsumableEffectController>();
+            }
+
+            EditorUtility.SetDirty(controller);
+            return controller;
+        }
+
         private static MMOCurrencyWallet EnsureCurrencyWallet(GameObject player)
         {
             MMOCurrencyWallet wallet = player.GetComponent<MMOCurrencyWallet>();
@@ -464,6 +518,9 @@ namespace RPGClone.EditorTools
             EnsureQuestTracker(canvas.transform, questLog);
             EnsureItemTooltip(canvas.transform);
             EnsureAbilityTooltip(canvas.transform);
+            EnsureGameTooltip(canvas.transform);
+            EnsureVendorPresenter(canvas.transform);
+            EnsureTrainerPresenter(canvas.transform);
             EnsureCastBar(canvas.transform, playerAbilitySystem, interactionCastController);
             EnsureWorldHoverTooltip(canvas.transform, gameplayCamera, questLog);
             EnsureBottomHud(canvas.transform, actionBar, characterPanel, inventoryPanel, spellBookPanel, questLogPanel);
@@ -852,6 +909,68 @@ namespace RPGClone.EditorTools
             return presenter;
         }
 
+        private static MMOGameTooltipPresenter EnsureGameTooltip(Transform canvas)
+        {
+            Transform existing = canvas.Find("Game Tooltip");
+            GameObject panelObject = existing != null ? existing.gameObject : new GameObject("Game Tooltip", typeof(RectTransform));
+            panelObject.transform.SetParent(canvas, false);
+
+            MMOGameTooltipPresenter presenter = panelObject.GetComponent<MMOGameTooltipPresenter>();
+            if (presenter == null)
+            {
+                presenter = panelObject.AddComponent<MMOGameTooltipPresenter>();
+            }
+
+            EditorUtility.SetDirty(presenter);
+            return presenter;
+        }
+
+        private static MMOVendorPresenter EnsureVendorPresenter(Transform canvas)
+        {
+            Transform existing = canvas.Find("Vendor Window");
+            GameObject panelObject = existing != null ? existing.gameObject : new GameObject("Vendor Window", typeof(RectTransform));
+            panelObject.transform.SetParent(canvas, false);
+
+            RectTransform rectTransform = (RectTransform)panelObject.transform;
+            rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            rectTransform.pivot = new Vector2(0f, 1f);
+            rectTransform.anchoredPosition = new Vector2(96f, 170f);
+
+            MMOVendorPresenter presenter = panelObject.GetComponent<MMOVendorPresenter>();
+            if (presenter == null)
+            {
+                presenter = panelObject.AddComponent<MMOVendorPresenter>();
+            }
+
+            panelObject.SetActive(false);
+            EditorUtility.SetDirty(presenter);
+            return presenter;
+        }
+
+        private static MMOClassTrainerPresenter EnsureTrainerPresenter(Transform canvas)
+        {
+            Transform existing = canvas.Find("Class Trainer Window");
+            GameObject panelObject = existing != null ? existing.gameObject : new GameObject("Class Trainer Window", typeof(RectTransform));
+            panelObject.transform.SetParent(canvas, false);
+
+            RectTransform rectTransform = (RectTransform)panelObject.transform;
+            rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            rectTransform.pivot = new Vector2(0f, 1f);
+            rectTransform.anchoredPosition = new Vector2(124f, 190f);
+
+            MMOClassTrainerPresenter presenter = panelObject.GetComponent<MMOClassTrainerPresenter>();
+            if (presenter == null)
+            {
+                presenter = panelObject.AddComponent<MMOClassTrainerPresenter>();
+            }
+
+            panelObject.SetActive(false);
+            EditorUtility.SetDirty(presenter);
+            return presenter;
+        }
+
         private static MMOCastBarPresenter EnsureCastBar(Transform canvas, MMOAbilitySystem abilitySystem, MMOInteractionCastController interactionCastController)
         {
             Transform existing = canvas.Find("Cast Bar");
@@ -946,6 +1065,29 @@ namespace RPGClone.EditorTools
         private static string CleanDisplayName(string objectName)
         {
             return objectName.Replace(" Placeholder", string.Empty);
+        }
+
+        private static string ResolveConfiguredDisplayName(GameObject target)
+        {
+            MMOQuestNpc questNpc = target.GetComponent<MMOQuestNpc>();
+            if (questNpc != null)
+            {
+                return questNpc.DisplayName;
+            }
+
+            MMOVendorNpc vendorNpc = target.GetComponent<MMOVendorNpc>();
+            if (vendorNpc != null)
+            {
+                return vendorNpc.DisplayName;
+            }
+
+            MMOClassTrainerNpc trainerNpc = target.GetComponent<MMOClassTrainerNpc>();
+            if (trainerNpc != null)
+            {
+                return trainerNpc.DisplayName;
+            }
+
+            return CleanDisplayName(target.name);
         }
 
         private static string Sanitize(string value)

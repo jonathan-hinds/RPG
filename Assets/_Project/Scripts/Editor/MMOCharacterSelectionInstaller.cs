@@ -4,6 +4,7 @@ using System.IO;
 using RPGClone.Abilities;
 using RPGClone.CharacterSelection;
 using RPGClone.Characters;
+using RPGClone.Inventory;
 using RPGClone.Quests;
 using RPGClone.UI;
 using UnityEditor;
@@ -22,6 +23,7 @@ namespace RPGClone.EditorTools
         private const string ConfigFolder = RootFolder + "/Configs";
         private const string AbilityFolder = ConfigFolder + "/Abilities";
         private const string CharacterFolder = ConfigFolder + "/Characters";
+        private const string ItemFolder = ConfigFolder + "/Items";
         private const string ProgressionFolder = ConfigFolder + "/Progression";
         private const string ArchetypeFolder = ConfigFolder + "/Archetypes";
         private const string SceneFolder = "Assets/Scenes";
@@ -35,10 +37,11 @@ namespace RPGClone.EditorTools
         {
             EnsureFolders();
             AbilitySet abilities = CreateAbilities();
+            MMOAbilityCatalog abilityCatalog = CreateAbilityCatalog(abilities.All);
             ProgressionSet progression = CreateProgression();
             MMOCharacterArchetypeCatalog catalog = CreateArchetypes(abilities, progression);
             CreateCharacterSelectionScene(catalog);
-            ConfigureGameplayScene(catalog);
+            ConfigureGameplayScene(catalog, abilityCatalog);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("Built character selection scene, race/class archetypes, abilities, and gameplay persistence hooks.");
@@ -50,6 +53,7 @@ namespace RPGClone.EditorTools
             CreateFolderIfMissing(ConfigFolder);
             CreateFolderIfMissing(AbilityFolder);
             CreateFolderIfMissing(CharacterFolder);
+            CreateFolderIfMissing(ItemFolder);
             CreateFolderIfMissing(ProgressionFolder);
             CreateFolderIfMissing(ArchetypeFolder);
             CreateFolderIfMissing(SceneFolder);
@@ -80,7 +84,13 @@ namespace RPGClone.EditorTools
                 TrollRacial = GetOrCreateBuffAbility("Troll_Regeneration", "troll_regeneration", "Regeneration", "Greatly increases health regeneration for a short time.", 120f, 10f, 0, 1f, 1f, 4f),
                 Bash = GetOrCreateDamageAbility("Warrior_Bash", "warrior_bash", "Bash", "A close-range shield bash that deals physical damage.", MMOAbilityTargetType.Hostile, false, false, 3f, 8f, 0, 0f, false, false, MMOAbilityAmountSource.AttackPower, MMODamageSchool.Physical, 12f, 0.25f),
                 Fireball = GetOrCreateDamageAbility("Mage_Fireball", "mage_fireball", "Fireball", "Hurls a fiery projectile at a hostile target.", MMOAbilityTargetType.Hostile, false, false, 30f, 0f, 16, 2.5f, true, false, MMOAbilityAmountSource.SpellPower, MMODamageSchool.Fire, 24f, 0.85f),
-                HealingBeam = GetOrCreateHealAbility("Shaman_Healing_Beam", "shaman_healing_beam", "Healing Beam", "Channels restorative energy into a friendly target. Hostile targets redirect the heal to self.", 30f, 0f, 18, 2f, true, true, 30f, 0.8f)
+                HealingBeam = GetOrCreateHealAbility("Shaman_Healing_Beam", "shaman_healing_beam", "Healing Beam", "Channels restorative energy into a friendly target. Hostile targets redirect the heal to self.", 30f, 0f, 18, 2f, true, true, 30f, 0.8f),
+                Berzerkitis = GetOrCreateBuffAbility("Warrior_Berzerkitis", "warrior_berzerkitis", "Berzerkitis", "Increases attack speed by 50%.", 60f, 15f, 0, 1f, 1.5f, 1f),
+                Charge = GetOrCreateChargeAbility("Warrior_Charge", "warrior_charge", "Charge", "Charges a hostile target if a valid path exists, then strikes with physical force.", 25f, 15f, 18f, 2.5f, MMOAbilityAmountSource.AttackPower, MMODamageSchool.Physical, 10f, 0.35f),
+                MageArmor = GetOrCreateBuffAbility("Mage_Mage_Armor", "mage_mage_armor", "Mage Armor", "Increases out of combat mana regeneration by 50%.", 0f, 1800f, 0, 1f, 1f, 1f, 1.5f, 0f),
+                FireBlast = GetOrCreateDamageAbility("Mage_Fire_Blast", "mage_fire_blast", "Fire Blast", "Blasts a hostile target with instant fire damage.", MMOAbilityTargetType.Hostile, false, false, 20f, 8f, 12, 0f, false, false, MMOAbilityAmountSource.SpellPower, MMODamageSchool.Fire, 18f, 0.45f),
+                WaterShield = GetOrCreateBuffAbility("Shaman_Water_Shield", "shaman_water_shield", "Water Shield", "Absorbs 20% of incoming damage and restores that amount as mana.", 0f, 600f, 0, 1f, 1f, 1f, 1f, 0.2f),
+                LightningBolt = GetOrCreateDamageAbility("Shaman_Lightning_Bolt", "shaman_lightning_bolt", "Lightning Bolt", "Calls down nature damage on a hostile target.", MMOAbilityTargetType.Hostile, false, false, 30f, 0f, 14, 2f, true, false, MMOAbilityAmountSource.SpellPower, MMODamageSchool.Nature, 22f, 0.75f)
             };
         }
 
@@ -106,6 +116,25 @@ namespace RPGClone.EditorTools
             MMOAbilityEffectDefinition effect = new();
             effect.Configure(MMOAbilityEffectType.Damage, amountSource, school, flatAmount, coefficient);
             return GetOrCreateAbility(assetName, abilityId, displayName, description, targetType, autoAttack, toggled, range, cooldown, manaCost, castTime, interruptOnMovement, fallbackSelf, new[] { effect });
+        }
+
+        private static MMOAbilityDefinition GetOrCreateChargeAbility(
+            string assetName,
+            string abilityId,
+            string displayName,
+            string description,
+            float range,
+            float cooldown,
+            float chargeSpeed,
+            float stopDistance,
+            MMOAbilityAmountSource amountSource,
+            MMODamageSchool school,
+            float flatAmount,
+            float coefficient)
+        {
+            MMOAbilityEffectDefinition effect = new();
+            effect.ConfigureCharge(chargeSpeed, stopDistance, amountSource, school, flatAmount, coefficient);
+            return GetOrCreateAbility(assetName, abilityId, displayName, description, MMOAbilityTargetType.Hostile, false, false, range, cooldown, 0, 0f, false, false, new[] { effect });
         }
 
         private static MMOAbilityDefinition GetOrCreateHealAbility(
@@ -139,9 +168,53 @@ namespace RPGClone.EditorTools
             float attackSpeedMultiplier,
             float healthRegenMultiplier)
         {
+            return GetOrCreateBuffAbility(
+                assetName,
+                abilityId,
+                displayName,
+                description,
+                cooldown,
+                duration,
+                attackPowerBonus,
+                attackPowerMultiplier,
+                attackSpeedMultiplier,
+                healthRegenMultiplier,
+                1f,
+                0f);
+        }
+
+        private static MMOAbilityDefinition GetOrCreateBuffAbility(
+            string assetName,
+            string abilityId,
+            string displayName,
+            string description,
+            float cooldown,
+            float duration,
+            int attackPowerBonus,
+            float attackPowerMultiplier,
+            float attackSpeedMultiplier,
+            float healthRegenMultiplier,
+            float manaRegenMultiplier,
+            float damageTakenAsManaPercent)
+        {
             MMOAbilityEffectDefinition effect = new();
-            effect.ConfigureTemporaryStatModifier(duration, attackPowerBonus, attackPowerMultiplier, attackSpeedMultiplier, healthRegenMultiplier);
+            effect.ConfigureTemporaryStatModifier(duration, attackPowerBonus, attackPowerMultiplier, attackSpeedMultiplier, healthRegenMultiplier, manaRegenMultiplier, damageTakenAsManaPercent);
             return GetOrCreateAbility(assetName, abilityId, displayName, description, MMOAbilityTargetType.Self, false, false, 0f, cooldown, 0, 0f, false, false, new[] { effect });
+        }
+
+        private static MMOAbilityCatalog CreateAbilityCatalog(IEnumerable<MMOAbilityDefinition> abilities)
+        {
+            string path = $"{AbilityFolder}/Starter_Ability_Catalog.asset";
+            MMOAbilityCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOAbilityCatalog>(path);
+            if (catalog == null)
+            {
+                catalog = ScriptableObject.CreateInstance<MMOAbilityCatalog>();
+                AssetDatabase.CreateAsset(catalog, path);
+            }
+
+            catalog.Configure(abilities);
+            EditorUtility.SetDirty(catalog);
+            return catalog;
         }
 
         private static MMOAbilityDefinition GetOrCreateAbility(
@@ -369,7 +442,7 @@ namespace RPGClone.EditorTools
             AddSceneToBuildSettings(CharacterSelectionScenePath, 0);
         }
 
-        private static void ConfigureGameplayScene(MMOCharacterArchetypeCatalog catalog)
+        private static void ConfigureGameplayScene(MMOCharacterArchetypeCatalog catalog, MMOAbilityCatalog abilityCatalog)
         {
             if (!File.Exists(AssetPathToFullPath(GameplayScenePath)))
             {
@@ -388,6 +461,8 @@ namespace RPGClone.EditorTools
                 }
 
                 persistence.SetArchetypeCatalog(catalog);
+                persistence.SetItemCatalog(AssetDatabase.LoadAssetAtPath<MMOItemCatalog>($"{ItemFolder}/Starter_Item_Catalog.asset"));
+                persistence.SetAbilityCatalog(abilityCatalog);
                 EditorUtility.SetDirty(persistence);
 
                 Component redirector = EnsureComponentByTypeName(player, "RPGClone.CharacterSelection.MMOCharacterSelectionRedirector");
@@ -542,6 +617,28 @@ namespace RPGClone.EditorTools
             public MMOAbilityDefinition Bash;
             public MMOAbilityDefinition Fireball;
             public MMOAbilityDefinition HealingBeam;
+            public MMOAbilityDefinition Berzerkitis;
+            public MMOAbilityDefinition Charge;
+            public MMOAbilityDefinition MageArmor;
+            public MMOAbilityDefinition FireBlast;
+            public MMOAbilityDefinition WaterShield;
+            public MMOAbilityDefinition LightningBolt;
+
+            public MMOAbilityDefinition[] All => new[]
+            {
+                AutoAttack,
+                OrcRacial,
+                TrollRacial,
+                Bash,
+                Fireball,
+                HealingBeam,
+                Berzerkitis,
+                Charge,
+                MageArmor,
+                FireBlast,
+                WaterShield,
+                LightningBolt
+            };
         }
 
         private sealed class ProgressionSet

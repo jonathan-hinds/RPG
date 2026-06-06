@@ -12,7 +12,8 @@ namespace RPGClone.Abilities
     {
         Damage = 0,
         Heal = 1,
-        TemporaryStatModifier = 2
+        TemporaryStatModifier = 2,
+        Charge = 3
     }
 
     public enum MMOAbilityAmountSource

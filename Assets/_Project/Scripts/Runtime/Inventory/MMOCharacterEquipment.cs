@@ -115,6 +115,27 @@ namespace RPGClone.Inventory
             return true;
         }
 
+        public void ClearEquipment(bool removeStatBonuses = true)
+        {
+            MMOCharacterIdentity identity = GetComponent<MMOCharacterIdentity>();
+            foreach (MMOEquippedItemSlot equippedItem in equippedItems)
+            {
+                if (equippedItem == null)
+                {
+                    continue;
+                }
+
+                if (removeStatBonuses && identity != null && equippedItem.Item != null)
+                {
+                    identity.RemoveStatGains(equippedItem.Item.StatBonuses, true);
+                }
+
+                equippedItem.Configure(equippedItem.SlotType, null);
+            }
+
+            Changed?.Invoke(this);
+        }
+
         public MMOItemDefinition GetEquippedItem(MMOEquipmentSlotType slotType)
         {
             foreach (MMOEquippedItemSlot equippedItem in equippedItems)

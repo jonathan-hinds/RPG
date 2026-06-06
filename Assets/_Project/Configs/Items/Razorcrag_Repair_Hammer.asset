@@ -15,11 +15,16 @@ MonoBehaviour:
   itemId: razorcrag_repair_hammer
   displayName: Razorcrag Repair Hammer
   description: A compact hammer used to shore up damaged palisade posts.
-  itemType: 3
+  itemType: 4
   quality: 1
   icon: {fileID: 0}
   maxStackSize: 1
   vendorValueCopper: 0
+  consumableType: 0
+  restoreHealthAmount: 0
+  restoreManaAmount: 0
+  consumeDurationSeconds: 10
+  requiresStationary: 1
   equipmentSlot: 4
   armorWeight: 0
   statBonuses:

@@ -15,11 +15,16 @@ MonoBehaviour:
   itemId: bristleback_war_charm
   displayName: Bristleback War Charm
   description: A crude charm carried by bristleback raiders.
-  itemType: 3
+  itemType: 4
   quality: 1
   icon: {fileID: 0}
   maxStackSize: 10
   vendorValueCopper: 0
+  consumableType: 0
+  restoreHealthAmount: 0
+  restoreManaAmount: 0
+  consumeDurationSeconds: 10
+  requiresStationary: 1
   equipmentSlot: 4
   armorWeight: 0
   statBonuses:

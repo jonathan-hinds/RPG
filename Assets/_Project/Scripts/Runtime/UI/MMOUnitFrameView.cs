@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using RPGClone.Buffs;
 using RPGClone.Characters;
 using UnityEngine;
 using UnityEngine.UI;
@@ -21,6 +23,8 @@ namespace RPGClone.UI
         private const float PortraitSize = 56f;
         private const float Padding = 6f;
         private const float BarHeight = 18f;
+        private const float BuffSize = 26f;
+        private const float BuffSpacing = 4f;
 
         private Image background;
         private Image portraitImage;
@@ -31,7 +35,10 @@ namespace RPGClone.UI
         private Text healthText;
         private Image manaFill;
         private Text manaText;
+        private RectTransform buffRoot;
+        private readonly List<BuffIconView> buffIcons = new();
         private MMOCharacterIdentity boundCharacter;
+        private MMOCharacterBuffController boundBuffController;
         private bool subscribedToBoundCharacter;
 
         private static Font cachedFont;
@@ -56,6 +63,11 @@ namespace RPGClone.UI
             UnsubscribeFromBoundCharacter();
         }
 
+        private void Update()
+        {
+            RefreshBuffTimers();
+        }
+
         public void Bind(MMOCharacterIdentity character)
         {
             if (boundCharacter == character)
@@ -70,6 +82,7 @@ namespace RPGClone.UI
             }
 
             boundCharacter = character;
+            boundBuffController = boundCharacter != null ? boundCharacter.GetComponent<MMOCharacterBuffController>() : null;
 
             Refresh();
             SubscribeToBoundCharacter();
@@ -90,6 +103,16 @@ namespace RPGClone.UI
             Refresh();
         }
 
+        private void OnBuffsChanged(MMOCharacterBuffController controller)
+        {
+            RefreshBuffs();
+        }
+
+        private void OnBuffsUpdated(MMOCharacterBuffController controller)
+        {
+            RefreshBuffTimers();
+        }
+
         private void SubscribeToBoundCharacter()
         {
             if (subscribedToBoundCharacter || boundCharacter == null || !isActiveAndEnabled)
@@ -100,6 +123,12 @@ namespace RPGClone.UI
             boundCharacter.Changed += OnCharacterChanged;
             boundCharacter.Health.Changed += OnBoundResourceChanged;
             boundCharacter.Mana.Changed += OnBoundResourceChanged;
+            if (boundBuffController != null)
+            {
+                boundBuffController.BuffsChanged += OnBuffsChanged;
+                boundBuffController.BuffsUpdated += OnBuffsUpdated;
+            }
+
             subscribedToBoundCharacter = true;
         }
 
@@ -114,6 +143,12 @@ namespace RPGClone.UI
             boundCharacter.Changed -= OnCharacterChanged;
             boundCharacter.Health.Changed -= OnBoundResourceChanged;
             boundCharacter.Mana.Changed -= OnBoundResourceChanged;
+            if (boundBuffController != null)
+            {
+                boundBuffController.BuffsChanged -= OnBuffsChanged;
+                boundBuffController.BuffsUpdated -= OnBuffsUpdated;
+            }
+
             subscribedToBoundCharacter = false;
         }
 
@@ -197,6 +232,13 @@ namespace RPGClone.UI
             levelText.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             levelText.rectTransform.anchoredPosition = new Vector2(Padding + PortraitSize, Padding);
             levelText.rectTransform.sizeDelta = new Vector2(28f, 22f);
+
+            buffRoot = CreateRect("Buffs", transform);
+            buffRoot.anchorMin = new Vector2(0f, 0f);
+            buffRoot.anchorMax = new Vector2(0f, 0f);
+            buffRoot.pivot = new Vector2(0f, 1f);
+            buffRoot.anchoredPosition = new Vector2(Padding, -4f);
+            buffRoot.sizeDelta = new Vector2(270f, BuffSize);
         }
 
         private bool TryBindExistingHierarchy()
@@ -215,6 +257,16 @@ namespace RPGClone.UI
             healthText = GetText(healthBar != null ? healthBar.Find("Value") : null);
             manaFill = GetImage(manaBar != null ? manaBar.Find("Fill") : null);
             manaText = GetText(manaBar != null ? manaBar.Find("Value") : null);
+            buffRoot = transform.Find("Buffs") as RectTransform;
+            if (buffRoot == null)
+            {
+                buffRoot = CreateRect("Buffs", transform);
+                buffRoot.anchorMin = new Vector2(0f, 0f);
+                buffRoot.anchorMax = new Vector2(0f, 0f);
+                buffRoot.pivot = new Vector2(0f, 1f);
+                buffRoot.anchoredPosition = new Vector2(Padding, -4f);
+                buffRoot.sizeDelta = new Vector2(270f, BuffSize);
+            }
 
             return background != null
                 && portraitImage != null
@@ -277,6 +329,106 @@ namespace RPGClone.UI
 
             RefreshResource(boundCharacter.Health, healthFill, healthText);
             RefreshResource(boundCharacter.Mana, manaFill, manaText);
+            RefreshBuffs();
+        }
+
+        private void RefreshBuffs()
+        {
+            BuildIfNeeded();
+            int buffCount = boundBuffController != null ? boundBuffController.ActiveBuffs.Count : 0;
+            EnsureBuffIconCount(buffCount);
+
+            for (int i = 0; i < buffIcons.Count; i++)
+            {
+                bool active = i < buffCount;
+                buffIcons[i].Root.gameObject.SetActive(active);
+                if (!active)
+                {
+                    continue;
+                }
+
+                MMOActiveBuff buff = boundBuffController.ActiveBuffs[i];
+                BuffIconView iconView = buffIcons[i];
+                iconView.Icon.sprite = buff.Icon;
+                iconView.Icon.color = buff.Icon != null ? Color.white : new Color(0.16f, 0.11f, 0.06f, 1f);
+                iconView.Initial.text = buff.Icon == null ? GetInitial(buff.DisplayName) : string.Empty;
+                iconView.Tooltip.Configure(boundBuffController, buff.BuffId);
+                RefreshBuffTimer(iconView, buff);
+            }
+        }
+
+        private void RefreshBuffTimers()
+        {
+            if (boundBuffController == null || buffIcons.Count == 0)
+            {
+                return;
+            }
+
+            int count = Mathf.Min(boundBuffController.ActiveBuffs.Count, buffIcons.Count);
+            for (int i = 0; i < count; i++)
+            {
+                RefreshBuffTimer(buffIcons[i], boundBuffController.ActiveBuffs[i]);
+            }
+        }
+
+        private static void RefreshBuffTimer(BuffIconView iconView, MMOActiveBuff buff)
+        {
+            iconView.Timer.text = FormatBuffTime(buff.RemainingSeconds);
+            float alpha = buff.IsNearExpiry ? Mathf.Lerp(0.38f, 1f, Mathf.PingPong(Time.unscaledTime * 2.2f, 1f)) : 1f;
+            Color iconColor = iconView.Icon.color;
+            iconView.Icon.color = new Color(iconColor.r, iconColor.g, iconColor.b, alpha);
+            Color borderColor = iconView.Border.color;
+            iconView.Border.color = new Color(borderColor.r, borderColor.g, borderColor.b, alpha);
+        }
+
+        private void EnsureBuffIconCount(int count)
+        {
+            while (buffIcons.Count < count)
+            {
+                buffIcons.Add(CreateBuffIcon(buffIcons.Count));
+            }
+        }
+
+        private BuffIconView CreateBuffIcon(int index)
+        {
+            RectTransform root = CreateRect($"Buff {index + 1}", buffRoot);
+            root.anchorMin = new Vector2(0f, 1f);
+            root.anchorMax = new Vector2(0f, 1f);
+            root.pivot = new Vector2(0f, 1f);
+            root.anchoredPosition = new Vector2(index * (BuffSize + BuffSpacing), 0f);
+            root.sizeDelta = new Vector2(BuffSize, BuffSize);
+
+            Image border = CreateImage("Border", root, new Color(0.72f, 0.63f, 0.42f, 1f));
+            Stretch(border.rectTransform);
+
+            Image icon = CreateImage("Icon", root, new Color(0.16f, 0.11f, 0.06f, 1f));
+            icon.rectTransform.anchorMin = Vector2.zero;
+            icon.rectTransform.anchorMax = Vector2.one;
+            icon.rectTransform.offsetMin = new Vector2(2f, 2f);
+            icon.rectTransform.offsetMax = new Vector2(-2f, -2f);
+            icon.raycastTarget = true;
+
+            Text initial = CreateText("Initial", root, 11, FontStyle.Bold, TextAnchor.MiddleCenter);
+            Stretch(initial.rectTransform);
+
+            Text timer = CreateText("Timer", root, 8, FontStyle.Bold, TextAnchor.LowerCenter);
+            Stretch(timer.rectTransform);
+            timer.rectTransform.offsetMin = new Vector2(1f, 1f);
+            timer.rectTransform.offsetMax = new Vector2(-1f, -1f);
+            timer.color = Color.white;
+
+            MMOBuffTooltipTrigger tooltip = root.gameObject.AddComponent<MMOBuffTooltipTrigger>();
+            return new BuffIconView(root, icon, border, initial, timer, tooltip);
+        }
+
+        private static string FormatBuffTime(float seconds)
+        {
+            if (seconds >= 60f)
+            {
+                return Mathf.CeilToInt(seconds / 60f) + "m";
+            }
+
+            return seconds >= 10f ? Mathf.CeilToInt(seconds).ToString() : seconds.ToString("0");
         }
 
         private static void RefreshResource(MMOCharacterResource resource, Image fill, Text valueText)
@@ -355,6 +507,26 @@ namespace RPGClone.UI
             rectTransform.anchorMax = Vector2.one;
             rectTransform.offsetMin = Vector2.zero;
             rectTransform.offsetMax = Vector2.zero;
+        }
+
+        private readonly struct BuffIconView
+        {
+            public readonly RectTransform Root;
+            public readonly Image Icon;
+            public readonly Image Border;
+            public readonly Text Initial;
+            public readonly Text Timer;
+            public readonly MMOBuffTooltipTrigger Tooltip;
+
+            public BuffIconView(RectTransform root, Image icon, Image border, Text initial, Text timer, MMOBuffTooltipTrigger tooltip)
+            {
+                Root = root;
+                Icon = icon;
+                Border = border;
+                Initial = initial;
+                Timer = timer;
+                Tooltip = tooltip;
+            }
         }
     }
 }

@@ -1,5 +1,8 @@
+using System.Collections.Generic;
 using RPGClone.Inventory;
 using RPGClone.Abilities;
+using RPGClone.Characters;
+using RPGClone.Quests;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -15,11 +18,7 @@ namespace RPGClone.UI
         [SerializeField] private Vector2 cursorOffset = new(18f, -12f);
 
         private RectTransform root;
-        private Image background;
-        private Text nameText;
-        private Text typeText;
-        private Text descriptionText;
-        private Text valueText;
+        private RectTransform contentRoot;
         private Canvas canvas;
         private Vector2 lastScreenPosition;
 
@@ -51,13 +50,13 @@ namespace RPGClone.UI
 
         public static void ShowItem(MMOItemDefinition item)
         {
-            MMOItemTooltipPresenter presenter = Instance != null ? Instance : FindAnyObjectByType<MMOItemTooltipPresenter>();
+            MMOItemTooltipPresenter presenter = ResolvePresenter();
             presenter?.Show(item);
         }
 
         public static void ShowItem(MMOItemDefinition item, Vector2 screenPosition)
         {
-            MMOItemTooltipPresenter presenter = Instance != null ? Instance : FindAnyObjectByType<MMOItemTooltipPresenter>();
+            MMOItemTooltipPresenter presenter = ResolvePresenter();
             presenter?.Show(item, screenPosition);
         }
 
@@ -83,11 +82,7 @@ namespace RPGClone.UI
             BuildIfNeeded();
             lastScreenPosition = screenPosition;
             gameObject.SetActive(true);
-            nameText.text = item.DisplayName;
-            nameText.color = GetQualityColor(item.Quality);
-            typeText.text = $"{FormatQuality(item.Quality)} {MMOUiFactory.FormatEnumLabel(item.ItemType)}";
-            descriptionText.text = item.Description;
-            valueText.text = item.VendorValueCopper > 0 ? $"Sell Price: {item.VendorValueCopper} Copper" : string.Empty;
+            BuildItemContent(item);
             ResizeToContent();
             SetPosition(screenPosition);
             transform.SetAsLastSibling();
@@ -98,6 +93,30 @@ namespace RPGClone.UI
             gameObject.SetActive(false);
         }
 
+        private static MMOItemTooltipPresenter ResolvePresenter()
+        {
+            if (Instance != null)
+            {
+                return Instance;
+            }
+
+            MMOItemTooltipPresenter presenter = FindAnyObjectByType<MMOItemTooltipPresenter>();
+            if (presenter != null)
+            {
+                return presenter;
+            }
+
+            Canvas canvas = FindAnyObjectByType<Canvas>();
+            if (canvas == null)
+            {
+                return null;
+            }
+
+            GameObject tooltipObject = new("Item Tooltip", typeof(RectTransform));
+            tooltipObject.transform.SetParent(canvas.transform, false);
+            return tooltipObject.AddComponent<MMOItemTooltipPresenter>();
+        }
+
         private void BuildIfNeeded()
         {
             if (root != null)
@@ -106,9 +125,9 @@ namespace RPGClone.UI
             }
 
             root = (RectTransform)transform;
-            root.sizeDelta = new Vector2(260f, 124f);
+            root.sizeDelta = new Vector2(320f, 124f);
 
-            background = gameObject.GetComponent<Image>();
+            Image background = gameObject.GetComponent<Image>();
             if (background == null)
             {
                 background = gameObject.AddComponent<Image>();
@@ -126,40 +145,189 @@ namespace RPGClone.UI
             outline.effectColor = new Color(0.72f, 0.63f, 0.42f, 1f);
             outline.effectDistance = new Vector2(1f, -1f);
 
-            nameText = MMOUiFactory.CreateText("Name", transform, 14, FontStyle.Bold, TextAnchor.UpperLeft);
-            typeText = MMOUiFactory.CreateText("Type", transform, 11, FontStyle.Normal, TextAnchor.UpperLeft);
-            descriptionText = MMOUiFactory.CreateText("Description", transform, 11, FontStyle.Italic, TextAnchor.UpperLeft);
-            valueText = MMOUiFactory.CreateText("Value", transform, 11, FontStyle.Normal, TextAnchor.UpperLeft);
+            contentRoot = MMOUiFactory.CreateRect("Content", transform);
+            contentRoot.anchorMin = Vector2.zero;
+            contentRoot.anchorMax = Vector2.one;
+            contentRoot.offsetMin = new Vector2(Padding, Padding);
+            contentRoot.offsetMax = new Vector2(-Padding, -Padding);
 
-            nameText.rectTransform.anchoredPosition = new Vector2(Padding, -Padding);
-            typeText.rectTransform.anchoredPosition = new Vector2(Padding, -34f);
-            descriptionText.rectTransform.anchoredPosition = new Vector2(Padding, -58f);
-            valueText.rectTransform.anchoredPosition = new Vector2(Padding, -98f);
-
-            foreach (Text text in new[] { nameText, typeText, descriptionText, valueText })
-            {
-                text.raycastTarget = false;
-                text.horizontalOverflow = HorizontalWrapMode.Wrap;
-                text.verticalOverflow = VerticalWrapMode.Overflow;
-                text.rectTransform.anchorMin = new Vector2(0f, 1f);
-                text.rectTransform.anchorMax = new Vector2(1f, 1f);
-                text.rectTransform.pivot = new Vector2(0f, 1f);
-                text.rectTransform.sizeDelta = new Vector2(-Padding * 2f, 24f);
-            }
-
-            descriptionText.rectTransform.sizeDelta = new Vector2(-Padding * 2f, 42f);
-            valueText.color = new Color(0.95f, 0.82f, 0.48f, 1f);
+            VerticalLayoutGroup layout = contentRoot.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.spacing = 5f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
         }
 
         private void ResizeToContent()
         {
-            float descriptionHeight = string.IsNullOrWhiteSpace(descriptionText.text) ? 0f : 42f;
-            descriptionText.gameObject.SetActive(descriptionHeight > 0f);
-            valueText.rectTransform.anchoredPosition = new Vector2(Padding, descriptionHeight > 0f ? -98f : -62f);
-            float height = string.IsNullOrWhiteSpace(valueText.text)
-                ? (descriptionHeight > 0f ? 104f : 70f)
-                : (descriptionHeight > 0f ? 126f : 92f);
-            root.sizeDelta = new Vector2(260f, height);
+            Canvas.ForceUpdateCanvases();
+            float contentWidth = 320f - Padding * 2f;
+            float height = Padding * 2f;
+            for (int i = 0; i < contentRoot.childCount; i++)
+            {
+                Text text = contentRoot.GetChild(i).GetComponent<Text>();
+                if (text != null)
+                {
+                    height += CalculateTextHeight(text, contentWidth);
+                    if (i < contentRoot.childCount - 1)
+                    {
+                        height += 5f;
+                    }
+                }
+            }
+
+            root.sizeDelta = new Vector2(320f, Mathf.Clamp(height, 76f, 360f));
+        }
+
+        private void BuildItemContent(MMOItemDefinition item)
+        {
+            ClearContent();
+            AddLine(item.DisplayName, 15, FontStyle.Bold, GetQualityColor(item.Quality));
+            AddLine($"{FormatQuality(item.Quality)} {MMOUiFactory.FormatEnumLabel(item.ItemType)}", 11, FontStyle.Normal, new Color(0.82f, 0.78f, 0.68f, 1f));
+
+            if (item.IsEquipment)
+            {
+                AddLine($"{MMOUiFactory.FormatEnumLabel(item.ArmorWeight)} - {MMOUiFactory.FormatEnumLabel(item.EquipmentSlot)}", 11, FontStyle.Normal, Color.white);
+                foreach (string statLine in BuildStatLines(item.StatBonuses))
+                {
+                    AddLine(statLine, 11, FontStyle.Normal, new Color(0.18f, 1f, 0.18f, 1f));
+                }
+            }
+
+            if (item.IsConsumable)
+            {
+                string effect = BuildConsumableEffectText(item);
+                if (!string.IsNullOrWhiteSpace(effect))
+                {
+                    AddLine(effect, 11, FontStyle.Normal, new Color(0.12f, 1f, 0.12f, 1f));
+                }
+            }
+
+            foreach (string questLine in BuildQuestLines(item))
+            {
+                AddLine(questLine, 11, FontStyle.Normal, new Color(1f, 0.86f, 0.35f, 1f));
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.Description))
+            {
+                AddLine(item.Description, 11, FontStyle.Italic, Color.white);
+            }
+
+            if (item.VendorValueCopper > 0)
+            {
+                AddLine($"Sell Price: {MMOCurrencyWallet.FormatCopper(item.VendorValueCopper)}", 11, FontStyle.Normal, new Color(0.95f, 0.82f, 0.48f, 1f));
+            }
+        }
+
+        private void ClearContent()
+        {
+            for (int i = contentRoot.childCount - 1; i >= 0; i--)
+            {
+                GameObject child = contentRoot.GetChild(i).gameObject;
+                child.transform.SetParent(null);
+                Destroy(child);
+            }
+        }
+
+        private Text AddLine(string text, int fontSize, FontStyle style, Color color)
+        {
+            Text line = MMOUiFactory.CreateText("Line", contentRoot, fontSize, style, TextAnchor.UpperLeft);
+            line.text = text;
+            line.color = color;
+            line.horizontalOverflow = HorizontalWrapMode.Wrap;
+            line.verticalOverflow = VerticalWrapMode.Overflow;
+            line.raycastTarget = false;
+            LayoutElement layoutElement = line.gameObject.AddComponent<LayoutElement>();
+            layoutElement.minHeight = fontSize + 4f;
+            return line;
+        }
+
+        private static IEnumerable<string> BuildStatLines(MMOCharacterStats stats)
+        {
+            if (stats == null)
+            {
+                yield break;
+            }
+
+            if (stats.Stamina > 0) yield return $"+{stats.Stamina} Stamina";
+            if (stats.Strength > 0) yield return $"+{stats.Strength} Strength";
+            if (stats.Agility > 0) yield return $"+{stats.Agility} Agility";
+            if (stats.Intellect > 0) yield return $"+{stats.Intellect} Intellect";
+            if (stats.Spirit > 0) yield return $"+{stats.Spirit} Spirit";
+            if (stats.Armor > 0) yield return $"+{stats.Armor} Armor";
+            if (stats.AttackPower > 0) yield return $"+{stats.AttackPower} Attack Power";
+            if (stats.SpellPower > 0) yield return $"+{stats.SpellPower} Spell Power";
+        }
+
+        private static string BuildConsumableEffectText(MMOItemDefinition item)
+        {
+            List<string> effects = new();
+            if (item.RestoreHealthAmount > 0)
+            {
+                effects.Add($"{item.RestoreHealthAmount} health");
+            }
+
+            if (item.RestoreManaAmount > 0)
+            {
+                effects.Add($"{item.RestoreManaAmount} mana");
+            }
+
+            if (effects.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            string stationary = item.RequiresStationary ? " Must remain stationary." : string.Empty;
+            return $"Use: Restores {string.Join(" and ", effects)} over {item.ConsumeDurationSeconds:0.#} sec.{stationary}";
+        }
+
+        private static IEnumerable<string> BuildQuestLines(MMOItemDefinition item)
+        {
+            if (item.ItemType != MMOItemType.Quest)
+            {
+                yield break;
+            }
+
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            MMOQuestLog questLog = player != null ? player.GetComponent<MMOQuestLog>() : null;
+            if (questLog == null)
+            {
+                yield return "Quest Item";
+                yield break;
+            }
+
+            bool matchedQuest = false;
+            foreach (MMOQuestRuntimeState state in questLog.ActiveQuests)
+            {
+                MMOQuestDefinition quest = state.Quest;
+                if (quest == null)
+                {
+                    continue;
+                }
+
+                foreach (MMOQuestObjectiveDefinition objective in quest.Objectives)
+                {
+                    if (objective.RequiredItem == item || objective.UsableItem == item)
+                    {
+                        matchedQuest = true;
+                        yield return $"Quest: {quest.DisplayName}";
+                        break;
+                    }
+                }
+            }
+
+            if (!matchedQuest)
+            {
+                yield return "Quest Item";
+            }
+        }
+
+        private static float CalculateTextHeight(Text text, float width)
+        {
+            TextGenerationSettings settings = text.GetGenerationSettings(new Vector2(width, 0f));
+            return Mathf.Ceil(text.cachedTextGeneratorForLayout.GetPreferredHeight(text.text, settings) / text.pixelsPerUnit) + 2f;
         }
 
         private void FollowCursor()
@@ -496,17 +664,17 @@ namespace RPGClone.UI
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            MMOAbilityTooltipPresenter.ShowAbility(ability, eventData.position);
+            MMOGameTooltipPresenter.ShowAbility(ability, eventData.position);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            MMOAbilityTooltipPresenter.HideAbility(ability);
+            MMOGameTooltipPresenter.HideTooltip();
         }
 
         private void OnDisable()
         {
-            MMOAbilityTooltipPresenter.HideAbility(ability);
+            MMOGameTooltipPresenter.HideTooltip();
         }
     }
 }

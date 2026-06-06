@@ -15,11 +15,16 @@ MonoBehaviour:
   itemId: valley_watch_leggings_leather
   displayName: Valley Watch Leggings (Leather)
   description: Supple leather leggings for scouts and shamans.
-  itemType: 2
+  itemType: 3
   quality: 1
   icon: {fileID: 0}
   maxStackSize: 1
   vendorValueCopper: 16
+  consumableType: 0
+  restoreHealthAmount: 0
+  restoreManaAmount: 0
+  consumeDurationSeconds: 10
+  requiresStationary: 1
   equipmentSlot: 10
   armorWeight: 1
   statBonuses:

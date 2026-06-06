@@ -4,13 +4,16 @@ using System.IO;
 using RPGClone.Abilities;
 using RPGClone.Characters;
 using RPGClone.Enemies;
+using RPGClone.CharacterSelection;
 using RPGClone.Inventory;
 using RPGClone.Loot;
 using RPGClone.Quests;
+using RPGClone.Trainers;
+using RPGClone.Vendors;
+using RPGClone.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
@@ -40,11 +43,15 @@ namespace RPGClone.EditorTools
             MMOEnemyAuthoringInstaller.CreateEnemyAuthoringAssets();
 
             StarterItems items = CreateItems();
+            CreateItemCatalog(items.All);
+            TrainerAbilities trainerAbilities = CreateTrainerAbilities();
+            CreateAbilityCatalog(trainerAbilities.All);
             StarterEnemies enemies = CreateEnemies(items);
             StarterQuests quests = CreateQuests(items, enemies);
+            MMOCharacterProfile friendlyNpcProfile = GetOrCreateFriendlyNpcProfile();
             CreateQuestCatalog(quests.All);
             UpdateLootTables(items, quests, enemies);
-            InstallSceneObjects(items, quests, enemies);
+            InstallSceneObjects(items, quests, enemies, trainerAbilities, friendlyNpcProfile);
             MMOHudSceneInstaller.InstallIntoOpenScene(false);
 
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
@@ -97,6 +104,9 @@ namespace RPGClone.EditorTools
                 WaterGourd = GetOrCreateBasicItem("Cooled Water Gourd", "cooled_water_gourd", "A hide-bound gourd filled with cool spring water.", MMOItemType.Quest, MMOItemQuality.Common, 1, 0)
             };
 
+            items.RazorcragJerky = GetOrCreateConsumable("Razorcrag Jerky", "razorcrag_jerky", "Salted trail meat from the camp stores.", MMOConsumableType.Food, 250, 0, 10f, 20, 8);
+            items.SpringwaterFlask = GetOrCreateConsumable("Springwater Flask", "springwater_flask", "A stoppered flask of clean valley springwater.", MMOConsumableType.Water, 0, 250, 10f, 20, 8);
+
             items.BootRewards = CreateGearSet("Trailbreaker's Boots", MMOEquipmentSlotType.Feet, 2);
             items.GloveRewards = CreateGearSet("Razorcrag Grips", MMOEquipmentSlotType.Hands, 2);
             items.ChestRewards = CreateGearSet("Ashguard Vest", MMOEquipmentSlotType.Chest, 4);
@@ -125,6 +135,30 @@ namespace RPGClone.EditorTools
             }
 
             item.Configure(itemId, displayName, description, type, quality, maxStack, vendorValueCopper);
+            EditorUtility.SetDirty(item);
+            return item;
+        }
+
+        private static MMOItemDefinition GetOrCreateConsumable(
+            string displayName,
+            string itemId,
+            string description,
+            MMOConsumableType consumableType,
+            int restoreHealth,
+            int restoreMana,
+            float durationSeconds,
+            int maxStack,
+            int vendorValueCopper)
+        {
+            string path = $"{ItemFolder}/{Sanitize(displayName)}.asset";
+            MMOItemDefinition item = AssetDatabase.LoadAssetAtPath<MMOItemDefinition>(path);
+            if (item == null)
+            {
+                item = ScriptableObject.CreateInstance<MMOItemDefinition>();
+                AssetDatabase.CreateAsset(item, path);
+            }
+
+            item.ConfigureConsumable(itemId, displayName, description, MMOItemQuality.Common, maxStack, vendorValueCopper, consumableType, restoreHealth, restoreMana, durationSeconds);
             EditorUtility.SetDirty(item);
             return item;
         }
@@ -176,6 +210,21 @@ namespace RPGClone.EditorTools
             definition.Configure(profile, MMOEnemyDisposition.Aggressive, autoAttack, new[] { autoAttack }, 15f, 36f, 0.25f, true, 7f, 2.5f, 5.5f, 1.5f, 4.4f, 2.4f, 65, lootTable);
             EditorUtility.SetDirty(definition);
             return definition;
+        }
+
+        private static MMOCharacterProfile GetOrCreateFriendlyNpcProfile()
+        {
+            string path = $"{CharacterFolder}/Friendly_NPC.asset";
+            MMOCharacterProfile profile = AssetDatabase.LoadAssetAtPath<MMOCharacterProfile>(path);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<MMOCharacterProfile>();
+                AssetDatabase.CreateAsset(profile, path);
+            }
+
+            profile.Configure("Razorcrag NPC", 4, 120, 90, new Color(0.95f, 0.66f, 0.22f), null, true, MMOEntityFaction.Friendly, CreateStats(12, 9, 12, 11, 10, 12, 8, 4));
+            EditorUtility.SetDirty(profile);
+            return profile;
         }
 
         private static StarterQuests CreateQuests(StarterItems items, StarterEnemies enemies)
@@ -422,6 +471,163 @@ namespace RPGClone.EditorTools
             EditorUtility.SetDirty(catalog);
         }
 
+        private static void CreateItemCatalog(MMOItemDefinition[] items)
+        {
+            string path = $"{ItemFolder}/Starter_Item_Catalog.asset";
+            MMOItemCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOItemCatalog>(path);
+            if (catalog == null)
+            {
+                catalog = ScriptableObject.CreateInstance<MMOItemCatalog>();
+                AssetDatabase.CreateAsset(catalog, path);
+            }
+
+            catalog.Configure(items);
+            EditorUtility.SetDirty(catalog);
+        }
+
+        private static TrainerAbilities CreateTrainerAbilities()
+        {
+            return new TrainerAbilities
+            {
+                Berzerkitis = GetOrCreateBuffAbility("Warrior_Berzerkitis", "warrior_berzerkitis", "Berzerkitis", "Increases attack speed by 50%.", 60f, 15f, 0, 1f, 1.5f, 1f, 1f, 0f),
+                Charge = GetOrCreateChargeAbility("Warrior_Charge", "warrior_charge", "Charge", "Charges a hostile target if a valid path exists, then strikes with physical force.", 25f, 15f, 18f, 2.5f, MMOAbilityAmountSource.AttackPower, MMODamageSchool.Physical, 10f, 0.35f),
+                MageArmor = GetOrCreateBuffAbility("Mage_Mage_Armor", "mage_mage_armor", "Mage Armor", "Increases out of combat mana regeneration by 50%.", 0f, 1800f, 0, 1f, 1f, 1f, 1.5f, 0f),
+                FireBlast = GetOrCreateDamageAbility("Mage_Fire_Blast", "mage_fire_blast", "Fire Blast", "Blasts a hostile target with instant fire damage.", MMOAbilityTargetType.Hostile, 20f, 8f, 12, 0f, false, false, MMOAbilityAmountSource.SpellPower, MMODamageSchool.Fire, 18f, 0.45f),
+                WaterShield = GetOrCreateBuffAbility("Shaman_Water_Shield", "shaman_water_shield", "Water Shield", "Absorbs 20% of incoming damage and restores that amount as mana.", 0f, 600f, 0, 1f, 1f, 1f, 1f, 0.2f),
+                LightningBolt = GetOrCreateDamageAbility("Shaman_Lightning_Bolt", "shaman_lightning_bolt", "Lightning Bolt", "Calls down nature damage on a hostile target.", MMOAbilityTargetType.Hostile, 30f, 0f, 14, 2f, true, false, MMOAbilityAmountSource.SpellPower, MMODamageSchool.Nature, 22f, 0.75f)
+            };
+        }
+
+        private static MMOAbilityDefinition GetOrCreateDamageAbility(
+            string assetName,
+            string abilityId,
+            string displayName,
+            string description,
+            MMOAbilityTargetType targetType,
+            float range,
+            float cooldown,
+            int manaCost,
+            float castTime,
+            bool interruptOnMovement,
+            bool fallbackSelf,
+            MMOAbilityAmountSource amountSource,
+            MMODamageSchool school,
+            float flatAmount,
+            float coefficient)
+        {
+            string path = $"{AbilityFolder}/{assetName}.asset";
+            MMOAbilityDefinition ability = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(path);
+            if (ability == null)
+            {
+                ability = ScriptableObject.CreateInstance<MMOAbilityDefinition>();
+                AssetDatabase.CreateAsset(ability, path);
+            }
+
+            MMOAbilityEffectDefinition effect = new();
+            effect.Configure(MMOAbilityEffectType.Damage, amountSource, school, flatAmount, coefficient);
+            ability.Configure(abilityId, displayName, description, targetType, false, false, range, cooldown, manaCost, castTime, interruptOnMovement, fallbackSelf, new[] { effect });
+            EditorUtility.SetDirty(ability);
+            return ability;
+        }
+
+        private static MMOAbilityDefinition GetOrCreateChargeAbility(
+            string assetName,
+            string abilityId,
+            string displayName,
+            string description,
+            float range,
+            float cooldown,
+            float chargeSpeed,
+            float stopDistance,
+            MMOAbilityAmountSource amountSource,
+            MMODamageSchool school,
+            float flatAmount,
+            float coefficient)
+        {
+            string path = $"{AbilityFolder}/{assetName}.asset";
+            MMOAbilityDefinition ability = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(path);
+            if (ability == null)
+            {
+                ability = ScriptableObject.CreateInstance<MMOAbilityDefinition>();
+                AssetDatabase.CreateAsset(ability, path);
+            }
+
+            MMOAbilityEffectDefinition effect = new();
+            effect.ConfigureCharge(chargeSpeed, stopDistance, amountSource, school, flatAmount, coefficient);
+            ability.Configure(abilityId, displayName, description, MMOAbilityTargetType.Hostile, false, false, range, cooldown, 0, 0f, false, false, new[] { effect });
+            EditorUtility.SetDirty(ability);
+            return ability;
+        }
+
+        private static MMOAbilityDefinition GetOrCreateBuffAbility(
+            string assetName,
+            string abilityId,
+            string displayName,
+            string description,
+            float cooldown,
+            float duration,
+            int attackPowerBonus,
+            float attackPowerMultiplier,
+            float attackSpeedMultiplier,
+            float healthRegenMultiplier,
+            float manaRegenMultiplier,
+            float damageTakenAsManaPercent)
+        {
+            string path = $"{AbilityFolder}/{assetName}.asset";
+            MMOAbilityDefinition ability = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(path);
+            if (ability == null)
+            {
+                ability = ScriptableObject.CreateInstance<MMOAbilityDefinition>();
+                AssetDatabase.CreateAsset(ability, path);
+            }
+
+            MMOAbilityEffectDefinition effect = new();
+            effect.ConfigureTemporaryStatModifier(duration, attackPowerBonus, attackPowerMultiplier, attackSpeedMultiplier, healthRegenMultiplier, manaRegenMultiplier, damageTakenAsManaPercent);
+            ability.Configure(abilityId, displayName, description, MMOAbilityTargetType.Self, false, false, 0f, cooldown, 0, 0f, false, false, new[] { effect });
+            EditorUtility.SetDirty(ability);
+            return ability;
+        }
+
+        private static void CreateAbilityCatalog(MMOAbilityDefinition[] trainerAbilities)
+        {
+            string path = $"{AbilityFolder}/Starter_Ability_Catalog.asset";
+            MMOAbilityCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOAbilityCatalog>(path);
+            if (catalog == null)
+            {
+                catalog = ScriptableObject.CreateInstance<MMOAbilityCatalog>();
+                AssetDatabase.CreateAsset(catalog, path);
+            }
+
+            List<MMOAbilityDefinition> abilities = new();
+            foreach (string assetName in new[]
+            {
+                "Auto_Attack",
+                "Orc_Blood_Fury",
+                "Troll_Regeneration",
+                "Warrior_Bash",
+                "Mage_Fireball",
+                "Shaman_Healing_Beam"
+            })
+            {
+                MMOAbilityDefinition ability = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>($"{AbilityFolder}/{assetName}.asset");
+                if (ability != null)
+                {
+                    abilities.Add(ability);
+                }
+            }
+
+            foreach (MMOAbilityDefinition ability in trainerAbilities)
+            {
+                if (ability != null && !abilities.Contains(ability))
+                {
+                    abilities.Add(ability);
+                }
+            }
+
+            catalog.Configure(abilities);
+            EditorUtility.SetDirty(catalog);
+        }
+
         private static void UpdateLootTables(StarterItems items, StarterQuests quests, StarterEnemies enemies)
         {
             enemies.BristlebackLoot.Configure(new[]
@@ -442,14 +648,35 @@ namespace RPGClone.EditorTools
             EditorUtility.SetDirty(enemies.AshCanyonLoot);
         }
 
-        private static void InstallSceneObjects(StarterItems items, StarterQuests quests, StarterEnemies enemies)
+        private static void InstallSceneObjects(StarterItems items, StarterQuests quests, StarterEnemies enemies, TrainerAbilities trainerAbilities, MMOCharacterProfile friendlyNpcProfile)
         {
             ConvertEnemyPlaceholders(enemies);
 
-            EnsureQuestNpc("Quest Giver - Warchief", "warchief_korga", "Warchief Korga", new Vector3(-34f, 2f, -118f), new[] { quests.C1, quests.D1, quests.D2, quests.D3 });
-            EnsureQuestNpc("Quest Giver - Scout", "scout_gorrek", "Scout Gorrek", new Vector3(-24f, 2f, -113f), new[] { quests.A1, quests.A2, quests.A3 });
-            EnsureQuestNpc("Quest Giver - Seer", "seer_mahka", "Seer Mahka", new Vector3(-44f, 2f, -111f), new[] { quests.B1, quests.B2, quests.B3 });
-            EnsureQuestNpc("Quest Giver - Canyon Scout", "canyon_scout_rakka", "Canyon Scout Rakka", new Vector3(128f, 2f, 55f), new[] { quests.C2, quests.C3 });
+            EnsureQuestNpc("Quest Giver - Warchief", "warchief_korga", "Warchief Korga", new Vector3(-35f, 2f, -124f), new[] { quests.C1, quests.D1, quests.D2, quests.D3 }, friendlyNpcProfile);
+            EnsureQuestNpc("Quest Giver - Scout", "scout_gorrek", "Scout Gorrek", new Vector3(-18f, 2f, -111f), new[] { quests.A1, quests.A2, quests.A3 }, friendlyNpcProfile);
+            EnsureQuestNpc("Quest Giver - Seer", "seer_mahka", "Seer Mahka", new Vector3(-51f, 2f, -105f), new[] { quests.B1, quests.B2, quests.B3 }, friendlyNpcProfile);
+            EnsureQuestNpc("Quest Giver - Canyon Scout", "canyon_scout_rakka", "Canyon Scout Rakka", new Vector3(128f, 2f, 55f), new[] { quests.C2, quests.C3 }, friendlyNpcProfile);
+            EnsureVendorNpc("Vendor - Quartermaster", "quartermaster_grakka", "Quartermaster Grakka", "General Goods Merchant", new Vector3(-13f, 2f, -128f), new[]
+            {
+                new MMOVendorStockEntry(items.RazorcragJerky, 1, 16),
+                new MMOVendorStockEntry(items.SpringwaterFlask, 1, 16)
+            }, friendlyNpcProfile);
+            EnsureTrainerNpc("Trainer - Warrior", "trainer_warrior_gorvak", "Gorvak Steelarm", "Warrior Trainer", MMOPlayableClass.Warrior, new Vector3(-14f, 2f, -102f), new[]
+            {
+                new MMOTrainerOfferEntry(trainerAbilities.Berzerkitis, MMOPlayableClass.Warrior, 3, 75),
+                new MMOTrainerOfferEntry(trainerAbilities.Charge, MMOPlayableClass.Warrior, 3, 75)
+            }, friendlyNpcProfile);
+            EnsureTrainerNpc("Trainer - Mage", "trainer_mage_zunari", "Zunari Embermind", "Mage Trainer", MMOPlayableClass.Mage, new Vector3(-57f, 2f, -126f), new[]
+            {
+                new MMOTrainerOfferEntry(trainerAbilities.MageArmor, MMOPlayableClass.Mage, 3, 75),
+                new MMOTrainerOfferEntry(trainerAbilities.FireBlast, MMOPlayableClass.Mage, 3, 75)
+            }, friendlyNpcProfile);
+            EnsureTrainerNpc("Trainer - Shaman", "trainer_shaman_mahru", "Mahru Raincaller", "Shaman Trainer", MMOPlayableClass.Shaman, new Vector3(-46f, 2f, -99f), new[]
+            {
+                new MMOTrainerOfferEntry(trainerAbilities.WaterShield, MMOPlayableClass.Shaman, 3, 75),
+                new MMOTrainerOfferEntry(trainerAbilities.LightningBolt, MMOPlayableClass.Shaman, 3, 75)
+            }, friendlyNpcProfile);
+            Physics.SyncTransforms();
 
             for (int i = 0; i < 4; i++)
             {
@@ -479,6 +706,19 @@ namespace RPGClone.EditorTools
                     player.AddComponent<MMOCurrencyWallet>();
                 }
 
+                if (player.GetComponent<MMOConsumableEffectController>() == null)
+                {
+                    player.AddComponent<MMOConsumableEffectController>();
+                }
+
+                MMOCharacterPersistenceAgent persistence = player.GetComponent<MMOCharacterPersistenceAgent>();
+                if (persistence != null)
+                {
+                    persistence.SetItemCatalog(AssetDatabase.LoadAssetAtPath<MMOItemCatalog>($"{ItemFolder}/Starter_Item_Catalog.asset"));
+                    persistence.SetAbilityCatalog(AssetDatabase.LoadAssetAtPath<MMOAbilityCatalog>($"{AbilityFolder}/Starter_Ability_Catalog.asset"));
+                    EditorUtility.SetDirty(persistence);
+                }
+
                 EditorUtility.SetDirty(player);
             }
         }
@@ -501,31 +741,90 @@ namespace RPGClone.EditorTools
             }
         }
 
-        private static void EnsureQuestNpc(string objectName, string npcId, string displayName, Vector3 fallbackPosition, MMOQuestDefinition[] offeredQuests)
+        private static void EnsureQuestNpc(string objectName, string npcId, string displayName, Vector3 fallbackPosition, MMOQuestDefinition[] offeredQuests, MMOCharacterProfile profile)
         {
             GameObject npc = GameObject.Find(objectName) ?? GameObject.Find(objectName + " Placeholder");
             if (npc == null)
             {
                 npc = GameObject.CreatePrimitive(PrimitiveType.Capsule);
                 npc.name = objectName;
-                npc.transform.position = Grounded(fallbackPosition);
             }
             else
             {
                 npc.name = objectName;
             }
 
+            npc.transform.SetParent(null, true);
+            npc.transform.position = Grounded(fallbackPosition);
+            MMOGroundingUtility.SnapTransformToGround(npc.transform, npc.GetComponent<Collider>());
             npc.isStatic = false;
             MMOQuestNpc questNpc = npc.GetComponent<MMOQuestNpc>() ?? npc.AddComponent<MMOQuestNpc>();
             questNpc.Configure(npcId, displayName, offeredQuests);
-            MMOCharacterIdentity identity = npc.GetComponent<MMOCharacterIdentity>();
-            if (identity != null)
-            {
-                identity.SetDisplayName(displayName);
-            }
+            MMOStandardNpcIdentity standardIdentity = npc.GetComponent<MMOStandardNpcIdentity>() ?? npc.AddComponent<MMOStandardNpcIdentity>();
+            standardIdentity.Configure(profile, displayName, MMONpcIdentityRole.QuestGiver, true);
 
             EditorUtility.SetDirty(npc);
             EditorUtility.SetDirty(questNpc);
+            EditorUtility.SetDirty(standardIdentity);
+            EditorUtility.SetDirty(standardIdentity.Identity);
+        }
+
+        private static void EnsureVendorNpc(string objectName, string vendorId, string displayName, Vector3 fallbackPosition, MMOVendorStockEntry[] stock, MMOCharacterProfile profile)
+        {
+            EnsureVendorNpc(objectName, vendorId, displayName, "General Goods Merchant", fallbackPosition, stock, profile);
+        }
+
+        private static void EnsureVendorNpc(string objectName, string vendorId, string displayName, string title, Vector3 fallbackPosition, MMOVendorStockEntry[] stock, MMOCharacterProfile profile)
+        {
+            GameObject vendor = GameObject.Find(objectName);
+            if (vendor == null)
+            {
+                vendor = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                vendor.name = objectName;
+            }
+
+            vendor.transform.SetParent(null, true);
+            vendor.transform.position = Grounded(fallbackPosition);
+            MMOGroundingUtility.SnapTransformToGround(vendor.transform, vendor.GetComponent<Collider>());
+            vendor.isStatic = false;
+            MMOVendorNpc vendorNpc = vendor.GetComponent<MMOVendorNpc>() ?? vendor.AddComponent<MMOVendorNpc>();
+            vendorNpc.Configure(vendorId, displayName, title, stock, true);
+            MMOStandardNpcIdentity standardIdentity = vendor.GetComponent<MMOStandardNpcIdentity>() ?? vendor.AddComponent<MMOStandardNpcIdentity>();
+            standardIdentity.Configure(profile, displayName, title, MMONpcIdentityRole.Vendor, true);
+
+            EditorUtility.SetDirty(vendor);
+            EditorUtility.SetDirty(vendorNpc);
+            EditorUtility.SetDirty(standardIdentity);
+            EditorUtility.SetDirty(standardIdentity.Identity);
+        }
+
+        private static void EnsureTrainerNpc(string objectName, string trainerId, string displayName, MMOPlayableClass trainerClass, Vector3 fallbackPosition, MMOTrainerOfferEntry[] offers, MMOCharacterProfile profile)
+        {
+            EnsureTrainerNpc(objectName, trainerId, displayName, $"{trainerClass} Trainer", trainerClass, fallbackPosition, offers, profile);
+        }
+
+        private static void EnsureTrainerNpc(string objectName, string trainerId, string displayName, string title, MMOPlayableClass trainerClass, Vector3 fallbackPosition, MMOTrainerOfferEntry[] offers, MMOCharacterProfile profile)
+        {
+            GameObject trainer = GameObject.Find(objectName);
+            if (trainer == null)
+            {
+                trainer = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                trainer.name = objectName;
+            }
+
+            trainer.transform.SetParent(null, true);
+            trainer.transform.position = Grounded(fallbackPosition);
+            MMOGroundingUtility.SnapTransformToGround(trainer.transform, trainer.GetComponent<Collider>());
+            trainer.isStatic = false;
+            MMOClassTrainerNpc trainerNpc = trainer.GetComponent<MMOClassTrainerNpc>() ?? trainer.AddComponent<MMOClassTrainerNpc>();
+            trainerNpc.Configure(trainerId, displayName, title, trainerClass, offers);
+            MMOStandardNpcIdentity standardIdentity = trainer.GetComponent<MMOStandardNpcIdentity>() ?? trainer.AddComponent<MMOStandardNpcIdentity>();
+            standardIdentity.Configure(profile, displayName, title, MMONpcIdentityRole.Trainer, true);
+
+            EditorUtility.SetDirty(trainer);
+            EditorUtility.SetDirty(trainerNpc);
+            EditorUtility.SetDirty(standardIdentity);
+            EditorUtility.SetDirty(standardIdentity.Identity);
         }
 
         private static void EnsureWorldInteractable(string objectName, string worldObjectId, string displayName, PrimitiveType primitiveType, Vector3 position, Vector3 scale, MMOItemDefinition lootItem, int quantity)
@@ -549,11 +848,6 @@ namespace RPGClone.EditorTools
 
         private static Vector3 Grounded(Vector3 position)
         {
-            if (NavMesh.SamplePosition(position, out NavMeshHit hit, 12f, NavMesh.AllAreas))
-            {
-                return hit.position + Vector3.up * 0.5f;
-            }
-
             Terrain terrain = Terrain.activeTerrain;
             if (terrain != null)
             {
@@ -615,10 +909,65 @@ namespace RPGClone.EditorTools
             public MMOItemDefinition EmberCore;
             public MMOItemDefinition RepairHammer;
             public MMOItemDefinition WaterGourd;
+            public MMOItemDefinition RazorcragJerky;
+            public MMOItemDefinition SpringwaterFlask;
             public MMOItemDefinition[] BootRewards;
             public MMOItemDefinition[] GloveRewards;
             public MMOItemDefinition[] ChestRewards;
             public MMOItemDefinition[] LegRewards;
+
+            public MMOItemDefinition[] All
+            {
+                get
+                {
+                    List<MMOItemDefinition> items = new()
+                    {
+                        MattedPelt,
+                        CrackedTusk,
+                        GreasySnout,
+                        BristlebackCharm,
+                        ValleyRuneShard,
+                        EmberCore,
+                        RepairHammer,
+                        WaterGourd,
+                        RazorcragJerky,
+                        SpringwaterFlask
+                    };
+                    AddRange(items, BootRewards);
+                    AddRange(items, GloveRewards);
+                    AddRange(items, ChestRewards);
+                    AddRange(items, LegRewards);
+                    return items.ToArray();
+                }
+            }
+
+            private static void AddRange(List<MMOItemDefinition> items, MMOItemDefinition[] range)
+            {
+                if (range == null)
+                {
+                    return;
+                }
+
+                foreach (MMOItemDefinition item in range)
+                {
+                    if (item != null)
+                    {
+                        items.Add(item);
+                    }
+                }
+            }
+        }
+
+        private sealed class TrainerAbilities
+        {
+            public MMOAbilityDefinition Berzerkitis;
+            public MMOAbilityDefinition Charge;
+            public MMOAbilityDefinition MageArmor;
+            public MMOAbilityDefinition FireBlast;
+            public MMOAbilityDefinition WaterShield;
+            public MMOAbilityDefinition LightningBolt;
+
+            public MMOAbilityDefinition[] All => new[] { Berzerkitis, Charge, MageArmor, FireBlast, WaterShield, LightningBolt };
         }
 
         private sealed class StarterEnemies

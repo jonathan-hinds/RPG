@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using RPGClone.Characters;
 using RPGClone.UI;
+using RPGClone.World;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -8,6 +9,8 @@ using UnityEngine.InputSystem;
 namespace RPGClone.Quests
 {
     [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(MMOCharacterIdentity))]
+    [RequireComponent(typeof(MMOStandardNpcIdentity))]
     public sealed class MMOQuestNpc : MonoBehaviour
     {
         [SerializeField] private string npcId = "npc";
@@ -15,9 +18,12 @@ namespace RPGClone.Quests
         [SerializeField] private List<MMOQuestDefinition> offeredQuests = new();
         [SerializeField, Min(1f)] private float interactionDistance = 5f;
         [SerializeField] private LayerMask interactionMask = ~0;
+        [SerializeField] private bool snapToGroundOnStart = true;
 
         private TextMesh questMarker;
         private MMOQuestLog observedQuestLog;
+        private MMOCharacterIdentity identity;
+        private MMOStandardNpcIdentity standardIdentity;
 
         public string NpcId => string.IsNullOrWhiteSpace(npcId) ? name : npcId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayNameOverride) ? name : displayNameOverride;
@@ -25,8 +31,17 @@ namespace RPGClone.Quests
 
         private void Awake()
         {
+            EnsureIdentity();
             EnsureMarker();
             RefreshMarker();
+        }
+
+        private void Start()
+        {
+            if (snapToGroundOnStart)
+            {
+                MMOGroundingUtility.SnapTransformToGround(transform, GetComponent<Collider>());
+            }
         }
 
         private void OnEnable()
@@ -70,7 +85,23 @@ namespace RPGClone.Quests
             npcId = newNpcId;
             displayNameOverride = newDisplayName;
             offeredQuests = newOfferedQuests != null ? new List<MMOQuestDefinition>(newOfferedQuests) : new List<MMOQuestDefinition>();
+            EnsureIdentity();
             RefreshMarker();
+        }
+
+        private void EnsureIdentity()
+        {
+            if (standardIdentity == null)
+            {
+                standardIdentity = GetComponent<MMOStandardNpcIdentity>();
+                if (standardIdentity == null)
+                {
+                    standardIdentity = gameObject.AddComponent<MMOStandardNpcIdentity>();
+                }
+            }
+
+            standardIdentity.Configure(standardIdentity.Profile, DisplayName, MMONpcIdentityRole.QuestGiver, false);
+            identity = standardIdentity.Identity;
         }
 
         private void Interact(Vector2 screenPosition)

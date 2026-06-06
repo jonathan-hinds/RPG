@@ -1,12 +1,36 @@
 using RPGClone.Inventory;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace RPGClone.UI
 {
     public sealed class MMOItemTooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         [SerializeField] private MMOItemDefinition item;
+
+        public static MMOItemTooltipTrigger Bind(GameObject target, MMOItemDefinition item)
+        {
+            if (target == null)
+            {
+                return null;
+            }
+
+            MMOItemTooltipTrigger trigger = target.GetComponent<MMOItemTooltipTrigger>();
+            if (trigger == null)
+            {
+                trigger = target.AddComponent<MMOItemTooltipTrigger>();
+            }
+
+            trigger.Configure(item);
+            Graphic graphic = target.GetComponent<Graphic>();
+            if (graphic != null)
+            {
+                graphic.raycastTarget = item != null;
+            }
+
+            return trigger;
+        }
 
         public void Configure(MMOItemDefinition newItem)
         {
@@ -15,17 +39,17 @@ namespace RPGClone.UI
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            MMOItemTooltipPresenter.ShowItem(item, eventData.position);
+            MMOGameTooltipPresenter.ShowItem(item, eventData.position);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            MMOItemTooltipPresenter.HideItem(item);
+            MMOGameTooltipPresenter.HideTooltip();
         }
 
         private void OnDisable()
         {
-            MMOItemTooltipPresenter.HideItem(item);
+            MMOGameTooltipPresenter.HideTooltip();
         }
     }
 }

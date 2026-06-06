@@ -36,3 +36,7 @@ MonoBehaviour:
     attackPowerMultiplier: 1
     attackSpeedMultiplier: 1
     healthRegenMultiplier: 1
+    manaRegenMultiplier: 1
+    damageTakenAsManaPercent: 0
+    chargeSpeed: 18
+    chargeStopDistance: 2.5

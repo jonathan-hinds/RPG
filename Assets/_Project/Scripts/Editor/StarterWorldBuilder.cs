@@ -35,6 +35,7 @@ namespace RPGClone.EditorTools
             MMOPlayerMovementConfig movementConfig = CreateMovementConfig();
             MMOThirdPersonCameraConfig cameraConfig = CreateCameraConfig();
             Terrain terrain = CreateTerrain(palette);
+            MMOClassicGrassFoliageBuilder.ApplyToTerrain(terrain);
 
             GameObject worldRoot = new("Starter World");
             GameObject markerRoot = new("World Markers");

@@ -50,4 +50,91 @@ namespace RPGClone.World
             };
         }
     }
+
+    public static class MMOGroundingUtility
+    {
+        private const float GroundSkin = 0.02f;
+
+        public static bool SnapTransformToGround(Transform target, Collider collider)
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            if (!TryGetGroundHeight(target, out float groundY))
+            {
+                return false;
+            }
+
+            float bottomOffset = collider != null ? collider.bounds.min.y - target.position.y : 0f;
+            Vector3 position = target.position;
+            position.y = groundY - bottomOffset + GroundSkin;
+            target.position = position;
+            return true;
+        }
+
+        private static bool TryGetGroundHeight(Transform target, out float groundY)
+        {
+            Vector3 position = target.position;
+            Terrain terrain = FindTerrainAt(position);
+            if (terrain != null)
+            {
+                groundY = terrain.SampleHeight(position) + terrain.transform.position.y;
+                return true;
+            }
+
+            return TryRaycastGround(target, out groundY);
+        }
+
+        private static Terrain FindTerrainAt(Vector3 position)
+        {
+            Terrain[] terrains = Terrain.activeTerrains;
+            for (int i = 0; i < terrains.Length; i++)
+            {
+                Terrain terrain = terrains[i];
+                if (terrain == null || terrain.terrainData == null)
+                {
+                    continue;
+                }
+
+                Vector3 terrainPosition = terrain.transform.position;
+                Vector3 size = terrain.terrainData.size;
+                if (position.x >= terrainPosition.x
+                    && position.z >= terrainPosition.z
+                    && position.x <= terrainPosition.x + size.x
+                    && position.z <= terrainPosition.z + size.z)
+                {
+                    return terrain;
+                }
+            }
+
+            return Terrain.activeTerrain;
+        }
+
+        private static bool TryRaycastGround(Transform target, out float groundY)
+        {
+            Vector3 position = target.position;
+            Ray ray = new(position + Vector3.up * 50f, Vector3.down);
+            RaycastHit[] hits = Physics.RaycastAll(ray, 120f, ~0, QueryTriggerInteraction.Ignore);
+            float closestDistance = float.PositiveInfinity;
+            groundY = 0f;
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                RaycastHit hit = hits[i];
+                if (hit.collider == null
+                    || hit.collider.transform.IsChildOf(target)
+                    || hit.distance >= closestDistance)
+                {
+                    continue;
+                }
+
+                closestDistance = hit.distance;
+                groundY = hit.point.y;
+            }
+
+            return closestDistance < float.PositiveInfinity;
+        }
+    }
 }

@@ -15,11 +15,16 @@ MonoBehaviour:
   itemId: valley_rune_shard
   displayName: Valley Rune Shard
   description: A warm sliver of carved valley stone.
-  itemType: 3
+  itemType: 4
   quality: 1
   icon: {fileID: 0}
   maxStackSize: 10
   vendorValueCopper: 0
+  consumableType: 0
+  restoreHealthAmount: 0
+  restoreManaAmount: 0
+  consumeDurationSeconds: 10
+  requiresStationary: 1
   equipmentSlot: 4
   armorWeight: 0
   statBonuses:

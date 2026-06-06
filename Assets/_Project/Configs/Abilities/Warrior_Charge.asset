@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a4c6e6fb7e37634a9d9ad2a12dc7533, type: 3}
+  m_Name: Warrior_Charge
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Abilities.MMOAbilityDefinition
+  abilityId: warrior_charge
+  displayName: Charge
+  description: Charges a hostile target if a valid path exists, then strikes with
+    physical force.
+  icon: {fileID: 0}
+  targetType: 2
+  autoAttack: 0
+  toggled: 0
+  range: 25
+  cooldownSeconds: 15
+  manaCost: 0
+  castTimeSeconds: 0
+  interruptOnMovement: 0
+  castOnSelfWhenFriendlyTargetInvalid: 0
+  effects:
+  - effectType: 3
+    amountSource: 2
+    damageSchool: 0
+    flatAmount: 10
+    coefficient: 0.35
+    durationSeconds: 0
+    attackPowerBonus: 0
+    attackPowerMultiplier: 1
+    attackSpeedMultiplier: 1
+    healthRegenMultiplier: 1
+    manaRegenMultiplier: 1
+    damageTakenAsManaPercent: 0
+    chargeSpeed: 18
+    chargeStopDistance: 2.5

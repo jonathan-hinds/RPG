@@ -85,6 +85,44 @@ namespace RPGClone.Inventory
             return remainingQuantity <= 0;
         }
 
+        public bool CanAddItem(MMOItemDefinition item, int quantity)
+        {
+            EnsureSlotList();
+            int remainingQuantity = Mathf.Max(0, quantity);
+            if (item == null || remainingQuantity <= 0)
+            {
+                return false;
+            }
+
+            foreach (MMOItemStack slot in slots)
+            {
+                if (slot != null && !slot.IsEmpty && slot.Item == item)
+                {
+                    remainingQuantity -= slot.RemainingStackSpace;
+                    if (remainingQuantity <= 0)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            foreach (MMOItemStack slot in slots)
+            {
+                if (slot == null || !slot.IsEmpty)
+                {
+                    continue;
+                }
+
+                remainingQuantity -= item.MaxStackSize;
+                if (remainingQuantity <= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public bool TryAddStack(MMOItemStack stack, out int remainingQuantity)
         {
             return stack != null

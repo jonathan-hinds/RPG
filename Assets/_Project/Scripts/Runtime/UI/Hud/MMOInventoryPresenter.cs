@@ -1,4 +1,5 @@
 using RPGClone.Inventory;
+using RPGClone.Quests;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,8 +10,10 @@ namespace RPGClone.UI
     {
         [SerializeField] private bool autoBuild = true;
         [SerializeField] private MMOInventoryContainer inventory;
+        [SerializeField] private MMOCurrencyWallet wallet;
 
         private RectTransform slotGrid;
+        private Text moneyText;
 
         private void Awake()
         {
@@ -37,9 +40,15 @@ namespace RPGClone.UI
         {
             Unsubscribe();
             inventory = newInventory;
+            ResolveWalletFromInventory();
             BuildIfNeeded();
             Refresh();
             Subscribe();
+        }
+
+        public void RefreshNow()
+        {
+            Refresh();
         }
 
         public void Toggle()
@@ -62,7 +71,18 @@ namespace RPGClone.UI
             if (player != null)
             {
                 inventory = player.GetComponent<MMOInventoryContainer>();
+                wallet = player.GetComponent<MMOCurrencyWallet>();
             }
+        }
+
+        private void ResolveWalletFromInventory()
+        {
+            if (wallet != null || inventory == null)
+            {
+                return;
+            }
+
+            wallet = inventory.GetComponent<MMOCurrencyWallet>();
         }
 
         private void Subscribe()
@@ -72,6 +92,12 @@ namespace RPGClone.UI
                 inventory.Changed -= Refresh;
                 inventory.Changed += Refresh;
             }
+
+            if (wallet != null)
+            {
+                wallet.Changed -= OnWalletChanged;
+                wallet.Changed += OnWalletChanged;
+            }
         }
 
         private void Unsubscribe()
@@ -79,6 +105,11 @@ namespace RPGClone.UI
             if (inventory != null)
             {
                 inventory.Changed -= Refresh;
+            }
+
+            if (wallet != null)
+            {
+                wallet.Changed -= OnWalletChanged;
             }
         }
 
@@ -92,7 +123,7 @@ namespace RPGClone.UI
             MMOUiFactory.DestroyChildren(transform);
 
             RectTransform root = (RectTransform)transform;
-            root.sizeDelta = new Vector2(300f, 330f);
+            root.sizeDelta = new Vector2(300f, 364f);
 
             Image background = gameObject.GetComponent<Image>();
             if (background == null)
@@ -121,20 +152,37 @@ namespace RPGClone.UI
             slotGrid = MMOUiFactory.CreateRect("Slots", transform);
             slotGrid.anchorMin = new Vector2(0f, 0f);
             slotGrid.anchorMax = new Vector2(1f, 1f);
-            slotGrid.offsetMin = new Vector2(16f, 18f);
+            slotGrid.offsetMin = new Vector2(16f, 52f);
             slotGrid.offsetMax = new Vector2(-16f, -58f);
+
+            moneyText = MMOUiFactory.CreateText("Money", transform, 12, FontStyle.Bold, TextAnchor.MiddleRight);
+            moneyText.color = new Color(0.95f, 0.82f, 0.48f, 1f);
+            moneyText.rectTransform.anchorMin = new Vector2(0f, 0f);
+            moneyText.rectTransform.anchorMax = new Vector2(1f, 0f);
+            moneyText.rectTransform.pivot = new Vector2(1f, 0f);
+            moneyText.rectTransform.anchoredPosition = new Vector2(-16f, 16f);
+            moneyText.rectTransform.sizeDelta = new Vector2(-32f, 24f);
         }
 
         private void Refresh()
         {
             BuildIfNeeded();
             MMOUiFactory.DestroyChildren(slotGrid);
+            if (moneyText != null)
+            {
+                moneyText.text = wallet != null ? MMOCurrencyWallet.FormatCopper(wallet.Copper) : "0c";
+            }
 
             int slotCount = inventory != null ? inventory.SlotCount : 0;
             for (int i = 0; i < slotCount; i++)
             {
                 CreateSlot(i, inventory != null ? inventory.GetSlot(i) : null);
             }
+        }
+
+        private void OnWalletChanged(MMOCurrencyWallet changedWallet)
+        {
+            Refresh();
         }
 
         private void CreateSlot(int index, MMOItemStack itemStack)
@@ -163,13 +211,7 @@ namespace RPGClone.UI
                 return;
             }
 
-            MMOItemTooltipTrigger tooltipTrigger = slot.gameObject.GetComponent<MMOItemTooltipTrigger>();
-            if (tooltipTrigger == null)
-            {
-                tooltipTrigger = slot.gameObject.AddComponent<MMOItemTooltipTrigger>();
-            }
-
-            tooltipTrigger.Configure(itemStack.Item);
+            MMOItemTooltipTrigger.Bind(slot.gameObject, itemStack.Item);
 
             MMOInventoryItemUseTrigger useTrigger = slot.gameObject.GetComponent<MMOInventoryItemUseTrigger>();
             if (useTrigger == null)

@@ -65,11 +65,7 @@ namespace RPGClone.UI
             root.anchoredPosition = new Vector2(0f, 20f);
             root.sizeDelta = new Vector2(520f, 580f);
 
-            Image background = gameObject.GetComponent<Image>() ?? gameObject.AddComponent<Image>();
-            background.color = new Color(0.036f, 0.028f, 0.019f, 0.98f);
-            Outline outline = gameObject.GetComponent<Outline>() ?? gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.76f, 0.61f, 0.33f, 1f);
-            outline.effectDistance = new Vector2(1f, -1f);
+            MMONpcWindowFrame.Apply(gameObject);
 
             contentRoot = MMOUiFactory.CreateRect("Content", transform);
             MMOUiFactory.Stretch(contentRoot);
@@ -82,7 +78,7 @@ namespace RPGClone.UI
             MMOUiFactory.DestroyChildren(contentRoot);
 
             Text title = CreateText("Title", npc != null ? npc.DisplayName : "Quest Giver", 20, FontStyle.Bold, TextAnchor.MiddleLeft, 0f, 0f, 40f);
-            title.color = new Color(1f, 0.82f, 0.34f, 1f);
+            title.color = MMONpcWindowFrame.TitleColor;
 
             float y = 52f;
             List<MMOQuestDefinition> turnIns = npc != null && questLog != null ? questLog.GetTurnInQuestsForNpc(npc.NpcId) : new List<MMOQuestDefinition>();
@@ -107,10 +103,10 @@ namespace RPGClone.UI
             if (y <= 52f)
             {
                 Text empty = CreateText("Empty", "I have no work for you right now.", 14, FontStyle.Normal, TextAnchor.UpperLeft, 0f, y, 80f);
-                empty.color = new Color(0.86f, 0.79f, 0.66f, 1f);
+                empty.color = MMONpcWindowFrame.BodyColor;
             }
 
-            Button close = MMOUiFactory.CreateTextButton("Goodbye", contentRoot, "Goodbye", new Vector2(116f, 34f), new Color(0.12f, 0.085f, 0.05f, 1f));
+            Button close = MMOUiFactory.CreateTextButton("Goodbye", contentRoot, "Goodbye", new Vector2(116f, 34f), MMONpcWindowFrame.ButtonColor);
             close.onClick.AddListener(Close);
             RectTransform closeRect = close.GetComponent<RectTransform>();
             closeRect.anchorMin = new Vector2(1f, 0f);
@@ -121,7 +117,7 @@ namespace RPGClone.UI
 
         private void CreateQuestListButton(MMOQuestDefinition quest, string marker, float y, bool turnIn)
         {
-            Button button = MMOUiFactory.CreateTextButton($"Quest {quest.DisplayName}", contentRoot, string.Empty, new Vector2(476f, 36f), new Color(0.07f, 0.052f, 0.034f, 0.96f));
+            Button button = MMOUiFactory.CreateTextButton($"Quest {quest.DisplayName}", contentRoot, string.Empty, new Vector2(476f, 36f), MMONpcWindowFrame.PanelColor);
             button.onClick.AddListener(() => OpenQuest(quest, turnIn));
             RectTransform rect = button.GetComponent<RectTransform>();
             rect.anchorMin = new Vector2(0f, 1f);
@@ -142,16 +138,21 @@ namespace RPGClone.UI
             selectedQuest = quest;
             MMOUiFactory.DestroyChildren(contentRoot);
 
-            CreateText("Title", quest.DisplayName, 20, FontStyle.Bold, TextAnchor.MiddleLeft, 0f, 0f, 38f).color = new Color(1f, 0.82f, 0.34f, 1f);
+            CreateText("Title", quest.DisplayName, 20, FontStyle.Bold, TextAnchor.MiddleLeft, 0f, 0f, 38f).color = MMONpcWindowFrame.TitleColor;
 
             string bodyText = turnIn
                 ? (string.IsNullOrWhiteSpace(quest.CompletionText) ? quest.ObjectiveSummary : quest.CompletionText)
                 : quest.OfferText;
             Text body = CreateText("Body", bodyText, 14, FontStyle.Normal, TextAnchor.UpperLeft, 0f, 48f, 210f);
-            body.color = new Color(0.91f, 0.84f, 0.69f, 1f);
+            body.color = MMONpcWindowFrame.BodyColor;
 
             Text objective = CreateText("Objectives", quest.ObjectiveSummary, 13, FontStyle.Bold, TextAnchor.UpperLeft, 0f, 266f, 74f);
             objective.color = Color.white;
+            MMOItemDefinition objectiveItem = GetFirstReferencedObjectiveItem(quest);
+            if (objectiveItem != null)
+            {
+                MMOItemTooltipTrigger.Bind(objective.gameObject, objectiveItem);
+            }
 
             float rewardY = 350f;
             MMOQuestRewardDefinition rewards = quest.Rewards;
@@ -165,10 +166,35 @@ namespace RPGClone.UI
 
                 CreateText("Reward Summary", rewardText, 13, FontStyle.Bold, TextAnchor.UpperLeft, 0f, rewardY, 24f).color = new Color(1f, 0.82f, 0.34f, 1f);
                 rewardY += 30f;
+                rewardY = CreateGuaranteedRewards(rewards, rewardY);
                 CreateRewardChoices(rewards, rewardY);
             }
 
             CreateActionButtons(turnIn);
+        }
+
+        private float CreateGuaranteedRewards(MMOQuestRewardDefinition rewards, float startY)
+        {
+            float y = startY;
+            foreach (MMOItemStack stack in rewards.GuaranteedItems)
+            {
+                if (stack == null || stack.IsEmpty)
+                {
+                    continue;
+                }
+
+                string label = stack.Quantity > 1 ? $"{stack.Item.DisplayName} x{stack.Quantity}" : stack.Item.DisplayName;
+                Button itemButton = MMOUiFactory.CreateTextButton($"Reward {stack.Item.DisplayName}", contentRoot, label, new Vector2(190f, 30f), new Color(0.065f, 0.05f, 0.036f, 1f));
+                MMOItemTooltipTrigger.Bind(itemButton.gameObject, stack.Item);
+                RectTransform rect = itemButton.GetComponent<RectTransform>();
+                rect.anchorMin = new Vector2(0f, 1f);
+                rect.anchorMax = new Vector2(0f, 1f);
+                rect.pivot = new Vector2(0f, 1f);
+                rect.anchoredPosition = new Vector2(0f, -y);
+                y += 34f;
+            }
+
+            return y;
         }
 
         private void CreateRewardChoices(MMOQuestRewardDefinition rewards, float startY)
@@ -188,6 +214,7 @@ namespace RPGClone.UI
                 }
 
                 Button choice = MMOUiFactory.CreateTextButton($"Reward {item.DisplayName}", contentRoot, item.DisplayName, new Vector2(150f, 30f), new Color(0.065f, 0.05f, 0.036f, 1f));
+                MMOItemTooltipTrigger.Bind(choice.gameObject, item);
                 choice.onClick.AddListener(() =>
                 {
                     selectedReward = item;
@@ -208,16 +235,44 @@ namespace RPGClone.UI
             }
         }
 
+        private static MMOItemDefinition GetFirstReferencedObjectiveItem(MMOQuestDefinition quest)
+        {
+            if (quest == null)
+            {
+                return null;
+            }
+
+            foreach (MMOQuestObjectiveDefinition objective in quest.Objectives)
+            {
+                if (objective == null)
+                {
+                    continue;
+                }
+
+                if (objective.RequiredItem != null)
+                {
+                    return objective.RequiredItem;
+                }
+
+                if (objective.UsableItem != null)
+                {
+                    return objective.UsableItem;
+                }
+            }
+
+            return null;
+        }
+
         private void CreateActionButtons(bool turnIn)
         {
-            Button back = MMOUiFactory.CreateTextButton("Back", contentRoot, "Back", new Vector2(96f, 34f), new Color(0.11f, 0.08f, 0.052f, 1f));
+            Button back = MMOUiFactory.CreateTextButton("Back", contentRoot, "Back", new Vector2(96f, 34f), MMONpcWindowFrame.ButtonColor);
             back.onClick.AddListener(RefreshList);
             RectTransform backRect = back.GetComponent<RectTransform>();
             backRect.anchorMin = new Vector2(0f, 0f);
             backRect.anchorMax = new Vector2(0f, 0f);
             backRect.pivot = new Vector2(0f, 0f);
 
-            Button action = MMOUiFactory.CreateTextButton(turnIn ? "Complete" : "Accept", contentRoot, turnIn ? "Complete Quest" : "Accept", new Vector2(132f, 34f), new Color(0.16f, 0.105f, 0.045f, 1f));
+            Button action = MMOUiFactory.CreateTextButton(turnIn ? "Complete" : "Accept", contentRoot, turnIn ? "Complete Quest" : "Accept", new Vector2(132f, 34f), MMONpcWindowFrame.AccentButtonColor);
             action.onClick.AddListener(() =>
             {
                 if (turnIn)

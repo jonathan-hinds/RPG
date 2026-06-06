@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Barrens_Slope_Blend_Terrain
+  m_Shader: {fileID: 4800000, guid: 2f3a1d9b8a4c4e65a1b8740d5a8f6c33, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _FlatTex:
+        m_Texture: {fileID: 2800000, guid: 8b94c642fbf63304c955b641f7791691, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FlatVariationTex:
+        m_Texture: {fileID: 2800000, guid: 3bea07e09189511499f99ae0abd7dda9, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SteepTex:
+        m_Texture: {fileID: 2800000, guid: c92f504eff7b5514fbb316059ff21173, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _FlatVariationBlendStrength: 0.32
+    - _FlatVariationNoiseSize: 38
+    - _FlatVariationNoiseSoftness: 0.18
+    - _FlatVariationTilingSize: 9
+    - _FlatTilingSize: 7
+    - _MacroVariationSize: 72
+    - _MacroVariationStrength: 0.24
+    - _Occlusion: 1
+    - _SlopeBlendSoftness: 0.075
+    - _SlopeBlendThreshold: 0.36
+    - _Smoothness: 0
+    - _SteepTilingSize: 33.2
+    - _TextureRandomizationStrength: 0.68
+    - _TileEdgeBlendStrength: 0.206
+    - _TriplanarBlendSharpness: 4
+    m_Colors:
+    - _FlatVariationTint: {r: 1, g: 1, b: 1, a: 1}
+    - _FlatTint: {r: 1, g: 1, b: 1, a: 1}
+    - _SteepTint: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
+--- !u!114 &7027541031736096088
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Editor::UnityEditor.Rendering.Universal.AssetVersion
+  version: 10

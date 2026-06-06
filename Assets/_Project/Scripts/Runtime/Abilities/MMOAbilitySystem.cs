@@ -1,8 +1,12 @@
 using System.Collections.Generic;
 using System;
+using System.Collections;
+using RPGClone.Buffs;
 using RPGClone.Characters;
 using RPGClone.Combat;
+using RPGClone.Player;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace RPGClone.Abilities
 {
@@ -16,6 +20,7 @@ namespace RPGClone.Abilities
         private MMOCharacterIdentity identity;
         private MMOCombatant combatant;
         private ActiveCast activeCast;
+        private ActiveCharge activeCharge;
 
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity, string> AbilityFailed;
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity> AbilityUsed;
@@ -23,9 +28,10 @@ namespace RPGClone.Abilities
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity, float> CastProgressed;
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity, string> CastInterrupted;
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity> CastCompleted;
+        public event Action<MMOAbilitySystem, MMOAbilityDefinition> AbilityLearned;
 
         public IReadOnlyList<MMOAbilityDefinition> KnownAbilities => startingAbilities;
-        public bool IsCasting => activeCast != null;
+        public bool IsCasting => activeCast != null || activeCharge != null;
         public float CurrentCastNormalized => activeCast == null ? 0f : Mathf.Clamp01((Time.time - activeCast.StartTime) / activeCast.Duration);
         public MMOCharacterIdentity Identity
         {
@@ -65,6 +71,7 @@ namespace RPGClone.Abilities
             if (ability != null && !startingAbilities.Contains(ability))
             {
                 startingAbilities.Add(ability);
+                AbilityLearned?.Invoke(this, ability);
             }
         }
 
@@ -87,7 +94,7 @@ namespace RPGClone.Abilities
                 return Fail(ability, target, $"{identity.DisplayName} cannot act.", out failureReason);
             }
 
-            if (activeCast != null)
+            if (activeCast != null || activeCharge != null)
             {
                 return Fail(ability, target, "Another action is in progress.", out failureReason);
             }
@@ -104,12 +111,18 @@ namespace RPGClone.Abilities
             }
 
             return TryPrepareAbility(ability, resolvedTarget, out failureReason, out MMOCombatant targetCombatant)
-                ? StartOrExecuteAbility(ability, resolvedTarget, targetCombatant)
+                ? StartOrExecuteAbility(ability, resolvedTarget, targetCombatant, out failureReason)
                 : false;
         }
 
-        private bool StartOrExecuteAbility(MMOAbilityDefinition ability, MMOCharacterIdentity resolvedTarget, MMOCombatant targetCombatant)
+        private bool StartOrExecuteAbility(MMOAbilityDefinition ability, MMOCharacterIdentity resolvedTarget, MMOCombatant targetCombatant, out string failureReason)
         {
+            failureReason = string.Empty;
+            if (TryGetChargeEffect(ability, out MMOAbilityEffectDefinition chargeEffect))
+            {
+                return TryStartChargeAbility(ability, resolvedTarget, targetCombatant, chargeEffect, out failureReason);
+            }
+
             if (ability.CastTimeSeconds > 0f)
             {
                 activeCast = new ActiveCast(ability, resolvedTarget, transform.position, Time.time, ability.CastTimeSeconds);
@@ -118,6 +131,30 @@ namespace RPGClone.Abilities
             }
 
             ExecutePreparedAbility(ability, resolvedTarget, targetCombatant);
+            return true;
+        }
+
+        private bool TryStartChargeAbility(MMOAbilityDefinition ability, MMOCharacterIdentity resolvedTarget, MMOCombatant targetCombatant, MMOAbilityEffectDefinition chargeEffect, out string failureReason)
+        {
+            if (!TryBuildChargePath(resolvedTarget, out Vector3[] pathCorners))
+            {
+                return Fail(ability, resolvedTarget, "No valid path found.", out failureReason);
+            }
+
+            if (ability.ManaCost > 0)
+            {
+                identity.Mana.SetCurrent(identity.Mana.CurrentValue - ability.ManaCost);
+            }
+
+            if (ability.CooldownSeconds > 0f)
+            {
+                cooldownReadyTimes[ability] = Time.time + ability.CooldownSeconds;
+            }
+
+            activeCharge = new ActiveCharge(ability, resolvedTarget, targetCombatant, chargeEffect, pathCorners);
+            StartCoroutine(RunCharge(activeCharge));
+            AbilityUsed?.Invoke(this, ability, resolvedTarget);
+            failureReason = string.Empty;
             return true;
         }
 
@@ -242,18 +279,18 @@ namespace RPGClone.Abilities
             {
                 if (effect.EffectType == MMOAbilityEffectType.TemporaryStatModifier)
                 {
-                    MMOTemporaryStatModifierReceiver modifierReceiver = target.GetComponent<MMOTemporaryStatModifierReceiver>();
-                    if (modifierReceiver == null)
+                    MMOCharacterBuffController buffController = target.GetComponent<MMOCharacterBuffController>();
+                    if (buffController == null)
                     {
-                        modifierReceiver = target.gameObject.AddComponent<MMOTemporaryStatModifierReceiver>();
+                        buffController = target.gameObject.AddComponent<MMOCharacterBuffController>();
                     }
 
-                    modifierReceiver.AddModifier(
-                        effect.DurationSeconds,
-                        effect.AttackPowerBonus,
-                        effect.AttackPowerMultiplier,
-                        effect.AttackSpeedMultiplier,
-                        effect.HealthRegenMultiplier);
+                    buffController.ApplyBuff(MMOBuffApplication.FromAbility(ability, effect));
+                    continue;
+                }
+
+                if (effect.EffectType == MMOAbilityEffectType.Charge)
+                {
                     continue;
                 }
 
@@ -267,6 +304,128 @@ namespace RPGClone.Abilities
                     target.ApplyDamage(combatant, ability, amount);
                 }
             }
+        }
+
+        private bool TryGetChargeEffect(MMOAbilityDefinition ability, out MMOAbilityEffectDefinition chargeEffect)
+        {
+            foreach (MMOAbilityEffectDefinition effect in ability.Effects)
+            {
+                if (effect.EffectType == MMOAbilityEffectType.Charge)
+                {
+                    chargeEffect = effect;
+                    return true;
+                }
+            }
+
+            chargeEffect = null;
+            return false;
+        }
+
+        private bool TryBuildChargePath(MMOCharacterIdentity target, out Vector3[] pathCorners)
+        {
+            pathCorners = Array.Empty<Vector3>();
+            if (target == null)
+            {
+                return false;
+            }
+
+            if (!NavMesh.SamplePosition(transform.position, out NavMeshHit startHit, 4f, NavMesh.AllAreas)
+                || !NavMesh.SamplePosition(target.transform.position, out NavMeshHit targetHit, 4f, NavMesh.AllAreas))
+            {
+                return false;
+            }
+
+            NavMeshPath path = new();
+            if (!NavMesh.CalculatePath(startHit.position, targetHit.position, NavMesh.AllAreas, path)
+                || path.status != NavMeshPathStatus.PathComplete
+                || path.corners == null
+                || path.corners.Length == 0)
+            {
+                return false;
+            }
+
+            pathCorners = path.corners;
+            return true;
+        }
+
+        private IEnumerator RunCharge(ActiveCharge charge)
+        {
+            MMOPlayerMotor playerMotor = GetComponent<MMOPlayerMotor>();
+            bool restorePlayerMotor = playerMotor != null && playerMotor.enabled;
+            if (restorePlayerMotor)
+            {
+                playerMotor.enabled = false;
+            }
+
+            CharacterController characterController = GetComponent<CharacterController>();
+            int cornerIndex = charge.Corners.Length > 1 ? 1 : 0;
+
+            while (activeCharge == charge && charge.Target != null && charge.TargetCombatant != null && charge.TargetCombatant.IsAlive)
+            {
+                float stopDistance = charge.Effect.ChargeStopDistance;
+                Vector3 toTarget = charge.Target.transform.position - transform.position;
+                toTarget.y = 0f;
+                if (toTarget.sqrMagnitude <= stopDistance * stopDistance)
+                {
+                    break;
+                }
+
+                Vector3 destination = cornerIndex < charge.Corners.Length ? charge.Corners[cornerIndex] : charge.Target.transform.position;
+                Vector3 toDestination = destination - transform.position;
+                toDestination.y = 0f;
+                if (toDestination.sqrMagnitude <= 0.04f)
+                {
+                    cornerIndex++;
+                    continue;
+                }
+
+                Vector3 planarDirection = toDestination.normalized;
+                float step = charge.Effect.ChargeSpeed * Time.deltaTime;
+                Vector3 delta = planarDirection * Mathf.Min(step, toDestination.magnitude);
+                float targetY = cornerIndex < charge.Corners.Length ? charge.Corners[cornerIndex].y : transform.position.y;
+                delta.y = targetY - transform.position.y;
+
+                MoveChargeStep(characterController, delta);
+                FaceChargeDirection(planarDirection);
+                yield return null;
+            }
+
+            if (activeCharge == charge && charge.TargetCombatant != null && charge.TargetCombatant.IsAlive && IsInRange(charge.Target, charge.Effect.ChargeStopDistance + 0.25f))
+            {
+                int amount = charge.Effect.CalculateAmount(identity);
+                charge.TargetCombatant.ApplyDamage(combatant, charge.Ability, amount);
+            }
+
+            if (restorePlayerMotor && playerMotor != null)
+            {
+                playerMotor.enabled = true;
+            }
+
+            if (activeCharge == charge)
+            {
+                activeCharge = null;
+            }
+        }
+
+        private void MoveChargeStep(CharacterController characterController, Vector3 delta)
+        {
+            if (characterController != null && characterController.enabled)
+            {
+                characterController.Move(delta);
+                return;
+            }
+
+            transform.position += delta;
+        }
+
+        private void FaceChargeDirection(Vector3 planarDirection)
+        {
+            if (planarDirection.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            transform.rotation = Quaternion.LookRotation(planarDirection, Vector3.up);
         }
 
         private void UpdateCast()
@@ -351,6 +510,24 @@ namespace RPGClone.Abilities
                 StartPosition = startPosition;
                 StartTime = startTime;
                 Duration = Mathf.Max(0.01f, duration);
+            }
+        }
+
+        private sealed class ActiveCharge
+        {
+            public readonly MMOAbilityDefinition Ability;
+            public readonly MMOCharacterIdentity Target;
+            public readonly MMOCombatant TargetCombatant;
+            public readonly MMOAbilityEffectDefinition Effect;
+            public readonly Vector3[] Corners;
+
+            public ActiveCharge(MMOAbilityDefinition ability, MMOCharacterIdentity target, MMOCombatant targetCombatant, MMOAbilityEffectDefinition effect, Vector3[] corners)
+            {
+                Ability = ability;
+                Target = target;
+                TargetCombatant = targetCombatant;
+                Effect = effect;
+                Corners = corners ?? Array.Empty<Vector3>();
             }
         }
     }

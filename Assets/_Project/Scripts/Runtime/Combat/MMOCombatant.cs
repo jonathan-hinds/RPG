@@ -1,5 +1,6 @@
 using System;
 using RPGClone.Abilities;
+using RPGClone.Buffs;
 using RPGClone.Characters;
 using UnityEngine;
 
@@ -46,10 +47,13 @@ namespace RPGClone.Combat
             }
 
             int mitigatedAmount = CalculatePhysicalMitigation(amount);
-            identity.Health.SetCurrent(identity.Health.CurrentValue - mitigatedAmount);
+            MMOCharacterBuffController buffController = GetComponent<MMOCharacterBuffController>();
+            int absorbedAmount = buffController != null ? buffController.AbsorbDamageAsMana(mitigatedAmount) : 0;
+            int appliedAmount = Mathf.Max(0, mitigatedAmount - absorbedAmount);
+            identity.Health.SetCurrent(identity.Health.CurrentValue - appliedAmount);
             source?.CombatActivity?.Invoke(source);
             CombatActivity?.Invoke(this);
-            Damaged?.Invoke(source, this, ability, mitigatedAmount);
+            Damaged?.Invoke(source, this, ability, appliedAmount);
 
             if (identity.Health.CurrentValue <= 0)
             {

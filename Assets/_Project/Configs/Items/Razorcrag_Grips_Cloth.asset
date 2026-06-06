@@ -15,11 +15,16 @@ MonoBehaviour:
   itemId: razorcrag_grips_cloth
   displayName: Razorcrag Grips (Cloth)
   description: Light cloth gloves for new spellcasters.
-  itemType: 2
+  itemType: 3
   quality: 1
   icon: {fileID: 0}
   maxStackSize: 1
   vendorValueCopper: 8
+  consumableType: 0
+  restoreHealthAmount: 0
+  restoreManaAmount: 0
+  consumeDurationSeconds: 10
+  requiresStationary: 1
   equipmentSlot: 8
   armorWeight: 0
   statBonuses:

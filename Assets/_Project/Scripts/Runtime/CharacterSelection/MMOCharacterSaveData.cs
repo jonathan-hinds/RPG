@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using RPGClone.Characters;
+using RPGClone.Inventory;
 using UnityEngine;
 
 namespace RPGClone.CharacterSelection
@@ -26,7 +27,13 @@ namespace RPGClone.CharacterSelection
         public string sceneName = "OrcishStarterValley";
         public Vector3SaveData position;
         public Vector3SaveData rotationEuler;
+        public int copper;
         public List<MMOInventorySlotSaveData> inventory = new();
+        public List<MMOEquipmentSlotSaveData> equipment = new();
+        public List<string> learnedAbilityIds = new();
+        public List<MMOQuestStateSaveData> activeQuests = new();
+        public List<string> completedQuestIds = new();
+        public string pendingUsableItemId;
 
         public string DisplayName => string.IsNullOrWhiteSpace(characterName) ? $"{race} {characterClass}" : characterName;
     }
@@ -37,6 +44,21 @@ namespace RPGClone.CharacterSelection
         public int slotIndex;
         public string itemId;
         public int quantity;
+    }
+
+    [Serializable]
+    public sealed class MMOEquipmentSlotSaveData
+    {
+        public MMOEquipmentSlotType slotType;
+        public string itemId;
+    }
+
+    [Serializable]
+    public sealed class MMOQuestStateSaveData
+    {
+        public string questId;
+        public bool tracked = true;
+        public List<int> objectiveProgress = new();
     }
 
     [Serializable]

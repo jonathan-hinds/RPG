@@ -81,6 +81,39 @@ namespace RPGClone.Characters
             Changed?.Invoke(this);
         }
 
+        public void Configure(
+            string newDisplayName,
+            int newLevel,
+            Sprite newPortrait,
+            Color newPortraitTint,
+            MMOEntityFaction newFaction,
+            bool newSelectable,
+            MMOCharacterStats newStats,
+            int newMaxHealth,
+            int newMaxMana,
+            bool resetResources = true)
+        {
+            profile = null;
+            displayName = string.IsNullOrWhiteSpace(newDisplayName) ? gameObject.name : newDisplayName;
+            level = Mathf.Max(1, newLevel);
+            portrait = newPortrait;
+            portraitTint = newPortraitTint;
+            faction = newFaction;
+            selectable = newSelectable;
+            stats ??= new MMOCharacterStats();
+            if (newStats != null)
+            {
+                stats.CopyFrom(newStats);
+            }
+
+            int maxHealth = CalculateMaxHealth(Mathf.Max(1, newMaxHealth));
+            int maxMana = CalculateMaxMana(Mathf.Max(0, newMaxMana));
+            health.Configure(maxHealth, resetResources ? maxHealth : health.CurrentValue, false);
+            mana.Configure(maxMana, resetResources ? maxMana : mana.CurrentValue, false);
+            ClampValues();
+            Changed?.Invoke(this);
+        }
+
         public void SetDisplayName(string newDisplayName)
         {
             displayName = string.IsNullOrWhiteSpace(newDisplayName) ? gameObject.name : newDisplayName;
@@ -172,6 +205,179 @@ namespace RPGClone.Characters
         private int CalculateMaxMana(int baseValue)
         {
             return Mathf.Max(0, baseValue + (stats != null ? stats.MaxManaBonus : 0));
+        }
+    }
+
+    public enum MMONpcIdentityRole
+    {
+        Friendly,
+        QuestGiver,
+        Vendor,
+        Trainer
+    }
+
+    [RequireComponent(typeof(MMOCharacterIdentity))]
+    public sealed class MMOStandardNpcIdentity : MonoBehaviour
+    {
+        [SerializeField] private MMOCharacterProfile profile;
+        [SerializeField] private MMONpcIdentityRole role = MMONpcIdentityRole.Friendly;
+        [SerializeField] private string displayNameOverride;
+        [SerializeField] private string titleOverride;
+        [SerializeField] private bool applyOnAwake = true;
+
+        private MMOCharacterIdentity identity;
+
+        public MMOCharacterIdentity Identity
+        {
+            get
+            {
+                EnsureReference();
+                return identity;
+            }
+        }
+
+        public MMOCharacterProfile Profile => profile;
+        public MMONpcIdentityRole Role => role;
+        public string DisplayName => string.IsNullOrWhiteSpace(displayNameOverride) ? gameObject.name : displayNameOverride;
+        public string Title => string.IsNullOrWhiteSpace(titleOverride) ? MMONpcIdentityStandards.GetDefaultTitle(role) : titleOverride;
+
+        private void Awake()
+        {
+            if (applyOnAwake)
+            {
+                Apply(true);
+            }
+        }
+
+        private void OnValidate()
+        {
+            if (!Application.isPlaying)
+            {
+                EnsureReference();
+            }
+        }
+
+        public void Configure(MMOCharacterProfile newProfile, string newDisplayName, MMONpcIdentityRole newRole, bool resetResources)
+        {
+            Configure(newProfile, newDisplayName, MMONpcIdentityStandards.GetDefaultTitle(newRole), newRole, resetResources);
+        }
+
+        public void Configure(MMOCharacterProfile newProfile, string newDisplayName, string newTitle, MMONpcIdentityRole newRole, bool resetResources)
+        {
+            profile = newProfile;
+            displayNameOverride = string.IsNullOrWhiteSpace(newDisplayName) ? gameObject.name : newDisplayName;
+            titleOverride = newTitle;
+            role = newRole;
+            Apply(resetResources);
+        }
+
+        public void SetDisplayName(string newDisplayName, bool resetResources = false)
+        {
+            displayNameOverride = string.IsNullOrWhiteSpace(newDisplayName) ? gameObject.name : newDisplayName;
+            Apply(resetResources);
+        }
+
+        public void SetTitle(string newTitle)
+        {
+            titleOverride = newTitle;
+        }
+
+        public void Apply(bool resetResources)
+        {
+            EnsureReference();
+            MMONpcIdentityStandards.Apply(identity, profile, DisplayName, role, resetResources);
+        }
+
+        private void EnsureReference()
+        {
+            if (identity == null)
+            {
+                identity = GetComponent<MMOCharacterIdentity>();
+            }
+        }
+    }
+
+    public static class MMONpcIdentityStandards
+    {
+        private static readonly Color FriendlyPortraitTint = new(0.95f, 0.66f, 0.22f, 1f);
+
+        public static void Apply(
+            MMOCharacterIdentity identity,
+            MMOCharacterProfile profile,
+            string displayName,
+            MMONpcIdentityRole role,
+            bool resetResources)
+        {
+            if (identity == null)
+            {
+                return;
+            }
+
+            if (profile != null)
+            {
+                identity.Configure(profile, displayName, resetResources);
+                return;
+            }
+
+            identity.Configure(
+                displayName,
+                GetDefaultLevel(role),
+                null,
+                GetDefaultPortraitTint(role),
+                GetDefaultFaction(role),
+                true,
+                CreateDefaultStats(role),
+                GetDefaultMaxHealth(role),
+                GetDefaultMaxMana(role),
+                resetResources);
+        }
+
+        private static int GetDefaultLevel(MMONpcIdentityRole role)
+        {
+            return role switch
+            {
+                MMONpcIdentityRole.Vendor => 4,
+                MMONpcIdentityRole.Trainer => 5,
+                MMONpcIdentityRole.QuestGiver => 4,
+                _ => 4
+            };
+        }
+
+        public static string GetDefaultTitle(MMONpcIdentityRole role)
+        {
+            return role switch
+            {
+                MMONpcIdentityRole.Vendor => "General Goods Merchant",
+                MMONpcIdentityRole.Trainer => "Class Trainer",
+                _ => string.Empty
+            };
+        }
+
+        private static int GetDefaultMaxHealth(MMONpcIdentityRole role)
+        {
+            return 120;
+        }
+
+        private static int GetDefaultMaxMana(MMONpcIdentityRole role)
+        {
+            return 90;
+        }
+
+        private static Color GetDefaultPortraitTint(MMONpcIdentityRole role)
+        {
+            return FriendlyPortraitTint;
+        }
+
+        private static MMOEntityFaction GetDefaultFaction(MMONpcIdentityRole role)
+        {
+            return MMOEntityFaction.Friendly;
+        }
+
+        private static MMOCharacterStats CreateDefaultStats(MMONpcIdentityRole role)
+        {
+            MMOCharacterStats stats = new();
+            stats.Configure(12, 9, 12, 11, 10, 12, 8, 4, 3f, 6f, 2.2f, 3f);
+            return stats;
         }
     }
 }

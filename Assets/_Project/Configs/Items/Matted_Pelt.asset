@@ -20,6 +20,11 @@ MonoBehaviour:
   icon: {fileID: 0}
   maxStackSize: 10
   vendorValueCopper: 9
+  consumableType: 0
+  restoreHealthAmount: 0
+  restoreManaAmount: 0
+  consumeDurationSeconds: 10
+  requiresStationary: 1
   equipmentSlot: 4
   armorWeight: 0
   statBonuses:

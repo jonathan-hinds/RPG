@@ -21,6 +21,18 @@ namespace RPGClone.Quests
             Changed?.Invoke(this);
         }
 
+        public void SetCopper(int amount)
+        {
+            int clampedAmount = Mathf.Max(0, amount);
+            if (copper == clampedAmount)
+            {
+                return;
+            }
+
+            copper = clampedAmount;
+            Changed?.Invoke(this);
+        }
+
         public bool TrySpendCopper(int amount)
         {
             if (amount <= 0)
