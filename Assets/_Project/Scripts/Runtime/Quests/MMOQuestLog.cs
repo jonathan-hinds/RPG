@@ -151,6 +151,7 @@ namespace RPGClone.Quests
                 completedQuests.Add(quest);
             }
 
+            RemoveCompletedQuestItems(quest);
             if (pendingUsableItem != null && !HasOpenUseObjectiveForItem(pendingUsableItem))
             {
                 pendingUsableItem = null;
@@ -556,6 +557,105 @@ namespace RPGClone.Quests
             }
 
             return true;
+        }
+
+        private void RemoveCompletedQuestItems(MMOQuestDefinition quest)
+        {
+            ResolveReferences();
+            if (inventory == null || quest == null)
+            {
+                return;
+            }
+
+            List<MMOItemDefinition> cleanupItems = new();
+            foreach (MMOItemStack stack in quest.StartItems)
+            {
+                AddQuestCleanupItem(cleanupItems, stack != null ? stack.Item : null, true);
+            }
+
+            foreach (MMOQuestObjectiveDefinition objective in quest.Objectives)
+            {
+                if (objective == null)
+                {
+                    continue;
+                }
+
+                AddQuestCleanupItem(cleanupItems, objective.UsableItem, objective.ObjectiveType == MMOQuestObjectiveType.UseItemOnWorldObject);
+                AddQuestCleanupItem(cleanupItems, objective.RequiredItem, objective.ObjectiveType == MMOQuestObjectiveType.CollectQuestItem);
+            }
+
+            foreach (MMOItemDefinition item in cleanupItems)
+            {
+                if (item == null || IsItemNeededByActiveQuest(item))
+                {
+                    continue;
+                }
+
+                int quantity = inventory.CountItem(item);
+                if (quantity > 0)
+                {
+                    inventory.TryRemoveItem(item, quantity);
+                }
+
+                if (pendingUsableItem == item)
+                {
+                    pendingUsableItem = null;
+                }
+            }
+        }
+
+        private static void AddQuestCleanupItem(List<MMOItemDefinition> cleanupItems, MMOItemDefinition item, bool objectiveOwnsItem)
+        {
+            if (item == null || cleanupItems.Contains(item))
+            {
+                return;
+            }
+
+            if (objectiveOwnsItem || item.ItemType == MMOItemType.Quest)
+            {
+                cleanupItems.Add(item);
+            }
+        }
+
+        private bool IsItemNeededByActiveQuest(MMOItemDefinition item)
+        {
+            if (item == null)
+            {
+                return false;
+            }
+
+            foreach (MMOQuestRuntimeState activeState in activeQuests)
+            {
+                MMOQuestDefinition activeQuest = activeState.Quest;
+                if (activeQuest == null)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < activeQuest.Objectives.Count; i++)
+                {
+                    MMOQuestObjectiveDefinition objective = activeQuest.Objectives[i];
+                    if (objective == null || activeState.GetProgress(i) >= objective.RequiredCount)
+                    {
+                        continue;
+                    }
+
+                    if (objective.RequiredItem == item || objective.UsableItem == item)
+                    {
+                        return true;
+                    }
+                }
+
+                foreach (MMOItemStack stack in activeQuest.StartItems)
+                {
+                    if (stack != null && stack.Item == item)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private void GrantStartItems(MMOQuestDefinition quest)

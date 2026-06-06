@@ -140,7 +140,7 @@ namespace RPGClone.UI
             background.color = new Color(0.08f, 0.065f, 0.05f, 0.95f);
 
             Button button = buttonObject.AddComponent<Button>();
-            button.onClick.AddListener(() => MMOAbilityDragState.EndDrag());
+            button.onClick.AddListener(() => MMOActionBarDragState.EndDrag());
 
             Image icon = MMOUiFactory.CreateImage("Icon", buttonObject.transform, ability.Icon != null ? Color.white : new Color(0.18f, 0.12f, 0.055f, 1f), false);
             icon.sprite = ability.Icon;

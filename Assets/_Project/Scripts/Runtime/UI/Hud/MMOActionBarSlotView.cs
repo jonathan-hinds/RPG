@@ -22,17 +22,17 @@ namespace RPGClone.UI
 
         public void OnDrag(PointerEventData eventData)
         {
-            MMOAbilityDragState.UpdateDrag(eventData);
+            MMOActionBarDragState.UpdateDrag(eventData);
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            MMOAbilityDragState.EndDrag();
+            MMOActionBarDragState.EndDrag();
         }
 
         public void OnDrop(PointerEventData eventData)
         {
-            presenter?.AcceptAbilityDrop(slotIndex, MMOAbilityDragState.Current);
+            presenter?.AcceptDrop(slotIndex, MMOActionBarDragState.Current);
         }
     }
 }

@@ -46,6 +46,7 @@ namespace RPGClone.UI
             selectedReward = null;
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
+            TrackNpcDistance();
             RefreshList();
         }
 
@@ -54,6 +55,22 @@ namespace RPGClone.UI
             selectedQuest = null;
             selectedReward = null;
             gameObject.SetActive(false);
+        }
+
+        private void TrackNpcDistance()
+        {
+            if (npc == null || questLog == null)
+            {
+                return;
+            }
+
+            MMONpcPanelDistanceCloser closer = gameObject.GetComponent<MMONpcPanelDistanceCloser>();
+            if (closer == null)
+            {
+                closer = gameObject.AddComponent<MMONpcPanelDistanceCloser>();
+            }
+
+            closer.Track(npc.transform, questLog.transform, npc.InteractionDistance + 0.75f, Close);
         }
 
         private void BuildFrame()

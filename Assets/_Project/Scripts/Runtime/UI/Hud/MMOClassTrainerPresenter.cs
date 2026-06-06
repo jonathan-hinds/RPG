@@ -54,6 +54,7 @@ namespace RPGClone.UI
             BuildIfNeeded();
             gameObject.SetActive(true);
             Position(screenPosition);
+            TrackNpcDistance();
             Refresh();
             transform.SetAsLastSibling();
         }
@@ -61,6 +62,22 @@ namespace RPGClone.UI
         public void Close()
         {
             gameObject.SetActive(false);
+        }
+
+        private void TrackNpcDistance()
+        {
+            if (trainer == null || player == null)
+            {
+                return;
+            }
+
+            MMONpcPanelDistanceCloser closer = gameObject.GetComponent<MMONpcPanelDistanceCloser>();
+            if (closer == null)
+            {
+                closer = gameObject.AddComponent<MMONpcPanelDistanceCloser>();
+            }
+
+            closer.Track(trainer.transform, player.transform, trainer.InteractionDistance + 0.75f, Close);
         }
 
         private static MMOClassTrainerPresenter ResolvePresenter()

@@ -5,15 +5,20 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
         [MainTexture] _FlatTex ("Flat Texture", 2D) = "white" {}
         _FlatVariationTex ("Flat Variation Texture", 2D) = "white" {}
         _SteepTex ("Steep Texture", 2D) = "gray" {}
+        _PathTex ("Painted Path Texture", 2D) = "white" {}
+        [HideInInspector] _Control ("Terrain Control Map", 2D) = "black" {}
         _FlatTint ("Flat Texture Tint", Color) = (1, 1, 1, 1)
         _FlatVariationTint ("Flat Variation Texture Tint", Color) = (1, 1, 1, 1)
         _SteepTint ("Steep Texture Tint", Color) = (1, 1, 1, 1)
+        _PathTint ("Painted Path Tint", Color) = (1, 1, 1, 1)
         _FlatTilingSize ("Flat Texture Tiling Size", Range(0.25, 128)) = 7
         _FlatVariationTilingSize ("Flat Variation Texture Tiling Size", Range(0.25, 128)) = 9
         _FlatVariationBlendStrength ("Flat Variation Blend Strength", Range(0, 1)) = 0.35
         _FlatVariationNoiseSize ("Flat Variation Noise Size", Range(4, 256)) = 38
         _FlatVariationNoiseSoftness ("Flat Variation Noise Softness", Range(0.01, 0.5)) = 0.18
         _SteepTilingSize ("Steep Texture Tiling Size", Range(0.25, 128)) = 5
+        _PathTilingSize ("Painted Path Tiling Size", Range(0.25, 128)) = 8
+        _PathBlendStrength ("Painted Path Blend Strength", Range(0, 1)) = 1
         _SlopeBlendThreshold ("Slope Blend Threshold", Range(0, 1)) = 0.38
         _SlopeBlendSoftness ("Slope Blend Softness", Range(0.001, 0.5)) = 0.16
         _TextureRandomizationStrength ("Texture Rotation/Randomization Strength", Range(0, 1)) = 0.65
@@ -72,6 +77,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
+                float2 texcoord : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -82,6 +88,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
                 half3 normalWS : TEXCOORD1;
                 half fogCoord : TEXCOORD2;
                 float4 shadowCoord : TEXCOORD3;
+                float2 terrainUV : TEXCOORD4;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -92,17 +99,24 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
             SAMPLER(sampler_FlatVariationTex);
             TEXTURE2D(_SteepTex);
             SAMPLER(sampler_SteepTex);
+            TEXTURE2D(_PathTex);
+            SAMPLER(sampler_PathTex);
+            TEXTURE2D(_Control);
+            SAMPLER(sampler_Control);
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _FlatTint;
                 half4 _FlatVariationTint;
                 half4 _SteepTint;
+                half4 _PathTint;
                 float _FlatTilingSize;
                 float _FlatVariationTilingSize;
                 float _FlatVariationBlendStrength;
                 float _FlatVariationNoiseSize;
                 float _FlatVariationNoiseSoftness;
                 float _SteepTilingSize;
+                float _PathTilingSize;
+                float _PathBlendStrength;
                 float _SlopeBlendThreshold;
                 float _SlopeBlendSoftness;
                 float _TextureRandomizationStrength;
@@ -118,6 +132,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
                 #ifdef UNITY_INSTANCING_ENABLED
                     float4 _TerrainHeightmapRecipSize;
                 #endif
+                float4 _Control_TexelSize;
                 float4 _TerrainHeightmapScale;
             CBUFFER_END
 
@@ -130,7 +145,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
                 UNITY_INSTANCING_BUFFER_END(Terrain)
             #endif
 
-            void ApplyUnityTerrainInstancing(inout float4 positionOS, inout float3 normalOS)
+            void ApplyUnityTerrainInstancing(inout float4 positionOS, inout float3 normalOS, inout float2 terrainUV)
             {
                 #ifdef UNITY_INSTANCING_ENABLED
                     float2 patchVertex = positionOS.xy;
@@ -141,6 +156,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
                     positionOS.xz = sampleCoords * _TerrainHeightmapScale.xz;
                     positionOS.y = height * _TerrainHeightmapScale.y;
                     normalOS = _TerrainNormalmapTexture.Load(int3(sampleCoords, 0)).rgb * 2.0 - 1.0;
+                    terrainUV = sampleCoords * _TerrainHeightmapRecipSize.zw;
                 #endif
             }
 
@@ -254,7 +270,8 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
 
                 float4 positionOS = input.positionOS;
                 float3 normalOS = input.normalOS;
-                ApplyUnityTerrainInstancing(positionOS, normalOS);
+                float2 terrainUV = input.texcoord;
+                ApplyUnityTerrainInstancing(positionOS, normalOS, terrainUV);
 
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(positionOS.xyz);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(normalOS);
@@ -264,6 +281,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
                 output.normalWS = NormalizeNormalPerVertex(normalInputs.normalWS);
                 output.fogCoord = ComputeFogFactor(positionInputs.positionCS.z);
                 output.shadowCoord = float4(0.0, 0.0, 0.0, 0.0);
+                output.terrainUV = terrainUV;
 
                 return output;
             }
@@ -288,6 +306,10 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
 
                 half3 steepColor = SampleTriplanarTerrainTexture(TEXTURE2D_ARGS(_SteepTex, sampler_SteepTex), input.positionWS, normalWS, _SteepTilingSize) * _SteepTint.rgb;
                 half3 albedo = lerp(flatColor, steepColor, steepBlend);
+                half3 pathColor = SampleTriplanarTerrainTexture(TEXTURE2D_ARGS(_PathTex, sampler_PathTex), input.positionWS, normalWS, _PathTilingSize) * _PathTint.rgb;
+                float2 splatUV = (saturate(input.terrainUV) * (_Control_TexelSize.zw - 1.0) + 0.5) * _Control_TexelSize.xy;
+                half pathMask = saturate(SAMPLE_TEXTURE2D(_Control, sampler_Control, splatUV).a * _PathBlendStrength);
+                albedo = lerp(albedo, pathColor, pathMask);
 
                 float macroNoise = GetTriplanarValueNoise(input.positionWS, normalWS, _MacroVariationSize);
                 half macroVariation = lerp(1.0h, (half)lerp(0.82, 1.18, macroNoise), (half)_MacroVariationStrength);

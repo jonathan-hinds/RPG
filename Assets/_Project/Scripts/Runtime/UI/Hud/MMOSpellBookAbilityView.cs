@@ -21,8 +21,8 @@ namespace RPGClone.UI
             }
 
             MMOAbilityTooltipPresenter.HideAbility(ability);
-            MMOAbilityDragState.BeginDrag(
-                new MMOAbilityDragPayload(ability),
+            MMOActionBarDragState.BeginDrag(
+                new MMOActionBarDragPayload(ability),
                 eventData,
                 transform,
                 ability.DisplayName,
@@ -31,12 +31,12 @@ namespace RPGClone.UI
 
         public void OnDrag(PointerEventData eventData)
         {
-            MMOAbilityDragState.UpdateDrag(eventData);
+            MMOActionBarDragState.UpdateDrag(eventData);
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            MMOAbilityDragState.EndDrag();
+            MMOActionBarDragState.EndDrag();
         }
     }
 }

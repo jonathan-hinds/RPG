@@ -32,6 +32,7 @@ namespace RPGClone.Vendors
         public string Title => string.IsNullOrWhiteSpace(title) ? "General Goods Merchant" : title;
         public IReadOnlyList<MMOVendorStockEntry> Stock => stock;
         public bool BuysTrash => buysTrash;
+        public float InteractionDistance => interactionDistance;
 
         private void Awake()
         {

@@ -190,7 +190,7 @@ namespace RPGClone.EditorTools
                 CreateTerrainLayer("AshGrass", palette.Grass, new Color(0.27f, 0.39f, 0.24f), 11f),
                 CreateTerrainLayer("DryClay", palette.Clay, new Color(0.53f, 0.27f, 0.16f), 16f),
                 CreateTerrainLayer("DarkRock", palette.Rock, new Color(0.19f, 0.18f, 0.17f), 18f),
-                CreateTerrainLayer("TrailDirt", palette.Dirt, new Color(0.39f, 0.30f, 0.21f), 9f)
+                MMOTerrainPathPaintingConfigurator.CreateOrUpdatePathTerrainLayer(palette.Dirt)
             };
 
             string dataPath = $"{TerrainFolder}/OrcishStarterValleyTerrain.asset";
@@ -219,6 +219,7 @@ namespace RPGClone.EditorTools
             Terrain terrain = terrainObject.GetComponent<Terrain>();
             terrain.drawInstanced = true;
             terrain.allowAutoConnect = false;
+            MMOTerrainPathPaintingConfigurator.ConfigureTerrainForPathPainting(terrain, palette.Dirt);
             return terrain;
         }
 

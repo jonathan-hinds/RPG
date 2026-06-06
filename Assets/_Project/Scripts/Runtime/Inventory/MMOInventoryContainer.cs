@@ -130,6 +130,78 @@ namespace RPGClone.Inventory
                 : TryAddItem(null, 0, out remainingQuantity);
         }
 
+        public bool TryFindFirstSlotContaining(MMOItemDefinition item, out int slotIndex)
+        {
+            EnsureSlotList();
+            slotIndex = -1;
+            if (item == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                MMOItemStack slot = slots[i];
+                if (slot != null && !slot.IsEmpty && slot.Item == item)
+                {
+                    slotIndex = i;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool TryMoveSlot(int sourceIndex, int targetIndex)
+        {
+            EnsureSlotList();
+            if (sourceIndex < 0 || sourceIndex >= slots.Count || targetIndex < 0 || targetIndex >= slots.Count || sourceIndex == targetIndex)
+            {
+                return false;
+            }
+
+            MMOItemStack source = slots[sourceIndex];
+            MMOItemStack target = slots[targetIndex];
+            if (source == null || source.IsEmpty)
+            {
+                return false;
+            }
+
+            if (target == null || target.IsEmpty)
+            {
+                slots[targetIndex] = source.Clone();
+                source.Clear();
+                Changed?.Invoke();
+                return true;
+            }
+
+            if (target.Item == source.Item && target.RemainingStackSpace > 0)
+            {
+                int previousQuantity = source.Quantity;
+                int remaining = target.Add(source.Quantity);
+                if (remaining <= 0)
+                {
+                    source.Clear();
+                }
+                else
+                {
+                    source.Configure(source.Item, remaining);
+                }
+
+                if (remaining != previousQuantity)
+                {
+                    Changed?.Invoke();
+                    return true;
+                }
+
+                return false;
+            }
+
+            (slots[sourceIndex], slots[targetIndex]) = (target, source);
+            Changed?.Invoke();
+            return true;
+        }
+
         public int CountItem(MMOItemDefinition item)
         {
             EnsureSlotList();

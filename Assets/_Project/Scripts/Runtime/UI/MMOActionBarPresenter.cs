@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using RPGClone.Abilities;
 using RPGClone.Characters;
 using RPGClone.Combat;
+using RPGClone.Inventory;
 using RPGClone.Targeting;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -18,6 +19,7 @@ namespace RPGClone.UI
         [SerializeField] private bool autoBuild = true;
         [SerializeField, Min(1)] private int slotCount = DefaultSlotCount;
         [SerializeField] private MMOAbilitySystem abilitySystem;
+        [SerializeField] private MMOInventoryContainer inventory;
         [SerializeField] private MMOAutoAttackController autoAttackController;
         [SerializeField] private MMOTargetSelectionController targetSelectionController;
         [SerializeField] private List<MMOActionBarSlot> slots = new();
@@ -32,6 +34,8 @@ namespace RPGClone.UI
         private readonly List<MMOActionBarSlotView> slotViews = new();
         private readonly List<MMOAbilityTooltipTrigger> tooltipTriggers = new();
         private static Font cachedFont;
+
+        public IReadOnlyList<MMOActionBarSlot> Slots => slots;
 
         private void Awake()
         {
@@ -73,6 +77,11 @@ namespace RPGClone.UI
             abilitySystem = newAbilitySystem;
             autoAttackController = newAutoAttackController;
             targetSelectionController = newTargetSelectionController;
+            if (abilitySystem != null)
+            {
+                inventory = abilitySystem.GetComponent<MMOInventoryContainer>();
+            }
+
             slots = newSlots != null ? new List<MMOActionBarSlot>(newSlots) : new List<MMOActionBarSlot>();
             slotCount = Mathf.Max(DefaultSlotCount, slots.Count);
             EnsureSlotState();
@@ -88,8 +97,15 @@ namespace RPGClone.UI
             }
 
             MMOAbilityDefinition ability = slots[index].ability;
-            if (ability == null)
+            MMOItemDefinition item = slots[index].item;
+            if (ability == null && item == null)
             {
+                return;
+            }
+
+            if (item != null)
+            {
+                MMOInventoryItemUseService.TryUseItem(inventory, item);
                 return;
             }
 
@@ -125,7 +141,7 @@ namespace RPGClone.UI
                         continue;
                     }
 
-                    slots[i].ability = ability;
+                    slots[i].SetAbility(ability);
                     break;
                 }
             }
@@ -133,11 +149,20 @@ namespace RPGClone.UI
             Refresh();
         }
 
+        public void ApplySlots(IReadOnlyList<MMOActionBarSlot> newSlots)
+        {
+            slots = newSlots != null ? new List<MMOActionBarSlot>(newSlots) : new List<MMOActionBarSlot>();
+            slotCount = Mathf.Max(DefaultSlotCount, slots.Count);
+            EnsureSlotState();
+            BuildIfNeeded();
+            Refresh();
+        }
+
         private bool SlotsContain(MMOAbilityDefinition ability)
         {
             foreach (MMOActionBarSlot slot in slots)
             {
-                if (slot.ability == ability)
+                if (slot.bindingType == MMOActionBarSlotBindingType.Ability && slot.ability == ability)
                 {
                     return true;
                 }
@@ -153,22 +178,32 @@ namespace RPGClone.UI
                 return false;
             }
 
-            MMOAbilityDefinition ability = slots[index].ability;
-            if (ability == null)
+            MMOActionBarSlot slot = slots[index];
+            if (slot == null || slot.IsEmpty)
             {
                 return false;
             }
 
             MMOGameTooltipPresenter.HideTooltip();
-            return MMOAbilityDragState.BeginDrag(
-                new MMOAbilityDragPayload(ability, this, index),
+            string label = slot.bindingType == MMOActionBarSlotBindingType.Item
+                ? slot.item.DisplayName
+                : slot.ability.DisplayName;
+            Sprite icon = slot.bindingType == MMOActionBarSlotBindingType.Item
+                ? slot.item.Icon
+                : slot.ability.Icon;
+            MMOActionBarDragPayload payload = slot.bindingType == MMOActionBarSlotBindingType.Item
+                ? new MMOActionBarDragPayload(slot.item, this, index)
+                : new MMOActionBarDragPayload(slot.ability, this, index);
+
+            return MMOActionBarDragState.BeginDrag(
+                payload,
                 eventData,
                 owner,
-                ability.DisplayName,
-                ability.Icon);
+                label,
+                icon);
         }
 
-        public void AcceptAbilityDrop(int targetIndex, MMOAbilityDragPayload payload)
+        public void AcceptDrop(int targetIndex, MMOActionBarDragPayload payload)
         {
             if (!payload.IsValid || targetIndex < 0 || targetIndex >= slots.Count)
             {
@@ -182,11 +217,18 @@ namespace RPGClone.UI
                     return;
                 }
 
-                (slots[targetIndex].ability, slots[payload.SourceSlotIndex].ability) = (slots[payload.SourceSlotIndex].ability, slots[targetIndex].ability);
+                SwapSlotBindings(targetIndex, payload.SourceSlotIndex);
             }
             else
             {
-                slots[targetIndex].ability = payload.Ability;
+                if (payload.BindingType == MMOActionBarSlotBindingType.Item)
+                {
+                    slots[targetIndex].SetItem(payload.Item);
+                }
+                else
+                {
+                    slots[targetIndex].SetAbility(payload.Ability);
+                }
             }
 
             Refresh();
@@ -194,13 +236,25 @@ namespace RPGClone.UI
 
         private void ResolveReferences()
         {
-            if (abilitySystem == null)
+            if (abilitySystem == null || inventory == null)
             {
                 GameObject player = GameObject.FindGameObjectWithTag("Player");
                 if (player != null)
                 {
-                    abilitySystem = player.GetComponent<MMOAbilitySystem>();
-                    autoAttackController = player.GetComponent<MMOAutoAttackController>();
+                    if (abilitySystem == null)
+                    {
+                        abilitySystem = player.GetComponent<MMOAbilitySystem>();
+                    }
+
+                    if (inventory == null)
+                    {
+                        inventory = player.GetComponent<MMOInventoryContainer>();
+                    }
+
+                    if (autoAttackController == null)
+                    {
+                        autoAttackController = player.GetComponent<MMOAutoAttackController>();
+                    }
                 }
             }
 
@@ -208,6 +262,28 @@ namespace RPGClone.UI
             {
                 targetSelectionController = FindAnyObjectByType<MMOTargetSelectionController>();
             }
+        }
+
+        private void SwapSlotBindings(int firstIndex, int secondIndex)
+        {
+            if (firstIndex < 0 || firstIndex >= slots.Count || secondIndex < 0 || secondIndex >= slots.Count)
+            {
+                return;
+            }
+
+            MMOActionBarSlot first = slots[firstIndex];
+            MMOActionBarSlot second = slots[secondIndex];
+            MMOActionBarSlotBindingType firstType = first.bindingType;
+            MMOAbilityDefinition firstAbility = first.ability;
+            MMOItemDefinition firstItem = first.item;
+
+            first.bindingType = second.bindingType;
+            first.ability = second.ability;
+            first.item = second.item;
+
+            second.bindingType = firstType;
+            second.ability = firstAbility;
+            second.item = firstItem;
         }
 
         private void BuildIfNeeded()
@@ -319,17 +395,32 @@ namespace RPGClone.UI
             BuildIfNeeded();
             for (int i = 0; i < slots.Count; i++)
             {
-                MMOAbilityDefinition ability = slots[i].ability;
-                bool hasAbility = ability != null;
-                labels[i].text = hasAbility && ability.Icon == null ? Shorten(ability.DisplayName) : string.Empty;
+                MMOActionBarSlot slot = slots[i];
+                MMOAbilityDefinition ability = slot.ability;
+                MMOItemDefinition item = slot.item;
+                bool hasAbility = slot.bindingType == MMOActionBarSlotBindingType.Ability && ability != null;
+                bool hasItem = slot.bindingType == MMOActionBarSlotBindingType.Item && item != null;
+                string displayName = hasItem ? item.DisplayName : hasAbility ? ability.DisplayName : string.Empty;
+                Sprite icon = hasItem ? item.Icon : hasAbility ? ability.Icon : null;
+
+                labels[i].text = !string.IsNullOrWhiteSpace(displayName) && icon == null ? Shorten(displayName) : string.Empty;
                 keyLabels[i].text = slots[i].key == Key.None ? string.Empty : GetKeyLabel(slots[i].key);
                 buttons[i].interactable = true;
-                backgrounds[i].color = hasAbility
+                backgrounds[i].color = hasAbility || hasItem
                     ? new Color(0.12f, 0.09f, 0.055f, 0.98f)
                     : new Color(0.04f, 0.036f, 0.034f, 0.78f);
-                iconImages[i].sprite = hasAbility ? ability.Icon : null;
-                iconImages[i].gameObject.SetActive(hasAbility && ability.Icon != null);
-                tooltipTriggers[i].Configure(ability);
+                iconImages[i].sprite = icon;
+                iconImages[i].gameObject.SetActive(icon != null);
+                tooltipTriggers[i].Configure(hasAbility ? ability : null);
+                MMOItemTooltipTrigger itemTooltip = buttons[i].GetComponent<MMOItemTooltipTrigger>();
+                if (hasItem)
+                {
+                    MMOItemTooltipTrigger.Bind(buttons[i].gameObject, item);
+                }
+                else if (itemTooltip != null)
+                {
+                    itemTooltip.Configure(null);
+                }
             }
 
             UpdateCooldowns();
@@ -346,7 +437,10 @@ namespace RPGClone.UI
             for (int i = 0; i < count; i++)
             {
                 MMOAbilityDefinition ability = slots[i].ability;
-                float remaining = abilitySystem.GetCooldownRemaining(ability);
+                bool isAutoAttack = ability != null && ability.IsAutoAttack && autoAttackController != null;
+                float remaining = isAutoAttack
+                    ? autoAttackController.GetAutoAttackCooldownRemaining()
+                    : abilitySystem.GetCooldownRemaining(ability);
                 bool coolingDown = ability != null && remaining > 0f;
 
                 cooldownOverlays[i].gameObject.SetActive(coolingDown);
@@ -356,7 +450,9 @@ namespace RPGClone.UI
                     continue;
                 }
 
-                cooldownOverlays[i].fillAmount = abilitySystem.GetCooldownNormalized(ability);
+                cooldownOverlays[i].fillAmount = isAutoAttack
+                    ? autoAttackController.GetAutoAttackCooldownNormalized()
+                    : abilitySystem.GetCooldownNormalized(ability);
                 cooldownLabels[i].text = FormatCooldown(remaining);
             }
         }
@@ -368,6 +464,39 @@ namespace RPGClone.UI
             while (slots.Count < slotCount)
             {
                 slots.Add(new MMOActionBarSlot());
+            }
+
+            foreach (MMOActionBarSlot slot in slots)
+            {
+                if (slot == null)
+                {
+                    continue;
+                }
+
+                if (slot.bindingType == MMOActionBarSlotBindingType.Empty)
+                {
+                    if (slot.ability != null)
+                    {
+                        slot.bindingType = MMOActionBarSlotBindingType.Ability;
+                    }
+                    else if (slot.item != null)
+                    {
+                        slot.bindingType = MMOActionBarSlotBindingType.Item;
+                    }
+                }
+
+                if (slot.bindingType == MMOActionBarSlotBindingType.Ability)
+                {
+                    slot.item = null;
+                }
+                else if (slot.bindingType == MMOActionBarSlotBindingType.Item)
+                {
+                    slot.ability = null;
+                }
+                else
+                {
+                    slot.ClearBinding();
+                }
             }
         }
 

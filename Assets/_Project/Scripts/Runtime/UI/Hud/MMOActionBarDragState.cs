@@ -1,35 +1,64 @@
 using RPGClone.Abilities;
+using RPGClone.Inventory;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace RPGClone.UI
 {
-    public readonly struct MMOAbilityDragPayload
+    public readonly struct MMOActionBarDragPayload
     {
         public readonly MMOAbilityDefinition Ability;
+        public readonly MMOItemDefinition Item;
         public readonly MMOActionBarPresenter SourceActionBar;
+        public readonly MMOInventoryContainer SourceInventory;
         public readonly int SourceSlotIndex;
 
-        public bool IsValid => Ability != null;
+        public bool IsValid => Ability != null || Item != null;
         public bool FromActionBar => SourceActionBar != null && SourceSlotIndex >= 0;
+        public bool FromInventory => SourceInventory != null && SourceSlotIndex >= 0;
+        public MMOActionBarSlotBindingType BindingType => Ability != null
+            ? MMOActionBarSlotBindingType.Ability
+            : Item != null
+                ? MMOActionBarSlotBindingType.Item
+                : MMOActionBarSlotBindingType.Empty;
 
-        public MMOAbilityDragPayload(MMOAbilityDefinition ability, MMOActionBarPresenter sourceActionBar = null, int sourceSlotIndex = -1)
+        public MMOActionBarDragPayload(MMOAbilityDefinition ability, MMOActionBarPresenter sourceActionBar = null, int sourceSlotIndex = -1)
         {
             Ability = ability;
+            Item = null;
             SourceActionBar = sourceActionBar;
+            SourceInventory = null;
+            SourceSlotIndex = sourceSlotIndex;
+        }
+
+        public MMOActionBarDragPayload(MMOItemDefinition item, MMOInventoryContainer sourceInventory = null, int sourceSlotIndex = -1)
+        {
+            Ability = null;
+            Item = item;
+            SourceActionBar = null;
+            SourceInventory = sourceInventory;
+            SourceSlotIndex = sourceSlotIndex;
+        }
+
+        public MMOActionBarDragPayload(MMOItemDefinition item, MMOActionBarPresenter sourceActionBar, int sourceSlotIndex)
+        {
+            Ability = null;
+            Item = item;
+            SourceActionBar = sourceActionBar;
+            SourceInventory = null;
             SourceSlotIndex = sourceSlotIndex;
         }
     }
 
-    public static class MMOAbilityDragState
+    public static class MMOActionBarDragState
     {
         private static RectTransform dragVisual;
 
-        public static MMOAbilityDragPayload Current { get; private set; }
+        public static MMOActionBarDragPayload Current { get; private set; }
         public static bool HasPayload => Current.IsValid;
 
-        public static bool BeginDrag(MMOAbilityDragPayload payload, PointerEventData eventData, Transform owner, string label, Sprite icon)
+        public static bool BeginDrag(MMOActionBarDragPayload payload, PointerEventData eventData, Transform owner, string label, Sprite icon)
         {
             if (!payload.IsValid)
             {
@@ -76,7 +105,7 @@ namespace RPGClone.UI
         {
             Canvas canvas = owner != null ? owner.GetComponentInParent<Canvas>() : null;
             Transform parent = canvas != null ? canvas.transform : owner;
-            GameObject visualObject = new("Dragged Ability", typeof(RectTransform));
+            GameObject visualObject = new("Dragged Action", typeof(RectTransform));
             visualObject.transform.SetParent(parent, false);
             visualObject.transform.SetAsLastSibling();
 

@@ -28,6 +28,7 @@ namespace RPGClone.CharacterSelection
         private MMOCurrencyWallet wallet;
         private MMOQuestLog questLog;
         private MMOAbilitySystem abilitySystem;
+        private MMOActionBarPresenter actionBar;
         private MMOCharacterRosterRepository repository;
         private bool appliedSession;
         private bool isQuittingOrUnloading;
@@ -118,6 +119,7 @@ namespace RPGClone.CharacterSelection
             ApplyEquipment(saveData);
             ApplyWallet(saveData);
             ApplyLearnedAbilities(saveData);
+            ApplyActionBar(saveData);
             ApplyQuests(saveData);
 
             if (saveData.currentHealth > 0)
@@ -203,6 +205,7 @@ namespace RPGClone.CharacterSelection
             CaptureInventory(saveData);
             CaptureEquipment(saveData);
             CaptureLearnedAbilities(saveData);
+            CaptureActionBar(saveData);
             CaptureQuests(saveData);
         }
 
@@ -223,6 +226,7 @@ namespace RPGClone.CharacterSelection
             destination.inventory = new System.Collections.Generic.List<MMOInventorySlotSaveData>(source.inventory ?? new System.Collections.Generic.List<MMOInventorySlotSaveData>());
             destination.equipment = new System.Collections.Generic.List<MMOEquipmentSlotSaveData>(source.equipment ?? new System.Collections.Generic.List<MMOEquipmentSlotSaveData>());
             destination.learnedAbilityIds = new System.Collections.Generic.List<string>(source.learnedAbilityIds ?? new System.Collections.Generic.List<string>());
+            destination.actionBarSlots = new System.Collections.Generic.List<MMOActionBarSlotSaveData>(source.actionBarSlots ?? new System.Collections.Generic.List<MMOActionBarSlotSaveData>());
             destination.activeQuests = new System.Collections.Generic.List<MMOQuestStateSaveData>(source.activeQuests ?? new System.Collections.Generic.List<MMOQuestStateSaveData>());
             destination.completedQuestIds = new System.Collections.Generic.List<string>(source.completedQuestIds ?? new System.Collections.Generic.List<string>());
             destination.pendingUsableItemId = source.pendingUsableItemId;
@@ -293,6 +297,36 @@ namespace RPGClone.CharacterSelection
                 {
                     saveData.learnedAbilityIds.Add(ability.AbilityId);
                 }
+            }
+        }
+
+        private void CaptureActionBar(MMOCharacterSaveData saveData)
+        {
+            saveData.actionBarSlots ??= new System.Collections.Generic.List<MMOActionBarSlotSaveData>();
+            saveData.actionBarSlots.Clear();
+
+            MMOActionBarPresenter presenter = ResolveActionBar();
+            if (presenter == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < presenter.Slots.Count; i++)
+            {
+                MMOActionBarSlot slot = presenter.Slots[i];
+                if (slot == null)
+                {
+                    continue;
+                }
+
+                saveData.actionBarSlots.Add(new MMOActionBarSlotSaveData
+                {
+                    slotIndex = i,
+                    bindingType = slot.bindingType,
+                    abilityId = slot.ability != null ? slot.ability.AbilityId : null,
+                    itemId = slot.item != null ? slot.item.ItemId : null,
+                    key = slot.key
+                });
             }
         }
 
@@ -391,6 +425,72 @@ namespace RPGClone.CharacterSelection
             }
 
             FillActionBar();
+        }
+
+        private void ApplyActionBar(MMOCharacterSaveData saveData)
+        {
+            MMOActionBarPresenter presenter = ResolveActionBar();
+            if (presenter == null)
+            {
+                return;
+            }
+
+            System.Collections.Generic.List<MMOActionBarSlotSaveData> savedSlots = saveData.actionBarSlots ?? new System.Collections.Generic.List<MMOActionBarSlotSaveData>();
+            if (savedSlots.Count == 0)
+            {
+                FillActionBar();
+                return;
+            }
+
+            int slotCount = MMOActionBarPresenter.DefaultSlotCount;
+            foreach (MMOActionBarSlotSaveData savedSlot in savedSlots)
+            {
+                if (savedSlot != null)
+                {
+                    slotCount = Mathf.Max(slotCount, savedSlot.slotIndex + 1);
+                }
+            }
+
+            System.Collections.Generic.List<MMOActionBarSlot> restoredSlots = new(slotCount);
+            for (int i = 0; i < slotCount; i++)
+            {
+                MMOActionBarSlot existingSlot = i < presenter.Slots.Count ? presenter.Slots[i] : null;
+                restoredSlots.Add(new MMOActionBarSlot
+                {
+                    key = existingSlot != null ? existingSlot.key : UnityEngine.InputSystem.Key.None
+                });
+            }
+
+            foreach (MMOActionBarSlotSaveData savedSlot in savedSlots)
+            {
+                if (savedSlot == null || savedSlot.slotIndex < 0 || savedSlot.slotIndex >= restoredSlots.Count)
+                {
+                    continue;
+                }
+
+                MMOActionBarSlot slot = restoredSlots[savedSlot.slotIndex];
+                slot.key = savedSlot.key;
+                if (savedSlot.bindingType == MMOActionBarSlotBindingType.Ability)
+                {
+                    MMOAbilityDefinition ability = ResolveAbility(savedSlot.abilityId);
+                    if (ability != null && abilitySystem != null && !abilitySystem.KnowsAbility(ability))
+                    {
+                        abilitySystem.LearnAbility(ability);
+                    }
+
+                    slot.SetAbility(ability);
+                }
+                else if (savedSlot.bindingType == MMOActionBarSlotBindingType.Item)
+                {
+                    slot.SetItem(ResolveItem(savedSlot.itemId));
+                }
+                else
+                {
+                    slot.ClearBinding();
+                }
+            }
+
+            presenter.ApplySlots(restoredSlots);
         }
 
         private void ApplyQuests(MMOCharacterSaveData saveData)
@@ -503,8 +603,17 @@ namespace RPGClone.CharacterSelection
 
         private void FillActionBar()
         {
-            MMOActionBarPresenter actionBar = FindAnyObjectByType<MMOActionBarPresenter>();
-            actionBar?.FillEmptySlotsFromKnownAbilities();
+            ResolveActionBar()?.FillEmptySlotsFromKnownAbilities();
+        }
+
+        private MMOActionBarPresenter ResolveActionBar()
+        {
+            if (actionBar == null)
+            {
+                actionBar = FindAnyObjectByType<MMOActionBarPresenter>();
+            }
+
+            return actionBar;
         }
     }
 }

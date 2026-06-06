@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using RPGClone.Characters;
 using RPGClone.Inventory;
+using RPGClone.UI;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace RPGClone.CharacterSelection
 {
@@ -31,6 +33,7 @@ namespace RPGClone.CharacterSelection
         public List<MMOInventorySlotSaveData> inventory = new();
         public List<MMOEquipmentSlotSaveData> equipment = new();
         public List<string> learnedAbilityIds = new();
+        public List<MMOActionBarSlotSaveData> actionBarSlots = new();
         public List<MMOQuestStateSaveData> activeQuests = new();
         public List<string> completedQuestIds = new();
         public string pendingUsableItemId;
@@ -51,6 +54,16 @@ namespace RPGClone.CharacterSelection
     {
         public MMOEquipmentSlotType slotType;
         public string itemId;
+    }
+
+    [Serializable]
+    public sealed class MMOActionBarSlotSaveData
+    {
+        public int slotIndex;
+        public MMOActionBarSlotBindingType bindingType;
+        public string abilityId;
+        public string itemId;
+        public Key key = Key.None;
     }
 
     [Serializable]

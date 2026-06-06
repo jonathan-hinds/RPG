@@ -199,20 +199,6 @@ namespace RPGClone.UI
             rectTransform.anchoredPosition = new Vector2(column * 66f, -row * 66f);
             rectTransform.sizeDelta = new Vector2(58f, 58f);
 
-            Text number = MMOUiFactory.CreateText("Number", rectTransform, 10, FontStyle.Bold, TextAnchor.UpperLeft);
-            number.text = (index + 1).ToString();
-            number.color = new Color(0.76f, 0.68f, 0.5f, 1f);
-            MMOUiFactory.Stretch(number.rectTransform);
-            number.rectTransform.offsetMin = new Vector2(4f, 2f);
-            number.rectTransform.offsetMax = new Vector2(-4f, -2f);
-
-            if (!hasItem)
-            {
-                return;
-            }
-
-            MMOItemTooltipTrigger.Bind(slot.gameObject, itemStack.Item);
-
             MMOInventoryItemUseTrigger useTrigger = slot.gameObject.GetComponent<MMOInventoryItemUseTrigger>();
             if (useTrigger == null)
             {
@@ -220,6 +206,13 @@ namespace RPGClone.UI
             }
 
             useTrigger.Configure(inventory, index);
+
+            if (!hasItem)
+            {
+                return;
+            }
+
+            MMOItemTooltipTrigger.Bind(slot.gameObject, itemStack.Item);
 
             Text itemName = MMOUiFactory.CreateText("Item Name", rectTransform, 9, FontStyle.Bold, TextAnchor.MiddleCenter);
             itemName.text = itemStack.Item.DisplayName;

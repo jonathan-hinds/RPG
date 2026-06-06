@@ -1,11 +1,10 @@
 using RPGClone.Inventory;
-using RPGClone.Quests;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace RPGClone.UI
 {
-    public sealed class MMOInventoryItemUseTrigger : MonoBehaviour, IPointerClickHandler
+    public sealed class MMOInventoryItemUseTrigger : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
     {
         private MMOInventoryContainer inventory;
         private int slotIndex;
@@ -23,38 +22,45 @@ namespace RPGClone.UI
                 return;
             }
 
-            MMOItemStack stack = inventory.GetSlot(slotIndex);
+            MMOInventoryItemUseService.TryUseSlot(inventory, slotIndex);
+        }
+
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            MMOItemStack stack = inventory != null ? inventory.GetSlot(slotIndex) : null;
             if (stack == null || stack.IsEmpty)
             {
                 return;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player == null)
+            MMOGameTooltipPresenter.HideTooltip();
+            MMOActionBarDragState.BeginDrag(
+                new MMOActionBarDragPayload(stack.Item, inventory, slotIndex),
+                eventData,
+                transform,
+                stack.Item.DisplayName,
+                stack.Item.Icon);
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            MMOActionBarDragState.UpdateDrag(eventData);
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            MMOActionBarDragState.EndDrag();
+        }
+
+        public void OnDrop(PointerEventData eventData)
+        {
+            MMOActionBarDragPayload payload = MMOActionBarDragState.Current;
+            if (!payload.FromInventory || inventory == null || payload.SourceInventory != inventory)
             {
                 return;
             }
 
-            if (MMOVendorPresenter.TrySellInventorySlot(inventory, slotIndex))
-            {
-                return;
-            }
-
-            MMOCharacterEquipment equipment = player.GetComponent<MMOCharacterEquipment>();
-            if (equipment != null && stack.Item.IsEquipment && equipment.TryEquipFromInventory(inventory, slotIndex))
-            {
-                return;
-            }
-
-            MMOConsumableEffectController consumables = player.GetComponent<MMOConsumableEffectController>();
-            if (consumables != null && stack.Item.IsConsumable && consumables.TryConsume(stack.Item))
-            {
-                inventory.TryRemoveItem(stack.Item, 1);
-                return;
-            }
-
-            MMOQuestLog questLog = player.GetComponent<MMOQuestLog>();
-            questLog?.TryBeginUseQuestItem(stack.Item);
+            inventory.TryMoveSlot(payload.SourceSlotIndex, slotIndex);
         }
     }
 }

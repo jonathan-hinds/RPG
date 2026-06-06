@@ -31,6 +31,7 @@ namespace RPGClone.Trainers
         public string Title => string.IsNullOrWhiteSpace(titleOverride) ? $"{trainerClass} Trainer" : titleOverride;
         public MMOPlayableClass TrainerClass => trainerClass;
         public IReadOnlyList<MMOTrainerOfferEntry> Offers => offers;
+        public float InteractionDistance => interactionDistance;
 
         private void Awake()
         {

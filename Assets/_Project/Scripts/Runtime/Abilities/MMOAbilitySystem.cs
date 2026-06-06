@@ -15,6 +15,8 @@ namespace RPGClone.Abilities
     public sealed class MMOAbilitySystem : MonoBehaviour
     {
         [SerializeField] private List<MMOAbilityDefinition> startingAbilities = new();
+        [SerializeField, Min(0f)] private float castKnockbackSeconds = 0.5f;
+        [SerializeField, Min(0f)] private float maxCastKnockbackSeconds = 2f;
 
         private readonly Dictionary<MMOAbilityDefinition, float> cooldownReadyTimes = new();
         private MMOCharacterIdentity identity;
@@ -54,6 +56,24 @@ namespace RPGClone.Abilities
         private void Awake()
         {
             EnsureInitialized();
+        }
+
+        private void OnEnable()
+        {
+            EnsureInitialized();
+            if (combatant != null)
+            {
+                combatant.Damaged -= OnDamaged;
+                combatant.Damaged += OnDamaged;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (combatant != null)
+            {
+                combatant.Damaged -= OnDamaged;
+            }
         }
 
         private void Update()
@@ -461,6 +481,31 @@ namespace RPGClone.Abilities
             CastCompleted?.Invoke(this, ability, target);
         }
 
+        private void OnDamaged(MMOCombatant source, MMOCombatant target, MMOAbilityDefinition ability, int amount)
+        {
+            if (activeCast == null || amount <= 0 || castKnockbackSeconds <= 0f)
+            {
+                return;
+            }
+
+            float remainingKnockbackBudget = Mathf.Max(0f, maxCastKnockbackSeconds - activeCast.AppliedKnockbackSeconds);
+            if (remainingKnockbackBudget <= 0f)
+            {
+                return;
+            }
+
+            float elapsed = Mathf.Max(0f, Time.time - activeCast.StartTime);
+            float knockback = Mathf.Min(castKnockbackSeconds, remainingKnockbackBudget, elapsed);
+            if (knockback <= 0f)
+            {
+                return;
+            }
+
+            activeCast.StartTime += knockback;
+            activeCast.AppliedKnockbackSeconds += knockback;
+            CastProgressed?.Invoke(this, activeCast.Ability, activeCast.Target, CurrentCastNormalized);
+        }
+
         private void InterruptCast(string reason)
         {
             if (activeCast == null)
@@ -500,8 +545,9 @@ namespace RPGClone.Abilities
             public readonly MMOAbilityDefinition Ability;
             public readonly MMOCharacterIdentity Target;
             public readonly Vector3 StartPosition;
-            public readonly float StartTime;
             public readonly float Duration;
+            public float StartTime;
+            public float AppliedKnockbackSeconds;
 
             public ActiveCast(MMOAbilityDefinition ability, MMOCharacterIdentity target, Vector3 startPosition, float startTime, float duration)
             {

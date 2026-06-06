@@ -94,6 +94,7 @@ namespace RPGClone.UI
             BuildIfNeeded();
             gameObject.SetActive(true);
             Position(screenPosition);
+            TrackNpcDistance();
             OpenInventoryPanel();
             Refresh();
         }
@@ -237,6 +238,22 @@ namespace RPGClone.UI
                 : "That item cannot be sold.";
             Refresh();
             return sold;
+        }
+
+        private void TrackNpcDistance()
+        {
+            if (vendor == null || inventory == null)
+            {
+                return;
+            }
+
+            MMONpcPanelDistanceCloser closer = gameObject.GetComponent<MMONpcPanelDistanceCloser>();
+            if (closer == null)
+            {
+                closer = gameObject.AddComponent<MMONpcPanelDistanceCloser>();
+            }
+
+            closer.Track(vendor.transform, inventory.transform, vendor.InteractionDistance + 0.75f, () => gameObject.SetActive(false));
         }
 
         private void OpenInventoryPanel()

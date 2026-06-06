@@ -28,6 +28,7 @@ namespace RPGClone.Quests
         public string NpcId => string.IsNullOrWhiteSpace(npcId) ? name : npcId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayNameOverride) ? name : displayNameOverride;
         public IReadOnlyList<MMOQuestDefinition> OfferedQuests => offeredQuests;
+        public float InteractionDistance => interactionDistance;
 
         private void Awake()
         {

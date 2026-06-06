@@ -9,8 +9,10 @@ This project now includes `RPG Clone/Terrain/MMO Slope Blend Terrain`, a URP sha
 - Flat texture: `Assets/RockGroundTexture.png`
 - Flat variation texture: `Assets/RockGroundTextureVarient.png`
 - Steep texture: `Assets/RockCliffFaceTexture.png`
+- Painted path texture: `Assets/RockGroundPathTexture.png`
+- Painted path TerrainLayer: `Assets/_Project/Generated/Terrain/RockGroundPath.terrainlayer`
 
-No C# helper script is required. The shader works from object/world position and surface normals, so it can be used on Unity Terrain or static terrain-like meshes.
+The shader works from object/world position and surface normals. On Unity Terrain it also reads the alpha channel of the first terrain control map, so the fourth TerrainLayer slot acts as an artist-painted path mask.
 
 ## Assign To Unity Terrain
 
@@ -20,7 +22,15 @@ No C# helper script is required. The shader works from object/world position and
 4. Confirm the flat texture is `RockGroundTexture` and the steep texture is `RockCliffFaceTexture`.
 5. Move around the elevated Barrens areas and tune the slope controls while viewing the scene camera.
 
-Unity TerrainLayers and splat painting are not used by this material. Treat this as a procedural base material for the terrain surface.
+## Paint Paths With Unity's Terrain Brush
+
+1. Run `Tools/RPG Clone/Terrain/Configure Path Texture Painting`.
+2. Select the Terrain GameObject.
+3. Open the Terrain component's Paint Texture tool.
+4. Select the `RockGroundPath` layer.
+5. Paint paths with Unity's built-in brush size, opacity, and falloff controls.
+
+The material keeps the procedural base terrain and uses the painted `RockGroundPath` splat weight as a smooth blend mask for `RockGroundPathTexture`. Keep `RockGroundPath` in terrain layer slot 4 unless the shader is updated to read a different control-map channel.
 
 ## Assign To Mesh Terrain
 

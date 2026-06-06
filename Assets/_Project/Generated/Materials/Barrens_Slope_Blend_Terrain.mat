@@ -24,6 +24,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _Control:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _FlatTex:
         m_Texture: {fileID: 2800000, guid: 8b94c642fbf63304c955b641f7791691, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -32,20 +36,26 @@ Material:
         m_Texture: {fileID: 2800000, guid: 3bea07e09189511499f99ae0abd7dda9, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _PathTex:
+        m_Texture: {fileID: 2800000, guid: 8b548a6b31fa9ec4a9ef2be7ea983baf, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _SteepTex:
         m_Texture: {fileID: 2800000, guid: c92f504eff7b5514fbb316059ff21173, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _FlatTilingSize: 7
     - _FlatVariationBlendStrength: 0.32
     - _FlatVariationNoiseSize: 38
     - _FlatVariationNoiseSoftness: 0.18
     - _FlatVariationTilingSize: 9
-    - _FlatTilingSize: 7
     - _MacroVariationSize: 72
     - _MacroVariationStrength: 0.24
     - _Occlusion: 1
+    - _PathBlendStrength: 1
+    - _PathTilingSize: 8
     - _SlopeBlendSoftness: 0.075
     - _SlopeBlendThreshold: 0.36
     - _Smoothness: 0
@@ -54,8 +64,9 @@ Material:
     - _TileEdgeBlendStrength: 0.206
     - _TriplanarBlendSharpness: 4
     m_Colors:
-    - _FlatVariationTint: {r: 1, g: 1, b: 1, a: 1}
     - _FlatTint: {r: 1, g: 1, b: 1, a: 1}
+    - _FlatVariationTint: {r: 1, g: 1, b: 1, a: 1}
+    - _PathTint: {r: 1, g: 1, b: 1, a: 1}
     - _SteepTint: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

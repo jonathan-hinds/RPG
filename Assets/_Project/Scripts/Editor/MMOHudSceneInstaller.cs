@@ -674,6 +674,7 @@ namespace RPGClone.EditorTools
 
             MMOActionBarSlot autoAttackSlot = new()
             {
+                bindingType = MMOActionBarSlotBindingType.Ability,
                 ability = autoAttackAbility,
                 key = Key.Digit1
             };
@@ -705,6 +706,7 @@ namespace RPGClone.EditorTools
             {
                 slots[i] = new MMOActionBarSlot
                 {
+                    bindingType = i == 0 && firstSlot.ability != null ? MMOActionBarSlotBindingType.Ability : MMOActionBarSlotBindingType.Empty,
                     ability = i == 0 ? firstSlot.ability : null,
                     key = keys[i]
                 };

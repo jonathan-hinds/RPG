@@ -39,6 +39,11 @@ namespace RPGClone.UI
 
         public void OnPointerEnter(PointerEventData eventData)
         {
+            if (item == null)
+            {
+                return;
+            }
+
             MMOGameTooltipPresenter.ShowItem(item, eventData.position);
         }
 
