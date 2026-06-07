@@ -11,6 +11,8 @@ namespace RPGClone.Inventory
         [SerializeField, TextArea] private string description;
         [SerializeField] private MMOItemType itemType = MMOItemType.Trash;
         [SerializeField] private MMOItemQuality quality = MMOItemQuality.Poor;
+        [Header("Presentation")]
+        [Tooltip("Square item thumbnail used by inventory, loot, rewards, vendor, equipment, and action bar UI.")]
         [SerializeField] private Sprite icon;
         [SerializeField, Min(1)] private int maxStackSize = 20;
         [SerializeField, Min(0)] private int vendorValueCopper;

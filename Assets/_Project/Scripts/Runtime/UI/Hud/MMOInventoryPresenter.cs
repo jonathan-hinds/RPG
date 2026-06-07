@@ -188,7 +188,7 @@ namespace RPGClone.UI
         private void CreateSlot(int index, MMOItemStack itemStack)
         {
             bool hasItem = itemStack != null && !itemStack.IsEmpty;
-            Color slotColor = hasItem ? GetQualityColor(itemStack.Item.Quality) : new Color(0.045f, 0.04f, 0.036f, 0.94f);
+            Color slotColor = hasItem ? MMOItemIconView.GetSlotBackgroundColor(itemStack.Item) : new Color(0.045f, 0.04f, 0.036f, 0.94f);
             Image slot = MMOUiFactory.CreateImage($"Inventory Slot {index + 1}", slotGrid, slotColor);
             RectTransform rectTransform = slot.rectTransform;
             int column = index % 4;
@@ -212,39 +212,7 @@ namespace RPGClone.UI
                 return;
             }
 
-            MMOItemTooltipTrigger.Bind(slot.gameObject, itemStack.Item);
-
-            Text itemName = MMOUiFactory.CreateText("Item Name", rectTransform, 9, FontStyle.Bold, TextAnchor.MiddleCenter);
-            itemName.text = itemStack.Item.DisplayName;
-            itemName.color = Color.white;
-            itemName.resizeTextForBestFit = true;
-            itemName.resizeTextMinSize = 6;
-            itemName.resizeTextMaxSize = 9;
-            MMOUiFactory.Stretch(itemName.rectTransform);
-            itemName.rectTransform.offsetMin = new Vector2(5f, 8f);
-            itemName.rectTransform.offsetMax = new Vector2(-5f, -8f);
-
-            if (itemStack.Quantity > 1)
-            {
-                Text quantity = MMOUiFactory.CreateText("Quantity", rectTransform, 10, FontStyle.Bold, TextAnchor.LowerRight);
-                quantity.text = itemStack.Quantity.ToString();
-                quantity.color = Color.white;
-                MMOUiFactory.Stretch(quantity.rectTransform);
-                quantity.rectTransform.offsetMin = new Vector2(4f, 2f);
-                quantity.rectTransform.offsetMax = new Vector2(-4f, -2f);
-            }
-        }
-
-        private static Color GetQualityColor(MMOItemQuality quality)
-        {
-            return quality switch
-            {
-                MMOItemQuality.Common => new Color(0.13f, 0.13f, 0.12f, 0.96f),
-                MMOItemQuality.Uncommon => new Color(0.05f, 0.18f, 0.07f, 0.96f),
-                MMOItemQuality.Rare => new Color(0.05f, 0.12f, 0.24f, 0.96f),
-                MMOItemQuality.Epic => new Color(0.18f, 0.07f, 0.22f, 0.96f),
-                _ => new Color(0.11f, 0.105f, 0.095f, 0.96f)
-            };
+            MMOItemIconView.AddToSlot(rectTransform, itemStack.Item, itemStack.Quantity);
         }
     }
 }

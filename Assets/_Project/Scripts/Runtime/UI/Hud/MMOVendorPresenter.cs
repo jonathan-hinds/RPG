@@ -187,14 +187,8 @@ namespace RPGClone.UI
                 return;
             }
 
-            Text itemName = MMOUiFactory.CreateText("Item Name", rect, 10, FontStyle.Bold, TextAnchor.MiddleCenter);
-            itemName.text = entry.Item.DisplayName;
-            itemName.resizeTextForBestFit = true;
-            itemName.resizeTextMinSize = 6;
-            itemName.resizeTextMaxSize = 10;
-            MMOUiFactory.Stretch(itemName.rectTransform);
-            itemName.rectTransform.offsetMin = new Vector2(5f, 9f);
-            itemName.rectTransform.offsetMax = new Vector2(-5f, -23f);
+            slot.color = MMOItemIconView.GetSlotBackgroundColor(entry.Item);
+            MMOItemIconView.AddToSlot(rect, entry.Item, 0, false, false, 5f);
 
             Text price = MMOUiFactory.CreateText("Price", rect, 9, FontStyle.Bold, TextAnchor.LowerCenter);
             price.text = MMOCurrencyWallet.FormatCopper(entry.PriceCopper);

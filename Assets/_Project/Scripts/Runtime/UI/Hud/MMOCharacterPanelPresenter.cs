@@ -242,7 +242,7 @@ namespace RPGClone.UI
 
             Text label = MMOUiFactory.CreateText("Label", rectTransform, 10, FontStyle.Bold, TextAnchor.MiddleCenter);
             MMOItemDefinition equippedItem = equipment != null ? equipment.GetEquippedItem(slotType) : null;
-            label.text = equippedItem != null ? equippedItem.DisplayName : MMOUiFactory.FormatEnumLabel(slotType);
+            label.text = equippedItem != null ? string.Empty : MMOUiFactory.FormatEnumLabel(slotType);
             label.color = new Color(0.78f, 0.7f, 0.52f, 1f);
             label.resizeTextForBestFit = true;
             label.resizeTextMinSize = 6;
@@ -253,7 +253,8 @@ namespace RPGClone.UI
 
             if (equippedItem != null)
             {
-                MMOItemTooltipTrigger.Bind(slot.gameObject, equippedItem);
+                slot.color = MMOItemIconView.GetSlotBackgroundColor(equippedItem);
+                MMOItemIconView.AddToSlot(rectTransform, equippedItem);
             }
         }
 

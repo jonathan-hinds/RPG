@@ -211,7 +211,7 @@ namespace RPGClone.UI
 
         private void CreateLootRow(int lootIndex, MMOItemStack stack, int rowIndex)
         {
-            Button row = MMOUiFactory.CreateTextButton($"Loot Row {rowIndex + 1}", rowsRoot, string.Empty, new Vector2(214f, 30f), new Color(0.055f, 0.046f, 0.036f, 0.96f));
+            Button row = MMOUiFactory.CreateTextButton($"Loot Row {rowIndex + 1}", rowsRoot, string.Empty, new Vector2(214f, 32f), new Color(0.055f, 0.046f, 0.036f, 0.96f));
             row.onClick.AddListener(() => LootSingle(lootIndex));
 
             RectTransform rowRect = row.GetComponent<RectTransform>();
@@ -220,12 +220,23 @@ namespace RPGClone.UI
             rowRect.pivot = new Vector2(0f, 1f);
             rowRect.anchoredPosition = new Vector2(0f, -rowIndex * 34f);
 
+            RectTransform iconSlot = MMOUiFactory.CreateRect("Icon Slot", rowRect);
+            iconSlot.anchorMin = new Vector2(0f, 0.5f);
+            iconSlot.anchorMax = new Vector2(0f, 0.5f);
+            iconSlot.pivot = new Vector2(0f, 0.5f);
+            iconSlot.anchoredPosition = new Vector2(3f, 0f);
+            iconSlot.sizeDelta = new Vector2(26f, 26f);
+            Image iconBackground = iconSlot.gameObject.AddComponent<Image>();
+            iconBackground.color = MMOItemIconView.GetSlotBackgroundColor(stack.Item);
+            iconBackground.raycastTarget = false;
+            MMOItemIconView.AddToSlot(iconSlot, stack.Item, stack.Quantity, false, false, 2f);
+
             Text label = MMOUiFactory.CreateText("Item", rowRect, 12, FontStyle.Bold, TextAnchor.MiddleLeft);
-            label.text = stack.Quantity > 1 ? $"{stack.Item.DisplayName} x{stack.Quantity}" : stack.Item.DisplayName;
-            label.color = GetQualityColor(stack.Item.Quality);
+            label.text = stack.Item.DisplayName;
+            label.color = MMOItemIconView.GetQualityTextColor(stack.Item.Quality);
             label.rectTransform.anchorMin = Vector2.zero;
             label.rectTransform.anchorMax = Vector2.one;
-            label.rectTransform.offsetMin = new Vector2(8f, 0f);
+            label.rectTransform.offsetMin = new Vector2(36f, 0f);
             label.rectTransform.offsetMax = new Vector2(-8f, 0f);
 
             MMOItemTooltipTrigger.Bind(row.gameObject, stack.Item);
@@ -261,16 +272,5 @@ namespace RPGClone.UI
             return position;
         }
 
-        private static Color GetQualityColor(MMOItemQuality quality)
-        {
-            return quality switch
-            {
-                MMOItemQuality.Common => Color.white,
-                MMOItemQuality.Uncommon => new Color(0.12f, 1f, 0f, 1f),
-                MMOItemQuality.Rare => new Color(0f, 0.44f, 0.87f, 1f),
-                MMOItemQuality.Epic => new Color(0.64f, 0.21f, 0.93f, 1f),
-                _ => new Color(0.62f, 0.62f, 0.62f, 1f)
-            };
-        }
     }
 }

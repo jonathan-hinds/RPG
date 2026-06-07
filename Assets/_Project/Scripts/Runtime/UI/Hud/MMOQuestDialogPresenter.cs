@@ -169,6 +169,7 @@ namespace RPGClone.UI
             if (objectiveItem != null)
             {
                 MMOItemTooltipTrigger.Bind(objective.gameObject, objectiveItem);
+                CreateObjectiveItemIcon(objectiveItem, 266f);
             }
 
             float rewardY = 350f;
@@ -200,15 +201,9 @@ namespace RPGClone.UI
                     continue;
                 }
 
-                string label = stack.Quantity > 1 ? $"{stack.Item.DisplayName} x{stack.Quantity}" : stack.Item.DisplayName;
-                Button itemButton = MMOUiFactory.CreateTextButton($"Reward {stack.Item.DisplayName}", contentRoot, label, new Vector2(190f, 30f), new Color(0.065f, 0.05f, 0.036f, 1f));
+                Button itemButton = CreateItemIconButton($"Reward {stack.Item.DisplayName}", stack.Item, stack.Quantity, new Vector2(0f, -y), false);
                 MMOItemTooltipTrigger.Bind(itemButton.gameObject, stack.Item);
-                RectTransform rect = itemButton.GetComponent<RectTransform>();
-                rect.anchorMin = new Vector2(0f, 1f);
-                rect.anchorMax = new Vector2(0f, 1f);
-                rect.pivot = new Vector2(0f, 1f);
-                rect.anchoredPosition = new Vector2(0f, -y);
-                y += 34f;
+                y += 48f;
             }
 
             return y;
@@ -230,26 +225,48 @@ namespace RPGClone.UI
                     continue;
                 }
 
-                Button choice = MMOUiFactory.CreateTextButton($"Reward {item.DisplayName}", contentRoot, item.DisplayName, new Vector2(150f, 30f), new Color(0.065f, 0.05f, 0.036f, 1f));
+                if (selectedReward == null)
+                {
+                    selectedReward = item;
+                }
+
+                bool isSelected = selectedReward == item;
+                Button choice = CreateItemIconButton($"Reward {item.DisplayName}", item, 0, new Vector2(0f, -y), isSelected);
                 MMOItemTooltipTrigger.Bind(choice.gameObject, item);
                 choice.onClick.AddListener(() =>
                 {
                     selectedReward = item;
                     OpenQuest(selectedQuest, true);
                 });
-                RectTransform rect = choice.GetComponent<RectTransform>();
-                rect.anchorMin = new Vector2(0f, 1f);
-                rect.anchorMax = new Vector2(0f, 1f);
-                rect.pivot = new Vector2(0f, 1f);
-                rect.anchoredPosition = new Vector2(0f, -y);
-
-                if (selectedReward == null)
-                {
-                    selectedReward = item;
-                }
-
-                y += 34f;
+                y += 48f;
             }
+        }
+
+        private void CreateObjectiveItemIcon(MMOItemDefinition item, float y)
+        {
+            Image slot = MMOUiFactory.CreateImage($"Objective Item {item.DisplayName}", contentRoot, MMOItemIconView.GetSlotBackgroundColor(item));
+            RectTransform rect = slot.rectTransform;
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -y);
+            rect.sizeDelta = new Vector2(42f, 42f);
+            MMOItemIconView.AddToSlot(rect, item, 0);
+        }
+
+        private Button CreateItemIconButton(string objectName, MMOItemDefinition item, int quantity, Vector2 anchoredPosition, bool selected)
+        {
+            Image slot = MMOUiFactory.CreateImage(objectName, contentRoot, MMOItemIconView.GetSlotBackgroundColor(item));
+            RectTransform rect = slot.rectTransform;
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = new Vector2(42f, 42f);
+
+            Button button = slot.gameObject.AddComponent<Button>();
+            MMOItemIconView.AddToSlot(rect, item, quantity, false, selected);
+            return button;
         }
 
         private static MMOItemDefinition GetFirstReferencedObjectiveItem(MMOQuestDefinition quest)
