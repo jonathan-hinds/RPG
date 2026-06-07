@@ -26,6 +26,7 @@ namespace RPGClone.EditorTools
         private const string LootFolder = ConfigFolder + "/Loot";
         private const string EnemyPrefabFolder = RootFolder + "/Prefabs/Enemies";
         private const string EnemyPrefabPath = EnemyPrefabFolder + "/EnemyCapsule.prefab";
+        private const string BristlebackPrefabPath = EnemyPrefabFolder + "/BristlebackEnemy.prefab";
 
         [MenuItem("Tools/RPG Clone/Enemies/Create Enemy Authoring Assets")]
         public static void CreateEnemyAuthoringAssets()
@@ -111,6 +112,13 @@ namespace RPGClone.EditorTools
             CreateEnemyAuthoringAssets();
 
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(EnemyPrefabPath);
+            GameObject bristlebackPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(BristlebackPrefabPath);
+            if (bristlebackPrefab == null && AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Characters/Bristleback/Animations/Bristleback.fbx") != null)
+            {
+                MMOBristlebackAnimationInstaller.InstallBristlebackAnimations();
+                bristlebackPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(BristlebackPrefabPath);
+            }
+
             MMOEnemyDefinition bristleback = AssetDatabase.LoadAssetAtPath<MMOEnemyDefinition>($"{EnemyDefinitionFolder}/Bristleback_Aggressive.asset");
             MMOEnemyDefinition dummy = AssetDatabase.LoadAssetAtPath<MMOEnemyDefinition>($"{EnemyDefinitionFolder}/Training_Dummy_Docile.asset");
             if (prefab == null || bristleback == null || dummy == null)
@@ -136,7 +144,10 @@ namespace RPGClone.EditorTools
                 MMOEnemyDefinition definition = sceneObject.name.StartsWith("Training Dummy", StringComparison.Ordinal)
                     ? dummy
                     : bristleback;
-                ReplaceWithEnemyPrefab(sceneObject, prefab, definition);
+                GameObject selectedPrefab = definition == bristleback && bristlebackPrefab != null
+                    ? bristlebackPrefab
+                    : prefab;
+                ReplaceWithEnemyPrefab(sceneObject, selectedPrefab, definition);
                 convertedCount++;
             }
 

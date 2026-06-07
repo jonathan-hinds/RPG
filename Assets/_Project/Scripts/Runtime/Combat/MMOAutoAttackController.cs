@@ -26,8 +26,8 @@ namespace RPGClone.Combat
         private MMOAbilitySystem abilitySystem;
         private MMOCombatant combatant;
         private MMOCharacterIdentity currentTarget;
-        private MMOCharacterIdentity lastSwingTarget;
         private float nextSwingTime;
+        private bool hasSwingTimer;
 
         public MMOAbilityDefinition AutoAttackAbility => autoAttackAbility;
         public MMOCharacterIdentity CurrentTarget => currentTarget;
@@ -105,9 +105,9 @@ namespace RPGClone.Combat
             }
 
             currentTarget = target;
-            if (lastSwingTarget != target || nextSwingTime <= Time.time)
+            if (!hasSwingTimer || nextSwingTime <= Time.time)
             {
-                nextSwingTime = Time.time;
+                ScheduleNextSwing();
             }
 
             float effectiveRange = combatant.Identity.Stats != null ? combatant.Identity.Stats.MeleeRange : autoAttackAbility.Range;
@@ -122,7 +122,6 @@ namespace RPGClone.Combat
 
         public void StopAutoAttack()
         {
-            lastSwingTarget = currentTarget;
             currentTarget = null;
         }
 
@@ -201,7 +200,16 @@ namespace RPGClone.Combat
 
             float swingDelay = combatant.Identity.Stats != null ? combatant.Identity.Stats.MeleeAttackSpeed : 2f;
             nextSwingTime = Time.time + Mathf.Max(0.1f, swingDelay);
-            lastSwingTarget = currentTarget;
+            hasSwingTimer = true;
+        }
+
+        private void ScheduleNextSwing()
+        {
+            float swingDelay = combatant != null && combatant.Identity != null && combatant.Identity.Stats != null
+                ? combatant.Identity.Stats.MeleeAttackSpeed
+                : 2f;
+            nextSwingTime = Time.time + Mathf.Max(0.1f, swingDelay);
+            hasSwingTimer = true;
         }
 
         private void FaceCurrentTarget()

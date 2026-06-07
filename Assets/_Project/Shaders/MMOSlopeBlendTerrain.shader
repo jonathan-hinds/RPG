@@ -306,8 +306,8 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
 
                 half3 steepColor = SampleTriplanarTerrainTexture(TEXTURE2D_ARGS(_SteepTex, sampler_SteepTex), input.positionWS, normalWS, _SteepTilingSize) * _SteepTint.rgb;
                 half3 albedo = lerp(flatColor, steepColor, steepBlend);
-                half3 pathColor = SampleTriplanarTerrainTexture(TEXTURE2D_ARGS(_PathTex, sampler_PathTex), input.positionWS, normalWS, _PathTilingSize) * _PathTint.rgb;
                 float2 splatUV = (saturate(input.terrainUV) * (_Control_TexelSize.zw - 1.0) + 0.5) * _Control_TexelSize.xy;
+                half3 pathColor = SampleTriplanarTerrainTexture(TEXTURE2D_ARGS(_PathTex, sampler_PathTex), input.positionWS, normalWS, _PathTilingSize) * _PathTint.rgb;
                 half pathMask = saturate(SAMPLE_TEXTURE2D(_Control, sampler_Control, splatUV).a * _PathBlendStrength);
                 albedo = lerp(albedo, pathColor, pathMask);
 
