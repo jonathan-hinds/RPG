@@ -16,6 +16,7 @@ namespace RPGClone.Animation
         private static readonly int DamageHash = Animator.StringToHash(MMOCreatureAnimationSet.DamageParameter);
         private static readonly int DeathHash = Animator.StringToHash(MMOCreatureAnimationSet.DeathParameter);
         private static readonly int DeadHash = Animator.StringToHash(MMOCreatureAnimationSet.DeadParameter);
+        private static readonly int LocomotionHash = Animator.StringToHash("Base Layer.Locomotion");
 
         [SerializeField] private MMOCreatureAnimationSet animationSet;
         [SerializeField] private Animator animator;
@@ -76,6 +77,11 @@ namespace RPGClone.Animation
             if (animator == null || animationSet == null)
             {
                 return;
+            }
+
+            if (dead && combatant != null && combatant.IsAlive)
+            {
+                ResetAfterRespawn();
             }
 
             float worldSpeed = dead ? 0f : GetWorldSpeed();
@@ -251,6 +257,32 @@ namespace RPGClone.Animation
             animator.ResetTrigger(DamageHash);
             animator.SetBool(DeadHash, true);
             animator.SetTrigger(DeathHash);
+        }
+
+        private void ResetAfterRespawn()
+        {
+            dead = false;
+            nextAttackIndex = 0;
+            attackPriorityUntil = 0f;
+            nextDamageReactionTime = 0f;
+            lastPosition = transform.position;
+
+            animator.ResetTrigger(Attack1Hash);
+            animator.ResetTrigger(Attack2Hash);
+            animator.ResetTrigger(DamageHash);
+            animator.ResetTrigger(DeathHash);
+            animator.SetBool(DeadHash, false);
+            animator.SetFloat(MoveSpeedHash, 0f);
+
+            if (animator.HasState(0, LocomotionHash))
+            {
+                animator.Play(LocomotionHash, 0, 0f);
+            }
+            else
+            {
+                animator.Rebind();
+                animator.Update(0f);
+            }
         }
 
         private void EnsureReferences()
