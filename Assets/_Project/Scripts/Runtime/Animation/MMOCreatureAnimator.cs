@@ -24,6 +24,7 @@ namespace RPGClone.Animation
         [SerializeField] private NavMeshAgent agent;
         [SerializeField] private MMOAbilitySystem abilitySystem;
         [SerializeField] private MMOCombatant combatant;
+        [SerializeField] private float visualYawOffsetDegrees;
 
         private readonly List<KeyValuePair<AnimationClip, AnimationClip>> clipOverrides = new();
         private AnimatorOverrideController overrideController;
@@ -95,9 +96,15 @@ namespace RPGClone.Animation
 
         public void Configure(MMOCreatureAnimationSet newAnimationSet, Animator newAnimator, Transform newVisualRoot)
         {
+            Configure(newAnimationSet, newAnimator, newVisualRoot, 0f);
+        }
+
+        public void Configure(MMOCreatureAnimationSet newAnimationSet, Animator newAnimator, Transform newVisualRoot, float newVisualYawOffsetDegrees)
+        {
             animationSet = newAnimationSet;
             animator = newAnimator;
             visualRoot = newVisualRoot;
+            visualYawOffsetDegrees = newVisualYawOffsetDegrees;
             ApplyAnimationSet();
         }
 
@@ -114,7 +121,7 @@ namespace RPGClone.Animation
                 animator.applyRootMotion = animationSet.ApplyRootMotion;
                 if (visualRoot != null)
                 {
-                    visualRoot.localRotation = Quaternion.Euler(0f, animationSet.ModelYawOffsetDegrees, 0f);
+                    visualRoot.localRotation = Quaternion.Euler(0f, animationSet.ModelYawOffsetDegrees + visualYawOffsetDegrees, 0f);
                 }
 
                 return;
@@ -138,7 +145,7 @@ namespace RPGClone.Animation
 
             if (visualRoot != null)
             {
-                visualRoot.localRotation = Quaternion.Euler(0f, animationSet.ModelYawOffsetDegrees, 0f);
+                visualRoot.localRotation = Quaternion.Euler(0f, animationSet.ModelYawOffsetDegrees + visualYawOffsetDegrees, 0f);
             }
         }
 

@@ -9,6 +9,7 @@ using RPGClone.Targeting;
 using RPGClone.Trainers;
 using RPGClone.UI;
 using RPGClone.Vendors;
+using RPGClone.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -27,6 +28,7 @@ namespace RPGClone.EditorTools
         private const string AbilityFolder = ConfigFolder + "/Abilities";
         private const string ProgressionFolder = ConfigFolder + "/Progression";
         private const string QuestFolder = ConfigFolder + "/Quests";
+        private const string WorldFolder = ConfigFolder + "/World";
 
         [MenuItem("Tools/RPG Clone/Install HUD And Target Frames")]
         public static void InstallIntoOpenScene()
@@ -62,9 +64,11 @@ namespace RPGClone.EditorTools
             EnsureConsumableController(player);
             MMOInteractionCastController interactionCastController = EnsureInteractionCastController(player);
             MMOQuestLog questLog = EnsureQuestLog(player);
+            MMOZoneDefinition starterZone = GetOrCreateStarterZone();
+            MMOZoneService zoneService = EnsureZoneService(player.transform, starterZone);
 
             InstallTargetIdentities(player, profiles, autoAttackAbility);
-            EnsureHud(playerIdentity, selectionController, playerAbilitySystem, autoAttackController, autoAttackAbility, gameplayCamera, inventory, equipment, experience, questLog, interactionCastController);
+            EnsureHud(playerIdentity, selectionController, playerAbilitySystem, autoAttackController, autoAttackAbility, gameplayCamera, inventory, equipment, experience, questLog, interactionCastController, zoneService);
 
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
             AssetDatabase.SaveAssets();
@@ -85,6 +89,7 @@ namespace RPGClone.EditorTools
             CreateFolderIfMissing(AbilityFolder);
             CreateFolderIfMissing(ProgressionFolder);
             CreateFolderIfMissing(QuestFolder);
+            CreateFolderIfMissing(WorldFolder);
         }
 
         private static void CreateFolderIfMissing(string assetPath)
@@ -491,13 +496,14 @@ namespace RPGClone.EditorTools
             MMOCharacterEquipment equipment,
             MMOExperienceComponent experience,
             MMOQuestLog questLog,
-            MMOInteractionCastController interactionCastController)
+            MMOInteractionCastController interactionCastController,
+            MMOZoneService zoneService)
         {
             Canvas canvas = EnsureCanvas();
             EnsureEventSystem();
 
             MMOUnitFrameView playerFrame = EnsureFrame(canvas.transform, "Player Unit Frame", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(32f, -32f));
-            MMOUnitFrameView targetFrame = EnsureFrame(canvas.transform, "Target Unit Frame", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-32f, -32f));
+            MMOUnitFrameView targetFrame = EnsureFrame(canvas.transform, "Target Unit Frame", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(338f, -32f));
             MMOUnitFramePresenter presenter = canvas.GetComponent<MMOUnitFramePresenter>();
             if (presenter == null)
             {
@@ -523,6 +529,7 @@ namespace RPGClone.EditorTools
             EnsureTrainerPresenter(canvas.transform);
             EnsureCastBar(canvas.transform, playerAbilitySystem, interactionCastController);
             EnsureWorldHoverTooltip(canvas.transform, gameplayCamera, questLog);
+            EnsureMapHud(canvas.transform, zoneService, playerIdentity != null ? playerIdentity.transform : null, questLog);
             EnsureBottomHud(canvas.transform, actionBar, characterPanel, inventoryPanel, spellBookPanel, questLogPanel);
             EnsureCombatFeedback(canvas.transform, playerAbilitySystem, gameplayCamera);
 
@@ -598,6 +605,48 @@ namespace RPGClone.EditorTools
 
             RemoveDuplicateGeneratedFrameChildren(frameObject.transform);
             return frame;
+        }
+
+        private static MMOZoneDefinition GetOrCreateStarterZone()
+        {
+            string path = $"{WorldFolder}/Orcish_Starter_Valley.asset";
+            MMOZoneDefinition zone = AssetDatabase.LoadAssetAtPath<MMOZoneDefinition>(path);
+            if (zone == null)
+            {
+                zone = ScriptableObject.CreateInstance<MMOZoneDefinition>();
+                AssetDatabase.CreateAsset(zone, path);
+            }
+
+            zone.Configure("orcish_starter_valley", "Orcish Starter Valley", ResolveStarterZoneBounds());
+            EditorUtility.SetDirty(zone);
+            return zone;
+        }
+
+        private static Bounds ResolveStarterZoneBounds()
+        {
+            Terrain terrain = Object.FindAnyObjectByType<Terrain>();
+            if (terrain != null && terrain.terrainData != null)
+            {
+                Vector3 size = terrain.terrainData.size;
+                Vector3 center = terrain.transform.position + size * 0.5f;
+                return new Bounds(center, new Vector3(size.x, Mathf.Max(size.y, 180f), size.z));
+            }
+
+            return new Bounds(Vector3.zero, new Vector3(520f, 180f, 520f));
+        }
+
+        private static MMOZoneService EnsureZoneService(Transform player, MMOZoneDefinition starterZone)
+        {
+            MMOZoneService zoneService = Object.FindAnyObjectByType<MMOZoneService>();
+            if (zoneService == null)
+            {
+                GameObject serviceObject = GameObject.Find("Zone Service") ?? new GameObject("Zone Service");
+                zoneService = serviceObject.GetComponent<MMOZoneService>() ?? serviceObject.AddComponent<MMOZoneService>();
+            }
+
+            zoneService.Configure(player, starterZone != null ? new[] { starterZone } : null);
+            EditorUtility.SetDirty(zoneService);
+            return zoneService;
         }
 
         private static void RemoveDuplicateGeneratedFrameChildren(Transform frame)
@@ -875,6 +924,30 @@ namespace RPGClone.EditorTools
             }
 
             presenter.Configure(questLog);
+            EditorUtility.SetDirty(presenter);
+            return presenter;
+        }
+
+        private static MMOMapHudPresenter EnsureMapHud(Transform canvas, MMOZoneService zoneService, Transform player, MMOQuestLog questLog)
+        {
+            Transform existing = canvas.Find("Map HUD");
+            GameObject mapObject = existing != null ? existing.gameObject : new GameObject("Map HUD", typeof(RectTransform));
+            mapObject.transform.SetParent(canvas, false);
+            mapObject.SetActive(true);
+
+            RectTransform rectTransform = (RectTransform)mapObject.transform;
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+
+            MMOMapHudPresenter presenter = mapObject.GetComponent<MMOMapHudPresenter>();
+            if (presenter == null)
+            {
+                presenter = mapObject.AddComponent<MMOMapHudPresenter>();
+            }
+
+            presenter.Configure(zoneService, player, questLog);
             EditorUtility.SetDirty(presenter);
             return presenter;
         }

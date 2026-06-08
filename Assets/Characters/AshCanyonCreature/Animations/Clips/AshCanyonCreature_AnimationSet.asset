@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7be62599e92490e46baca1994a8fdda7, type: 3}
+  m_Name: AshCanyonCreature_AnimationSet
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureAnimationSet
+  baseController: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+  idle: {fileID: 7400000, guid: 0da07410e8da3e74cb353d3510fafbb2, type: 2}
+  walk: {fileID: 7400000, guid: 1c61e12424adcc447aeaf2936e6701ed, type: 2}
+  run: {fileID: 7400000, guid: 58854fd4e28afd24b96948365da08d97, type: 2}
+  walkSpeed: 1.45
+  runSpeed: 4.25
+  movementDampSeconds: 0.12
+  attack1: {fileID: 7400000, guid: e8073f5bae9e5c34196cda299ed93c8a, type: 2}
+  attack2: {fileID: 7400000, guid: cf8ca713e89d2d0448ac59775f24b310, type: 2}
+  damage: {fileID: 7400000, guid: 94c8c395d7ed3744a9631f194bcc722d, type: 2}
+  death: {fileID: 7400000, guid: 0890884df5cc0bb4da82625183e3b072, type: 2}
+  alternateAttacks: 1
+  attackPrioritySeconds: 0.85
+  damageReactionCooldownSeconds: 0.45
+  applyRootMotion: 0
+  modelYawOffsetDegrees: 0

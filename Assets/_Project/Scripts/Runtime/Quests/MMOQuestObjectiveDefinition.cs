@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using RPGClone.Enemies;
 using RPGClone.Inventory;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace RPGClone.Quests
         [SerializeField] private string requiredWorldObjectId;
         [SerializeField] private string requiredNpcId;
         [SerializeField] private bool consumeRequiredItemsOnTurnIn = true;
+        [SerializeField] private List<MMOQuestObjectiveMapHint> mapHints = new();
 
         public string ObjectiveId => string.IsNullOrWhiteSpace(objectiveId) ? summary : objectiveId;
         public MMOQuestObjectiveType ObjectiveType => objectiveType;
@@ -31,6 +33,7 @@ namespace RPGClone.Quests
         public string RequiredWorldObjectId => requiredWorldObjectId;
         public string RequiredNpcId => requiredNpcId;
         public bool ConsumeRequiredItemsOnTurnIn => consumeRequiredItemsOnTurnIn;
+        public IReadOnlyList<MMOQuestObjectiveMapHint> MapHints => mapHints;
 
         public void Configure(
             string newObjectiveId,
@@ -56,6 +59,11 @@ namespace RPGClone.Quests
             requiredWorldObjectId = newRequiredWorldObjectId;
             requiredNpcId = newRequiredNpcId;
             consumeRequiredItemsOnTurnIn = newConsumeRequiredItemsOnTurnIn;
+        }
+
+        public void SetMapHints(IEnumerable<MMOQuestObjectiveMapHint> newMapHints)
+        {
+            mapHints = newMapHints != null ? new List<MMOQuestObjectiveMapHint>(newMapHints) : new List<MMOQuestObjectiveMapHint>();
         }
     }
 }

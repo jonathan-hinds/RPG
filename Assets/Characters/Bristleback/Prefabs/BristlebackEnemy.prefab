@@ -1,0 +1,336 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2519779529001271426
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5756905518340762693}
+  - component: {fileID: 2937589576217532333}
+  - component: {fileID: 4089509106752701508}
+  - component: {fileID: 443202721402525328}
+  - component: {fileID: 6487205371173854090}
+  - component: {fileID: 2869577001320403176}
+  - component: {fileID: 6360869478419126047}
+  - component: {fileID: 7665195953047199919}
+  - component: {fileID: 1281142378416166460}
+  - component: {fileID: 9170097701054843545}
+  - component: {fileID: 3939426901796394810}
+  m_Layer: 0
+  m_Name: BristlebackEnemy
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5756905518340762693
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2519779529001271426}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8173420374843301684}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &2937589576217532333
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2519779529001271426}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.6
+  m_Height: 2.25
+  m_Direction: 1
+  m_Center: {x: 0, y: 1.125, z: 0}
+--- !u!195 &4089509106752701508
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2519779529001271426}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.6
+  m_Speed: 1.45
+  m_Acceleration: 16
+  avoidancePriority: 50
+  m_AngularSpeed: 720
+  m_StoppingDistance: 2.4
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2.25
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &443202721402525328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2519779529001271426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterIdentity
+  profile: {fileID: 11400000, guid: 592142d16b21c3940819fa00ff858559, type: 2}
+  displayName: Bristleback
+  level: 3
+  portrait: {fileID: 0}
+  portraitTint: {r: 0.72, g: 0.18, b: 0.16, a: 1}
+  faction: 3
+  selectable: 1
+  stats:
+    stamina: 9
+    strength: 11
+    agility: 8
+    intellect: 4
+    spirit: 5
+    armor: 8
+    attackPower: 10
+    spellPower: 0
+    meleeMinDamage: 4
+    meleeMaxDamage: 7
+    meleeAttackSpeed: 2.4
+    meleeRange: 3
+  health:
+    currentValue: 180
+    maxValue: 180
+  mana:
+    currentValue: 105
+    maxValue: 105
+--- !u!114 &6487205371173854090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2519779529001271426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 435fe087e6bff5749a08c97991818a52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Combat.MMOCombatant
+--- !u!114 &2869577001320403176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2519779529001271426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbd1ef234955ff94581217c98b9d6f06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Abilities.MMOAbilitySystem
+  startingAbilities:
+  - {fileID: 11400000, guid: 3c1aade4e9bf68c4c9c6ac4e85e35f96, type: 2}
+  castKnockbackSeconds: 0.5
+  maxCastKnockbackSeconds: 2
+--- !u!114 &6360869478419126047
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2519779529001271426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba4da20881c39594382695b3fa3590f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterRegeneration
+  outOfCombatDelaySeconds: 5
+  tickSeconds: 1
+--- !u!114 &7665195953047199919
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2519779529001271426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77cf9a6fa07c49d4f91b042f4521a182, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Loot.MMOLootableCorpse
+  loot: []
+  interactionDistance: 5
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &1281142378416166460
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2519779529001271426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36843d1ce910e804f840f567cd102b6a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Combat.MMOAutoAttackController
+  autoAttackAbility: {fileID: 11400000, guid: 3c1aade4e9bf68c4c9c6ac4e85e35f96, type: 2}
+  targetSelectionController: {fileID: 0}
+  interactionCamera: {fileID: 0}
+  handleRightClickInput: 0
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  maxInteractionDistance: 250
+  selectRightClickedTarget: 1
+  ignorePointerOverUi: 1
+  faceTargetWhileAttacking: 1
+  facingDegreesPerSecond: 720
+  failedAttemptRetrySeconds: 0.5
+--- !u!114 &9170097701054843545
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2519779529001271426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85a4e166f90a09c4ba42d316228cedd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Enemies.MMOEnemyController
+  definition: {fileID: 11400000, guid: 042f69ea79bc9b64097f4dc93a1aec45, type: 2}
+  displayNameOverride: 
+  aggroMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  resetResourcesOnLeash: 1
+  drawDebugGizmos: 1
+--- !u!114 &3939426901796394810
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2519779529001271426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c65118628d2d6d49ab49c66681665c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureAnimator
+  animationSet: {fileID: 11400000, guid: 23954168560def346bfc4f0efe1da17c, type: 2}
+  animator: {fileID: 2850213768393409870}
+  visualRoot: {fileID: 8173420374843301684}
+  agent: {fileID: 4089509106752701508}
+  abilitySystem: {fileID: 2869577001320403176}
+  combatant: {fileID: 6487205371173854090}
+  visualYawOffsetDegrees: 0
+--- !u!1001 &8567935545177864415
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5756905518340762693}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.036
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_Name
+      value: Bristleback Visual
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+    - target: {fileID: 8111781155169087978, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: d5025877a9909d847a68e1985ce72cf8, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+--- !u!95 &2850213768393409870 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+  m_PrefabInstance: {fileID: 8567935545177864415}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8173420374843301684 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
+  m_PrefabInstance: {fileID: 8567935545177864415}
+  m_PrefabAsset: {fileID: 0}
