@@ -5,6 +5,8 @@ namespace RPGClone.Player
     [CreateAssetMenu(menuName = "RPG Clone/Third Person Camera Config", fileName = "ThirdPersonCameraConfig")]
     public sealed class MMOThirdPersonCameraConfig : ScriptableObject
     {
+        public const string TreeTrunkLayerName = "TreeTrunk";
+
         [Header("Orbit")]
         public float defaultDistance = 8.5f;
         public float minDistance = 2.2f;
@@ -26,6 +28,40 @@ namespace RPGClone.Player
         [Header("Collision")]
         public float collisionRadius = 0.28f;
         public float collisionPadding = 0.18f;
-        public LayerMask collisionMask = ~0;
+        public float collisionRetractionSharpness = 64f;
+        public float collisionRecoverySharpness = 12f;
+        public LayerMask collisionMask = Physics.DefaultRaycastLayers;
+
+        public int EffectiveCollisionMask
+        {
+            get
+            {
+                int mask = collisionMask.value & Physics.DefaultRaycastLayers;
+                int treeTrunkLayer = LayerMask.NameToLayer(TreeTrunkLayerName);
+                if (treeTrunkLayer >= 0)
+                {
+                    mask &= ~(1 << treeTrunkLayer);
+                }
+
+                return mask;
+            }
+        }
+
+        public void ResetCollisionMaskToDefault()
+        {
+            collisionMask = BuildDefaultCollisionMask();
+        }
+
+        public static int BuildDefaultCollisionMask()
+        {
+            int mask = Physics.DefaultRaycastLayers;
+            int treeTrunkLayer = LayerMask.NameToLayer(TreeTrunkLayerName);
+            if (treeTrunkLayer >= 0)
+            {
+                mask &= ~(1 << treeTrunkLayer);
+            }
+
+            return mask;
+        }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using RPGClone.Player;
+using RPGClone.World.Foliage;
 using Unity.AI.Navigation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -86,7 +87,7 @@ namespace RPGClone.EditorTools
             TerrainData terrainData = terrain.terrainData;
             RemoveBrokenTreeDetails(terrainData, treePrefabs);
             ApplyTreePrototypes(terrainData, treePrefabs);
-            BakeTreeTrunkBlockers(terrain, treeTrunkLayer);
+            EnsureCollisionSynchronizer(terrain);
 
             ConfigureTerrainTreeRendering(terrain);
             ConfigureCameraCollisionMask(treeTrunkLayer);
@@ -110,6 +111,12 @@ namespace RPGClone.EditorTools
 
         private static GameObject BuildTreePrefab(TreeDefinition tree, int treeTrunkLayer)
         {
+            GameObject existingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(tree.PrefabPath);
+            Vector3 preservedLocalPosition = existingPrefab != null ? existingPrefab.transform.localPosition : Vector3.zero;
+            Quaternion preservedLocalRotation = existingPrefab != null ? existingPrefab.transform.localRotation : Quaternion.identity;
+            Vector3 preservedLocalScale = existingPrefab != null ? existingPrefab.transform.localScale : Vector3.one;
+            TreeCollisionSettings collisionSettings = GetCollisionSettings(existingPrefab, tree);
+
             GameObject source = GameObject.Find(tree.SceneObjectName);
             GameObject modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(tree.ModelPath);
             GameObject renderSource = source != null ? source : modelAsset;
@@ -128,6 +135,8 @@ namespace RPGClone.EditorTools
             GameObject root = new(tree.DisplayName);
             root.layer = treeTrunkLayer;
             root.isStatic = true;
+            root.transform.SetLocalPositionAndRotation(preservedLocalPosition, preservedLocalRotation);
+            root.transform.localScale = preservedLocalScale;
 
             MeshFilter meshFilter = root.AddComponent<MeshFilter>();
             meshFilter.sharedMesh = CreateOrUpdateBakedMesh(tree, sourceMeshFilter.sharedMesh, renderSource.transform);
@@ -136,6 +145,12 @@ namespace RPGClone.EditorTools
             meshRenderer.sharedMaterials = BuildRendererMaterials(sourceRenderer.sharedMaterials);
             meshRenderer.shadowCastingMode = sourceRenderer.shadowCastingMode;
             meshRenderer.receiveShadows = sourceRenderer.receiveShadows;
+
+            MMOTerrainTreeCollisionDefinition collisionDefinition = root.AddComponent<MMOTerrainTreeCollisionDefinition>();
+            collisionDefinition.Configure(
+                collisionSettings.TrunkRadius,
+                collisionSettings.TrunkHeight,
+                collisionSettings.TrunkCenterYOffset);
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, tree.PrefabPath);
             UnityEngine.Object.DestroyImmediate(root);
@@ -317,7 +332,7 @@ namespace RPGClone.EditorTools
                 return;
             }
 
-            cameraConfig.collisionMask = cameraConfig.collisionMask.value & ~(1 << treeTrunkLayer);
+            cameraConfig.ResetCollisionMaskToDefault();
             EditorUtility.SetDirty(cameraConfig);
         }
 
@@ -334,116 +349,17 @@ namespace RPGClone.EditorTools
             }
         }
 
-        private static void BakeTreeTrunkBlockers(Terrain terrain, int treeTrunkLayer)
+        private static void EnsureCollisionSynchronizer(Terrain terrain)
         {
-            Transform existingRoot = terrain.transform.Find(CollisionRootName);
-            if (existingRoot != null)
+            MMOTerrainTreeCollisionSynchronizer synchronizer = terrain.GetComponent<MMOTerrainTreeCollisionSynchronizer>();
+            if (synchronizer == null)
             {
-                UnityEngine.Object.DestroyImmediate(existingRoot.gameObject);
+                synchronizer = terrain.gameObject.AddComponent<MMOTerrainTreeCollisionSynchronizer>();
             }
 
-            TerrainData terrainData = terrain.terrainData;
-            if (terrainData == null || terrainData.treeInstanceCount == 0)
-            {
-                return;
-            }
-
-            TreePrototype[] prototypes = terrainData.treePrototypes;
-            if (prototypes == null || prototypes.Length == 0)
-            {
-                return;
-            }
-
-            GameObject root = new(CollisionRootName);
-            root.layer = treeTrunkLayer;
-            root.transform.SetParent(terrain.transform, false);
-            root.isStatic = true;
-
-            TreeInstance[] treeInstances = terrainData.treeInstances;
-            for (int i = 0; i < treeInstances.Length; i++)
-            {
-                TreeInstance treeInstance = treeInstances[i];
-                if (treeInstance.prototypeIndex < 0 || treeInstance.prototypeIndex >= prototypes.Length)
-                {
-                    continue;
-                }
-
-                GameObject prefab = prototypes[treeInstance.prototypeIndex].prefab;
-                if (!TryGetDefinition(prefab, out TreeDefinition tree))
-                {
-                    continue;
-                }
-
-                CreateTrunkBlocker(terrain, terrainData, root.transform, treeTrunkLayer, tree, treeInstance, i);
-            }
-
-            EditorUtility.SetDirty(root);
-        }
-
-        private static void CreateTrunkBlocker(
-            Terrain terrain,
-            TerrainData terrainData,
-            Transform parent,
-            int treeTrunkLayer,
-            TreeDefinition tree,
-            TreeInstance treeInstance,
-            int index)
-        {
-            Vector3 worldPosition = GetTreeWorldPosition(terrain, terrainData, treeInstance);
-            GameObject blocker = new($"{tree.DisplayName} Trunk Blocker {index:0000}");
-            blocker.layer = treeTrunkLayer;
-            blocker.isStatic = true;
-            blocker.transform.SetParent(parent, true);
-            blocker.transform.SetPositionAndRotation(worldPosition, Quaternion.Euler(0f, treeInstance.rotation * Mathf.Rad2Deg, 0f));
-
-            float radius = Mathf.Max(0.05f, tree.TrunkRadius * treeInstance.widthScale);
-            float height = Mathf.Max(radius * 2f, tree.TrunkHeight * treeInstance.heightScale);
-            Vector3 center = Vector3.up * Mathf.Max(radius, tree.TrunkCenterYOffset * treeInstance.heightScale);
-
-            CapsuleCollider collider = blocker.AddComponent<CapsuleCollider>();
-            collider.direction = 1;
-            collider.radius = radius;
-            collider.height = height;
-            collider.center = center;
-
-            NavMeshObstacle obstacle = blocker.AddComponent<NavMeshObstacle>();
-            obstacle.shape = NavMeshObstacleShape.Capsule;
-            obstacle.radius = radius;
-            obstacle.height = height;
-            obstacle.center = center;
-            obstacle.carving = true;
-            obstacle.carveOnlyStationary = true;
-        }
-
-        private static Vector3 GetTreeWorldPosition(Terrain terrain, TerrainData terrainData, TreeInstance treeInstance)
-        {
-            Vector3 terrainSize = terrainData.size;
-            Vector3 terrainPosition = terrain.transform.position;
-            Vector3 worldPosition = new(
-                terrainPosition.x + treeInstance.position.x * terrainSize.x,
-                terrainPosition.y,
-                terrainPosition.z + treeInstance.position.z * terrainSize.z);
-            worldPosition.y = terrain.SampleHeight(worldPosition) + terrainPosition.y;
-            return worldPosition;
-        }
-
-        private static bool TryGetDefinition(GameObject prefab, out TreeDefinition tree)
-        {
-            if (prefab != null)
-            {
-                for (int i = 0; i < Trees.Length; i++)
-                {
-                    if (prefab.name.Equals(Path.GetFileNameWithoutExtension(Trees[i].PrefabPath), StringComparison.Ordinal)
-                        || prefab.name.Equals(Trees[i].DisplayName, StringComparison.Ordinal))
-                    {
-                        tree = Trees[i];
-                        return true;
-                    }
-                }
-            }
-
-            tree = default;
-            return false;
+            synchronizer.Configure(CollisionRootName, TreeTrunkLayerName, true);
+            synchronizer.SyncNow();
+            EditorUtility.SetDirty(synchronizer);
         }
 
         private static void CleanupRemovedTreeSystems(Terrain terrain)
@@ -465,6 +381,22 @@ namespace RPGClone.EditorTools
             }
 
             GameObjectUtility.RemoveMonoBehavioursWithMissingScript(terrain.gameObject);
+        }
+
+        private static TreeCollisionSettings GetCollisionSettings(GameObject existingPrefab, TreeDefinition fallback)
+        {
+            if (existingPrefab != null && existingPrefab.TryGetComponent(out MMOTerrainTreeCollisionDefinition collisionDefinition))
+            {
+                return new TreeCollisionSettings(
+                    collisionDefinition.TrunkRadius,
+                    collisionDefinition.TrunkHeight,
+                    collisionDefinition.TrunkCenterYOffset);
+            }
+
+            return new TreeCollisionSettings(
+                fallback.TrunkRadius,
+                fallback.TrunkHeight,
+                fallback.TrunkCenterYOffset);
         }
 
         private static void EnsureFolders()
@@ -541,6 +473,20 @@ namespace RPGClone.EditorTools
             public string ModelPath { get; }
             public string PrefabPath { get; }
             public string MeshPath { get; }
+            public float TrunkRadius { get; }
+            public float TrunkHeight { get; }
+            public float TrunkCenterYOffset { get; }
+        }
+
+        private readonly struct TreeCollisionSettings
+        {
+            public TreeCollisionSettings(float trunkRadius, float trunkHeight, float trunkCenterYOffset)
+            {
+                TrunkRadius = trunkRadius;
+                TrunkHeight = trunkHeight;
+                TrunkCenterYOffset = trunkCenterYOffset;
+            }
+
             public float TrunkRadius { get; }
             public float TrunkHeight { get; }
             public float TrunkCenterYOffset { get; }

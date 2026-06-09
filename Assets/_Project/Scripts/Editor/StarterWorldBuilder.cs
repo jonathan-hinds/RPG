@@ -177,7 +177,9 @@ namespace RPGClone.EditorTools
             config.positionSharpness = 18f;
             config.collisionRadius = 0.28f;
             config.collisionPadding = 0.18f;
-            config.collisionMask = ~0;
+            config.collisionRetractionSharpness = 64f;
+            config.collisionRecoverySharpness = 12f;
+            config.ResetCollisionMaskToDefault();
             EditorUtility.SetDirty(config);
             return config;
         }

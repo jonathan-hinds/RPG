@@ -26,6 +26,8 @@ MonoBehaviour:
   positionSharpness: 18
   collisionRadius: 0.28
   collisionPadding: 0.18
+  collisionRetractionSharpness: 64
+  collisionRecoverySharpness: 12
   collisionMask:
     serializedVersion: 2
-    m_Bits: 4294967039
+    m_Bits: 4294967035

@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 832154531399439776}
   - component: {fileID: 8419356584604825575}
   - component: {fileID: 1751180349601865206}
+  - component: {fileID: 7890443553409536802}
   m_Layer: 8
   m_Name: Orcish_Ember_Tree_01_TerrainTree
   m_TagString: Untagged
@@ -28,7 +29,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -118,3 +119,18 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7890443553409536802
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5774227806811867744}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af9ac506217c8d14685776c129f1dd44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.World.Foliage.MMOTerrainTreeCollisionDefinition
+  trunkRadius: 0.48
+  trunkHeight: 4.2
+  trunkCenterYOffset: 2.1
