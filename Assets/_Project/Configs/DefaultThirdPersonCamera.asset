@@ -28,4 +28,4 @@ MonoBehaviour:
   collisionPadding: 0.18
   collisionMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 4294967039

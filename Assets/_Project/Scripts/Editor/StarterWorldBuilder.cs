@@ -36,6 +36,7 @@ namespace RPGClone.EditorTools
             MMOThirdPersonCameraConfig cameraConfig = CreateCameraConfig();
             Terrain terrain = CreateTerrain(palette);
             MMOClassicGrassFoliageBuilder.ApplyToTerrain(terrain);
+            MMOTerrainTreePrototypeInstaller.ConfigureTerrainTrees(terrain);
 
             GameObject worldRoot = new("Starter World");
             GameObject markerRoot = new("World Markers");
@@ -555,7 +556,7 @@ namespace RPGClone.EditorTools
             navigation.transform.SetParent(worldRoot);
             NavMeshSurface surface = navigation.AddComponent<NavMeshSurface>();
             surface.collectObjects = CollectObjects.All;
-            surface.useGeometry = NavMeshCollectGeometry.RenderMeshes;
+            surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
         }
 
         private static void CreateCapsule(Terrain terrain, string name, Vector2 point, Material material, Transform parent)

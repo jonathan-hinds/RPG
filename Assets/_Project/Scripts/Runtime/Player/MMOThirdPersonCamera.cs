@@ -4,6 +4,8 @@ namespace RPGClone.Player
 {
     public sealed class MMOThirdPersonCamera : MonoBehaviour
     {
+        private const string TreeTrunkLayerName = "TreeTrunk";
+
         [SerializeField] private Transform target;
         [SerializeField] private MMOInputReader inputReader;
         [SerializeField] private MMOThirdPersonCameraConfig cameraConfig;
@@ -119,7 +121,7 @@ namespace RPGClone.Player
                     direction,
                     out RaycastHit hit,
                     desiredDistance,
-                    cameraConfig.collisionMask,
+                    GetEffectiveCollisionMask(),
                     QueryTriggerInteraction.Ignore))
             {
                 float correctedDistance = Mathf.Max(hit.distance - cameraConfig.collisionPadding, cameraConfig.minDistance);
@@ -127,6 +129,18 @@ namespace RPGClone.Player
             }
 
             return desiredPosition;
+        }
+
+        private int GetEffectiveCollisionMask()
+        {
+            int mask = cameraConfig.collisionMask.value;
+            int treeTrunkLayer = LayerMask.NameToLayer(TreeTrunkLayerName);
+            if (treeTrunkLayer >= 0)
+            {
+                mask &= ~(1 << treeTrunkLayer);
+            }
+
+            return mask;
         }
     }
 }
