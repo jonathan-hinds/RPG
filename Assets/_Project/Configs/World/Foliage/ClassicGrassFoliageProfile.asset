@@ -14,15 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.World.Foliage.MMOClassicGrassFoliageProfile
   detailResolution: 192
   detailResolutionPerPatch: 16
-  terrainDetailDensity: 0.35
-  detailDrawDistance: 140
+  terrainDetailDensity: 0.36
+  detailDrawDistance: 170
   crossedPlaneCount: 3
   cardWidth: 0.82
   cardHeight: 1.08
-  alphaCutoff: 0.26
-  materialTint: {r: 1, g: 1, b: 1, a: 0.68}
-  healthyColor: {r: 0.47, g: 0.54, b: 0.28, a: 1}
-  dryColor: {r: 0.62, g: 0.49, b: 0.24, a: 1}
+  alphaCutoff: 0.02
+  opacity: 0.25
+  healthyColor: {r: 1, g: 1, b: 1, a: 1}
+  dryColor: {r: 1, g: 1, b: 1, a: 1}
   variations:
   - displayName: Classic Grass 01
     texture: {fileID: 2800000, guid: 00d58f72b0dd4c440b5fd5bec404127b, type: 3}

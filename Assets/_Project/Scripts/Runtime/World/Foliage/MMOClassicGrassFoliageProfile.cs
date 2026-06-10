@@ -22,11 +22,12 @@ namespace RPGClone.World.Foliage
         public int crossedPlaneCount = 3;
         public float cardWidth = 0.82f;
         public float cardHeight = 1.08f;
-        public float alphaCutoff = 0.26f;
-        public Color materialTint = new(1f, 1f, 1f, 0.68f);
+        public float alphaCutoff = 0.02f;
+        [Range(0.05f, 1f)]
+        public float opacity = 0.25f;
 
-        public Color healthyColor = new(0.47f, 0.54f, 0.28f, 1f);
-        public Color dryColor = new(0.62f, 0.49f, 0.24f, 1f);
+        public Color healthyColor = Color.white;
+        public Color dryColor = Color.white;
 
         public List<MMOClassicGrassFoliageVariation> variations = new();
     }

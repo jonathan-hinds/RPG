@@ -79,7 +79,7 @@ namespace RPGClone.EditorTools
             BuildVariationPrefabs(profile);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("Refreshed classic grass materials with unlit transparent alpha-cutout settings.");
+            Debug.Log("Refreshed classic grass materials with lit alpha-cutout shadow settings.");
         }
 
 
@@ -257,7 +257,7 @@ namespace RPGClone.EditorTools
                     continue;
                 }
 
-                Material material = CreateGrassMaterial(variation, profile.alphaCutoff, profile.materialTint);
+                Material material = CreateGrassMaterial(variation, profile.alphaCutoff, profile.opacity);
                 Mesh mesh = CreateCrossedPlaneMesh(
                     $"{MeshFolder}/{Sanitize(variation.displayName)}_CrossedCards.asset",
                     Mathf.Max(2, profile.crossedPlaneCount),
@@ -270,7 +270,7 @@ namespace RPGClone.EditorTools
             return prefabs.ToArray();
         }
 
-        private static Material CreateGrassMaterial(MMOClassicGrassFoliageVariation variation, float alphaCutoff, Color materialTint)
+        private static Material CreateGrassMaterial(MMOClassicGrassFoliageVariation variation, float alphaCutoff, float opacity)
         {
             string path = $"{MaterialFolder}/{Sanitize(variation.displayName)}_AlphaCutout.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -291,21 +291,29 @@ namespace RPGClone.EditorTools
 
             SetTextureIfPresent(material, "_BaseMap", variation.texture);
             SetTextureIfPresent(material, "_MainTex", variation.texture);
-            SetColorIfPresent(material, "_BaseColor", materialTint);
-            SetColorIfPresent(material, "_Color", materialTint);
+            float clampedOpacity = Mathf.Clamp01(opacity);
+            float effectiveAlphaCutoff = Mathf.Min(alphaCutoff, Mathf.Max(0.001f, clampedOpacity * 0.5f));
+            Color transparentWhite = new(1f, 1f, 1f, clampedOpacity);
+            SetColorIfPresent(material, "_BaseColor", transparentWhite);
+            SetColorIfPresent(material, "_Color", transparentWhite);
             SetFloatIfPresent(material, "_Surface", 1f);
             SetFloatIfPresent(material, "_Blend", 0f);
             SetFloatIfPresent(material, "_SrcBlend", (float)BlendMode.SrcAlpha);
             SetFloatIfPresent(material, "_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+            SetFloatIfPresent(material, "_SrcBlendAlpha", (float)BlendMode.One);
+            SetFloatIfPresent(material, "_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
             SetFloatIfPresent(material, "_ZWrite", 0f);
             SetFloatIfPresent(material, "_AlphaClip", 1f);
-            SetFloatIfPresent(material, "_Cutoff", alphaCutoff);
+            SetFloatIfPresent(material, "_AlphaToMask", 0f);
+            SetFloatIfPresent(material, "_Cutoff", effectiveAlphaCutoff);
             SetFloatIfPresent(material, "_Cull", (float)CullMode.Off);
             SetFloatIfPresent(material, "_Metallic", 0f);
-            SetFloatIfPresent(material, "_Smoothness", 0.12f);
-            SetFloatIfPresent(material, "_ReceiveShadows", 0f);
+            SetFloatIfPresent(material, "_Smoothness", 0f);
+            SetFloatIfPresent(material, "_ReceiveShadows", 1f);
             material.EnableKeyword("_ALPHATEST_ON");
             material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.DisableKeyword("_RECEIVE_SHADOWS_OFF");
+            material.SetShaderPassEnabled("ShadowCaster", true);
             material.SetOverrideTag("RenderType", "Transparent");
             material.renderQueue = (int)RenderQueue.Transparent;
             material.doubleSidedGI = true;
@@ -316,10 +324,10 @@ namespace RPGClone.EditorTools
 
         private static Shader FindGrassShader()
         {
-            return Shader.Find("Universal Render Pipeline/Unlit")
+            return Shader.Find("Universal Render Pipeline/Lit")
+                ?? Shader.Find("Universal Render Pipeline/Unlit")
                 ?? Shader.Find("Unlit/Transparent Cutout")
                 ?? Shader.Find("Unlit/Transparent")
-                ?? Shader.Find("Universal Render Pipeline/Lit")
                 ?? Shader.Find("Standard");
         }
 
@@ -379,8 +387,8 @@ namespace RPGClone.EditorTools
             meshFilter.sharedMesh = mesh;
             MeshRenderer meshRenderer = root.AddComponent<MeshRenderer>();
             meshRenderer.sharedMaterial = material;
-            meshRenderer.shadowCastingMode = ShadowCastingMode.Off;
-            meshRenderer.receiveShadows = false;
+            meshRenderer.shadowCastingMode = ShadowCastingMode.TwoSided;
+            meshRenderer.receiveShadows = true;
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             UnityEngine.Object.DestroyImmediate(root);
@@ -413,8 +421,8 @@ namespace RPGClone.EditorTools
                     density = 0.2f,
                     targetCoverage = 0.08f,
                     positionJitter = 0.9f,
-                    healthyColor = profile.healthyColor,
-                    dryColor = profile.dryColor
+                    healthyColor = Color.white,
+                    dryColor = Color.white
                 };
             }
 
