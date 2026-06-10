@@ -24,8 +24,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5d827734c3672064ba61aad10bef5f19, type: 2}
   sceneNamePrefixes:
   - Bristleback Creature
+  bodyType: 0
   targetHeight: 2.25
   colliderRadius: 0.6
+  colliderLength: 2.25
+  colliderCenter: {x: 0, y: 1.125, z: 0}
   visualLocalOffset: {x: 0, y: 0, z: 0}
   visualLocalEulerAngles: {x: 0, y: 0, z: 0}
   modelYawOffsetDegrees: 0

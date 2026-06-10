@@ -7,6 +7,7 @@ using RPGClone.Animation;
 using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Enemies;
+using RPGClone.Inventory;
 using RPGClone.Loot;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -25,11 +26,19 @@ namespace RPGClone.EditorTools
         private const string AshCanyonAnimationSourceFolder = "Assets/Characters/AshCanyonCreature/Animations/Source";
         private const string AshCanyonAnimationClipFolder = "Assets/Characters/AshCanyonCreature/Animations/Clips";
         private const string AshCanyonAnimationSetPath = AshCanyonAnimationClipFolder + "/AshCanyonCreature_AnimationSet.asset";
+        private const string WolfModelPath = "Assets/Characters/Wolf/Models/wolf2.fbx";
+        private const string WolfAnimationClipFolder = "Assets/Characters/Wolf/Animations/Clips";
+        private const string WolfAnimationSetPath = WolfAnimationClipFolder + "/Wolf_AnimationSet.asset";
+        private const string WolfEnemyDefinitionPath = RootFolder + "/Configs/Enemies/Wolf_Aggressive.asset";
+        private const string WolfProfilePath = RootFolder + "/Configs/Characters/Wolf.asset";
+        private const string WolfLootPath = RootFolder + "/Configs/Loot/Wolf_Trash_Loot.asset";
 
         [MenuItem("Tools/RPG Clone/Creatures/Create Standard Creature Visual Definitions")]
         public static void CreateStandardCreatureVisualDefinitions()
         {
             CreateOrUpdateAshCanyonAnimationSet();
+            CreateOrUpdateWolfAnimationSet();
+            CreateOrUpdateWolfEnemyDefinition();
 
             CreateOrUpdateVisualDefinition(
                 "Assets/Characters/Bristleback/Bristleback_Visual.asset",
@@ -46,8 +55,11 @@ namespace RPGClone.EditorTools
                     "Assets/_Project/Configs/Enemies/Bristleback_Docile.asset"
                 },
                 new[] { "Bristleback Creature" },
+                MMOCreatureBodyType.Biped,
                 2.25f,
                 0.6f,
+                2.25f,
+                new Vector3(0f, 1.125f, 0f),
                 Vector3.zero,
                 Vector3.zero,
                 0f,
@@ -65,12 +77,37 @@ namespace RPGClone.EditorTools
                 "Assets/_Project/Configs/Enemies/Ash_Canyon_Aggressive.asset",
                 new[] { "Assets/_Project/Configs/Enemies/Ash_Canyon_Aggressive.asset" },
                 new[] { "Ash Canyon Creature" },
+                MMOCreatureBodyType.Biped,
                 2.25f,
                 0.6f,
+                2.25f,
+                new Vector3(0f, 1.125f, 0f),
                 Vector3.zero,
                 Vector3.zero,
                 0f,
                 0.4f,
+                0f);
+
+            CreateOrUpdateVisualDefinition(
+                "Assets/Characters/Wolf/Wolf_Visual.asset",
+                "Wolf",
+                "Wolf",
+                WolfModelPath,
+                "Assets/Characters/Wolf/textures/Meshy_AI_Geometric_Wolf_0609183830_texture.png",
+                "Assets/Characters/Wolf/textures/Meshy_AI_Geometric_Wolf_0609183830_texture_normal.png",
+                WolfAnimationSetPath,
+                WolfEnemyDefinitionPath,
+                new[] { WolfEnemyDefinitionPath },
+                new[] { "Wolf" },
+                MMOCreatureBodyType.Quadruped,
+                1.15f,
+                0.38f,
+                1.75f,
+                new Vector3(0f, 0.56f, 0f),
+                Vector3.zero,
+                Vector3.zero,
+                0f,
+                0.25f,
                 0f);
 
             AssetDatabase.SaveAssets();
@@ -186,8 +223,9 @@ namespace RPGClone.EditorTools
 
             CapsuleCollider collider = root.AddComponent<CapsuleCollider>();
             collider.radius = visualDefinition.ColliderRadius;
-            collider.height = visualDefinition.TargetHeight;
-            collider.center = new Vector3(0f, visualDefinition.TargetHeight * 0.5f, 0f);
+            collider.height = visualDefinition.ColliderLength;
+            collider.direction = visualDefinition.ColliderDirection;
+            collider.center = visualDefinition.ColliderCenter;
 
             NavMeshAgent agent = root.AddComponent<NavMeshAgent>();
             agent.radius = visualDefinition.ColliderRadius;
@@ -257,8 +295,11 @@ namespace RPGClone.EditorTools
             string defaultEnemyDefinitionPath,
             IEnumerable<string> matchingEnemyDefinitionPaths,
             IEnumerable<string> sceneNamePrefixes,
+            MMOCreatureBodyType bodyType,
             float targetHeight,
             float colliderRadius,
+            float colliderLength,
+            Vector3 colliderCenter,
             Vector3 visualLocalOffset,
             Vector3 visualLocalEulerAngles,
             float modelYawOffsetDegrees,
@@ -297,8 +338,11 @@ namespace RPGClone.EditorTools
                 AssetDatabase.LoadAssetAtPath<MMOEnemyDefinition>(defaultEnemyDefinitionPath),
                 matchingEnemyDefinitions,
                 sceneNamePrefixes,
+                bodyType,
                 targetHeight,
                 colliderRadius,
+                colliderLength,
+                colliderCenter,
                 visualLocalOffset,
                 visualLocalEulerAngles,
                 modelYawOffsetDegrees,
@@ -348,6 +392,107 @@ namespace RPGClone.EditorTools
             EditorUtility.SetDirty(animationSet);
             DeleteAssetIfPresent(AshCanyonAnimationSourceFolder);
             return animationSet;
+        }
+
+        private static MMOCreatureAnimationSet CreateOrUpdateWolfAnimationSet()
+        {
+            CreateFolderIfMissing(WolfAnimationClipFolder);
+
+            AnimationClip idle = ExtractAnimationClip(WolfModelPath, "IdleFinal", "Wolf_Idle", true);
+            AnimationClip walk = ExtractAnimationClip(WolfModelPath, "WalkFinal", "Wolf_Walk", true);
+            AnimationClip run = ExtractAnimationClip(WolfModelPath, "RunFinal", "Wolf_Run", true);
+            AnimationClip attack1 = ExtractAnimationClip(WolfModelPath, "AttackFinal", "Wolf_Attack1", false);
+            AnimationClip attack2 = ExtractAnimationClip(WolfModelPath, "Attack2Final", "Wolf_Attack2", false);
+            AnimationClip damage = ExtractAnimationClip(WolfModelPath, "DamageFinal", "Wolf_Damage", false);
+            AnimationClip death = ExtractAnimationClip(WolfModelPath, "DeathFinal", "Wolf_Death", false);
+            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(BaseControllerPath);
+
+            MMOCreatureAnimationSet animationSet = AssetDatabase.LoadAssetAtPath<MMOCreatureAnimationSet>(WolfAnimationSetPath);
+            if (animationSet == null)
+            {
+                animationSet = ScriptableObject.CreateInstance<MMOCreatureAnimationSet>();
+                AssetDatabase.CreateAsset(animationSet, WolfAnimationSetPath);
+            }
+
+            animationSet.name = "Wolf_AnimationSet";
+            animationSet.Configure(
+                baseController,
+                idle,
+                walk,
+                run,
+                attack1,
+                attack2,
+                damage,
+                death,
+                1.65f,
+                5.1f,
+                0.75f,
+                0.35f,
+                0.1f,
+                false,
+                0f);
+            EditorUtility.SetDirty(animationSet);
+            return animationSet;
+        }
+
+        private static MMOEnemyDefinition CreateOrUpdateWolfEnemyDefinition()
+        {
+            CreateFolderIfMissing(Path.GetDirectoryName(WolfProfilePath)?.Replace('\\', '/') ?? RootFolder + "/Configs/Characters");
+            CreateFolderIfMissing(Path.GetDirectoryName(WolfEnemyDefinitionPath)?.Replace('\\', '/') ?? RootFolder + "/Configs/Enemies");
+            CreateFolderIfMissing(Path.GetDirectoryName(WolfLootPath)?.Replace('\\', '/') ?? RootFolder + "/Configs/Loot");
+
+            MMOCharacterProfile profile = AssetDatabase.LoadAssetAtPath<MMOCharacterProfile>(WolfProfilePath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<MMOCharacterProfile>();
+                AssetDatabase.CreateAsset(profile, WolfProfilePath);
+            }
+
+            MMOCharacterStats stats = new();
+            stats.Configure(8, 10, 13, 3, 5, 5, 11, 0, 3.5f, 6.5f, 2.1f, 2.8f);
+            profile.Configure("Wolf", 3, 80, 0, new Color(0.55f, 0.62f, 0.64f), null, true, MMOEntityFaction.Hostile, stats);
+            EditorUtility.SetDirty(profile);
+
+            MMOLootTable lootTable = AssetDatabase.LoadAssetAtPath<MMOLootTable>(WolfLootPath);
+            if (lootTable == null)
+            {
+                lootTable = ScriptableObject.CreateInstance<MMOLootTable>();
+                AssetDatabase.CreateAsset(lootTable, WolfLootPath);
+            }
+
+            MMOItemDefinition mattedPelt = AssetDatabase.LoadAssetAtPath<MMOItemDefinition>(RootFolder + "/Configs/Items/Matted_Pelt.asset");
+            lootTable.Configure(mattedPelt != null
+                ? new[] { new MMOLootTableEntry(mattedPelt, 0.45f, 1, 1) }
+                : Array.Empty<MMOLootTableEntry>());
+            EditorUtility.SetDirty(lootTable);
+
+            MMOAbilityDefinition autoAttack = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(AutoAttackPath);
+            MMOEnemyDefinition definition = AssetDatabase.LoadAssetAtPath<MMOEnemyDefinition>(WolfEnemyDefinitionPath);
+            if (definition == null)
+            {
+                definition = ScriptableObject.CreateInstance<MMOEnemyDefinition>();
+                AssetDatabase.CreateAsset(definition, WolfEnemyDefinitionPath);
+            }
+
+            definition.Configure(
+                profile,
+                MMOEnemyDisposition.Aggressive,
+                autoAttack,
+                autoAttack != null ? new[] { autoAttack } : Array.Empty<MMOAbilityDefinition>(),
+                13f,
+                34f,
+                0.25f,
+                true,
+                6.5f,
+                2f,
+                5f,
+                1.65f,
+                5.1f,
+                2.2f,
+                50,
+                lootTable);
+            EditorUtility.SetDirty(definition);
+            return definition;
         }
 
         private static void OrganizeAshCanyonAnimationSources()
@@ -413,12 +558,26 @@ namespace RPGClone.EditorTools
         {
             string sourcePath = $"{AshCanyonAnimationSourceFolder}/{sourceFileName}";
             string outputPath = $"{AshCanyonAnimationClipFolder}/{outputName}.anim";
+            return ExtractAnimationClip(sourcePath, null, outputPath, outputName, loop);
+        }
+
+        private static AnimationClip ExtractAnimationClip(string sourcePath, string sourceClipName, string outputName, bool loop)
+        {
+            string outputPath = $"{WolfAnimationClipFolder}/{outputName}.anim";
+            return ExtractAnimationClip(sourcePath, sourceClipName, outputPath, outputName, loop);
+        }
+
+        private static AnimationClip ExtractAnimationClip(string sourcePath, string sourceClipName, string outputPath, string outputName, bool loop)
+        {
             ConfigureAnimationImporter(sourcePath, loop);
 
             AnimationClip outputClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(outputPath);
-            AnimationClip sourceClip = AssetDatabase.LoadAllAssetsAtPath(sourcePath)
+            IEnumerable<AnimationClip> sourceClips = AssetDatabase.LoadAllAssetsAtPath(sourcePath)
                 .OfType<AnimationClip>()
-                .FirstOrDefault(IsUsableSourceClip);
+                .Where(IsUsableSourceClip);
+            AnimationClip sourceClip = string.IsNullOrWhiteSpace(sourceClipName)
+                ? sourceClips.FirstOrDefault()
+                : sourceClips.FirstOrDefault(clip => string.Equals(clip.name, sourceClipName, StringComparison.OrdinalIgnoreCase));
             if (sourceClip == null)
             {
                 if (outputClip != null)
@@ -426,7 +585,9 @@ namespace RPGClone.EditorTools
                     return outputClip;
                 }
 
-                Debug.LogError($"Could not find a usable animation clip in {sourcePath}.");
+                Debug.LogError(string.IsNullOrWhiteSpace(sourceClipName)
+                    ? $"Could not find a usable animation clip in {sourcePath}."
+                    : $"Could not find animation clip '{sourceClipName}' in {sourcePath}.");
                 return null;
             }
 

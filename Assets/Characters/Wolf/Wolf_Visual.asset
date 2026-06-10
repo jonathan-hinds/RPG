@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ec76b4c3da7c5745bc508990c32e1e4, type: 3}
+  m_Name: Wolf_Visual
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureVisualDefinition
+  creatureId: Wolf
+  displayName: Wolf
+  modelPrefab: {fileID: 919132149155446097, guid: 33c377e56a6b7444d8ef59996327073f, type: 3}
+  diffuseTexture: {fileID: 2800000, guid: e09ab9019f6011644b91eef2de675faf, type: 3}
+  normalTexture: {fileID: 2800000, guid: f58173ecd5fa7f74b9fdd5d4060112d8, type: 3}
+  animationSet: {fileID: 11400000, guid: d8c2a047639364c4188ccd491074bf32, type: 2}
+  defaultEnemyDefinition: {fileID: 11400000, guid: 773c66a658830684e997faeb51c21d0e, type: 2}
+  matchingEnemyDefinitions:
+  - {fileID: 11400000, guid: 773c66a658830684e997faeb51c21d0e, type: 2}
+  sceneNamePrefixes:
+  - Wolf
+  bodyType: 1
+  targetHeight: 1.15
+  colliderRadius: 0.38
+  colliderLength: 1.75
+  colliderCenter: {x: 0, y: 0.56, z: 0}
+  visualLocalOffset: {x: 0, y: 0, z: 0}
+  visualLocalEulerAngles: {x: 0, y: 0, z: 0}
+  modelYawOffsetDegrees: 0
+  smoothness: 0.25
+  metallic: 0

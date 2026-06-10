@@ -23,8 +23,11 @@ namespace RPGClone.Animation
         [SerializeField] private List<string> sceneNamePrefixes = new();
 
         [Header("Sizing")]
+        [SerializeField] private MMOCreatureBodyType bodyType = MMOCreatureBodyType.Biped;
         [SerializeField, Min(0.1f)] private float targetHeight = 2.25f;
         [SerializeField, Min(0.01f)] private float colliderRadius = 0.6f;
+        [SerializeField, Min(0.01f)] private float colliderLength = 2.25f;
+        [SerializeField] private Vector3 colliderCenter = new(0f, 1.125f, 0f);
         [SerializeField] private Vector3 visualLocalOffset;
         [SerializeField] private Vector3 visualLocalEulerAngles;
         [SerializeField] private float modelYawOffsetDegrees;
@@ -42,8 +45,12 @@ namespace RPGClone.Animation
         public MMOEnemyDefinition DefaultEnemyDefinition => defaultEnemyDefinition;
         public IReadOnlyList<MMOEnemyDefinition> MatchingEnemyDefinitions => matchingEnemyDefinitions;
         public IReadOnlyList<string> SceneNamePrefixes => sceneNamePrefixes;
+        public MMOCreatureBodyType BodyType => bodyType;
         public float TargetHeight => targetHeight;
         public float ColliderRadius => colliderRadius;
+        public float ColliderLength => Mathf.Max(colliderRadius * 2f, colliderLength > 0f ? colliderLength : targetHeight);
+        public Vector3 ColliderCenter => colliderCenter == Vector3.zero ? new Vector3(0f, targetHeight * 0.5f, 0f) : colliderCenter;
+        public int ColliderDirection => bodyType == MMOCreatureBodyType.Quadruped ? 2 : 1;
         public Vector3 VisualLocalOffset => visualLocalOffset;
         public Vector3 VisualLocalEulerAngles => visualLocalEulerAngles;
         public float ModelYawOffsetDegrees => modelYawOffsetDegrees;
@@ -60,8 +67,11 @@ namespace RPGClone.Animation
             MMOEnemyDefinition newDefaultEnemyDefinition,
             IEnumerable<MMOEnemyDefinition> newMatchingEnemyDefinitions,
             IEnumerable<string> newSceneNamePrefixes,
+            MMOCreatureBodyType newBodyType,
             float newTargetHeight,
             float newColliderRadius,
+            float newColliderLength,
+            Vector3 newColliderCenter,
             Vector3 newVisualLocalOffset,
             Vector3 newVisualLocalEulerAngles,
             float newModelYawOffsetDegrees,
@@ -81,8 +91,11 @@ namespace RPGClone.Animation
             sceneNamePrefixes = newSceneNamePrefixes != null
                 ? new List<string>(newSceneNamePrefixes)
                 : new List<string>();
+            bodyType = newBodyType;
             targetHeight = Mathf.Max(0.1f, newTargetHeight);
             colliderRadius = Mathf.Max(0.01f, newColliderRadius);
+            colliderLength = Mathf.Max(colliderRadius * 2f, newColliderLength);
+            colliderCenter = newColliderCenter == Vector3.zero ? new Vector3(0f, targetHeight * 0.5f, 0f) : newColliderCenter;
             visualLocalOffset = newVisualLocalOffset;
             visualLocalEulerAngles = newVisualLocalEulerAngles;
             modelYawOffsetDegrees = newModelYawOffsetDegrees;

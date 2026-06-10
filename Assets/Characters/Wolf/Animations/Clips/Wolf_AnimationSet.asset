@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7be62599e92490e46baca1994a8fdda7, type: 3}
+  m_Name: Wolf_AnimationSet
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureAnimationSet
+  baseController: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+  idle: {fileID: 7400000, guid: cba3369601d90af47a0bc926c2e0f6b8, type: 2}
+  walk: {fileID: 7400000, guid: 6c6425a044d30b3498f0eecfde4c4b58, type: 2}
+  run: {fileID: 7400000, guid: ee26137c0316abd4092c204aaa2e699e, type: 2}
+  walkSpeed: 1.65
+  runSpeed: 5.1
+  movementDampSeconds: 0.1
+  attack1: {fileID: 7400000, guid: 1bf121f8307f04843bc4f17c084386b2, type: 2}
+  attack2: {fileID: 7400000, guid: b3ac2de2d9b32034f80806db9c794be2, type: 2}
+  damage: {fileID: 7400000, guid: 7bc749caad538ff45b24621e7dbc1788, type: 2}
+  death: {fileID: 7400000, guid: af7fbdb615307ff4296f9ad83e8f5b88, type: 2}
+  alternateAttacks: 1
+  attackPrioritySeconds: 0.75
+  damageReactionCooldownSeconds: 0.35
+  applyRootMotion: 0
+  modelYawOffsetDegrees: 0

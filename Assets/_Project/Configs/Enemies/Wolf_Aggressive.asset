@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0449a1f1d46998f4cb914f3bf2406fb6, type: 3}
+  m_Name: Wolf_Aggressive
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Enemies.MMOEnemyDefinition
+  characterProfile: {fileID: 11400000, guid: c1f7e3c59098397499ef014c2f307c58, type: 2}
+  disposition: 1
+  autoAttackAbility: {fileID: 11400000, guid: 3c1aade4e9bf68c4c9c6ac4e85e35f96, type: 2}
+  abilities:
+  - {fileID: 11400000, guid: 3c1aade4e9bf68c4c9c6ac4e85e35f96, type: 2}
+  aggroRadius: 13
+  leashRadius: 34
+  aggroScanInterval: 0.25
+  canRoam: 1
+  roamRadius: 6.5
+  minRoamIdleSeconds: 2
+  maxRoamIdleSeconds: 5
+  walkSpeed: 1.65
+  chaseSpeed: 5.1
+  stoppingDistance: 2.2
+  experienceReward: 50
+  lootTable: {fileID: 11400000, guid: 6e18903b7a4c24942945f314abb30910, type: 2}
+  lootedCorpseDespawnSeconds: 2.5
+  emptyCorpseDespawnSeconds: 6
+  unlootedCorpseDespawnSeconds: 120
+  respawnSeconds: 30

@@ -23,8 +23,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7321c7d8091065b4eb2f6c571954af57, type: 2}
   sceneNamePrefixes:
   - Ash Canyon Creature
+  bodyType: 0
   targetHeight: 2.25
   colliderRadius: 0.6
+  colliderLength: 2.25
+  colliderCenter: {x: 0, y: 1.125, z: 0}
   visualLocalOffset: {x: 0, y: 0, z: 0}
   visualLocalEulerAngles: {x: 0, y: 0, z: 0}
   modelYawOffsetDegrees: 0
