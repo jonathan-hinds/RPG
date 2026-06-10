@@ -7,6 +7,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
         _SteepTex ("Steep Texture", 2D) = "gray" {}
         _PathTex ("Painted Path Texture", 2D) = "white" {}
         [HideInInspector] _Control ("Terrain Control Map", 2D) = "black" {}
+        [HideInInspector] _TerrainHolesTexture ("Holes Map (RGB)", 2D) = "white" {}
         _FlatTint ("Flat Texture Tint", Color) = (1, 1, 1, 1)
         _FlatVariationTint ("Flat Variation Texture Tint", Color) = (1, 1, 1, 1)
         _SteepTint ("Steep Texture Tint", Color) = (1, 1, 1, 1)
@@ -29,6 +30,10 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
         _Smoothness ("Surface Smoothness", Range(0, 1)) = 0.18
         _Occlusion ("Ambient Occlusion", Range(0, 1)) = 1
     }
+
+    HLSLINCLUDE
+        #pragma multi_compile_fragment __ _ALPHATEST_ON
+    ENDHLSL
 
     SubShader
     {
@@ -103,6 +108,17 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
             SAMPLER(sampler_PathTex);
             TEXTURE2D(_Control);
             SAMPLER(sampler_Control);
+
+            #ifdef _ALPHATEST_ON
+                TEXTURE2D(_TerrainHolesTexture);
+                SAMPLER(sampler_TerrainHolesTexture);
+
+                void ClipTerrainHoles(float2 terrainUV)
+                {
+                    float hole = SAMPLE_TEXTURE2D(_TerrainHolesTexture, sampler_TerrainHolesTexture, terrainUV).r;
+                    clip(hole < 0.0005 ? -1.0 : 1.0);
+                }
+            #endif
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _FlatTint;
@@ -291,6 +307,10 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
+                #ifdef _ALPHATEST_ON
+                    ClipTerrainHoles(input.terrainUV);
+                #endif
+
                 half3 normalWS = NormalizeNormalPerPixel(input.normalWS);
                 half upFacing = saturate(dot(normalWS, half3(0.0, 1.0, 0.0)));
                 float slope = 1.0 - upFacing;
@@ -379,6 +399,17 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
                 float4 _TerrainHeightmapScale;
             CBUFFER_END
 
+            #ifdef _ALPHATEST_ON
+                TEXTURE2D(_TerrainHolesTexture);
+                SAMPLER(sampler_TerrainHolesTexture);
+
+                void ClipTerrainHoles(float2 terrainUV)
+                {
+                    float hole = SAMPLE_TEXTURE2D(_TerrainHolesTexture, sampler_TerrainHolesTexture, terrainUV).r;
+                    clip(hole < 0.0005 ? -1.0 : 1.0);
+                }
+            #endif
+
             #ifdef UNITY_INSTANCING_ENABLED
                 TEXTURE2D(_TerrainHeightmapTexture);
                 TEXTURE2D(_TerrainNormalmapTexture);
@@ -392,17 +423,19 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
+                float2 texcoord : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct ShadowVaryings
             {
                 float4 positionCS : SV_POSITION;
+                float2 terrainUV : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            void ApplyUnityTerrainInstancingShadow(inout float4 positionOS, inout float3 normalOS)
+            void ApplyUnityTerrainInstancingShadow(inout float4 positionOS, inout float3 normalOS, inout float2 terrainUV)
             {
                 #ifdef UNITY_INSTANCING_ENABLED
                     float2 patchVertex = positionOS.xy;
@@ -413,6 +446,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
                     positionOS.xz = sampleCoords * _TerrainHeightmapScale.xz;
                     positionOS.y = height * _TerrainHeightmapScale.y;
                     normalOS = _TerrainNormalmapTexture.Load(int3(sampleCoords, 0)).rgb * 2.0 - 1.0;
+                    terrainUV = sampleCoords * _TerrainHeightmapRecipSize.zw;
                 #endif
             }
 
@@ -425,7 +459,8 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
 
                 float4 positionOS = input.positionOS;
                 float3 normalOS = input.normalOS;
-                ApplyUnityTerrainInstancingShadow(positionOS, normalOS);
+                float2 terrainUV = input.texcoord;
+                ApplyUnityTerrainInstancingShadow(positionOS, normalOS, terrainUV);
 
                 float3 positionWS = TransformObjectToWorld(positionOS.xyz);
                 float3 normalWS = TransformObjectToWorldNormal(normalOS);
@@ -438,6 +473,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
 
                 output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDirectionWS));
                 output.positionCS = ApplyShadowClamping(output.positionCS);
+                output.terrainUV = terrainUV;
                 return output;
             }
 
@@ -445,6 +481,9 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                #ifdef _ALPHATEST_ON
+                    ClipTerrainHoles(input.terrainUV);
+                #endif
                 return 0;
             }
             ENDHLSL
@@ -475,6 +514,17 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
                 float4 _TerrainHeightmapScale;
             CBUFFER_END
 
+            #ifdef _ALPHATEST_ON
+                TEXTURE2D(_TerrainHolesTexture);
+                SAMPLER(sampler_TerrainHolesTexture);
+
+                void ClipTerrainHoles(float2 terrainUV)
+                {
+                    float hole = SAMPLE_TEXTURE2D(_TerrainHolesTexture, sampler_TerrainHolesTexture, terrainUV).r;
+                    clip(hole < 0.0005 ? -1.0 : 1.0);
+                }
+            #endif
+
             #ifdef UNITY_INSTANCING_ENABLED
                 TEXTURE2D(_TerrainHeightmapTexture);
                 TEXTURE2D(_TerrainNormalmapTexture);
@@ -488,17 +538,19 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
+                float2 texcoord : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct DepthVaryings
             {
                 float4 positionCS : SV_POSITION;
+                float2 terrainUV : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            void ApplyUnityTerrainInstancingDepth(inout float4 positionOS, inout float3 normalOS)
+            void ApplyUnityTerrainInstancingDepth(inout float4 positionOS, inout float3 normalOS, inout float2 terrainUV)
             {
                 #ifdef UNITY_INSTANCING_ENABLED
                     float2 patchVertex = positionOS.xy;
@@ -509,6 +561,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
                     positionOS.xz = sampleCoords * _TerrainHeightmapScale.xz;
                     positionOS.y = height * _TerrainHeightmapScale.y;
                     normalOS = _TerrainNormalmapTexture.Load(int3(sampleCoords, 0)).rgb * 2.0 - 1.0;
+                    terrainUV = sampleCoords * _TerrainHeightmapRecipSize.zw;
                 #endif
             }
 
@@ -521,9 +574,11 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
 
                 float4 positionOS = input.positionOS;
                 float3 normalOS = input.normalOS;
-                ApplyUnityTerrainInstancingDepth(positionOS, normalOS);
+                float2 terrainUV = input.texcoord;
+                ApplyUnityTerrainInstancingDepth(positionOS, normalOS, terrainUV);
 
                 output.positionCS = TransformObjectToHClip(positionOS.xyz);
+                output.terrainUV = terrainUV;
                 return output;
             }
 
@@ -531,6 +586,9 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                #ifdef _ALPHATEST_ON
+                    ClipTerrainHoles(input.terrainUV);
+                #endif
                 return input.positionCS.z;
             }
             ENDHLSL
