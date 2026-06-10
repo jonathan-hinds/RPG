@@ -9,12 +9,11 @@ namespace RPGClone.World.Foliage
     [RequireComponent(typeof(Terrain))]
     public sealed class MMOTerrainTreeCollisionSynchronizer : MonoBehaviour
     {
-        private const float EditModeSyncInterval = 0.25f;
-
         [SerializeField] private string collisionRootName = "Generated Tree Trunk Blockers";
         [SerializeField] private string collisionLayerName = "TreeTrunk";
         [SerializeField] private bool syncAutomatically = true;
         [SerializeField] private bool createNavMeshObstacles = true;
+        [SerializeField, Min(0.05f)] private float automaticSyncCheckInterval = 1f;
 
         private Terrain terrain;
         private int lastSyncedHash;
@@ -39,12 +38,12 @@ namespace RPGClone.World.Foliage
                 return;
             }
 
-            if (!Application.isPlaying && Time.realtimeSinceStartup < nextSyncTime)
+            if (Time.realtimeSinceStartup < nextSyncTime)
             {
                 return;
             }
 
-            nextSyncTime = Time.realtimeSinceStartup + EditModeSyncInterval;
+            nextSyncTime = Time.realtimeSinceStartup + automaticSyncCheckInterval;
             SyncIfNeeded();
         }
 

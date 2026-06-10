@@ -1,5 +1,6 @@
 using RPGClone.Abilities;
 using RPGClone.Characters;
+using RPGClone.Services;
 using RPGClone.Targeting;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -38,7 +39,7 @@ namespace RPGClone.Combat
             EnsureInitialized();
             if (interactionCamera == null)
             {
-                interactionCamera = Camera.main;
+                interactionCamera = MMORuntimeSceneReferences.MainCamera;
             }
         }
 
@@ -237,7 +238,7 @@ namespace RPGClone.Combat
         {
             if (interactionCamera == null)
             {
-                interactionCamera = Camera.main;
+                interactionCamera = MMORuntimeSceneReferences.MainCamera;
             }
 
             if (interactionCamera == null)

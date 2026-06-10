@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using RPGClone.Inventory;
+using RPGClone.Services;
 using RPGClone.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -72,9 +73,8 @@ namespace RPGClone.Loot
 
         public bool TryLootToPlayer()
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            MMOInventoryContainer inventory = player != null ? player.GetComponent<MMOInventoryContainer>() : null;
-            return inventory != null && TryLootToInventory(inventory);
+            return MMORuntimeSceneReferences.TryGetPlayerComponent(out MMOInventoryContainer inventory)
+                && TryLootToInventory(inventory);
         }
 
         public bool TryLootToInventory(MMOInventoryContainer inventory)
@@ -158,7 +158,7 @@ namespace RPGClone.Loot
 
         private bool IsPointerOverThisCorpse(Vector2 pointerPosition)
         {
-            Camera camera = Camera.main;
+            Camera camera = MMORuntimeSceneReferences.MainCamera;
             if (camera == null)
             {
                 return false;
@@ -172,9 +172,10 @@ namespace RPGClone.Loot
                 return false;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            Vector3 interactorPosition = player != null ? player.transform.position : camera.transform.position;
-            return Vector3.Distance(interactorPosition, transform.position) <= interactionDistance;
+            Transform playerTransform = MMORuntimeSceneReferences.PlayerTransform;
+            Vector3 interactorPosition = playerTransform != null ? playerTransform.position : camera.transform.position;
+            float sqrInteractionDistance = interactionDistance * interactionDistance;
+            return (interactorPosition - transform.position).sqrMagnitude <= sqrInteractionDistance;
         }
 
         private void EnsureSparkle()

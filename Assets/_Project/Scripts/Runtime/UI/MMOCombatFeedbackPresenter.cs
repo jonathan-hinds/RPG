@@ -19,7 +19,6 @@ namespace RPGClone.UI
         [SerializeField, Min(0.2f)] private float floatingTextLifetime = 1.15f;
         [SerializeField, Min(0.2f)] private float errorTextLifetime = 1.45f;
         [SerializeField, Min(0f)] private float verticalScreenDrift = 58f;
-        [SerializeField, Min(0f)] private float combatantScanInterval = 1f;
         [SerializeField, Min(0f)] private float repeatedErrorThrottleSeconds = 0.75f;
 
         private readonly List<MMOCombatant> subscribedCombatants = new();
@@ -27,7 +26,6 @@ namespace RPGClone.UI
         private readonly Stack<Text> textPool = new();
         private RectTransform canvasRect;
         private MMOCharacterIdentity playerIdentity;
-        private float nextCombatantScanTime;
         private string lastErrorMessage;
         private float lastErrorTime;
         private static Font cachedFont;
@@ -41,11 +39,17 @@ namespace RPGClone.UI
         private void OnEnable()
         {
             SubscribePlayerAbilitySystem();
-            ScanCombatants();
+            MMOCombatant.CombatantEnabled -= OnCombatantEnabled;
+            MMOCombatant.CombatantEnabled += OnCombatantEnabled;
+            MMOCombatant.CombatantDisabled -= OnCombatantDisabled;
+            MMOCombatant.CombatantDisabled += OnCombatantDisabled;
+            SubscribeExistingCombatants();
         }
 
         private void OnDisable()
         {
+            MMOCombatant.CombatantEnabled -= OnCombatantEnabled;
+            MMOCombatant.CombatantDisabled -= OnCombatantDisabled;
             if (playerAbilitySystem != null)
             {
                 playerAbilitySystem.AbilityFailed -= OnAbilityFailed;
@@ -67,11 +71,6 @@ namespace RPGClone.UI
 
         private void Update()
         {
-            if (Time.time >= nextCombatantScanTime)
-            {
-                ScanCombatants();
-            }
-
             UpdateEntries();
         }
 
@@ -96,15 +95,14 @@ namespace RPGClone.UI
         {
             if (worldCamera == null)
             {
-                worldCamera = Camera.main;
+                worldCamera = RPGClone.Services.MMORuntimeSceneReferences.MainCamera;
             }
 
             if (playerAbilitySystem == null)
             {
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
+                if (RPGClone.Services.MMORuntimeSceneReferences.TryGetPlayerComponent(out MMOAbilitySystem resolvedAbilitySystem))
                 {
-                    playerAbilitySystem = player.GetComponent<MMOAbilitySystem>();
+                    playerAbilitySystem = resolvedAbilitySystem;
                 }
             }
 
@@ -116,10 +114,9 @@ namespace RPGClone.UI
             playerIdentity = playerAbilitySystem != null ? playerAbilitySystem.Identity : null;
             if (playerIdentity == null)
             {
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
+                if (RPGClone.Services.MMORuntimeSceneReferences.TryGetPlayerComponent(out MMOCharacterIdentity resolvedIdentity))
                 {
-                    playerIdentity = player.GetComponent<MMOCharacterIdentity>();
+                    playerIdentity = resolvedIdentity;
                 }
             }
         }
@@ -135,21 +132,41 @@ namespace RPGClone.UI
             playerAbilitySystem.AbilityFailed += OnAbilityFailed;
         }
 
-        private void ScanCombatants()
+        private void SubscribeExistingCombatants()
         {
-            nextCombatantScanTime = Time.time + combatantScanInterval;
-            MMOCombatant[] combatants = FindObjectsByType<MMOCombatant>(FindObjectsInactive.Exclude);
-            foreach (MMOCombatant combatant in combatants)
+            foreach (MMOCombatant combatant in MMOCombatant.ActiveCombatants)
             {
-                if (combatant == null || subscribedCombatants.Contains(combatant))
-                {
-                    continue;
-                }
-
-                combatant.Damaged += OnCombatantDamaged;
-                combatant.Healed += OnCombatantHealed;
-                subscribedCombatants.Add(combatant);
+                SubscribeCombatant(combatant);
             }
+        }
+
+        private void OnCombatantEnabled(MMOCombatant combatant)
+        {
+            SubscribeCombatant(combatant);
+        }
+
+        private void OnCombatantDisabled(MMOCombatant combatant)
+        {
+            if (combatant == null)
+            {
+                return;
+            }
+
+            combatant.Damaged -= OnCombatantDamaged;
+            combatant.Healed -= OnCombatantHealed;
+            subscribedCombatants.Remove(combatant);
+        }
+
+        private void SubscribeCombatant(MMOCombatant combatant)
+        {
+            if (combatant == null || subscribedCombatants.Contains(combatant))
+            {
+                return;
+            }
+
+            combatant.Damaged += OnCombatantDamaged;
+            combatant.Healed += OnCombatantHealed;
+            subscribedCombatants.Add(combatant);
         }
 
         private void OnAbilityFailed(MMOAbilitySystem source, MMOAbilityDefinition ability, MMOCharacterIdentity target, string message)
@@ -257,7 +274,7 @@ namespace RPGClone.UI
         {
             if (worldCamera == null)
             {
-                worldCamera = Camera.main;
+                worldCamera = RPGClone.Services.MMORuntimeSceneReferences.MainCamera;
             }
 
             if (worldCamera == null)

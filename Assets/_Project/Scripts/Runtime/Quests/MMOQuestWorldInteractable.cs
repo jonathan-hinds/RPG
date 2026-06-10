@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using RPGClone.Inventory;
 using RPGClone.Loot;
+using RPGClone.Services;
 using RPGClone.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -11,6 +12,8 @@ namespace RPGClone.Quests
     [RequireComponent(typeof(Collider))]
     public sealed class MMOQuestWorldInteractable : MonoBehaviour, IMMOLootSource
     {
+        private const float SparkleRefreshSeconds = 0.25f;
+
         [SerializeField] private string worldObjectId = "world_object";
         [SerializeField] private string displayName = "Quest Object";
         [SerializeField] private MMOItemDefinition lootItem;
@@ -23,7 +26,10 @@ namespace RPGClone.Quests
 
         private readonly List<MMOItemStack> availableLoot = new();
         private ParticleSystem sparkle;
+        private MMOQuestLog observedQuestLog;
         private bool consumed;
+        private bool sparkleVisible;
+        private float nextSparkleRefreshTime;
         private Vector2 pendingScreenPosition;
 
         public string WorldObjectId => string.IsNullOrWhiteSpace(worldObjectId) ? name : worldObjectId;
@@ -38,9 +44,34 @@ namespace RPGClone.Quests
             RefreshSparkle();
         }
 
+        private void OnEnable()
+        {
+            SubscribeToPlayerQuestLog();
+            RefreshSparkle();
+        }
+
+        private void OnDisable()
+        {
+            if (observedQuestLog != null)
+            {
+                observedQuestLog.Changed -= OnQuestLogChanged;
+            }
+
+            observedQuestLog = null;
+        }
+
         private void Update()
         {
-            RefreshSparkle();
+            if (Time.unscaledTime >= nextSparkleRefreshTime)
+            {
+                nextSparkleRefreshTime = Time.unscaledTime + SparkleRefreshSeconds;
+                if (observedQuestLog == null)
+                {
+                    SubscribeToPlayerQuestLog();
+                }
+
+                RefreshSparkle();
+            }
 
             Mouse mouse = Mouse.current;
             if (mouse == null || !mouse.rightButton.wasPressedThisFrame)
@@ -143,8 +174,7 @@ namespace RPGClone.Quests
                 return;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            MMOInteractionCastController castController = player != null ? player.GetComponent<MMOInteractionCastController>() : null;
+            MMORuntimeSceneReferences.TryGetPlayerComponent(out MMOInteractionCastController castController);
             pendingScreenPosition = screenPosition;
             if (castController == null)
             {
@@ -204,7 +234,7 @@ namespace RPGClone.Quests
 
         private bool IsPointerOverThisObject(Vector2 pointerPosition)
         {
-            Camera camera = Camera.main;
+            Camera camera = MMORuntimeSceneReferences.MainCamera;
             if (camera == null)
             {
                 return false;
@@ -218,15 +248,45 @@ namespace RPGClone.Quests
                 return false;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            Vector3 interactorPosition = player != null ? player.transform.position : camera.transform.position;
-            return Vector3.Distance(interactorPosition, transform.position) <= interactionDistance;
+            Transform playerTransform = MMORuntimeSceneReferences.PlayerTransform;
+            Vector3 interactorPosition = playerTransform != null ? playerTransform.position : camera.transform.position;
+            float sqrInteractionDistance = interactionDistance * interactionDistance;
+            return (interactorPosition - transform.position).sqrMagnitude <= sqrInteractionDistance;
         }
 
         private MMOQuestLog ResolvePlayerQuestLog()
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            return player != null ? player.GetComponent<MMOQuestLog>() : null;
+            if (observedQuestLog != null)
+            {
+                return observedQuestLog;
+            }
+
+            return MMORuntimeSceneReferences.TryGetPlayerComponent(out MMOQuestLog questLog) ? questLog : null;
+        }
+
+        private void SubscribeToPlayerQuestLog()
+        {
+            MMOQuestLog questLog = ResolvePlayerQuestLog();
+            if (questLog == observedQuestLog)
+            {
+                return;
+            }
+
+            if (observedQuestLog != null)
+            {
+                observedQuestLog.Changed -= OnQuestLogChanged;
+            }
+
+            observedQuestLog = questLog;
+            if (observedQuestLog != null)
+            {
+                observedQuestLog.Changed += OnQuestLogChanged;
+            }
+        }
+
+        private void OnQuestLogChanged(MMOQuestLog questLog)
+        {
+            RefreshSparkle();
         }
 
         private void EnsureSparkle()
@@ -265,7 +325,14 @@ namespace RPGClone.Quests
         private void RefreshSparkle()
         {
             EnsureSparkle();
-            if (CanInteract())
+            bool shouldShowSparkle = CanInteract();
+            if (shouldShowSparkle == sparkleVisible && sparkle.gameObject.activeSelf == shouldShowSparkle)
+            {
+                return;
+            }
+
+            sparkleVisible = shouldShowSparkle;
+            if (shouldShowSparkle)
             {
                 sparkle.gameObject.SetActive(true);
                 if (!sparkle.isPlaying)

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using RPGClone.Abilities;
 using RPGClone.Characters;
 using RPGClone.Quests;
+using RPGClone.Services;
 using RPGClone.UI;
 using RPGClone.World;
 using UnityEngine;
@@ -205,7 +206,7 @@ namespace RPGClone.Trainers
 
         private void Interact(Vector2 screenPosition)
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            GameObject player = MMORuntimeSceneReferences.PlayerObject;
             if (player == null)
             {
                 return;
@@ -216,7 +217,7 @@ namespace RPGClone.Trainers
 
         private bool IsPointerOverThisTrainer(Vector2 pointerPosition)
         {
-            Camera camera = Camera.main;
+            Camera camera = MMORuntimeSceneReferences.MainCamera;
             if (camera == null)
             {
                 return false;
@@ -230,9 +231,10 @@ namespace RPGClone.Trainers
                 return false;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            Vector3 interactorPosition = player != null ? player.transform.position : camera.transform.position;
-            return Vector3.Distance(interactorPosition, transform.position) <= interactionDistance;
+            Transform playerTransform = MMORuntimeSceneReferences.PlayerTransform;
+            Vector3 interactorPosition = playerTransform != null ? playerTransform.position : camera.transform.position;
+            float sqrInteractionDistance = interactionDistance * interactionDistance;
+            return (interactorPosition - transform.position).sqrMagnitude <= sqrInteractionDistance;
         }
     }
 }

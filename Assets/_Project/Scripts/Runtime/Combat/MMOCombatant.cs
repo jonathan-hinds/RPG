@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using RPGClone.Abilities;
 using RPGClone.Buffs;
 using RPGClone.Characters;
@@ -9,12 +10,17 @@ namespace RPGClone.Combat
     [RequireComponent(typeof(MMOCharacterIdentity))]
     public sealed class MMOCombatant : MonoBehaviour
     {
+        private static readonly HashSet<MMOCombatant> ActiveCombatantSet = new();
+
         private MMOCharacterIdentity identity;
 
+        public static event Action<MMOCombatant> CombatantEnabled;
+        public static event Action<MMOCombatant> CombatantDisabled;
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> Damaged;
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> Healed;
         public event Action<MMOCombatant> Died;
         public event Action<MMOCombatant> CombatActivity;
+        public static IReadOnlyCollection<MMOCombatant> ActiveCombatants => ActiveCombatantSet;
 
         public MMOCharacterIdentity Identity
         {
@@ -37,6 +43,23 @@ namespace RPGClone.Combat
         private void Awake()
         {
             EnsureInitialized();
+        }
+
+        private void OnEnable()
+        {
+            EnsureInitialized();
+            if (ActiveCombatantSet.Add(this))
+            {
+                CombatantEnabled?.Invoke(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (ActiveCombatantSet.Remove(this))
+            {
+                CombatantDisabled?.Invoke(this);
+            }
         }
 
         public void ApplyDamage(MMOCombatant source, MMOAbilityDefinition ability, int amount)

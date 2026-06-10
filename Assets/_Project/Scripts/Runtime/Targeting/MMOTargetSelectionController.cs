@@ -1,5 +1,6 @@
 using System;
 using RPGClone.Characters;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -27,7 +28,7 @@ namespace RPGClone.Targeting
         {
             if (selectionCamera == null)
             {
-                selectionCamera = Camera.main;
+                selectionCamera = MMORuntimeSceneReferences.MainCamera;
             }
         }
 
@@ -72,7 +73,7 @@ namespace RPGClone.Targeting
         {
             if (selectionCamera == null)
             {
-                selectionCamera = Camera.main;
+                selectionCamera = MMORuntimeSceneReferences.MainCamera;
             }
 
             if (selectionCamera == null)

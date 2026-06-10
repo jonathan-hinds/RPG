@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using RPGClone.Player;
 using RPGClone.Quests;
+using RPGClone.Services;
 using RPGClone.World;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -54,6 +55,7 @@ namespace RPGClone.UI
         private Sprite diamondSprite;
         private bool built;
         private bool updatingLiveMapState;
+        private int lastMapRenderFrame = -1;
         private float nextMarkerRefreshTime;
         private readonly List<MMOMapMarkerData> markers = new();
         private readonly List<MapMarkerView> minimapMarkerViews = new();
@@ -113,7 +115,7 @@ namespace RPGClone.UI
             EnsureMapCameras();
             HandleInput();
             RefreshMarkers(false);
-            UpdateLiveMapState(true);
+            UpdateZoneLabels();
         }
 
         private void LateUpdate()
@@ -128,7 +130,7 @@ namespace RPGClone.UI
                 return;
             }
 
-            UpdateLiveMapState(true);
+            UpdateLiveMapState(false);
         }
 
         public void Configure(MMOZoneService newZoneService, Transform newPlayer, MMOQuestLog newQuestLog)
@@ -226,23 +228,23 @@ namespace RPGClone.UI
         {
             if (player == null)
             {
-                GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-                player = playerObject != null ? playerObject.transform : null;
+                player = MMORuntimeSceneReferences.PlayerTransform;
             }
 
             if (questLog == null && player != null)
             {
-                questLog = player.GetComponent<MMOQuestLog>();
+                MMORuntimeSceneReferences.TryGetPlayerComponent(out questLog);
             }
 
             if (inputReader == null && player != null)
             {
-                inputReader = player.GetComponent<MMOInputReader>();
+                MMORuntimeSceneReferences.TryGetPlayerComponent(out inputReader);
             }
 
-            if (gameplayCameraController == null && Camera.main != null)
+            Camera mainCamera = MMORuntimeSceneReferences.MainCamera;
+            if (gameplayCameraController == null && mainCamera != null)
             {
-                gameplayCameraController = Camera.main.GetComponent<MMOThirdPersonCamera>();
+                gameplayCameraController = mainCamera.GetComponent<MMOThirdPersonCamera>();
             }
 
             if (zoneService == null)
@@ -475,12 +477,13 @@ namespace RPGClone.UI
             BindExistingVisualsIfNeeded();
             bool minimapNeedsTexture = minimapTexture == null || !minimapTexture.IsCreated();
             bool largeMapNeedsTexture = largeMapTexture == null || !largeMapTexture.IsCreated();
+            bool largeMapVisible = largeMapRoot != null && largeMapRoot.gameObject.activeInHierarchy;
             if (minimapNeedsTexture)
             {
                 CreateMinimapRenderFeed();
             }
 
-            if (largeMapNeedsTexture)
+            if (largeMapNeedsTexture && largeMapVisible)
             {
                 CreateLargeMapRenderFeed();
             }
@@ -491,20 +494,21 @@ namespace RPGClone.UI
                 minimapRawImage.uvRect = new Rect(0f, 0f, 1f, 1f);
             }
 
-            if (largeMapRawImage != null)
+            if (largeMapRawImage != null && largeMapTexture != null)
             {
                 largeMapRawImage.texture = largeMapTexture;
                 largeMapRawImage.uvRect = new Rect(0f, 0f, 1f, 1f);
             }
 
-            EnsureMapCameraFollowers();
+            RemoveMapCameraFollower(minimapCamera);
+            RemoveMapCameraFollower(largeMapCamera);
 
             if (minimapRawImage != null && minimapRawImage.texture == null)
             {
                 Debug.LogError("Map HUD could not assign the minimap render texture.");
             }
 
-            if (largeMapRawImage != null && largeMapRawImage.texture == null)
+            if (largeMapVisible && largeMapRawImage != null && largeMapRawImage.texture == null)
             {
                 Debug.LogError("Map HUD could not assign the large map render texture.");
             }
@@ -515,7 +519,7 @@ namespace RPGClone.UI
             ReleaseRenderTexture(ref minimapTexture);
             minimapTexture = CreateRenderTexture("RPGClone_Minimap", MinimapTextureSize);
             minimapCamera = EnsureCamera("RPG Clone Minimap Camera", minimapTexture);
-            ConfigureMapCameraFollower(minimapCamera, true, Mathf.Clamp(minimapZoom, MinimapMinZoom, MinimapMaxZoom), null, true);
+            RemoveMapCameraFollower(minimapCamera);
             if (minimapRawImage != null)
             {
                 minimapRawImage.texture = minimapTexture;
@@ -523,6 +527,7 @@ namespace RPGClone.UI
             }
 
             PositionAndRenderMapCameras();
+            lastMapRenderFrame = Time.frameCount;
         }
 
         private void CreateLargeMapRenderFeed()
@@ -530,7 +535,7 @@ namespace RPGClone.UI
             ReleaseRenderTexture(ref largeMapTexture);
             largeMapTexture = CreateRenderTexture("RPGClone_LargeZoneMap", LargeMapTextureSize);
             largeMapCamera = EnsureCamera("RPG Clone Large Map Camera", largeMapTexture);
-            ConfigureMapCameraFollower(largeMapCamera, false, LargeMapSize, largeMapRoot, false);
+            RemoveMapCameraFollower(largeMapCamera);
             if (largeMapRawImage != null)
             {
                 largeMapRawImage.texture = largeMapTexture;
@@ -538,6 +543,7 @@ namespace RPGClone.UI
             }
 
             PositionAndRenderMapCameras();
+            lastMapRenderFrame = Time.frameCount;
         }
 
         private Camera EnsureCamera(string cameraName, RenderTexture targetTexture)
@@ -583,13 +589,7 @@ namespace RPGClone.UI
             return camera;
         }
 
-        private void EnsureMapCameraFollowers()
-        {
-            ConfigureMapCameraFollower(minimapCamera, true, Mathf.Clamp(minimapZoom, MinimapMinZoom, MinimapMaxZoom), null, true);
-            ConfigureMapCameraFollower(largeMapCamera, false, LargeMapSize, largeMapRoot, false);
-        }
-
-        private void ConfigureMapCameraFollower(Camera targetCamera, bool followPlayer, float orthographicSize, RectTransform visibilityRoot, bool renderWhenHidden)
+        private static void RemoveMapCameraFollower(Camera targetCamera)
         {
             if (targetCamera == null)
             {
@@ -599,10 +599,17 @@ namespace RPGClone.UI
             MMOMapCameraFollower follower = targetCamera.GetComponent<MMOMapCameraFollower>();
             if (follower == null)
             {
-                follower = targetCamera.gameObject.AddComponent<MMOMapCameraFollower>();
+                return;
             }
 
-            follower.Configure(player, zoneService, followPlayer, orthographicSize, visibilityRoot, renderWhenHidden);
+            if (Application.isPlaying)
+            {
+                Destroy(follower);
+            }
+            else
+            {
+                DestroyImmediate(follower);
+            }
         }
 
         private static RenderTexture CreateRenderTexture(string textureName, int size)
@@ -621,7 +628,12 @@ namespace RPGClone.UI
 
         private void UpdateMapSurface()
         {
-            PositionAndRenderMapCameras();
+            if (lastMapRenderFrame != Time.frameCount)
+            {
+                PositionAndRenderMapCameras();
+                lastMapRenderFrame = Time.frameCount;
+            }
+
             UpdateZoneLabels();
         }
 
@@ -978,17 +990,17 @@ namespace RPGClone.UI
             MMOMapPlayerIndicator playerIndicator = indicator.GetComponent<MMOMapPlayerIndicator>();
             if (playerIndicator == null)
             {
-                playerIndicator = indicator.gameObject.AddComponent<MMOMapPlayerIndicator>();
+                return;
             }
 
-            playerIndicator.Configure(
-                player,
-                inputReader,
-                gameplayCameraController,
-                zoneService,
-                useLargeMapPosition,
-                LargeMapSize,
-                playerArrowHeadingOffsetDegrees);
+            if (Application.isPlaying)
+            {
+                Destroy(playerIndicator);
+            }
+            else
+            {
+                DestroyImmediate(playerIndicator);
+            }
         }
 
         private void ToggleLargeMap()
@@ -1014,9 +1026,9 @@ namespace RPGClone.UI
             }
 
             largeMapRoot.gameObject.SetActive(true);
+            EnsureMapCameras();
             RefreshMarkers(true);
             UpdateLiveMapState(true);
-            largeMapCamera?.Render();
         }
 
         private void CloseLargeMap()

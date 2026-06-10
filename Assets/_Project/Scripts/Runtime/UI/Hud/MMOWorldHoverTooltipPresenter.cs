@@ -4,6 +4,7 @@ using RPGClone.Enemies;
 using RPGClone.Inventory;
 using RPGClone.Loot;
 using RPGClone.Quests;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -73,13 +74,12 @@ namespace RPGClone.UI
         {
             if (hoverCamera == null)
             {
-                hoverCamera = Camera.main;
+                hoverCamera = MMORuntimeSceneReferences.MainCamera;
             }
 
             if (questLog == null)
             {
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                questLog = player != null ? player.GetComponent<MMOQuestLog>() : null;
+                MMORuntimeSceneReferences.TryGetPlayerComponent(out questLog);
             }
         }
 

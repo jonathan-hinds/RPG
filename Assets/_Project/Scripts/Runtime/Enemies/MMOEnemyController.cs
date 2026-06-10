@@ -25,6 +25,8 @@ namespace RPGClone.Enemies
         [SerializeField] private LayerMask aggroMask = ~0;
         [SerializeField] private bool resetResourcesOnLeash = true;
         [SerializeField] private bool drawDebugGizmos = true;
+        [SerializeField, Min(0.02f)] private float chaseRepathInterval = 0.2f;
+        [SerializeField, Min(0.01f)] private float chaseRepathDistance = 0.35f;
 
         private readonly Collider[] detectionBuffer = new Collider[DetectionBufferSize];
         private MMOCharacterIdentity identity;
@@ -41,6 +43,8 @@ namespace RPGClone.Enemies
         private bool waitingAtRoamPoint;
         private bool configured;
         private bool corpseActive;
+        private float nextChaseRepathTime;
+        private Vector3 lastChaseDestination;
         private Coroutine despawnRoutine;
         private MMOCombatant lastDamageSource;
         private Renderer[] renderers;
@@ -77,7 +81,6 @@ namespace RPGClone.Enemies
 
         private void Update()
         {
-            EnsureReferences();
             if (definition == null || corpseActive || !combatant.IsAlive)
             {
                 StopMoving();
@@ -162,9 +165,11 @@ namespace RPGClone.Enemies
                 agent.stoppingDistance = Mathf.Max(0.05f, attackRange * 0.85f);
                 agent.isStopped = inAttackRange;
 
-                if (!inAttackRange)
+                if (!inAttackRange && ShouldRepathToTarget(currentTarget.transform.position))
                 {
-                    agent.SetDestination(currentTarget.transform.position);
+                    lastChaseDestination = currentTarget.transform.position;
+                    nextChaseRepathTime = Time.time + chaseRepathInterval;
+                    agent.SetDestination(lastChaseDestination);
                 }
             }
 
@@ -256,6 +261,7 @@ namespace RPGClone.Enemies
             currentTarget = target;
             waitingAtRoamPoint = false;
             nextRoamDecisionTime = 0f;
+            nextChaseRepathTime = 0f;
             if (CanMoveOnNavMesh())
             {
                 agent.ResetPath();
@@ -275,6 +281,7 @@ namespace RPGClone.Enemies
             if (CanMoveOnNavMesh())
             {
                 waitingAtRoamPoint = false;
+                nextChaseRepathTime = 0f;
                 agent.speed = definition.WalkSpeed;
                 agent.stoppingDistance = 0.15f;
                 agent.isStopped = false;
@@ -468,6 +475,12 @@ namespace RPGClone.Enemies
         private bool CanMoveOnNavMesh()
         {
             return agent != null && agent.enabled && agent.isOnNavMesh;
+        }
+
+        private bool ShouldRepathToTarget(Vector3 targetPosition)
+        {
+            return Time.time >= nextChaseRepathTime
+                || (targetPosition - lastChaseDestination).sqrMagnitude >= chaseRepathDistance * chaseRepathDistance;
         }
 
         private void StopMoving()

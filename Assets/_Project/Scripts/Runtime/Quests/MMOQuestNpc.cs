@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using RPGClone.Characters;
+using RPGClone.Services;
 using RPGClone.UI;
 using RPGClone.World;
 using UnityEngine;
@@ -13,6 +14,8 @@ namespace RPGClone.Quests
     [RequireComponent(typeof(MMOStandardNpcIdentity))]
     public sealed class MMOQuestNpc : MonoBehaviour
     {
+        private const float ReferenceRetrySeconds = 0.25f;
+
         [SerializeField] private string npcId = "npc";
         [SerializeField] private string displayNameOverride;
         [SerializeField] private List<MMOQuestDefinition> offeredQuests = new();
@@ -24,6 +27,8 @@ namespace RPGClone.Quests
         private MMOQuestLog observedQuestLog;
         private MMOCharacterIdentity identity;
         private MMOStandardNpcIdentity standardIdentity;
+        private string currentMarkerText = string.Empty;
+        private float nextReferenceResolveTime;
 
         public string NpcId => string.IsNullOrWhiteSpace(npcId) ? name : npcId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayNameOverride) ? name : displayNameOverride;
@@ -56,12 +61,19 @@ namespace RPGClone.Quests
             {
                 observedQuestLog.Changed -= OnQuestLogChanged;
             }
+
+            observedQuestLog = null;
         }
 
         private void Update()
         {
-            SubscribeToPlayerQuestLog();
-            RefreshMarker();
+            if (observedQuestLog == null && Time.unscaledTime >= nextReferenceResolveTime)
+            {
+                nextReferenceResolveTime = Time.unscaledTime + ReferenceRetrySeconds;
+                SubscribeToPlayerQuestLog();
+            }
+
+            FaceMarkerToCamera();
 
             Mouse mouse = Mouse.current;
             if (mouse == null || !mouse.rightButton.wasPressedThisFrame)
@@ -119,7 +131,7 @@ namespace RPGClone.Quests
 
         private bool IsPointerOverThisNpc(Vector2 pointerPosition)
         {
-            Camera camera = Camera.main;
+            Camera camera = MMORuntimeSceneReferences.MainCamera;
             if (camera == null)
             {
                 return false;
@@ -133,9 +145,10 @@ namespace RPGClone.Quests
                 return false;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            Vector3 interactorPosition = player != null ? player.transform.position : camera.transform.position;
-            return Vector3.Distance(interactorPosition, transform.position) <= interactionDistance;
+            Transform playerTransform = MMORuntimeSceneReferences.PlayerTransform;
+            Vector3 interactorPosition = playerTransform != null ? playerTransform.position : camera.transform.position;
+            float sqrInteractionDistance = interactionDistance * interactionDistance;
+            return (interactorPosition - transform.position).sqrMagnitude <= sqrInteractionDistance;
         }
 
         private void SubscribeToPlayerQuestLog()
@@ -165,8 +178,12 @@ namespace RPGClone.Quests
 
         private MMOQuestLog ResolvePlayerQuestLog()
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            return player != null ? player.GetComponent<MMOQuestLog>() : null;
+            if (observedQuestLog != null)
+            {
+                return observedQuestLog;
+            }
+
+            return MMORuntimeSceneReferences.TryGetPlayerComponent(out MMOQuestLog questLog) ? questLog : null;
         }
 
         private void EnsureMarker()
@@ -198,12 +215,30 @@ namespace RPGClone.Quests
             MMOQuestLog questLog = observedQuestLog != null ? observedQuestLog : ResolvePlayerQuestLog();
             bool ready = questLog != null && questLog.HasReadyTurnInForNpc(NpcId);
             bool available = questLog != null && HasAvailableQuest(questLog);
-            questMarker.text = ready ? "?" : available ? "!" : string.Empty;
-            questMarker.color = ready ? new Color(1f, 0.86f, 0.18f, 1f) : new Color(1f, 0.78f, 0.12f, 1f);
-            questMarker.gameObject.SetActive(!string.IsNullOrEmpty(questMarker.text));
+            string markerText = ready ? "?" : available ? "!" : string.Empty;
+            bool markerActive = !string.IsNullOrEmpty(markerText);
+            if (markerText != currentMarkerText
+                || questMarker.text != markerText
+                || questMarker.gameObject.activeSelf != markerActive)
+            {
+                currentMarkerText = markerText;
+                questMarker.text = markerText;
+                questMarker.gameObject.SetActive(markerActive);
+            }
 
-            Camera camera = Camera.main;
-            if (camera != null && questMarker.gameObject.activeSelf)
+            questMarker.color = ready ? new Color(1f, 0.86f, 0.18f, 1f) : new Color(1f, 0.78f, 0.12f, 1f);
+            FaceMarkerToCamera();
+        }
+
+        private void FaceMarkerToCamera()
+        {
+            if (questMarker == null || !questMarker.gameObject.activeSelf)
+            {
+                return;
+            }
+
+            Camera camera = MMORuntimeSceneReferences.MainCamera;
+            if (camera != null)
             {
                 questMarker.transform.rotation = Quaternion.LookRotation(questMarker.transform.position - camera.transform.position);
             }
