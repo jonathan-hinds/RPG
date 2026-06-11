@@ -134,7 +134,7 @@ namespace RPGClone.Combat
         public float GetAutoAttackCooldownNormalized()
         {
             float swingDelay = combatant != null && combatant.Identity != null && combatant.Identity.Stats != null
-                ? combatant.Identity.Stats.MeleeAttackSpeed
+                ? MMOCombatResolver.GetAttackSpeed(combatant.Identity)
                 : 2f;
             return Mathf.Clamp01(GetAutoAttackCooldownRemaining() / Mathf.Max(0.1f, swingDelay));
         }
@@ -199,7 +199,7 @@ namespace RPGClone.Combat
                 return;
             }
 
-            float swingDelay = combatant.Identity.Stats != null ? combatant.Identity.Stats.MeleeAttackSpeed : 2f;
+            float swingDelay = combatant.Identity.Stats != null ? MMOCombatResolver.GetAttackSpeed(combatant.Identity) : 2f;
             nextSwingTime = Time.time + Mathf.Max(0.1f, swingDelay);
             hasSwingTimer = true;
         }
@@ -207,7 +207,7 @@ namespace RPGClone.Combat
         private void ScheduleNextSwing()
         {
             float swingDelay = combatant != null && combatant.Identity != null && combatant.Identity.Stats != null
-                ? combatant.Identity.Stats.MeleeAttackSpeed
+                ? MMOCombatResolver.GetAttackSpeed(combatant.Identity)
                 : 2f;
             nextSwingTime = Time.time + Mathf.Max(0.1f, swingDelay);
             hasSwingTimer = true;

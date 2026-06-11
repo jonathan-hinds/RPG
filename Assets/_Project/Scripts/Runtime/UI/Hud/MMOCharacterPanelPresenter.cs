@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using RPGClone.Characters;
+using RPGClone.Combat;
 using RPGClone.Inventory;
 using UnityEngine;
 using UnityEngine.UI;
@@ -212,7 +213,7 @@ namespace RPGClone.UI
 
             nameText.text = character != null ? character.DisplayName : "Character";
             levelText.text = character != null ? $"Level {character.Level}" : string.Empty;
-            statsText.text = character != null ? FormatStats(character.Stats) : string.Empty;
+            statsText.text = character != null ? FormatStats(character, equipment) : string.Empty;
 
             MMOUiFactory.DestroyChildren(leftSlots);
             MMOUiFactory.DestroyChildren(rightSlots);
@@ -258,14 +259,19 @@ namespace RPGClone.UI
             }
         }
 
-        private static string FormatStats(MMOCharacterStats stats)
+        private static string FormatStats(MMOCharacterIdentity character, MMOCharacterEquipment equipment)
         {
+            MMOCharacterStats stats = character != null ? character.Stats : null;
             if (stats == null)
             {
                 return string.Empty;
             }
 
-            return $"Stamina {stats.Stamina}\nStrength {stats.Strength}\nAgility {stats.Agility}\nIntellect {stats.Intellect}\nSpirit {stats.Spirit}\nArmor {stats.Armor}\nAttack Power {stats.AttackPower}\nSpell Power {stats.SpellPower}\nCrit {stats.CriticalStrikeChance:0.0}%\nDodge {stats.DodgeChance:0.0}%\nHealth Regen {stats.HealthRegenPerSecond:0.0}/s\nMana Regen {stats.ManaRegenPerSecond:0.0}/s";
+            MMOWeaponSnapshot weapon = MMOCombatResolver.GetWeaponSnapshot(character);
+            int blockValue = MMOCombatResolver.GetBlockValue(character);
+            string weaponLine = $"Damage {weapon.MinDamage:0}-{weapon.MaxDamage:0}\nSpeed {MMOCombatResolver.GetAttackSpeed(character):0.00}";
+            string blockLine = blockValue > 0 ? $"\nBlock {blockValue}" : string.Empty;
+            return $"Stamina {stats.Stamina}\nStrength {stats.Strength}\nAgility {stats.Agility}\nIntellect {stats.Intellect}\nSpirit {stats.Spirit}\nArmor {stats.Armor}\nAttack Power {stats.AttackPower}\nSpell Power {stats.SpellPower}\n{weaponLine}{blockLine}\nCrit {stats.CriticalStrikeChance:0.0}%\nDodge {stats.DodgeChance:0.0}%";
         }
     }
 }

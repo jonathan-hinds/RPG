@@ -18,6 +18,8 @@ namespace RPGClone.Combat
         public static event Action<MMOCombatant> CombatantDisabled;
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> Damaged;
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> Healed;
+        public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition> Missed;
+        public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> Blocked;
         public event Action<MMOCombatant> Died;
         public event Action<MMOCombatant> CombatActivity;
         public static IReadOnlyCollection<MMOCombatant> ActiveCombatants => ActiveCombatantSet;
@@ -82,6 +84,23 @@ namespace RPGClone.Combat
             {
                 Died?.Invoke(this);
             }
+        }
+
+        public void NotifyMiss(MMOCombatant source, MMOAbilityDefinition ability)
+        {
+            source?.CombatActivity?.Invoke(source);
+            CombatActivity?.Invoke(this);
+            Missed?.Invoke(source, this, ability);
+        }
+
+        public void NotifyBlock(MMOCombatant source, MMOAbilityDefinition ability, int blockedAmount)
+        {
+            if (blockedAmount <= 0)
+            {
+                return;
+            }
+
+            Blocked?.Invoke(source, this, ability, blockedAmount);
         }
 
         public void ApplyHeal(MMOCombatant source, MMOAbilityDefinition ability, int amount)

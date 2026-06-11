@@ -45,6 +45,7 @@ namespace RPGClone.Characters
         public float MeleeMinDamage => meleeMinDamage;
         public float MeleeMaxDamage => Mathf.Max(meleeMinDamage, meleeMaxDamage);
         public float MeleeAttackSpeed => meleeAttackSpeed / Mathf.Max(1f, runtimeAttackSpeedMultiplier);
+        public float AttackSpeedMultiplier => Mathf.Max(1f, runtimeAttackSpeedMultiplier);
         public float MeleeRange => meleeRange;
         public int MaxHealthBonus => Stamina * HealthPerStamina;
         public int MaxManaBonus => Intellect * ManaPerIntellect;

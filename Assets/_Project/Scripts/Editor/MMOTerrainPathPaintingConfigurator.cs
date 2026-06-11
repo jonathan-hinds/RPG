@@ -2,6 +2,7 @@ using System;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace RPGClone.EditorTools
 {
@@ -126,8 +127,37 @@ namespace RPGClone.EditorTools
                 material.SetFloat("_PathBlendStrength", 1f);
             }
 
+            ForceOpaqueTerrainMaterial(material);
             terrain.materialTemplate = material;
             EditorUtility.SetDirty(material);
+        }
+
+        private static void ForceOpaqueTerrainMaterial(Material material)
+        {
+            if (material == null)
+            {
+                return;
+            }
+
+            SetFloatIfPresent(material, "_Surface", 0f);
+            SetFloatIfPresent(material, "_AlphaClip", 0f);
+            SetFloatIfPresent(material, "_ZWrite", 1f);
+            SetFloatIfPresent(material, "_SrcBlend", (float)BlendMode.One);
+            SetFloatIfPresent(material, "_DstBlend", (float)BlendMode.Zero);
+            SetFloatIfPresent(material, "_SrcBlendAlpha", (float)BlendMode.One);
+            SetFloatIfPresent(material, "_DstBlendAlpha", (float)BlendMode.Zero);
+
+            material.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.SetOverrideTag("RenderType", "Opaque");
+            material.renderQueue = (int)RenderQueue.Geometry;
+        }
+
+        private static void SetFloatIfPresent(Material material, string propertyName, float value)
+        {
+            if (material.HasProperty(propertyName))
+            {
+                material.SetFloat(propertyName, value);
+            }
         }
 
         private static void ConfigurePathTextureImporter()

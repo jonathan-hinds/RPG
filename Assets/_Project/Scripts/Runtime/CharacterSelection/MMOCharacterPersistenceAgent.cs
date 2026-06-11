@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using RPGClone.Abilities;
 using RPGClone.Characters;
+using RPGClone.Combat;
 using RPGClone.Inventory;
 using RPGClone.Quests;
 using RPGClone.UI;
@@ -25,6 +26,7 @@ namespace RPGClone.CharacterSelection
         private MMOExperienceComponent experience;
         private MMOInventoryContainer inventory;
         private MMOCharacterEquipment equipment;
+        private MMOWeaponSkillController weaponSkills;
         private MMOCurrencyWallet wallet;
         private MMOQuestLog questLog;
         private MMOAbilitySystem abilitySystem;
@@ -39,6 +41,7 @@ namespace RPGClone.CharacterSelection
             experience = GetComponent<MMOExperienceComponent>();
             inventory = GetComponent<MMOInventoryContainer>();
             equipment = GetComponent<MMOCharacterEquipment>();
+            weaponSkills = GetComponent<MMOWeaponSkillController>();
             wallet = GetComponent<MMOCurrencyWallet>();
             questLog = GetComponent<MMOQuestLog>();
             abilitySystem = GetComponent<MMOAbilitySystem>();
@@ -117,6 +120,7 @@ namespace RPGClone.CharacterSelection
 
             ApplyInventory(saveData);
             ApplyEquipment(saveData);
+            ApplyWeaponSkills(saveData, archetype);
             ApplyWallet(saveData);
             ApplyLearnedAbilities(saveData);
             ApplyActionBar(saveData);
@@ -204,6 +208,7 @@ namespace RPGClone.CharacterSelection
 
             CaptureInventory(saveData);
             CaptureEquipment(saveData);
+            CaptureWeaponSkills(saveData);
             CaptureLearnedAbilities(saveData);
             CaptureActionBar(saveData);
             CaptureQuests(saveData);
@@ -225,6 +230,7 @@ namespace RPGClone.CharacterSelection
             destination.copper = source.copper;
             destination.inventory = new System.Collections.Generic.List<MMOInventorySlotSaveData>(source.inventory ?? new System.Collections.Generic.List<MMOInventorySlotSaveData>());
             destination.equipment = new System.Collections.Generic.List<MMOEquipmentSlotSaveData>(source.equipment ?? new System.Collections.Generic.List<MMOEquipmentSlotSaveData>());
+            destination.weaponSkills = new System.Collections.Generic.List<MMOWeaponSkillSaveEntry>(source.weaponSkills ?? new System.Collections.Generic.List<MMOWeaponSkillSaveEntry>());
             destination.learnedAbilityIds = new System.Collections.Generic.List<string>(source.learnedAbilityIds ?? new System.Collections.Generic.List<string>());
             destination.actionBarSlots = new System.Collections.Generic.List<MMOActionBarSlotSaveData>(source.actionBarSlots ?? new System.Collections.Generic.List<MMOActionBarSlotSaveData>());
             destination.activeQuests = new System.Collections.Generic.List<MMOQuestStateSaveData>(source.activeQuests ?? new System.Collections.Generic.List<MMOQuestStateSaveData>());
@@ -278,6 +284,30 @@ namespace RPGClone.CharacterSelection
                 {
                     slotType = equippedItem.SlotType,
                     itemId = equippedItem.Item.ItemId
+                });
+            }
+        }
+
+        private void CaptureWeaponSkills(MMOCharacterSaveData saveData)
+        {
+            saveData.weaponSkills ??= new System.Collections.Generic.List<MMOWeaponSkillSaveEntry>();
+            saveData.weaponSkills.Clear();
+            if (weaponSkills == null)
+            {
+                return;
+            }
+
+            foreach (MMOWeaponSkillEntry entry in weaponSkills.WeaponSkills)
+            {
+                if (entry == null || entry.WeaponType == MMOWeaponType.None)
+                {
+                    continue;
+                }
+
+                saveData.weaponSkills.Add(new MMOWeaponSkillSaveEntry
+                {
+                    weaponType = entry.WeaponType,
+                    skillValue = entry.SkillValue
                 });
             }
         }
@@ -399,6 +429,35 @@ namespace RPGClone.CharacterSelection
                 if (item != null)
                 {
                     equipment.TryEquip(item);
+                }
+            }
+        }
+
+        private void ApplyWeaponSkills(MMOCharacterSaveData saveData, MMOCharacterArchetypeDefinition archetype)
+        {
+            if (weaponSkills == null)
+            {
+                weaponSkills = GetComponent<MMOWeaponSkillController>() ?? gameObject.AddComponent<MMOWeaponSkillController>();
+            }
+
+            if (saveData.weaponSkills != null && saveData.weaponSkills.Count > 0)
+            {
+                weaponSkills.RestoreSkills(saveData.weaponSkills);
+                return;
+            }
+
+            weaponSkills.SetSkillToCap(MMOWeaponType.Unarmed);
+            if (archetype == null)
+            {
+                return;
+            }
+
+            weaponSkills.LearnAtCap(archetype.StartingWeaponSkills);
+            foreach (MMOItemDefinition item in archetype.StartingEquipment)
+            {
+                if (item != null && item.WeaponType != MMOWeaponType.None)
+                {
+                    weaponSkills.SetSkillToCap(item.WeaponType);
                 }
             }
         }

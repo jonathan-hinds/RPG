@@ -319,11 +319,22 @@ namespace RPGClone.Abilities
                 {
                     target.ApplyHeal(combatant, ability, amount);
                 }
+                else if (ShouldUseWeaponResolution(ability, effect))
+                {
+                    MMOCombatResolver.ApplyWeaponDamage(combatant, target, ability, effect);
+                }
                 else
                 {
                     target.ApplyDamage(combatant, ability, amount);
                 }
             }
+        }
+
+        private static bool ShouldUseWeaponResolution(MMOAbilityDefinition ability, MMOAbilityEffectDefinition effect)
+        {
+            return effect.EffectType == MMOAbilityEffectType.Damage
+                && effect.DamageSchool == MMODamageSchool.Physical
+                && (ability.IsAutoAttack || effect.AmountSource == MMOAbilityAmountSource.WeaponDamage);
         }
 
         private bool TryGetChargeEffect(MMOAbilityDefinition ability, out MMOAbilityEffectDefinition chargeEffect)

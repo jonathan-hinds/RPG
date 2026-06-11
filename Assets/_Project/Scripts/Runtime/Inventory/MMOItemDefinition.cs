@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 using RPGClone.Characters;
 
 namespace RPGClone.Inventory
@@ -26,6 +27,14 @@ namespace RPGClone.Inventory
         [SerializeField] private MMOEquipmentSlotType equipmentSlot = MMOEquipmentSlotType.Chest;
         [SerializeField] private MMOArmorWeight armorWeight = MMOArmorWeight.Cloth;
         [SerializeField] private MMOCharacterStats statBonuses = new();
+        [Header("Weapon And Shield")]
+        [SerializeField] private MMOWeaponType weaponType = MMOWeaponType.None;
+        [SerializeField, Min(0f)] private float weaponMinDamage;
+        [SerializeField, Min(0f)] private float weaponMaxDamage;
+        [SerializeField, Min(0.1f)] private float weaponSpeedSeconds = 2f;
+        [SerializeField, Min(0)] private int shieldBlockValue;
+        [Tooltip("Leave empty to let every class equip this item. Use this for class-specific weapon and shield rewards.")]
+        [SerializeField] private List<MMOPlayableClass> allowedClasses = new();
 
         public string ItemId => string.IsNullOrWhiteSpace(itemId) ? name : itemId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? name : displayName;
@@ -43,8 +52,20 @@ namespace RPGClone.Inventory
         public MMOEquipmentSlotType EquipmentSlot => equipmentSlot;
         public MMOArmorWeight ArmorWeight => armorWeight;
         public MMOCharacterStats StatBonuses => statBonuses;
+        public MMOWeaponType WeaponType => weaponType;
+        public float WeaponMinDamage => Mathf.Max(0f, weaponMinDamage);
+        public float WeaponMaxDamage => Mathf.Max(WeaponMinDamage, weaponMaxDamage);
+        public float WeaponSpeedSeconds => Mathf.Max(0.1f, weaponSpeedSeconds);
+        public int ShieldBlockValue => Mathf.Max(0, shieldBlockValue);
+        public IReadOnlyList<MMOPlayableClass> AllowedClasses => allowedClasses;
         public bool IsEquipment => itemType == MMOItemType.Equipment;
         public bool IsConsumable => itemType == MMOItemType.Consumable && consumableType != MMOConsumableType.None;
+        public bool IsWeapon => IsEquipment && weaponType != MMOWeaponType.None && weaponType != MMOWeaponType.Shield;
+        public bool IsShield => IsEquipment && weaponType == MMOWeaponType.Shield;
+        public bool IsTwoHandedWeapon => weaponType == MMOWeaponType.TwoHandSword
+            || weaponType == MMOWeaponType.TwoHandMace
+            || weaponType == MMOWeaponType.Staff;
+        public float WeaponDps => IsWeapon ? (WeaponMinDamage + WeaponMaxDamage) * 0.5f / WeaponSpeedSeconds : 0f;
 
         public void Configure(
             string newItemId,
@@ -113,6 +134,87 @@ namespace RPGClone.Inventory
             {
                 statBonuses.CopyFrom(newStatBonuses);
             }
+            else
+            {
+                statBonuses.Configure(0, 0, 0, 0, 0, 0, 0, 0, 0f, 0f, 2f, 3f);
+            }
+
+            weaponType = MMOWeaponType.None;
+            weaponMinDamage = 0f;
+            weaponMaxDamage = 0f;
+            weaponSpeedSeconds = 2f;
+            shieldBlockValue = 0;
+            allowedClasses = new List<MMOPlayableClass>();
+        }
+
+        public void ConfigureWeapon(
+            string newItemId,
+            string newDisplayName,
+            string newDescription,
+            MMOItemQuality newQuality,
+            MMOWeaponType newWeaponType,
+            float newMinDamage,
+            float newMaxDamage,
+            float newSpeedSeconds,
+            MMOCharacterStats newStatBonuses,
+            int newVendorValueCopper,
+            IEnumerable<MMOPlayableClass> newAllowedClasses = null,
+            Sprite newIcon = null)
+        {
+            MMOEquipmentSlotType slot = IsTwoHandedWeaponType(newWeaponType) || newWeaponType != MMOWeaponType.Shield
+                ? MMOEquipmentSlotType.MainHand
+                : MMOEquipmentSlotType.OffHand;
+            ConfigureEquipment(newItemId, newDisplayName, newDescription, newQuality, slot, MMOArmorWeight.Cloth, newStatBonuses, newVendorValueCopper, newIcon);
+            weaponType = newWeaponType;
+            weaponMinDamage = Mathf.Max(0f, newMinDamage);
+            weaponMaxDamage = Mathf.Max(weaponMinDamage, newMaxDamage);
+            weaponSpeedSeconds = Mathf.Max(0.1f, newSpeedSeconds);
+            shieldBlockValue = 0;
+            SetAllowedClasses(newAllowedClasses);
+        }
+
+        public void ConfigureShield(
+            string newItemId,
+            string newDisplayName,
+            string newDescription,
+            MMOItemQuality newQuality,
+            int newArmor,
+            int newBlockValue,
+            MMOCharacterStats newStatBonuses,
+            int newVendorValueCopper,
+            IEnumerable<MMOPlayableClass> newAllowedClasses = null,
+            Sprite newIcon = null)
+        {
+            MMOCharacterStats combinedStats = new();
+            combinedStats.Configure(0, 0, 0, 0, 0, 0, 0, 0, 0f, 0f, 2f, 3f);
+            if (newStatBonuses != null)
+            {
+                combinedStats.CopyFrom(newStatBonuses);
+            }
+
+            combinedStats.AddValues(0, 0, 0, 0, 0, newArmor, 0, 0, 0f, 0f);
+            ConfigureEquipment(newItemId, newDisplayName, newDescription, newQuality, MMOEquipmentSlotType.OffHand, MMOArmorWeight.Mail, combinedStats, newVendorValueCopper, newIcon);
+            weaponType = MMOWeaponType.Shield;
+            weaponMinDamage = 0f;
+            weaponMaxDamage = 0f;
+            weaponSpeedSeconds = 2f;
+            shieldBlockValue = Mathf.Max(0, newBlockValue);
+            SetAllowedClasses(newAllowedClasses);
+        }
+
+        public bool CanClassEquip(MMOPlayableClass characterClass)
+        {
+            return allowedClasses == null || allowedClasses.Count == 0 || allowedClasses.Contains(characterClass);
+        }
+
+        private void SetAllowedClasses(IEnumerable<MMOPlayableClass> newAllowedClasses)
+        {
+            allowedClasses = newAllowedClasses != null ? new List<MMOPlayableClass>(newAllowedClasses) : new List<MMOPlayableClass>();
+        }
+
+        private static bool IsTwoHandedWeaponType(MMOWeaponType type)
+        {
+            return type == MMOWeaponType.TwoHandSword || type == MMOWeaponType.TwoHandMace || type == MMOWeaponType.Staff;
         }
     }
 }

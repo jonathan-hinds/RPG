@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Abilities.MMOAbilityDefinition
   abilityId: auto_attack
   displayName: Auto Attack
-  description: Repeated weapon swings against a hostile target.
+  description: Automatically swing your equipped weapon at the target.
   icon: {fileID: 0}
   targetType: 2
   autoAttack: 1

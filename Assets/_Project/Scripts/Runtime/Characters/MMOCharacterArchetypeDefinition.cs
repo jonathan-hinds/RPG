@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using RPGClone.Abilities;
+using RPGClone.Inventory;
 using UnityEngine;
 
 namespace RPGClone.Characters
@@ -18,6 +19,10 @@ namespace RPGClone.Characters
         [SerializeField] private MMOAbilityDefinition racialAbility;
         [SerializeField] private MMOAbilityDefinition classAbility;
         [SerializeField] private List<MMOAbilityDefinition> startingAbilities = new();
+        [Header("Starting Items")]
+        [SerializeField] private List<MMOItemStack> startingInventoryItems = new();
+        [SerializeField] private List<MMOItemDefinition> startingEquipment = new();
+        [SerializeField] private List<MMOWeaponType> startingWeaponSkills = new();
 
         public MMOPlayableRace Race => race;
         public MMOPlayableClass CharacterClass => characterClass;
@@ -30,6 +35,9 @@ namespace RPGClone.Characters
         public MMOAbilityDefinition RacialAbility => racialAbility;
         public MMOAbilityDefinition ClassAbility => classAbility;
         public IReadOnlyList<MMOAbilityDefinition> StartingAbilities => startingAbilities;
+        public IReadOnlyList<MMOItemStack> StartingInventoryItems => startingInventoryItems;
+        public IReadOnlyList<MMOItemDefinition> StartingEquipment => startingEquipment;
+        public IReadOnlyList<MMOWeaponType> StartingWeaponSkills => startingWeaponSkills;
 
         public void Configure(
             MMOPlayableRace newRace,
@@ -57,6 +65,22 @@ namespace RPGClone.Characters
             startingAbilities = newStartingAbilities != null
                 ? new List<MMOAbilityDefinition>(newStartingAbilities)
                 : new List<MMOAbilityDefinition>();
+        }
+
+        public void ConfigureStartingItems(
+            IEnumerable<MMOItemStack> newStartingInventoryItems,
+            IEnumerable<MMOItemDefinition> newStartingEquipment,
+            IEnumerable<MMOWeaponType> newStartingWeaponSkills)
+        {
+            startingInventoryItems = newStartingInventoryItems != null
+                ? new List<MMOItemStack>(newStartingInventoryItems)
+                : new List<MMOItemStack>();
+            startingEquipment = newStartingEquipment != null
+                ? new List<MMOItemDefinition>(newStartingEquipment)
+                : new List<MMOItemDefinition>();
+            startingWeaponSkills = newStartingWeaponSkills != null
+                ? new List<MMOWeaponType>(newStartingWeaponSkills)
+                : new List<MMOWeaponType>();
         }
     }
 }

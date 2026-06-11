@@ -70,7 +70,28 @@ namespace RPGClone.Inventory
 
             MMOCharacterCustomization customization = GetComponent<MMOCharacterCustomization>();
             MMOPlayableClass characterClass = customization != null ? customization.CharacterClass : MMOPlayableClass.Warrior;
-            return item.ArmorWeight <= GetMaximumArmorWeight(characterClass);
+            if (!item.CanClassEquip(characterClass))
+            {
+                return false;
+            }
+
+            if (item.IsWeapon && item.EquipmentSlot != MMOEquipmentSlotType.MainHand)
+            {
+                return false;
+            }
+
+            if (item.IsShield && item.EquipmentSlot != MMOEquipmentSlotType.OffHand)
+            {
+                return false;
+            }
+
+            MMOItemDefinition mainHand = GetEquippedItem(MMOEquipmentSlotType.MainHand);
+            if (item.EquipmentSlot == MMOEquipmentSlotType.OffHand && mainHand != null && mainHand.IsTwoHandedWeapon)
+            {
+                return false;
+            }
+
+            return item.IsWeapon || item.IsShield || item.ArmorWeight <= GetMaximumArmorWeight(characterClass);
         }
 
         public bool TryEquipFromInventory(MMOInventoryContainer inventory, int slotIndex)
@@ -109,6 +130,11 @@ namespace RPGClone.Inventory
             if (identity != null)
             {
                 identity.ApplyStatGains(item.StatBonuses, true);
+            }
+
+            if (item.IsTwoHandedWeapon)
+            {
+                ClearSlot(MMOEquipmentSlotType.OffHand, true);
             }
 
             Changed?.Invoke(this);
@@ -163,6 +189,23 @@ namespace RPGClone.Inventory
             MMOEquippedItemSlot slot = new(slotType, null);
             equippedItems.Add(slot);
             return slot;
+        }
+
+        private void ClearSlot(MMOEquipmentSlotType slotType, bool removeStatBonuses)
+        {
+            MMOEquippedItemSlot slot = GetOrCreateSlot(slotType);
+            if (slot.Item == null)
+            {
+                return;
+            }
+
+            MMOCharacterIdentity identity = GetComponent<MMOCharacterIdentity>();
+            if (removeStatBonuses && identity != null)
+            {
+                identity.RemoveStatGains(slot.Item.StatBonuses, true);
+            }
+
+            slot.Configure(slotType, null);
         }
 
         private static MMOArmorWeight GetMaximumArmorWeight(MMOPlayableClass characterClass)

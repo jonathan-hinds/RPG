@@ -28,3 +28,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3c1aade4e9bf68c4c9c6ac4e85e35f96, type: 2}
   - {fileID: 11400000, guid: 646844a572f8142489442eaf9b243b39, type: 2}
   - {fileID: 11400000, guid: afdda849a5a328448b56c72992d50691, type: 2}
+  startingInventoryItems: []
+  startingEquipment:
+  - {fileID: 11400000, guid: 9d146e485a7802446838f24183575d5c, type: 2}
+  - {fileID: 11400000, guid: 25dace770860f3047852a681083c0626, type: 2}
+  startingWeaponSkills: 010000000200000007000000

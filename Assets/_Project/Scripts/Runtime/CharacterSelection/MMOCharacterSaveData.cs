@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using RPGClone.Characters;
+using RPGClone.Combat;
 using RPGClone.Inventory;
 using RPGClone.UI;
 using UnityEngine;
@@ -32,6 +33,7 @@ namespace RPGClone.CharacterSelection
         public int copper;
         public List<MMOInventorySlotSaveData> inventory = new();
         public List<MMOEquipmentSlotSaveData> equipment = new();
+        public List<MMOWeaponSkillSaveEntry> weaponSkills = new();
         public List<string> learnedAbilityIds = new();
         public List<MMOActionBarSlotSaveData> actionBarSlots = new();
         public List<MMOQuestStateSaveData> activeQuests = new();

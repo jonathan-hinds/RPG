@@ -54,8 +54,11 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
             Tags { "LightMode" = "UniversalForward" }
 
             Cull Back
+            Blend One Zero
+            BlendOp Add
             ZWrite On
             ZTest LEqual
+            AlphaToMask Off
 
             HLSLPROGRAM
             #pragma target 3.5
@@ -375,6 +378,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
 
             ZWrite On
             ZTest LEqual
+            Blend One Zero
             ColorMask 0
             Cull Back
 
@@ -496,6 +500,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
 
             ZWrite On
             ColorMask R
+            Blend One Zero
             Cull Back
 
             HLSLPROGRAM

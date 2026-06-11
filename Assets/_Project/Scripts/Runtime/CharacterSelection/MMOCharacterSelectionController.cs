@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using RPGClone.Characters;
+using RPGClone.Combat;
+using RPGClone.Inventory;
 using RPGClone.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -369,7 +371,7 @@ namespace RPGClone.CharacterSelection
 
         private MMOCharacterSaveData CreateCharacterData(string characterName)
         {
-            return new MMOCharacterSaveData
+            MMOCharacterSaveData saveData = new()
             {
                 characterId = Guid.NewGuid().ToString("N"),
                 characterName = characterName,
@@ -380,6 +382,84 @@ namespace RPGClone.CharacterSelection
                 position = new Vector3SaveData(Vector3.zero),
                 rotationEuler = new Vector3SaveData(Vector3.zero)
             };
+
+            ApplyArchetypeStartingContent(saveData);
+            return saveData;
+        }
+
+        private void ApplyArchetypeStartingContent(MMOCharacterSaveData saveData)
+        {
+            MMOCharacterArchetypeDefinition archetype = archetypeCatalog != null ? archetypeCatalog.Find(saveData.race, saveData.characterClass) : null;
+            if (archetype == null)
+            {
+                return;
+            }
+
+            int slotIndex = 0;
+            foreach (MMOItemStack stack in archetype.StartingInventoryItems)
+            {
+                if (stack == null || stack.IsEmpty)
+                {
+                    continue;
+                }
+
+                saveData.inventory.Add(new MMOInventorySlotSaveData
+                {
+                    slotIndex = slotIndex++,
+                    itemId = stack.Item.ItemId,
+                    quantity = stack.Quantity
+                });
+            }
+
+            foreach (MMOItemDefinition item in archetype.StartingEquipment)
+            {
+                if (item == null || !item.IsEquipment)
+                {
+                    continue;
+                }
+
+                saveData.equipment.Add(new MMOEquipmentSlotSaveData
+                {
+                    slotType = item.EquipmentSlot,
+                    itemId = item.ItemId
+                });
+            }
+
+            AddStartingWeaponSkill(saveData, MMOWeaponType.Unarmed);
+            foreach (MMOWeaponType weaponType in archetype.StartingWeaponSkills)
+            {
+                AddStartingWeaponSkill(saveData, weaponType);
+            }
+
+            foreach (MMOItemDefinition item in archetype.StartingEquipment)
+            {
+                if (item != null && item.WeaponType != MMOWeaponType.None)
+                {
+                    AddStartingWeaponSkill(saveData, item.WeaponType);
+                }
+            }
+        }
+
+        private static void AddStartingWeaponSkill(MMOCharacterSaveData saveData, MMOWeaponType weaponType)
+        {
+            if (weaponType == MMOWeaponType.None)
+            {
+                return;
+            }
+
+            foreach (MMOWeaponSkillSaveEntry existing in saveData.weaponSkills)
+            {
+                if (existing.weaponType == weaponType)
+                {
+                    return;
+                }
+            }
+
+            saveData.weaponSkills.Add(new MMOWeaponSkillSaveEntry
+            {
+                weaponType = weaponType,
+                skillValue = Mathf.Max(5, saveData.level * 5)
+            });
         }
 
         private void SelectRace(MMOPlayableRace race)

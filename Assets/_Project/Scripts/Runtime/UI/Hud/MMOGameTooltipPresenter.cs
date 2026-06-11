@@ -243,7 +243,29 @@ namespace RPGClone.UI
             content.Add($"{MMOUiFactory.FormatEnumLabel(item.Quality)} {MMOUiFactory.FormatEnumLabel(item.ItemType)}", 11, FontStyle.Normal, new Color(0.82f, 0.78f, 0.68f, 1f));
             if (item.IsEquipment)
             {
-                content.Add($"{MMOUiFactory.FormatEnumLabel(item.ArmorWeight)} - {MMOUiFactory.FormatEnumLabel(item.EquipmentSlot)}", 11, FontStyle.Normal, Color.white);
+                if (item.IsWeapon)
+                {
+                    content.Add($"{FormatWeaponHand(item)} {MMOUiFactory.FormatEnumLabel(item.WeaponType)}", 11, FontStyle.Normal, Color.white);
+                    content.Add($"{item.WeaponMinDamage:0}-{item.WeaponMaxDamage:0} Damage     Speed {item.WeaponSpeedSeconds:0.00}", 11, FontStyle.Normal, Color.white);
+                    content.Add($"({item.WeaponDps:0.0} damage per second)", 11, FontStyle.Normal, Color.white);
+                }
+                else if (item.IsShield)
+                {
+                    content.Add("Off Hand Shield", 11, FontStyle.Normal, Color.white);
+                    content.Add($"{item.StatBonuses.Armor} Armor", 11, FontStyle.Normal, Color.white);
+                    content.Add($"{item.ShieldBlockValue} Block", 11, FontStyle.Normal, Color.white);
+                }
+                else
+                {
+                    content.Add($"{MMOUiFactory.FormatEnumLabel(item.ArmorWeight)} - {MMOUiFactory.FormatEnumLabel(item.EquipmentSlot)}", 11, FontStyle.Normal, Color.white);
+                }
+
+                string classLine = FormatAllowedClasses(item);
+                if (!string.IsNullOrWhiteSpace(classLine))
+                {
+                    content.Add(classLine, 11, FontStyle.Normal, Color.white);
+                }
+
                 foreach (string statLine in BuildStatLines(item.StatBonuses))
                 {
                     content.Add(statLine, 11, FontStyle.Normal, new Color(0.18f, 1f, 0.18f, 1f));
@@ -275,6 +297,27 @@ namespace RPGClone.UI
             }
 
             return content;
+        }
+
+        private static string FormatWeaponHand(MMOItemDefinition item)
+        {
+            return item.IsTwoHandedWeapon ? "Two-Hand" : "One-Hand";
+        }
+
+        private static string FormatAllowedClasses(MMOItemDefinition item)
+        {
+            if (item == null || item.AllowedClasses == null || item.AllowedClasses.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            List<string> classNames = new();
+            foreach (MMOPlayableClass playableClass in item.AllowedClasses)
+            {
+                classNames.Add(MMOUiFactory.FormatEnumLabel(playableClass));
+            }
+
+            return $"Classes: {string.Join(", ", classNames)}";
         }
 
         private static MMOTooltipContent BuildAbilityContent(MMOAbilityDefinition ability)

@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36c86b9860fba74499c875bfa8a887e9, type: 3}
+  m_Name: Windmill_Repair_Hammer
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Inventory.MMOItemDefinition
+  itemId: windmill_repair_hammer
+  displayName: Windmill Repair Hammer
+  description: A weighted hammer and line pins used to secure damaged windmill rigging.
+  itemType: 4
+  quality: 1
+  icon: {fileID: 0}
+  maxStackSize: 1
+  vendorValueCopper: 0
+  consumableType: 0
+  restoreHealthAmount: 0
+  restoreManaAmount: 0
+  consumeDurationSeconds: 10
+  requiresStationary: 1
+  equipmentSlot: 4
+  armorWeight: 0
+  statBonuses:
+    stamina: 10
+    strength: 10
+    agility: 10
+    intellect: 10
+    spirit: 10
+    armor: 0
+    attackPower: 8
+    spellPower: 0
+    meleeMinDamage: 4
+    meleeMaxDamage: 7
+    meleeAttackSpeed: 2
+    meleeRange: 3
+  weaponType: 0
+  weaponMinDamage: 0
+  weaponMaxDamage: 0
+  weaponSpeedSeconds: 2
+  shieldBlockValue: 0
+  allowedClasses: 

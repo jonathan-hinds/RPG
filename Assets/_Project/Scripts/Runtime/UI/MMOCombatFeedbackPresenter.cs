@@ -15,6 +15,8 @@ namespace RPGClone.UI
         [SerializeField] private Color outgoingDamageColor = new(1f, 0.82f, 0.2f, 1f);
         [SerializeField] private Color incomingDamageColor = new(1f, 0.18f, 0.12f, 1f);
         [SerializeField] private Color healingColor = new(0.2f, 1f, 0.35f, 1f);
+        [SerializeField] private Color missColor = new(0.78f, 0.78f, 0.78f, 1f);
+        [SerializeField] private Color blockColor = new(0.48f, 0.72f, 1f, 1f);
         [SerializeField] private Color errorColor = new(1f, 0.08f, 0.04f, 1f);
         [SerializeField, Min(0.2f)] private float floatingTextLifetime = 1.15f;
         [SerializeField, Min(0.2f)] private float errorTextLifetime = 1.45f;
@@ -64,6 +66,8 @@ namespace RPGClone.UI
 
                 combatant.Damaged -= OnCombatantDamaged;
                 combatant.Healed -= OnCombatantHealed;
+                combatant.Missed -= OnCombatantMissed;
+                combatant.Blocked -= OnCombatantBlocked;
             }
 
             subscribedCombatants.Clear();
@@ -154,6 +158,8 @@ namespace RPGClone.UI
 
             combatant.Damaged -= OnCombatantDamaged;
             combatant.Healed -= OnCombatantHealed;
+            combatant.Missed -= OnCombatantMissed;
+            combatant.Blocked -= OnCombatantBlocked;
             subscribedCombatants.Remove(combatant);
         }
 
@@ -166,6 +172,8 @@ namespace RPGClone.UI
 
             combatant.Damaged += OnCombatantDamaged;
             combatant.Healed += OnCombatantHealed;
+            combatant.Missed += OnCombatantMissed;
+            combatant.Blocked += OnCombatantBlocked;
             subscribedCombatants.Add(combatant);
         }
 
@@ -205,6 +213,23 @@ namespace RPGClone.UI
             }
 
             SpawnWorldText(target.transform, $"+{amount}", healingColor, floatingTextLifetime);
+        }
+
+        private void OnCombatantMissed(MMOCombatant source, MMOCombatant target, MMOAbilityDefinition ability)
+        {
+            Transform anchor = target != null ? target.transform : source != null ? source.transform : null;
+            if (anchor != null)
+            {
+                SpawnWorldText(anchor, "Miss", missColor, floatingTextLifetime);
+            }
+        }
+
+        private void OnCombatantBlocked(MMOCombatant source, MMOCombatant target, MMOAbilityDefinition ability, int amount)
+        {
+            if (target != null)
+            {
+                SpawnWorldText(target.transform, $"Block {amount}", blockColor, floatingTextLifetime);
+            }
         }
 
         private void SpawnWorldText(Transform target, string message, Color color, float lifetime)

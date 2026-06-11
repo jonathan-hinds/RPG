@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e7c6418b419fe042ac03a47abbb3689, type: 3}
+  m_Name: A_Turn_of_the_Blades
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
+  questId: windmill_repair_weapons
+  displayName: A Turn of the Blades
+  minimumLevel: 1
+  offeredByNpcId: millwright_torga
+  turnedInToNpcId: millwright_torga
+  prerequisiteQuests: []
+  offerText: The mills keep our stores dry and our scouts fed, but the sail lines
+    are fraying. Take this hammer and pin a repair line at each windmill.
+  progressText: Each mill needs one good repair line.
+  completionText: The sails will turn through another ash storm. Choose a weapon
+    from the spare rack.
+  objectiveSummary: Repair 4 windmill lines.
+  objectives:
+  - objectiveId: windmill_lines
+    objectiveType: 3
+    summary: Windmill lines repaired
+    requiredCount: 4
+    requiredItem: {fileID: 0}
+    usableItem: {fileID: 11400000, guid: 3e56f08fcc4053d4ca7b967c4985d9b7, type: 2}
+    requiredCreature: {fileID: 0}
+    requiredCreatureId: 
+    requiredWorldObjectId: windmill_repair_line
+    requiredNpcId: 
+    consumeRequiredItemsOnTurnIn: 1
+    mapHints: []
+  startItems:
+  - item: {fileID: 11400000, guid: 3e56f08fcc4053d4ca7b967c4985d9b7, type: 2}
+    quantity: 1
+  rewards:
+    experience: 95
+    moneyCopper: 55
+    guaranteedItems: []
+    choiceItems:
+    - {fileID: 11400000, guid: 05d3201fd3bfebd4fb9e69c7e536eae2, type: 2}
+    - {fileID: 11400000, guid: e0dce1f3300d42541bb5571a226732d3, type: 2}
+    - {fileID: 11400000, guid: 95764ea0c88bc6a428641fba0366df45, type: 2}

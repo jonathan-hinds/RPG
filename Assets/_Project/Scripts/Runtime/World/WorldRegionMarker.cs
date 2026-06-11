@@ -77,14 +77,18 @@ namespace RPGClone.World
         private static bool TryGetGroundHeight(Transform target, out float groundY)
         {
             Vector3 position = target.position;
+            bool foundRaycastGround = TryRaycastGround(target, out float raycastGroundY);
+
             Terrain terrain = FindTerrainAt(position);
             if (terrain != null)
             {
-                groundY = terrain.SampleHeight(position) + terrain.transform.position.y;
+                float terrainGroundY = terrain.SampleHeight(position) + terrain.transform.position.y;
+                groundY = foundRaycastGround ? Mathf.Max(raycastGroundY, terrainGroundY) : terrainGroundY;
                 return true;
             }
 
-            return TryRaycastGround(target, out groundY);
+            groundY = raycastGroundY;
+            return foundRaycastGround;
         }
 
         private static Terrain FindTerrainAt(Vector3 position)

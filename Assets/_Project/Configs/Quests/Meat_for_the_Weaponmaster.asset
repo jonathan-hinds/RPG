@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e7c6418b419fe042ac03a47abbb3689, type: 3}
+  m_Name: Meat_for_the_Weaponmaster
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
+  questId: weapon_training_hunt
+  displayName: Meat for the Weaponmaster
+  minimumLevel: 1
+  offeredByNpcId: huntmaster_krul
+  turnedInToNpcId: huntmaster_krul
+  prerequisiteQuests: []
+  offerText: A weapon is only as good as the hand that feeds the camp. Bring wolf
+    meat from the valley packs and I will open the heavy racks to you.
+  progressText: The racks stay closed until the meat is here.
+  completionText: Good. The camp eats, and you earn a heavier weapon.
+  objectiveSummary: Collect 6 Wolf Meat from wolves.
+  objectives:
+  - objectiveId: wolf_meat
+    objectiveType: 1
+    summary: Wolf Meat
+    requiredCount: 6
+    requiredItem: {fileID: 11400000, guid: 8c9851cbebb8c5d4ca3f7bd9de42014f, type: 2}
+    usableItem: {fileID: 0}
+    requiredCreature: {fileID: 11400000, guid: 773c66a658830684e997faeb51c21d0e, type: 2}
+    requiredCreatureId: 
+    requiredWorldObjectId: 
+    requiredNpcId: 
+    consumeRequiredItemsOnTurnIn: 1
+    mapHints: []
+  startItems: []
+  rewards:
+    experience: 95
+    moneyCopper: 55
+    guaranteedItems: []
+    choiceItems:
+    - {fileID: 11400000, guid: 4ea4c09a90b35294d8fc1cbd4217d439, type: 2}
+    - {fileID: 11400000, guid: 6080b0eb30481dd408c83fe130d9b26b, type: 2}
+    - {fileID: 11400000, guid: c5921dac17f46e944a9a99ad3576adaf, type: 2}

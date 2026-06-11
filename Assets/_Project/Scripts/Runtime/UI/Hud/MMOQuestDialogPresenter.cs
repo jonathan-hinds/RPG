@@ -14,6 +14,7 @@ namespace RPGClone.UI
         private MMOQuestLog questLog;
         private MMOQuestDefinition selectedQuest;
         private MMOItemDefinition selectedReward;
+        private bool selectedQuestTurnIn;
 
         public static MMOQuestDialogPresenter Instance { get; private set; }
 
@@ -44,6 +45,7 @@ namespace RPGClone.UI
             questLog = newQuestLog;
             selectedQuest = null;
             selectedReward = null;
+            selectedQuestTurnIn = false;
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
             TrackNpcDistance();
@@ -54,6 +56,7 @@ namespace RPGClone.UI
         {
             selectedQuest = null;
             selectedReward = null;
+            selectedQuestTurnIn = false;
             gameObject.SetActive(false);
         }
 
@@ -153,6 +156,7 @@ namespace RPGClone.UI
         private void OpenQuest(MMOQuestDefinition quest, bool turnIn)
         {
             selectedQuest = quest;
+            selectedQuestTurnIn = turnIn;
             MMOUiFactory.DestroyChildren(contentRoot);
 
             CreateText("Title", quest.DisplayName, 20, FontStyle.Bold, TextAnchor.MiddleLeft, 0f, 0f, 38f).color = MMONpcWindowFrame.TitleColor;
@@ -220,12 +224,13 @@ namespace RPGClone.UI
             float y = startY;
             foreach (MMOItemDefinition item in rewards.ChoiceItems)
             {
-                if (item == null || (equipment != null && !equipment.CanEquip(item)))
+                if (item == null)
                 {
                     continue;
                 }
 
-                if (selectedReward == null)
+                bool canEquip = equipment == null || equipment.CanEquip(item);
+                if (selectedReward == null && canEquip)
                 {
                     selectedReward = item;
                 }
@@ -233,11 +238,24 @@ namespace RPGClone.UI
                 bool isSelected = selectedReward == item;
                 Button choice = CreateItemIconButton($"Reward {item.DisplayName}", item, 0, new Vector2(0f, -y), isSelected);
                 MMOItemTooltipTrigger.Bind(choice.gameObject, item);
-                choice.onClick.AddListener(() =>
+                choice.interactable = canEquip;
+                if (canEquip)
                 {
-                    selectedReward = item;
-                    OpenQuest(selectedQuest, true);
-                });
+                    choice.onClick.AddListener(() =>
+                    {
+                        selectedReward = item;
+                        OpenQuest(selectedQuest, selectedQuestTurnIn);
+                    });
+                }
+                else
+                {
+                    Image image = choice.GetComponent<Image>();
+                    if (image != null)
+                    {
+                        image.color = new Color(image.color.r * 0.55f, image.color.g * 0.55f, image.color.b * 0.55f, 0.72f);
+                    }
+                }
+
                 y += 48f;
             }
         }

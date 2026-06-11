@@ -189,7 +189,29 @@ namespace RPGClone.UI
 
             if (item.IsEquipment)
             {
-                AddLine($"{MMOUiFactory.FormatEnumLabel(item.ArmorWeight)} - {MMOUiFactory.FormatEnumLabel(item.EquipmentSlot)}", 11, FontStyle.Normal, Color.white);
+                if (item.IsWeapon)
+                {
+                    AddLine($"{FormatWeaponHand(item)} {MMOUiFactory.FormatEnumLabel(item.WeaponType)}", 11, FontStyle.Normal, Color.white);
+                    AddLine($"{item.WeaponMinDamage:0}-{item.WeaponMaxDamage:0} Damage     Speed {item.WeaponSpeedSeconds:0.00}", 11, FontStyle.Normal, Color.white);
+                    AddLine($"({item.WeaponDps:0.0} damage per second)", 11, FontStyle.Normal, Color.white);
+                }
+                else if (item.IsShield)
+                {
+                    AddLine($"Off Hand Shield", 11, FontStyle.Normal, Color.white);
+                    AddLine($"{item.StatBonuses.Armor} Armor", 11, FontStyle.Normal, Color.white);
+                    AddLine($"{item.ShieldBlockValue} Block", 11, FontStyle.Normal, Color.white);
+                }
+                else
+                {
+                    AddLine($"{MMOUiFactory.FormatEnumLabel(item.ArmorWeight)} - {MMOUiFactory.FormatEnumLabel(item.EquipmentSlot)}", 11, FontStyle.Normal, Color.white);
+                }
+
+                string classLine = FormatAllowedClasses(item);
+                if (!string.IsNullOrWhiteSpace(classLine))
+                {
+                    AddLine(classLine, 11, FontStyle.Normal, Color.white);
+                }
+
                 foreach (string statLine in BuildStatLines(item.StatBonuses))
                 {
                     AddLine(statLine, 11, FontStyle.Normal, new Color(0.18f, 1f, 0.18f, 1f));
@@ -259,6 +281,27 @@ namespace RPGClone.UI
             if (stats.Armor > 0) yield return $"+{stats.Armor} Armor";
             if (stats.AttackPower > 0) yield return $"+{stats.AttackPower} Attack Power";
             if (stats.SpellPower > 0) yield return $"+{stats.SpellPower} Spell Power";
+        }
+
+        private static string FormatWeaponHand(MMOItemDefinition item)
+        {
+            return item.IsTwoHandedWeapon ? "Two-Hand" : "One-Hand";
+        }
+
+        private static string FormatAllowedClasses(MMOItemDefinition item)
+        {
+            if (item == null || item.AllowedClasses == null || item.AllowedClasses.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            List<string> classNames = new();
+            foreach (MMOPlayableClass playableClass in item.AllowedClasses)
+            {
+                classNames.Add(MMOUiFactory.FormatEnumLabel(playableClass));
+            }
+
+            return $"Classes: {string.Join(", ", classNames)}";
         }
 
         private static string BuildConsumableEffectText(MMOItemDefinition item)
