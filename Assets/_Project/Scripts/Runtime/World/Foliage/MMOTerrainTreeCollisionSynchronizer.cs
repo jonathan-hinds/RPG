@@ -145,6 +145,7 @@ namespace RPGClone.World.Foliage
             float radius = Mathf.Max(0.05f, definition.TrunkRadius * treeInstance.widthScale * horizontalPrefabScale);
             float height = Mathf.Max(radius * 2f, definition.TrunkHeight * treeInstance.heightScale * verticalPrefabScale);
             Vector3 center = Vector3.up * Mathf.Clamp(definition.TrunkCenterYOffset * treeInstance.heightScale * verticalPrefabScale, radius, height - radius);
+            float embedDepth = definition.GroundEmbedDepth * verticalPrefabScale;
 
             GameObject blocker = new($"{prefab.name} Trunk Blocker {index:0000}")
             {
@@ -153,7 +154,7 @@ namespace RPGClone.World.Foliage
             };
             blocker.transform.SetParent(root, true);
             blocker.transform.SetPositionAndRotation(
-                GetTreeWorldPosition(terrainData, treeInstance),
+                GetTreeWorldPosition(terrainData, treeInstance) - Vector3.up * embedDepth,
                 Quaternion.Euler(0f, treeInstance.rotation * Mathf.Rad2Deg, 0f));
 
             CapsuleCollider collider = blocker.AddComponent<CapsuleCollider>();
@@ -223,6 +224,7 @@ namespace RPGClone.World.Foliage
                         hash = hash * 31 + Quantize(definition.TrunkRadius);
                         hash = hash * 31 + Quantize(definition.TrunkHeight);
                         hash = hash * 31 + Quantize(definition.TrunkCenterYOffset);
+                        hash = hash * 31 + Quantize(definition.GroundEmbedDepth);
                     }
                 }
 

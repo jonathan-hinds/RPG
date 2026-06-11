@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 2721156334149423462}
   - component: {fileID: 1615333049527975858}
   - component: {fileID: 9068916804312501769}
+  - component: {fileID: 4560369852677870198}
   - component: {fileID: 7626326302629050232}
   m_Layer: 8
   m_Name: Orcish_Ember_Tree_03_TerrainTree
@@ -111,6 +112,26 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!205 &4560369852677870198
+LODGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7688537706618455728}
+  serializedVersion: 3
+  m_LocalReferencePoint: {x: 0.50477886, y: 4.8382792, z: 0.6856313}
+  m_Size: 10.036559
+  m_FadeMode: 0
+  m_AnimateCrossFading: 0
+  m_LastLODIsBillboard: 0
+  m_LODs:
+  - screenRelativeHeight: 0.001
+    fadeTransitionWidth: 0
+    renderers:
+    - renderer: {fileID: 9068916804312501769}
+  m_Enabled: 1
+  m_GlobalIlluminationLOD: 0
 --- !u!114 &7626326302629050232
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -126,3 +147,4 @@ MonoBehaviour:
   trunkRadius: 0.44
   trunkHeight: 4
   trunkCenterYOffset: 2
+  groundEmbedDepth: 0.18

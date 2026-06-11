@@ -22,7 +22,11 @@ namespace RPGClone.EditorTools
         private const string TreeTrunkLayerName = "TreeTrunk";
         private const string CameraConfigPath = "Assets/_Project/Configs/DefaultThirdPersonCamera.asset";
         private const float TreeDrawDistance = 5000f;
+        private const float SingleLodScreenRelativeTransitionHeight = 0.001f;
+        private const float DefaultTreeGroundEmbedDepth = 0.18f;
+        private const float FullRotationRadians = 6.28318530718f;
         private const int MaxFullLodTrees = 10000;
+        private const int TreeRotationSeed = 0x4D4D4F54;
 
         private static readonly TreeDefinition[] Trees =
         {
@@ -34,7 +38,8 @@ namespace RPGClone.EditorTools
                 $"{MeshFolder}/Orcish_Ember_Tree_01_TerrainTreeMesh.asset",
                 0.48f,
                 4.2f,
-                2.1f),
+                2.1f,
+                DefaultTreeGroundEmbedDepth),
             new(
                 "Orcish Ember Tree 02",
                 "tree2",
@@ -43,7 +48,8 @@ namespace RPGClone.EditorTools
                 $"{MeshFolder}/Orcish_Ember_Tree_02_TerrainTreeMesh.asset",
                 0.5f,
                 4.4f,
-                2.2f),
+                2.2f,
+                DefaultTreeGroundEmbedDepth),
             new(
                 "Orcish Ember Tree 03",
                 "tree3",
@@ -52,7 +58,8 @@ namespace RPGClone.EditorTools
                 $"{MeshFolder}/Orcish_Ember_Tree_03_TerrainTreeMesh.asset",
                 0.44f,
                 4f,
-                2f)
+                2f,
+                DefaultTreeGroundEmbedDepth)
         };
 
         [MenuItem("Tools/RPG Clone/Foliage/Configure Terrain Trees")]
@@ -87,6 +94,7 @@ namespace RPGClone.EditorTools
             TerrainData terrainData = terrain.terrainData;
             RemoveBrokenTreeDetails(terrainData, treePrefabs);
             ApplyTreePrototypes(terrainData, treePrefabs);
+            EnsurePaintedTreeRotationVariation(terrainData);
             EnsureCollisionSynchronizer(terrain);
 
             ConfigureTerrainTreeRendering(terrain);
@@ -145,16 +153,34 @@ namespace RPGClone.EditorTools
             meshRenderer.sharedMaterials = BuildRendererMaterials(sourceRenderer.sharedMaterials);
             meshRenderer.shadowCastingMode = sourceRenderer.shadowCastingMode;
             meshRenderer.receiveShadows = sourceRenderer.receiveShadows;
+            ConfigureSingleLodGroup(root, meshRenderer);
 
             MMOTerrainTreeCollisionDefinition collisionDefinition = root.AddComponent<MMOTerrainTreeCollisionDefinition>();
             collisionDefinition.Configure(
                 collisionSettings.TrunkRadius,
                 collisionSettings.TrunkHeight,
-                collisionSettings.TrunkCenterYOffset);
+                collisionSettings.TrunkCenterYOffset,
+                tree.GroundEmbedDepth);
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, tree.PrefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return prefab;
+        }
+
+        private static void ConfigureSingleLodGroup(GameObject root, Renderer renderer)
+        {
+            LODGroup lodGroup = root.GetComponent<LODGroup>();
+            if (lodGroup == null)
+            {
+                lodGroup = root.AddComponent<LODGroup>();
+            }
+
+            lodGroup.animateCrossFading = false;
+            lodGroup.SetLODs(new[]
+            {
+                new LOD(SingleLodScreenRelativeTransitionHeight, new[] { renderer })
+            });
+            lodGroup.RecalculateBounds();
         }
 
         private static Mesh CreateOrUpdateBakedMesh(TreeDefinition tree, Mesh sourceMesh, Transform sourceTransform)
@@ -182,7 +208,7 @@ namespace RPGClone.EditorTools
             {
                 for (int i = 0; i < vertices.Length; i++)
                 {
-                    vertices[i].y -= minY;
+                    vertices[i].y -= minY + tree.GroundEmbedDepth;
                 }
             }
 
@@ -313,6 +339,53 @@ namespace RPGClone.EditorTools
 
             terrainData.treePrototypes = prototypes.ToArray();
             terrainData.RefreshPrototypes();
+        }
+
+        private static void EnsurePaintedTreeRotationVariation(TerrainData terrainData)
+        {
+            TreeInstance[] treeInstances = terrainData.treeInstances;
+            if (treeInstances == null || treeInstances.Length == 0 || !ShouldSeedTreeRotations(treeInstances))
+            {
+                return;
+            }
+
+            for (int i = 0; i < treeInstances.Length; i++)
+            {
+                TreeInstance treeInstance = treeInstances[i];
+                treeInstance.rotation = DeterministicTreeRotation(treeInstance, i);
+                treeInstances[i] = treeInstance;
+            }
+
+            terrainData.treeInstances = treeInstances;
+            EditorUtility.SetDirty(terrainData);
+        }
+
+        private static bool ShouldSeedTreeRotations(TreeInstance[] treeInstances)
+        {
+            int zeroRotationCount = 0;
+            for (int i = 0; i < treeInstances.Length; i++)
+            {
+                if (Mathf.Abs(treeInstances[i].rotation) <= 0.0001f)
+                {
+                    zeroRotationCount++;
+                }
+            }
+
+            return zeroRotationCount >= Mathf.CeilToInt(treeInstances.Length * 0.95f);
+        }
+
+        private static float DeterministicTreeRotation(TreeInstance treeInstance, int index)
+        {
+            unchecked
+            {
+                int hash = TreeRotationSeed;
+                hash = hash * 397 ^ treeInstance.prototypeIndex;
+                hash = hash * 397 ^ index;
+                hash = hash * 397 ^ Mathf.RoundToInt(treeInstance.position.x * 100000f);
+                hash = hash * 397 ^ Mathf.RoundToInt(treeInstance.position.z * 100000f);
+                uint positiveHash = (uint)hash & 0x7FFFFFFF;
+                return positiveHash / (float)0x7FFFFFFF * FullRotationRadians;
+            }
         }
 
         private static void ConfigureTerrainTreeRendering(Terrain terrain)
@@ -456,7 +529,8 @@ namespace RPGClone.EditorTools
                 string meshPath,
                 float trunkRadius,
                 float trunkHeight,
-                float trunkCenterYOffset)
+                float trunkCenterYOffset,
+                float groundEmbedDepth)
             {
                 DisplayName = displayName;
                 SceneObjectName = sceneObjectName;
@@ -466,6 +540,7 @@ namespace RPGClone.EditorTools
                 TrunkRadius = trunkRadius;
                 TrunkHeight = trunkHeight;
                 TrunkCenterYOffset = trunkCenterYOffset;
+                GroundEmbedDepth = Mathf.Max(0f, groundEmbedDepth);
             }
 
             public string DisplayName { get; }
@@ -476,6 +551,7 @@ namespace RPGClone.EditorTools
             public float TrunkRadius { get; }
             public float TrunkHeight { get; }
             public float TrunkCenterYOffset { get; }
+            public float GroundEmbedDepth { get; }
         }
 
         private readonly struct TreeCollisionSettings
