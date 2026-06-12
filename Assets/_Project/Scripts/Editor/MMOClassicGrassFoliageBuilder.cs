@@ -19,13 +19,17 @@ namespace RPGClone.EditorTools
         private const string MeshFolder = GeneratedFolder + "/Meshes";
         private const string PrefabFolder = GeneratedFolder + "/Prefabs";
         private const string ProfilePath = ConfigFolder + "/ClassicGrassFoliageProfile.asset";
+        private static readonly Quaternion ModelDetailMeshRotation = Quaternion.Euler(-90f, 0f, 0f);
 
-        private static readonly string[] DefaultGrassTexturePaths =
+        private static readonly DefaultVariationDefinition[] DefaultVariations =
         {
-            "Assets/grass-01.png",
-            "Assets/grass-02.png",
-            "Assets/grass-03.png",
-            "Assets/grass-04.png"
+            DefaultVariationDefinition.Texture("Classic Grass 01", "Assets/grass-01.png", 0.68f, 1.08f, 0.62f, 1.18f, 1, 73, 0.018f, 0.46f, 0.095f, 0.24f, 0.35f),
+            DefaultVariationDefinition.Texture("Classic Grass 02", "Assets/grass-02.png", 0.71f, 1.12f, 0.67f, 1.26f, 1, 174, 0.0215f, 0.485f, 0.113f, 0.258f, 0.35f),
+            DefaultVariationDefinition.Texture("Classic Grass 03", "Assets/grass-03.png", 0.74f, 1.16f, 0.72f, 1.34f, 1, 275, 0.025f, 0.51f, 0.131f, 0.276f, 0.35f),
+            DefaultVariationDefinition.Texture("Classic Grass 04", "Assets/grass-04.png", 0.77f, 1.2f, 0.77f, 1.42f, 1, 376, 0.0285f, 0.535f, 0.149f, 0.294f, 0.35f),
+            DefaultVariationDefinition.Model("Classic Bush 01", "Assets/bushes/Bush1/Untitled.fbx", 0.85f, 1.2f, 0.85f, 1.25f, 1, 517, 0.014f, 0.63f, 0.082f, 0.34f, 0.60f),
+            DefaultVariationDefinition.Model("Classic Bush 02", "Assets/bushes/bush2/bush2.fbx", 0.9f, 1.25f, 0.9f, 1.3f, 1, 619, 0.012f, 0.66f, 0.078f, 0.37f, 0.60f),
+            DefaultVariationDefinition.Model("Classic Bush 03", "Assets/bushes/Bush3/bush3.fbx", 0.8f, 1.15f, 0.8f, 1.2f, 1, 727, 0.016f, 0.61f, 0.087f, 0.32f, 0.60f)
         };
 
         [MenuItem("Tools/RPG Clone/Apply Classic Grass Foliage")]
@@ -58,8 +62,8 @@ namespace RPGClone.EditorTools
             EnsureFolders();
             MMOClassicGrassFoliageProfile profile = EnsureDefaultProfile();
             ConfigureTerrainDetailRendering(terrain, profile);
-            GameObject[] prefabs = BuildVariationPrefabs(profile);
-            ApplyDetailPrototypes(terrain.terrainData, profile, prefabs);
+            BuiltFoliageVariation[] builtVariations = BuildVariationPrefabs(profile);
+            ApplyDetailPrototypes(terrain.terrainData, profile, builtVariations);
             ClearAllDetailLayers(terrain.terrainData);
 
             EditorUtility.SetDirty(terrain);
@@ -69,6 +73,31 @@ namespace RPGClone.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"Prepared {terrain.name} for sparse manual classic grass painting. Detail prototypes were kept and painted instances were cleared.");
+        }
+
+        [MenuItem("Tools/RPG Clone/Sync Classic Foliage Details For Painting")]
+        public static void SyncActiveTerrainDetailsForPainting()
+        {
+            Terrain terrain = Terrain.activeTerrain ?? UnityEngine.Object.FindAnyObjectByType<Terrain>();
+            if (terrain == null)
+            {
+                Debug.LogError("Classic foliage details could not be synced because no Terrain exists in the active scene.");
+                return;
+            }
+
+            EnsureFolders();
+            MMOClassicGrassFoliageProfile profile = EnsureDefaultProfile();
+            ConfigureTerrainDetailRendering(terrain, profile);
+            BuiltFoliageVariation[] builtVariations = BuildVariationPrefabs(profile);
+            ApplyDetailPrototypes(terrain.terrainData, profile, builtVariations);
+
+            EditorUtility.SetDirty(terrain);
+            EditorUtility.SetDirty(terrain.terrainData);
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"Synced {builtVariations.Length} classic foliage detail prototypes on {terrain.name} for manual painting.");
         }
 
         [MenuItem("Tools/RPG Clone/Refresh Classic Grass Materials")]
@@ -116,6 +145,70 @@ namespace RPGClone.EditorTools
             Debug.Log(summary);
         }
 
+        [MenuItem("Tools/RPG Clone/Foliage/Paint Bush Detail Verification Patch")]
+        public static void PaintBushDetailVerificationPatch()
+        {
+            Terrain terrain = Terrain.activeTerrain ?? UnityEngine.Object.FindAnyObjectByType<Terrain>();
+            if (terrain == null)
+            {
+                Debug.LogError("Classic bush detail verification could not run because no Terrain exists in the active scene.");
+                return;
+            }
+
+            EnsureFolders();
+            MMOClassicGrassFoliageProfile profile = EnsureDefaultProfile();
+            ConfigureTerrainDetailRendering(terrain, profile);
+            BuiltFoliageVariation[] builtVariations = BuildVariationPrefabs(profile);
+            ApplyDetailPrototypes(terrain.terrainData, profile, builtVariations);
+            int paintedLayers = PaintDetailVerificationPatch(terrain, profile, "Bush");
+
+            EditorUtility.SetDirty(terrain);
+            EditorUtility.SetDirty(terrain.terrainData);
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"Painted a classic bush detail verification patch on {terrain.name}. Bush layers painted={paintedLayers}.");
+        }
+
+        [MenuItem("Tools/RPG Clone/Foliage/Validate Detail Prototype Paintability")]
+        public static void ValidateDetailPrototypePaintability()
+        {
+            Terrain terrain = Terrain.activeTerrain ?? UnityEngine.Object.FindAnyObjectByType<Terrain>();
+            if (terrain == null)
+            {
+                Debug.LogError("Classic foliage detail validation could not run because no Terrain exists in the active scene.");
+                return;
+            }
+
+            TerrainData terrainData = terrain.terrainData;
+            DetailPrototype[] prototypes = terrainData.detailPrototypes;
+            List<string> failures = new();
+            for (int i = 0; i < prototypes.Length; i++)
+            {
+                DetailPrototype prototype = prototypes[i];
+                if (!prototype.Validate(out string errorMessage))
+                {
+                    failures.Add($"layer {i}: {errorMessage}");
+                }
+
+                if (prototype.prototype != null
+                    && prototype.prototype.TryGetComponent(out Renderer renderer)
+                    && renderer.sharedMaterials.Length != 1)
+                {
+                    failures.Add($"layer {i}: renderer has {renderer.sharedMaterials.Length} material slots");
+                }
+            }
+
+            if (failures.Count > 0)
+            {
+                Debug.LogError("Classic foliage detail paintability validation failed: " + string.Join("; ", failures));
+                return;
+            }
+
+            Debug.Log($"Classic foliage detail paintability validation passed for {prototypes.Length} prototypes on {terrain.name}.");
+        }
+
         [MenuItem("Tools/RPG Clone/Clear Painted Classic Grass Foliage")]
         public static void ClearPaintedFoliageFromActiveTerrain()
         {
@@ -156,8 +249,8 @@ namespace RPGClone.EditorTools
             MMOClassicGrassFoliageProfile profile = EnsureDefaultProfile();
             ConfigureTerrainDetailRendering(terrain, profile);
 
-            GameObject[] prefabs = BuildVariationPrefabs(profile);
-            ApplyDetailPrototypes(terrain.terrainData, profile, prefabs);
+            BuiltFoliageVariation[] builtVariations = BuildVariationPrefabs(profile);
+            ApplyDetailPrototypes(terrain.terrainData, profile, builtVariations);
             PaintSparsePatchyDetails(terrain, profile);
 
             EditorUtility.SetDirty(terrain);
@@ -174,55 +267,127 @@ namespace RPGClone.EditorTools
                 AssetDatabase.CreateAsset(profile, ProfilePath);
             }
 
-            bool changed = profile.variations.Count != DefaultGrassTexturePaths.Length;
-            if (changed)
+            List<MMOClassicGrassFoliageVariation> ordered = new();
+            for (int i = 0; i < DefaultVariations.Length; i++)
             {
-                profile.variations.Clear();
+                DefaultVariationDefinition definition = DefaultVariations[i];
+                Texture2D texture = null;
+                GameObject modelPrefab = null;
+                if (definition.kind == FoliageVariationKind.Texture)
+                {
+                    texture = LoadConfiguredFoliageTexture(definition.assetPath);
+                    if (texture == null)
+                    {
+                        Debug.LogWarning($"Classic foliage texture is missing: {definition.assetPath}");
+                        continue;
+                    }
+                }
+                else
+                {
+                    modelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(definition.assetPath);
+                    if (modelPrefab == null)
+                    {
+                        Debug.LogWarning($"Classic foliage model is missing: {definition.assetPath}");
+                        continue;
+                    }
+                }
+
+                MMOClassicGrassFoliageVariation variation = FindExistingVariation(profile, definition.displayName, texture, modelPrefab, out bool wasCreated);
+                ApplyDefaultVariation(definition, texture, modelPrefab, variation, wasCreated);
+                ordered.Add(variation);
             }
 
-            for (int i = 0; i < DefaultGrassTexturePaths.Length; i++)
+            for (int i = 0; i < profile.variations.Count; i++)
             {
-                Texture2D texture = LoadConfiguredGrassTexture(DefaultGrassTexturePaths[i]);
-                if (texture == null)
+                MMOClassicGrassFoliageVariation variation = profile.variations[i];
+                if (variation != null && !ordered.Contains(variation))
                 {
-                    Debug.LogWarning($"Classic grass foliage texture is missing: {DefaultGrassTexturePaths[i]}");
-                    continue;
-                }
-
-                if (changed)
-                {
-                    profile.variations.Add(CreateDefaultVariation(i, texture));
-                }
-                else if (i < profile.variations.Count && profile.variations[i].texture == null)
-                {
-                    profile.variations[i].texture = texture;
+                    ordered.Add(variation);
                 }
             }
 
+            profile.variations.Clear();
+            profile.variations.AddRange(ordered);
+            profile.opacity = 0.35f;
             EditorUtility.SetDirty(profile);
             return profile;
         }
 
-        private static MMOClassicGrassFoliageVariation CreateDefaultVariation(int index, Texture2D texture)
+        private static MMOClassicGrassFoliageVariation FindExistingVariation(
+            MMOClassicGrassFoliageProfile profile,
+            string displayName,
+            Texture2D texture,
+            GameObject modelPrefab,
+            out bool wasCreated)
         {
-            return new MMOClassicGrassFoliageVariation
+            for (int i = 0; i < profile.variations.Count; i++)
             {
-                displayName = $"Classic Grass {index + 1:00}",
-                texture = texture,
-                minWidth = 0.68f + index * 0.03f,
-                maxWidth = 1.08f + index * 0.04f,
-                minHeight = 0.62f + index * 0.05f,
-                maxHeight = 1.18f + index * 0.08f,
-                maxDensityPerCell = index == 0 ? 3 : 2,
-                noiseSeed = 73 + index * 101,
-                clusterNoiseScale = 0.018f + index * 0.0035f,
-                clusterThreshold = 0.46f + index * 0.025f,
-                fineNoiseScale = 0.095f + index * 0.018f,
-                fineThreshold = 0.24f + index * 0.018f
-            };
+                MMOClassicGrassFoliageVariation variation = profile.variations[i];
+                if (variation == null)
+                {
+                    continue;
+                }
+
+                if (variation.displayName == displayName
+                    || (texture != null && variation.texture == texture)
+                    || (modelPrefab != null && variation.modelPrefab == modelPrefab))
+                {
+                    wasCreated = false;
+                    return variation;
+                }
+            }
+
+            MMOClassicGrassFoliageVariation created = new();
+            profile.variations.Add(created);
+            wasCreated = true;
+            return created;
         }
 
-        private static Texture2D LoadConfiguredGrassTexture(string assetPath)
+        private static void ApplyDefaultVariation(
+            DefaultVariationDefinition definition,
+            Texture2D texture,
+            GameObject modelPrefab,
+            MMOClassicGrassFoliageVariation variation,
+            bool resetAuthoringValues)
+        {
+            variation.displayName = definition.displayName;
+            variation.texture = texture;
+            variation.modelPrefab = modelPrefab;
+
+            if (!resetAuthoringValues)
+            {
+                ClampAuthoredVariationValues(variation, definition);
+                return;
+            }
+
+            variation.minWidth = definition.minWidth;
+            variation.maxWidth = definition.maxWidth;
+            variation.minHeight = definition.minHeight;
+            variation.maxHeight = definition.maxHeight;
+            variation.maxDensityPerCell = definition.maxDensityPerCell;
+            variation.noiseSeed = definition.noiseSeed;
+            variation.clusterNoiseScale = definition.clusterNoiseScale;
+            variation.clusterThreshold = definition.clusterThreshold;
+            variation.fineNoiseScale = definition.fineNoiseScale;
+            variation.fineThreshold = definition.fineThreshold;
+            variation.opacity = definition.opacity;
+        }
+
+        private static void ClampAuthoredVariationValues(
+            MMOClassicGrassFoliageVariation variation,
+            DefaultVariationDefinition fallback)
+        {
+            variation.minWidth = variation.minWidth > 0f ? variation.minWidth : fallback.minWidth;
+            variation.maxWidth = Mathf.Max(variation.minWidth, variation.maxWidth > 0f ? variation.maxWidth : fallback.maxWidth);
+            variation.minHeight = variation.minHeight > 0f ? variation.minHeight : fallback.minHeight;
+            variation.maxHeight = Mathf.Max(variation.minHeight, variation.maxHeight > 0f ? variation.maxHeight : fallback.maxHeight);
+            variation.maxDensityPerCell = Mathf.Max(1, variation.maxDensityPerCell);
+            variation.clusterNoiseScale = variation.clusterNoiseScale > 0f ? variation.clusterNoiseScale : fallback.clusterNoiseScale;
+            variation.fineNoiseScale = variation.fineNoiseScale > 0f ? variation.fineNoiseScale : fallback.fineNoiseScale;
+            variation.opacity = variation.opacity > 0f ? variation.opacity : fallback.opacity;
+        }
+
+        private static Texture2D LoadConfiguredFoliageTexture(string assetPath)
         {
             if (AssetImporter.GetAtPath(assetPath) is TextureImporter importer)
             {
@@ -246,28 +411,34 @@ namespace RPGClone.EditorTools
             terrain.detailObjectDistance = profile.detailDrawDistance;
         }
 
-        private static GameObject[] BuildVariationPrefabs(MMOClassicGrassFoliageProfile profile)
+        private static BuiltFoliageVariation[] BuildVariationPrefabs(MMOClassicGrassFoliageProfile profile)
         {
-            List<GameObject> prefabs = new();
+            List<BuiltFoliageVariation> builtVariations = new();
             for (int i = 0; i < profile.variations.Count; i++)
             {
                 MMOClassicGrassFoliageVariation variation = profile.variations[i];
+                if (variation.modelPrefab != null)
+                {
+                    builtVariations.Add(new BuiltFoliageVariation(variation, CreateModelPrefab(variation, profile.alphaCutoff, GetVariationOpacity(profile, variation))));
+                    continue;
+                }
+
                 if (variation.texture == null)
                 {
                     continue;
                 }
 
-                Material material = CreateGrassMaterial(variation, profile.alphaCutoff, profile.opacity);
+                Material material = CreateGrassMaterial(variation, profile.alphaCutoff, GetVariationOpacity(profile, variation));
                 Mesh mesh = CreateCrossedPlaneMesh(
                     $"{MeshFolder}/{Sanitize(variation.displayName)}_CrossedCards.asset",
                     Mathf.Max(2, profile.crossedPlaneCount),
                     Mathf.Max(0.1f, profile.cardWidth),
                     Mathf.Max(0.1f, profile.cardHeight));
 
-                prefabs.Add(CreateGrassPrefab(variation, mesh, material));
+                builtVariations.Add(new BuiltFoliageVariation(variation, CreateGrassPrefab(variation, mesh, material)));
             }
 
-            return prefabs.ToArray();
+            return builtVariations.ToArray();
         }
 
         private static Material CreateGrassMaterial(MMOClassicGrassFoliageVariation variation, float alphaCutoff, float opacity)
@@ -291,11 +462,18 @@ namespace RPGClone.EditorTools
 
             SetTextureIfPresent(material, "_BaseMap", variation.texture);
             SetTextureIfPresent(material, "_MainTex", variation.texture);
+            ConfigureTransparentCutoutMaterial(material, alphaCutoff, opacity);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static void ConfigureTransparentCutoutMaterial(Material material, float alphaCutoff, float opacity)
+        {
             float clampedOpacity = Mathf.Clamp01(opacity);
             float effectiveAlphaCutoff = Mathf.Min(alphaCutoff, Mathf.Max(0.001f, clampedOpacity * 0.5f));
-            Color transparentWhite = new(1f, 1f, 1f, clampedOpacity);
-            SetColorIfPresent(material, "_BaseColor", transparentWhite);
-            SetColorIfPresent(material, "_Color", transparentWhite);
+            Color foliageTint = new(1f, 1f, 1f, clampedOpacity);
+            SetColorIfPresent(material, "_BaseColor", foliageTint);
+            SetColorIfPresent(material, "_Color", foliageTint);
             SetFloatIfPresent(material, "_Surface", 1f);
             SetFloatIfPresent(material, "_Blend", 0f);
             SetFloatIfPresent(material, "_SrcBlend", (float)BlendMode.SrcAlpha);
@@ -318,8 +496,11 @@ namespace RPGClone.EditorTools
             material.renderQueue = (int)RenderQueue.Transparent;
             material.doubleSidedGI = true;
             material.enableInstancing = true;
-            EditorUtility.SetDirty(material);
-            return material;
+        }
+
+        private static float GetVariationOpacity(MMOClassicGrassFoliageProfile profile, MMOClassicGrassFoliageVariation variation)
+        {
+            return variation.opacity > 0f ? variation.opacity : profile.opacity;
         }
 
         private static Shader FindGrassShader()
@@ -395,18 +576,262 @@ namespace RPGClone.EditorTools
             return prefab;
         }
 
-        private static void ApplyDetailPrototypes(TerrainData terrainData, MMOClassicGrassFoliageProfile profile, GameObject[] prefabs)
+        private static GameObject CreateModelPrefab(MMOClassicGrassFoliageVariation variation, float alphaCutoff, float opacity)
+        {
+            string path = $"{PrefabFolder}/{Sanitize(variation.displayName)}_Clump.prefab";
+            GameObject modelInstance = (GameObject)PrefabUtility.InstantiatePrefab(variation.modelPrefab);
+            modelInstance.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            modelInstance.transform.localScale = Vector3.one;
+            Material material = CreateModelMaterial(
+                variation,
+                variation.displayName,
+                FindFirstMaterial(modelInstance),
+                0,
+                alphaCutoff,
+                opacity);
+            Mesh mesh = CreateCombinedModelMesh(
+                $"{MeshFolder}/{Sanitize(variation.displayName)}_ModelMesh.asset",
+                modelInstance,
+                variation.displayName);
+
+            UnityEngine.Object.DestroyImmediate(modelInstance);
+
+            GameObject root = new($"{variation.displayName} Clump");
+            MeshFilter meshFilter = root.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = mesh;
+            MeshRenderer meshRenderer = root.AddComponent<MeshRenderer>();
+            meshRenderer.sharedMaterial = material;
+            meshRenderer.shadowCastingMode = ShadowCastingMode.TwoSided;
+            meshRenderer.receiveShadows = true;
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+            UnityEngine.Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        private static Mesh CreateCombinedModelMesh(
+            string assetPath,
+            GameObject modelInstance,
+            string displayName)
+        {
+            List<CombineInstance> combines = new();
+            MeshFilter[] meshFilters = modelInstance.GetComponentsInChildren<MeshFilter>(true);
+            Matrix4x4 rootWorldToLocal = modelInstance.transform.worldToLocalMatrix;
+            for (int filterIndex = 0; filterIndex < meshFilters.Length; filterIndex++)
+            {
+                MeshFilter meshFilter = meshFilters[filterIndex];
+                Mesh sourceMesh = meshFilter.sharedMesh;
+                if (sourceMesh == null)
+                {
+                    continue;
+                }
+
+                Matrix4x4 transform = rootWorldToLocal * meshFilter.transform.localToWorldMatrix;
+                int subMeshCount = Mathf.Max(1, sourceMesh.subMeshCount);
+                for (int subMesh = 0; subMesh < subMeshCount; subMesh++)
+                {
+                    combines.Add(new CombineInstance
+                    {
+                        mesh = sourceMesh,
+                        subMeshIndex = subMesh,
+                        transform = transform
+                    });
+                }
+            }
+
+            if (combines.Count == 0)
+            {
+                throw new InvalidOperationException($"{displayName} must contain at least one MeshFilter with a mesh.");
+            }
+
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
+            if (mesh == null)
+            {
+                mesh = new Mesh();
+                AssetDatabase.CreateAsset(mesh, assetPath);
+            }
+
+            mesh.Clear();
+            mesh.name = Path.GetFileNameWithoutExtension(assetPath);
+            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            mesh.CombineMeshes(combines.ToArray(), true, true, false);
+            mesh.RecalculateBounds();
+            NormalizeModelDetailMesh(mesh);
+            RotateModelDetailMesh(mesh, ModelDetailMeshRotation);
+            CenterModelDetailMeshOnGround(mesh);
+            if (mesh.normals == null || mesh.normals.Length == 0)
+            {
+                mesh.RecalculateNormals();
+            }
+
+            EditorUtility.SetDirty(mesh);
+            return mesh;
+        }
+
+        private static void NormalizeModelDetailMesh(Mesh mesh)
+        {
+            OrientTallestMeshAxisUp(mesh);
+
+            Bounds bounds = mesh.bounds;
+            float sourceHeight = bounds.size.y;
+            if (sourceHeight <= 0.0001f)
+            {
+                sourceHeight = Mathf.Max(bounds.size.x, bounds.size.z);
+            }
+
+            if (sourceHeight <= 0.0001f)
+            {
+                return;
+            }
+
+            float scale = 1f / sourceHeight;
+            Vector3 pivotOffset = new(bounds.center.x, bounds.min.y, bounds.center.z);
+            Vector3[] vertices = mesh.vertices;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                vertices[i] = (vertices[i] - pivotOffset) * scale;
+            }
+
+            mesh.vertices = vertices;
+            mesh.RecalculateBounds();
+        }
+
+        private static void RotateModelDetailMesh(Mesh mesh, Quaternion rotation)
+        {
+            Vector3[] vertices = mesh.vertices;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                vertices[i] = rotation * vertices[i];
+            }
+
+            Vector3[] normals = mesh.normals;
+            if (normals != null && normals.Length == vertices.Length)
+            {
+                for (int i = 0; i < normals.Length; i++)
+                {
+                    normals[i] = rotation * normals[i];
+                }
+
+                mesh.normals = normals;
+            }
+
+            mesh.vertices = vertices;
+            mesh.RecalculateBounds();
+        }
+
+        private static void CenterModelDetailMeshOnGround(Mesh mesh)
+        {
+            Bounds bounds = mesh.bounds;
+            Vector3 pivotOffset = new(bounds.center.x, bounds.min.y, bounds.center.z);
+            Vector3[] vertices = mesh.vertices;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                vertices[i] -= pivotOffset;
+            }
+
+            mesh.vertices = vertices;
+            mesh.RecalculateBounds();
+        }
+
+        private static void OrientTallestMeshAxisUp(Mesh mesh)
+        {
+            Bounds bounds = mesh.bounds;
+            Vector3 size = bounds.size;
+            int verticalAxis = 1;
+            float verticalSize = size.y;
+            if (size.x > verticalSize)
+            {
+                verticalAxis = 0;
+                verticalSize = size.x;
+            }
+
+            if (size.z > verticalSize)
+            {
+                verticalAxis = 2;
+            }
+
+            if (verticalAxis == 1)
+            {
+                return;
+            }
+
+            Vector3[] vertices = mesh.vertices;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                Vector3 vertex = vertices[i];
+                vertices[i] = verticalAxis == 0
+                    ? new Vector3(vertex.y, vertex.x, vertex.z)
+                    : new Vector3(vertex.x, vertex.z, vertex.y);
+            }
+
+            mesh.vertices = vertices;
+            mesh.RecalculateBounds();
+        }
+
+        private static Material FindFirstMaterial(GameObject modelInstance)
+        {
+            Renderer[] renderers = modelInstance.GetComponentsInChildren<Renderer>(true);
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                Material[] materials = renderers[rendererIndex].sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    if (materials[materialIndex] != null)
+                    {
+                        return materials[materialIndex];
+                    }
+                }
+
+            }
+
+            return null;
+        }
+
+        private static Material CreateModelMaterial(
+            MMOClassicGrassFoliageVariation variation,
+            string displayName,
+            Material sourceMaterial,
+            int materialSlot,
+            float alphaCutoff,
+            float opacity)
+        {
+            string materialName = variation != null ? variation.displayName : displayName;
+            string suffix = materialSlot == 0 ? string.Empty : $"_{materialSlot + 1:00}";
+            string path = $"{MaterialFolder}/{Sanitize(materialName)}_AlphaCutout{suffix}.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            Shader shader = sourceMaterial != null ? sourceMaterial.shader : FindGrassShader();
+            if (material == null)
+            {
+                material = sourceMaterial != null ? new Material(sourceMaterial) : new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+            else if (shader != null && material.shader != shader)
+            {
+                material.shader = shader;
+            }
+
+            if (sourceMaterial != null)
+            {
+                material.CopyPropertiesFromMaterial(sourceMaterial);
+            }
+
+            ConfigureTransparentCutoutMaterial(material, alphaCutoff, opacity);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static void ApplyDetailPrototypes(TerrainData terrainData, MMOClassicGrassFoliageProfile profile, BuiltFoliageVariation[] builtVariations)
         {
             terrainData.SetDetailResolution(profile.detailResolution, profile.detailResolutionPerPatch);
             terrainData.SetDetailScatterMode(DetailScatterMode.InstanceCountMode);
 
-            DetailPrototype[] prototypes = new DetailPrototype[prefabs.Length];
-            for (int i = 0; i < prefabs.Length; i++)
+            DetailPrototype[] prototypes = new DetailPrototype[builtVariations.Length];
+            for (int i = 0; i < builtVariations.Length; i++)
             {
-                MMOClassicGrassFoliageVariation variation = profile.variations[i];
+                MMOClassicGrassFoliageVariation variation = builtVariations[i].variation;
                 prototypes[i] = new DetailPrototype
                 {
-                    prototype = prefabs[i],
+                    prototype = builtVariations[i].prefab,
                     renderMode = DetailRenderMode.VertexLit,
                     usePrototypeMesh = true,
                     useInstancing = true,
@@ -436,6 +861,42 @@ namespace RPGClone.EditorTools
             {
                 terrainData.SetDetailLayer(0, 0, layer, new int[terrainData.detailHeight, terrainData.detailWidth]);
             }
+        }
+
+        private static int PaintDetailVerificationPatch(Terrain terrain, MMOClassicGrassFoliageProfile profile, string displayNameFragment)
+        {
+            TerrainData terrainData = terrain.terrainData;
+            int patchSize = Mathf.Min(9, terrainData.detailWidth, terrainData.detailHeight);
+            int startX = Mathf.Clamp((terrainData.detailWidth - patchSize) / 2, 0, terrainData.detailWidth - patchSize);
+            int startZ = Mathf.Clamp((terrainData.detailHeight - patchSize) / 2, 0, terrainData.detailHeight - patchSize);
+            int layerCount = Mathf.Min(terrainData.detailPrototypes.Length, profile.variations.Count);
+            int paintedLayers = 0;
+
+            for (int layer = 0; layer < layerCount; layer++)
+            {
+                MMOClassicGrassFoliageVariation variation = profile.variations[layer];
+                if (variation == null
+                    || string.IsNullOrWhiteSpace(variation.displayName)
+                    || variation.displayName.IndexOf(displayNameFragment, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                int[,] details = terrainData.GetDetailLayer(startX, startZ, patchSize, patchSize, layer);
+                int density = Mathf.Max(1, variation.maxDensityPerCell);
+                for (int z = 0; z < patchSize; z++)
+                {
+                    for (int x = 0; x < patchSize; x++)
+                    {
+                        details[z, x] = Mathf.Max(details[z, x], density);
+                    }
+                }
+
+                terrainData.SetDetailLayer(startX, startZ, layer, details);
+                paintedLayers++;
+            }
+
+            return paintedLayers;
         }
 
         private static void PaintSparsePatchyDetails(Terrain terrain, MMOClassicGrassFoliageProfile profile)
@@ -600,6 +1061,138 @@ namespace RPGClone.EditorTools
             }
 
             return value.Replace(' ', '_');
+        }
+
+        private enum FoliageVariationKind
+        {
+            Texture,
+            Model
+        }
+
+        private readonly struct BuiltFoliageVariation
+        {
+            public readonly MMOClassicGrassFoliageVariation variation;
+            public readonly GameObject prefab;
+
+            public BuiltFoliageVariation(MMOClassicGrassFoliageVariation variation, GameObject prefab)
+            {
+                this.variation = variation;
+                this.prefab = prefab;
+            }
+        }
+
+        private readonly struct DefaultVariationDefinition
+        {
+            public readonly string displayName;
+            public readonly string assetPath;
+            public readonly FoliageVariationKind kind;
+            public readonly float minWidth;
+            public readonly float maxWidth;
+            public readonly float minHeight;
+            public readonly float maxHeight;
+            public readonly int maxDensityPerCell;
+            public readonly int noiseSeed;
+            public readonly float clusterNoiseScale;
+            public readonly float clusterThreshold;
+            public readonly float fineNoiseScale;
+            public readonly float fineThreshold;
+            public readonly float opacity;
+
+            public static DefaultVariationDefinition Texture(
+                string displayName,
+                string assetPath,
+                float minWidth,
+                float maxWidth,
+                float minHeight,
+                float maxHeight,
+                int maxDensityPerCell,
+                int noiseSeed,
+                float clusterNoiseScale,
+                float clusterThreshold,
+                float fineNoiseScale,
+                float fineThreshold,
+                float opacity)
+            {
+                return new DefaultVariationDefinition(
+                    displayName,
+                    assetPath,
+                    FoliageVariationKind.Texture,
+                    minWidth,
+                    maxWidth,
+                    minHeight,
+                    maxHeight,
+                    maxDensityPerCell,
+                    noiseSeed,
+                    clusterNoiseScale,
+                    clusterThreshold,
+                    fineNoiseScale,
+                    fineThreshold,
+                    opacity);
+            }
+
+            public static DefaultVariationDefinition Model(
+                string displayName,
+                string assetPath,
+                float minWidth,
+                float maxWidth,
+                float minHeight,
+                float maxHeight,
+                int maxDensityPerCell,
+                int noiseSeed,
+                float clusterNoiseScale,
+                float clusterThreshold,
+                float fineNoiseScale,
+                float fineThreshold,
+                float opacity)
+            {
+                return new DefaultVariationDefinition(
+                    displayName,
+                    assetPath,
+                    FoliageVariationKind.Model,
+                    minWidth,
+                    maxWidth,
+                    minHeight,
+                    maxHeight,
+                    maxDensityPerCell,
+                    noiseSeed,
+                    clusterNoiseScale,
+                    clusterThreshold,
+                    fineNoiseScale,
+                    fineThreshold,
+                    opacity);
+            }
+
+            private DefaultVariationDefinition(
+                string displayName,
+                string assetPath,
+                FoliageVariationKind kind,
+                float minWidth,
+                float maxWidth,
+                float minHeight,
+                float maxHeight,
+                int maxDensityPerCell,
+                int noiseSeed,
+                float clusterNoiseScale,
+                float clusterThreshold,
+                float fineNoiseScale,
+                float fineThreshold,
+                float opacity)
+            {
+                this.displayName = displayName;
+                this.assetPath = assetPath;
+                this.kind = kind;
+                this.minWidth = minWidth;
+                this.maxWidth = maxWidth;
+                this.minHeight = minHeight;
+                this.maxHeight = maxHeight;
+                this.maxDensityPerCell = maxDensityPerCell;
+                this.noiseSeed = noiseSeed;
+                this.clusterNoiseScale = clusterNoiseScale;
+                this.clusterThreshold = clusterThreshold;
+                this.fineNoiseScale = fineNoiseScale;
+                this.fineThreshold = fineThreshold;
+                this.opacity = opacity;
+            }
         }
     }
 }

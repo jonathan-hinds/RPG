@@ -24,7 +24,7 @@ namespace RPGClone.World.Foliage
         public float cardHeight = 1.08f;
         public float alphaCutoff = 0.02f;
         [Range(0.05f, 1f)]
-        public float opacity = 0.25f;
+        public float opacity = 0.35f;
 
         public Color healthyColor = Color.white;
         public Color dryColor = Color.white;
@@ -37,17 +37,35 @@ namespace RPGClone.World.Foliage
     {
         public string displayName;
         public Texture2D texture;
+        public GameObject modelPrefab;
 
+        [Tooltip("Minimum painted instance width for this detail type.")]
+        [Min(0.01f)]
         public float minWidth = 0.72f;
+
+        [Tooltip("Maximum painted instance width for this detail type.")]
+        [Min(0.01f)]
         public float maxWidth = 1.16f;
+
+        [Tooltip("Minimum painted instance height for this detail type.")]
+        [Min(0.01f)]
         public float minHeight = 0.68f;
+
+        [Tooltip("Maximum painted instance height for this detail type.")]
+        [Min(0.01f)]
         public float maxHeight = 1.32f;
 
+        [Tooltip("Maximum density value written into one Terrain detail cell when using the automated patch painter.")]
+        [Min(1)]
         public int maxDensityPerCell = 2;
+
         public int noiseSeed = 1;
         public float clusterNoiseScale = 0.022f;
         public float clusterThreshold = 0.58f;
         public float fineNoiseScale = 0.115f;
         public float fineThreshold = 0.36f;
+
+        [Range(0.05f, 1f)]
+        public float opacity = 0.35f;
     }
 }

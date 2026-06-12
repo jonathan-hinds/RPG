@@ -379,7 +379,7 @@ namespace RPGClone.EditorTools
             {
                 profile.detailDrawDistance = 170f;
                 profile.terrainDetailDensity = 0.36f;
-                profile.opacity = 0.25f;
+                profile.opacity = 0.35f;
                 profile.healthyColor = Color.white;
                 profile.dryColor = Color.white;
                 EditorUtility.SetDirty(profile);
