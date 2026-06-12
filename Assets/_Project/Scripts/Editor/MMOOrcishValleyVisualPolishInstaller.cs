@@ -19,10 +19,15 @@ namespace RPGClone.EditorTools
         private const string GeneratedMaterialsFolder = "Assets/_Project/Generated/Materials";
         private const string PcRenderPipelineAssetPath = SettingsFolder + "/PC_RPAsset.asset";
         private const string PcRendererPath = SettingsFolder + "/PC_Renderer.asset";
+        private const string StarterSkyboxMaterialPath = SettingsFolder + "/OrcishStarterValley_Skybox.mat";
         private const string PolishVolumeProfilePath = SettingsFolder + "/OrcishStarterValley_PolishProfile.asset";
         private const string DustProfilePath = AtmosphereConfigFolder + "/OrcishValley_DustProfile.asset";
         private const string DustMaterialPath = GeneratedMaterialsFolder + "/Ambient_Dust_Mote.mat";
         private const string GrassProfilePath = WorldConfigFolder + "/Foliage/ClassicGrassFoliageProfile.asset";
+        private const float LongRangeShadowDistance = 720f;
+        private const float ClassicFogStartDistance = 95f;
+        private const float ClassicFogEndDistance = 760f;
+        private const float ClassicGrassDrawDistance = 220f;
 
         [MenuItem("Tools/RPG Clone/Apply Orcish Valley Visual Polish")]
         public static void ApplyToActiveScene()
@@ -41,8 +46,10 @@ namespace RPGClone.EditorTools
         {
             EnsureFolders();
             ConfigureRenderPipelineAsset();
+            ConfigureQualitySettings();
             ConfigureScreenSpaceAmbientOcclusion();
             ConfigureLighting();
+            ConfigureSceneTerrainRendering();
             ConfigureCamera();
             ConfigureGlobalVolume();
             ConfigureAmbientDust();
@@ -66,18 +73,58 @@ namespace RPGClone.EditorTools
             }
 
             SerializedObject serializedAsset = new(asset);
-            SetSerializedFloat(serializedAsset, "m_ShadowDistance", 560f);
+            SetSerializedFloat(serializedAsset, "m_ShadowDistance", LongRangeShadowDistance);
             SetSerializedInt(serializedAsset, "m_ShadowCascadeCount", 4);
             SetSerializedInt(serializedAsset, "m_MainLightShadowmapResolution", 4096);
             SetSerializedInt(serializedAsset, "m_AdditionalLightsShadowmapResolution", 2048);
-            SetSerializedVector3(serializedAsset, "m_Cascade4Split", new Vector3(0.045f, 0.16f, 0.46f));
-            SetSerializedFloat(serializedAsset, "m_CascadeBorder", 0.08f);
-            SetSerializedFloat(serializedAsset, "m_ShadowDepthBias", 0.085f);
-            SetSerializedFloat(serializedAsset, "m_ShadowNormalBias", 0.42f);
+            SetSerializedVector3(serializedAsset, "m_Cascade4Split", new Vector3(0.035f, 0.13f, 0.42f));
+            SetSerializedFloat(serializedAsset, "m_CascadeBorder", 0.06f);
+            SetSerializedFloat(serializedAsset, "m_ShadowDepthBias", 0.075f);
+            SetSerializedFloat(serializedAsset, "m_ShadowNormalBias", 0.34f);
             SetSerializedInt(serializedAsset, "m_SoftShadowQuality", 3);
             SetSerializedInt(serializedAsset, "m_ColorGradingMode", 1);
             serializedAsset.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(asset);
+        }
+
+        private static void ConfigureQualitySettings()
+        {
+            int originalLevel = QualitySettings.GetQualityLevel();
+            string[] qualityNames = QualitySettings.names;
+            UniversalRenderPipelineAsset pcAsset = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(PcRenderPipelineAssetPath);
+
+            for (int i = 0; i < qualityNames.Length; i++)
+            {
+                if (!qualityNames[i].Contains("PC"))
+                {
+                    continue;
+                }
+
+                QualitySettings.SetQualityLevel(i, false);
+                QualitySettings.renderPipeline = pcAsset;
+                QualitySettings.shadows = UnityEngine.ShadowQuality.All;
+                QualitySettings.shadowResolution = UnityEngine.ShadowResolution.VeryHigh;
+                QualitySettings.shadowProjection = UnityEngine.ShadowProjection.StableFit;
+                QualitySettings.shadowCascades = 4;
+                QualitySettings.shadowDistance = LongRangeShadowDistance;
+                QualitySettings.shadowCascade4Split = new Vector3(0.035f, 0.13f, 0.42f);
+                QualitySettings.shadowNearPlaneOffset = 2f;
+                QualitySettings.lodBias = 2.5f;
+                QualitySettings.terrainDetailDistance = ClassicGrassDrawDistance;
+                QualitySettings.terrainDetailDensityScale = 1f;
+                QualitySettings.terrainBasemapDistance = 1400f;
+                QualitySettings.terrainTreeDistance = 5000f;
+                QualitySettings.terrainBillboardStart = 180f;
+                QualitySettings.terrainFadeLength = 35f;
+                QualitySettings.terrainMaxTrees = 300;
+                QualitySettings.softVegetation = true;
+                QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
+            }
+
+            if (originalLevel >= 0 && originalLevel < qualityNames.Length)
+            {
+                QualitySettings.SetQualityLevel(originalLevel, false);
+            }
         }
 
         private static void ConfigureScreenSpaceAmbientOcclusion()
@@ -121,36 +168,92 @@ namespace RPGClone.EditorTools
         {
             Light sun = FindOrCreateSun();
             sun.type = LightType.Directional;
-            sun.color = new Color(1f, 0.78f, 0.52f, 1f);
-            sun.intensity = 1.24f;
-            sun.bounceIntensity = 1.08f;
+            sun.color = new Color(1f, 0.76f, 0.47f, 1f);
+            sun.intensity = 1.32f;
+            sun.bounceIntensity = 1.12f;
             sun.shadows = LightShadows.Soft;
-            sun.shadowStrength = 0.82f;
-            sun.shadowBias = 0.04f;
-            sun.shadowNormalBias = 0.32f;
-            sun.transform.rotation = Quaternion.Euler(42f, 318f, 0f);
+            sun.shadowStrength = 0.88f;
+            sun.shadowBias = 0.032f;
+            sun.shadowNormalBias = 0.24f;
+            sun.transform.rotation = Quaternion.Euler(47f, 324f, 0f);
             RenderSettings.sun = sun;
 
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.46f, 0.53f, 0.68f, 1f);
-            RenderSettings.ambientEquatorColor = new Color(0.36f, 0.34f, 0.32f, 1f);
-            RenderSettings.ambientGroundColor = new Color(0.16f, 0.14f, 0.13f, 1f);
-            RenderSettings.ambientIntensity = 0.86f;
-            RenderSettings.subtractiveShadowColor = new Color(0.34f, 0.42f, 0.58f, 1f);
+            RenderSettings.ambientSkyColor = new Color(0.43f, 0.52f, 0.69f, 1f);
+            RenderSettings.ambientEquatorColor = new Color(0.39f, 0.35f, 0.32f, 1f);
+            RenderSettings.ambientGroundColor = new Color(0.15f, 0.13f, 0.12f, 1f);
+            RenderSettings.ambientIntensity = 0.82f;
+            RenderSettings.subtractiveShadowColor = new Color(0.29f, 0.38f, 0.56f, 1f);
 
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogColor = new Color(0.62f, 0.48f, 0.34f, 1f);
-            RenderSettings.fogStartDistance = 70f;
-            RenderSettings.fogEndDistance = 560f;
+            RenderSettings.fogColor = new Color(0.64f, 0.49f, 0.34f, 1f);
+            RenderSettings.fogStartDistance = ClassicFogStartDistance;
+            RenderSettings.fogEndDistance = ClassicFogEndDistance;
+
+            RenderSettings.skybox = CreateOrUpdateSkyboxMaterial();
+            RenderSettings.defaultReflectionMode = DefaultReflectionMode.Skybox;
+            RenderSettings.defaultReflectionResolution = 128;
+            RenderSettings.reflectionIntensity = 0.72f;
+            RenderSettings.reflectionBounces = 1;
 
             if (RenderSettings.skybox != null)
             {
-                SetMaterialColor(RenderSettings.skybox, "_SkyTint", new Color(0.58f, 0.62f, 0.72f, 1f));
-                SetMaterialColor(RenderSettings.skybox, "_GroundColor", new Color(0.42f, 0.32f, 0.24f, 1f));
-                SetMaterialFloat(RenderSettings.skybox, "_AtmosphereThickness", 1.18f);
-                SetMaterialFloat(RenderSettings.skybox, "_Exposure", 1.16f);
-                SetMaterialFloat(RenderSettings.skybox, "_SunSize", 0.055f);
+                SetMaterialColor(RenderSettings.skybox, "_SkyTint", new Color(0.56f, 0.61f, 0.73f, 1f));
+                SetMaterialColor(RenderSettings.skybox, "_GroundColor", new Color(0.43f, 0.31f, 0.22f, 1f));
+                SetMaterialFloat(RenderSettings.skybox, "_AtmosphereThickness", 1.28f);
+                SetMaterialFloat(RenderSettings.skybox, "_Exposure", 1.22f);
+                SetMaterialFloat(RenderSettings.skybox, "_SunSize", 0.047f);
+                SetMaterialFloat(RenderSettings.skybox, "_SunSizeConvergence", 4.5f);
+                EditorUtility.SetDirty(RenderSettings.skybox);
+            }
+
+            EditorUtility.SetDirty(sun);
+        }
+
+        private static Material CreateOrUpdateSkyboxMaterial()
+        {
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(StarterSkyboxMaterialPath);
+            if (material == null)
+            {
+                Shader shader = Shader.Find("Skybox/Procedural");
+                if (shader == null)
+                {
+                    return RenderSettings.skybox;
+                }
+
+                material = new Material(shader)
+                {
+                    name = Path.GetFileNameWithoutExtension(StarterSkyboxMaterialPath)
+                };
+                AssetDatabase.CreateAsset(material, StarterSkyboxMaterialPath);
+            }
+
+            return material;
+        }
+
+        private static void ConfigureSceneTerrainRendering()
+        {
+            Terrain[] terrains = Terrain.activeTerrains;
+            for (int i = 0; i < terrains.Length; i++)
+            {
+                Terrain terrain = terrains[i];
+                if (terrain == null)
+                {
+                    continue;
+                }
+
+                terrain.ignoreQualitySettings = false;
+                terrain.drawInstanced = true;
+                terrain.drawTreesAndFoliage = true;
+                terrain.detailObjectDistance = ClassicGrassDrawDistance;
+                terrain.detailObjectDensity = Mathf.Max(terrain.detailObjectDensity, 0.36f);
+                terrain.treeDistance = Mathf.Max(terrain.treeDistance, 5000f);
+                terrain.treeBillboardDistance = Mathf.Max(terrain.treeBillboardDistance, 180f);
+                terrain.treeCrossFadeLength = Mathf.Max(terrain.treeCrossFadeLength, 35f);
+                terrain.treeMaximumFullLODCount = Mathf.Max(terrain.treeMaximumFullLODCount, 300);
+                terrain.shadowCastingMode = ShadowCastingMode.TwoSided;
+                EditorUtility.SetDirty(terrain);
             }
         }
 
@@ -162,7 +265,7 @@ namespace RPGClone.EditorTools
                 return;
             }
 
-            camera.farClipPlane = Mathf.Max(camera.farClipPlane, 900f);
+            camera.farClipPlane = Mathf.Max(camera.farClipPlane, 1200f);
             camera.allowHDR = true;
             camera.allowMSAA = false;
 
@@ -377,7 +480,7 @@ namespace RPGClone.EditorTools
             MMOClassicGrassFoliageProfile profile = AssetDatabase.LoadAssetAtPath<MMOClassicGrassFoliageProfile>(GrassProfilePath);
             if (profile != null)
             {
-                profile.detailDrawDistance = 170f;
+                profile.detailDrawDistance = ClassicGrassDrawDistance;
                 profile.terrainDetailDensity = 0.36f;
                 profile.opacity = 0.35f;
                 profile.healthyColor = Color.white;
