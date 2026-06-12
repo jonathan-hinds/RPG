@@ -41,7 +41,7 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
         {
             "RenderPipeline" = "UniversalPipeline"
             "RenderType" = "Opaque"
-            "Queue" = "Geometry"
+            "Queue" = "Geometry-100"
             "UniversalMaterialType" = "Lit"
             "TerrainCompatible" = "True"
         }
@@ -595,6 +595,136 @@ Shader "RPG Clone/Terrain/MMO Slope Blend Terrain"
                     ClipTerrainHoles(input.terrainUV);
                 #endif
                 return input.positionCS.z;
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "DepthNormals"
+            Tags { "LightMode" = "DepthNormals" }
+
+            ZWrite On
+            Blend One Zero
+            Cull Back
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma vertex TerrainDepthNormalsVertex
+            #pragma fragment TerrainDepthNormalsFragment
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
+            #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+
+            CBUFFER_START(_Terrain)
+                #ifdef UNITY_INSTANCING_ENABLED
+                    float4 _TerrainHeightmapRecipSize;
+                #endif
+                float4 _TerrainHeightmapScale;
+            CBUFFER_END
+
+            #ifdef _ALPHATEST_ON
+                TEXTURE2D(_TerrainHolesTexture);
+                SAMPLER(sampler_TerrainHolesTexture);
+
+                void ClipTerrainHoles(float2 terrainUV)
+                {
+                    float hole = SAMPLE_TEXTURE2D(_TerrainHolesTexture, sampler_TerrainHolesTexture, terrainUV).r;
+                    clip(hole < 0.0005 ? -1.0 : 1.0);
+                }
+            #endif
+
+            #ifdef UNITY_INSTANCING_ENABLED
+                TEXTURE2D(_TerrainHeightmapTexture);
+                TEXTURE2D(_TerrainNormalmapTexture);
+
+                UNITY_INSTANCING_BUFFER_START(Terrain)
+                    UNITY_DEFINE_INSTANCED_PROP(float4, _TerrainPatchInstanceData)
+                UNITY_INSTANCING_BUFFER_END(Terrain)
+            #endif
+
+            struct DepthNormalsAttributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float2 texcoord : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct DepthNormalsVaryings
+            {
+                float4 positionCS : SV_POSITION;
+                half3 normalWS : TEXCOORD0;
+                float2 terrainUV : TEXCOORD1;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            void ApplyUnityTerrainInstancingDepthNormals(inout float4 positionOS, inout float3 normalOS, inout float2 terrainUV)
+            {
+                #ifdef UNITY_INSTANCING_ENABLED
+                    float2 patchVertex = positionOS.xy;
+                    float4 instanceData = UNITY_ACCESS_INSTANCED_PROP(Terrain, _TerrainPatchInstanceData);
+                    float2 sampleCoords = (patchVertex + instanceData.xy) * instanceData.z;
+                    float height = UnpackHeightmap(_TerrainHeightmapTexture.Load(int3(sampleCoords, 0)));
+
+                    positionOS.xz = sampleCoords * _TerrainHeightmapScale.xz;
+                    positionOS.y = height * _TerrainHeightmapScale.y;
+                    normalOS = _TerrainNormalmapTexture.Load(int3(sampleCoords, 0)).rgb * 2.0 - 1.0;
+                    terrainUV = sampleCoords * _TerrainHeightmapRecipSize.zw;
+                #endif
+            }
+
+            DepthNormalsVaryings TerrainDepthNormalsVertex(DepthNormalsAttributes input)
+            {
+                DepthNormalsVaryings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+                float4 positionOS = input.positionOS;
+                float3 normalOS = input.normalOS;
+                float2 terrainUV = input.texcoord;
+                ApplyUnityTerrainInstancingDepthNormals(positionOS, normalOS, terrainUV);
+
+                output.positionCS = TransformObjectToHClip(positionOS.xyz);
+                output.normalWS = NormalizeNormalPerVertex(TransformObjectToWorldNormal(normalOS));
+                output.terrainUV = terrainUV;
+                return output;
+            }
+
+            void TerrainDepthNormalsFragment(
+                DepthNormalsVaryings input,
+                out half4 outNormalWS : SV_Target0
+                #ifdef _WRITE_RENDERING_LAYERS
+                    , out uint outRenderingLayers : SV_Target1
+                #endif
+            )
+            {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+                #ifdef _ALPHATEST_ON
+                    ClipTerrainHoles(input.terrainUV);
+                #endif
+
+                half3 normalWS = NormalizeNormalPerPixel(input.normalWS);
+
+                #if defined(_GBUFFER_NORMALS_OCT)
+                    float2 octNormalWS = PackNormalOctQuadEncode(normalWS);
+                    float2 remappedOctNormalWS = saturate(octNormalWS * 0.5 + 0.5);
+                    half3 packedNormalWS = PackFloat2To888(remappedOctNormalWS);
+                    outNormalWS = half4(packedNormalWS, 0.0);
+                #else
+                    outNormalWS = half4(normalWS, 0.0);
+                #endif
+
+                #ifdef _WRITE_RENDERING_LAYERS
+                    outRenderingLayers = EncodeMeshRenderingLayer();
+                #endif
             }
             ENDHLSL
         }

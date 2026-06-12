@@ -1,6 +1,7 @@
 using System;
 using RPGClone.Animation;
 using RPGClone.Enemies;
+using RPGClone.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -46,7 +47,7 @@ namespace RPGClone.EditorTools
 
                 if (PrefabUtility.GetCorrespondingObjectFromSource(sceneObject) == prefab)
                 {
-                    SnapRootToTerrain(sceneObject.transform);
+                    SnapRootToGround(sceneObject.transform);
                     refreshedCount++;
                     continue;
                 }
@@ -99,38 +100,28 @@ namespace RPGClone.EditorTools
             instance.transform.SetPositionAndRotation(position, rotation);
             MMOEnemyController controller = instance.GetComponent<MMOEnemyController>();
             controller.SetDefinition(definition, true);
-            SnapRootToTerrain(instance.transform);
+            SnapRootToGround(instance.transform);
             EditorUtility.SetDirty(instance);
         }
 
         private static Vector3 GetGroundedPosition(GameObject source)
         {
-            Vector3 position = source.transform.position;
-            Terrain terrain = Terrain.activeTerrain;
-            if (terrain != null)
+            if (MMOGroundingUtility.TryGetGroundedPosition(source.transform, source.GetComponent<Collider>(), out Vector3 groundedPosition))
             {
-                position.y = terrain.SampleHeight(position) + terrain.transform.position.y;
+                return groundedPosition;
             }
 
-            return position;
+            return source.transform.position;
         }
 
-        private static void SnapRootToTerrain(Transform transformToGround)
+        private static void SnapRootToGround(Transform transformToGround)
         {
             if (transformToGround == null)
             {
                 return;
             }
 
-            Terrain terrain = Terrain.activeTerrain;
-            if (terrain == null)
-            {
-                return;
-            }
-
-            Vector3 position = transformToGround.position;
-            position.y = terrain.SampleHeight(position) + terrain.transform.position.y;
-            transformToGround.position = position;
+            MMOGroundingUtility.SnapTransformToGround(transformToGround, transformToGround.GetComponent<Collider>());
             EditorUtility.SetDirty(transformToGround);
         }
     }

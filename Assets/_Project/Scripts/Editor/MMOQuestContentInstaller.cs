@@ -755,7 +755,7 @@ namespace RPGClone.EditorTools
             }
 
             npc.transform.SetParent(null, true);
-            npc.transform.position = Grounded(fallbackPosition);
+            npc.transform.position = fallbackPosition;
             MMOGroundingUtility.SnapTransformToGround(npc.transform, npc.GetComponent<Collider>());
             npc.isStatic = false;
             MMOQuestNpc questNpc = npc.GetComponent<MMOQuestNpc>() ?? npc.AddComponent<MMOQuestNpc>();
@@ -784,7 +784,7 @@ namespace RPGClone.EditorTools
             }
 
             vendor.transform.SetParent(null, true);
-            vendor.transform.position = Grounded(fallbackPosition);
+            vendor.transform.position = fallbackPosition;
             MMOGroundingUtility.SnapTransformToGround(vendor.transform, vendor.GetComponent<Collider>());
             vendor.isStatic = false;
             MMOVendorNpc vendorNpc = vendor.GetComponent<MMOVendorNpc>() ?? vendor.AddComponent<MMOVendorNpc>();
@@ -813,7 +813,7 @@ namespace RPGClone.EditorTools
             }
 
             trainer.transform.SetParent(null, true);
-            trainer.transform.position = Grounded(fallbackPosition);
+            trainer.transform.position = fallbackPosition;
             MMOGroundingUtility.SnapTransformToGround(trainer.transform, trainer.GetComponent<Collider>());
             trainer.isStatic = false;
             MMOClassTrainerNpc trainerNpc = trainer.GetComponent<MMOClassTrainerNpc>() ?? trainer.AddComponent<MMOClassTrainerNpc>();

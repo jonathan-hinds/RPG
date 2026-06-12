@@ -94,6 +94,11 @@ namespace RPGClone.UI
             ResolvePresenter()?.Show(provider.Invoke(), screenPosition, provider);
         }
 
+        public static void ShowContent(MMOTooltipContent content, Vector2 screenPosition, Func<MMOTooltipContent> liveProvider = null)
+        {
+            ResolvePresenter()?.Show(content, screenPosition, liveProvider);
+        }
+
         public static void HideTooltip()
         {
             MMOGameTooltipPresenter presenter = Instance != null ? Instance : FindAnyObjectByType<MMOGameTooltipPresenter>();

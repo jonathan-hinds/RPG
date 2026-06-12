@@ -6,6 +6,7 @@ using RPGClone.Combat;
 using RPGClone.Enemies;
 using RPGClone.Inventory;
 using RPGClone.Loot;
+using RPGClone.World;
 using Unity.AI.Navigation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -382,19 +383,9 @@ namespace RPGClone.EditorTools
 
         private static Vector3 GetGroundedPosition(GameObject source)
         {
-            Vector3 position = source.transform.position;
-            Terrain terrain = Terrain.activeTerrain;
-            if (terrain != null)
+            if (MMOGroundingUtility.TryGetGroundedPosition(source.transform, source.GetComponent<Collider>(), out Vector3 groundedPosition))
             {
-                position.y = terrain.SampleHeight(position) + terrain.transform.position.y;
-                return position;
-            }
-
-            Collider collider = source.GetComponent<Collider>();
-            if (collider != null)
-            {
-                position.y = collider.bounds.min.y;
-                return position;
+                return groundedPosition;
             }
 
             return source.transform.position;

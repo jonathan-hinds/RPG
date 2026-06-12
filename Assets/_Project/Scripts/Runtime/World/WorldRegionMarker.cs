@@ -51,44 +51,103 @@ namespace RPGClone.World
         }
     }
 
+    public readonly struct MMOGroundingProbeSettings
+    {
+        public static MMOGroundingProbeSettings Default => new(
+            Physics.DefaultRaycastLayers,
+            0.6f,
+            12f,
+            0.35f,
+            true);
+
+        public MMOGroundingProbeSettings(
+            LayerMask groundMask,
+            float maxSnapUp,
+            float maxSnapDown,
+            float minSurfaceNormalY,
+            bool includeTerrain)
+        {
+            GroundMask = groundMask;
+            MaxSnapUp = Mathf.Max(0f, maxSnapUp);
+            MaxSnapDown = Mathf.Max(0f, maxSnapDown);
+            MinSurfaceNormalY = Mathf.Clamp01(minSurfaceNormalY);
+            IncludeTerrain = includeTerrain;
+        }
+
+        public LayerMask GroundMask { get; }
+        public float MaxSnapUp { get; }
+        public float MaxSnapDown { get; }
+        public float MinSurfaceNormalY { get; }
+        public bool IncludeTerrain { get; }
+    }
+
     public static class MMOGroundingUtility
     {
         private const float GroundSkin = 0.02f;
+        private const float ProbeSkin = 0.05f;
+        private const float CandidateEpsilon = 0.001f;
 
         public static bool SnapTransformToGround(Transform target, Collider collider)
         {
-            if (target == null)
+            return SnapTransformToGround(target, collider, MMOGroundingProbeSettings.Default);
+        }
+
+        public static bool SnapTransformToGround(Transform target, Collider collider, MMOGroundingProbeSettings settings)
+        {
+            if (!TryGetGroundedPosition(target, collider, settings, out Vector3 groundedPosition))
             {
                 return false;
             }
 
-            if (!TryGetGroundHeight(target, out float groundY))
-            {
-                return false;
-            }
-
-            float bottomOffset = collider != null ? collider.bounds.min.y - target.position.y : 0f;
-            Vector3 position = target.position;
-            position.y = groundY - bottomOffset + GroundSkin;
-            target.position = position;
+            target.position = groundedPosition;
             return true;
         }
 
-        private static bool TryGetGroundHeight(Transform target, out float groundY)
+        public static bool TryGetGroundedPosition(Transform target, Collider collider, out Vector3 groundedPosition)
         {
-            Vector3 position = target.position;
-            bool foundRaycastGround = TryRaycastGround(target, out float raycastGroundY);
+            return TryGetGroundedPosition(target, collider, MMOGroundingProbeSettings.Default, out groundedPosition);
+        }
 
-            Terrain terrain = FindTerrainAt(position);
-            if (terrain != null)
+        public static bool TryGetGroundedPosition(Transform target, Collider collider, MMOGroundingProbeSettings settings, out Vector3 groundedPosition)
+        {
+            if (target == null)
             {
-                float terrainGroundY = terrain.SampleHeight(position) + terrain.transform.position.y;
-                groundY = foundRaycastGround ? Mathf.Max(raycastGroundY, terrainGroundY) : terrainGroundY;
-                return true;
+                groundedPosition = default;
+                return false;
             }
 
-            groundY = raycastGroundY;
-            return foundRaycastGround;
+            groundedPosition = target.position;
+            float bottomOffset = GetBottomOffset(target, collider);
+            float footY = target.position.y + bottomOffset;
+            if (!TryGetGroundHeight(target, collider, footY, settings, out float groundY))
+            {
+                return false;
+            }
+
+            groundedPosition.y = groundY - bottomOffset + GroundSkin;
+            return true;
+        }
+
+        private static bool TryGetGroundHeight(Transform target, Collider collider, float footY, MMOGroundingProbeSettings settings, out float groundY)
+        {
+            Vector3 position = target.position;
+            GroundCandidate bestCandidate = default;
+            bool foundGround = false;
+
+            if (settings.IncludeTerrain)
+            {
+                Terrain terrain = FindTerrainAt(position);
+                if (terrain != null)
+                {
+                    float terrainGroundY = terrain.SampleHeight(position) + terrain.transform.position.y;
+                    TryAcceptGroundCandidate(terrainGroundY, footY, settings, ref bestCandidate, ref foundGround);
+                }
+            }
+
+            TryFindRaycastGround(target, collider, footY, settings, ref bestCandidate, ref foundGround);
+
+            groundY = foundGround ? bestCandidate.Height : 0f;
+            return foundGround;
         }
 
         private static Terrain FindTerrainAt(Vector3 position)
@@ -116,29 +175,79 @@ namespace RPGClone.World
             return Terrain.activeTerrain;
         }
 
-        private static bool TryRaycastGround(Transform target, out float groundY)
+        private static void TryFindRaycastGround(
+            Transform target,
+            Collider targetCollider,
+            float footY,
+            MMOGroundingProbeSettings settings,
+            ref GroundCandidate bestCandidate,
+            ref bool foundGround)
         {
-            Vector3 position = target.position;
-            Ray ray = new(position + Vector3.up * 50f, Vector3.down);
-            RaycastHit[] hits = Physics.RaycastAll(ray, 120f, ~0, QueryTriggerInteraction.Ignore);
-            float closestDistance = float.PositiveInfinity;
-            groundY = 0f;
+            Vector3 origin = target.position;
+            origin.y = footY + settings.MaxSnapUp + ProbeSkin;
+            float probeDistance = settings.MaxSnapUp + settings.MaxSnapDown + ProbeSkin * 2f;
+            if (probeDistance <= 0f)
+            {
+                return;
+            }
+
+            Ray ray = new(origin, Vector3.down);
+            RaycastHit[] hits = Physics.RaycastAll(ray, probeDistance, settings.GroundMask, QueryTriggerInteraction.Ignore);
 
             for (int i = 0; i < hits.Length; i++)
             {
                 RaycastHit hit = hits[i];
                 if (hit.collider == null
+                    || hit.collider == targetCollider
                     || hit.collider.transform.IsChildOf(target)
-                    || hit.distance >= closestDistance)
+                    || hit.normal.y < settings.MinSurfaceNormalY)
                 {
                     continue;
                 }
 
-                closestDistance = hit.distance;
-                groundY = hit.point.y;
+                TryAcceptGroundCandidate(hit.point.y, footY, settings, ref bestCandidate, ref foundGround);
+            }
+        }
+
+        private static float GetBottomOffset(Transform target, Collider collider)
+        {
+            return collider != null ? collider.bounds.min.y - target.position.y : 0f;
+        }
+
+        private static void TryAcceptGroundCandidate(
+            float candidateY,
+            float footY,
+            MMOGroundingProbeSettings settings,
+            ref GroundCandidate bestCandidate,
+            ref bool foundGround)
+        {
+            float verticalDelta = candidateY - footY;
+            if (verticalDelta > settings.MaxSnapUp + CandidateEpsilon
+                || verticalDelta < -settings.MaxSnapDown - CandidateEpsilon)
+            {
+                return;
             }
 
-            return closestDistance < float.PositiveInfinity;
+            float score = Mathf.Abs(verticalDelta);
+            if (!foundGround
+                || score < bestCandidate.Score - CandidateEpsilon
+                || (Mathf.Abs(score - bestCandidate.Score) <= CandidateEpsilon && candidateY < bestCandidate.Height))
+            {
+                bestCandidate = new GroundCandidate(candidateY, score);
+                foundGround = true;
+            }
+        }
+
+        private readonly struct GroundCandidate
+        {
+            public GroundCandidate(float height, float score)
+            {
+                Height = height;
+                Score = score;
+            }
+
+            public float Height { get; }
+            public float Score { get; }
         }
     }
 }

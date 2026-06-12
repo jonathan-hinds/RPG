@@ -74,4 +74,31 @@ namespace RPGClone.Quests
             }
         }
     }
+
+    public readonly struct MMOQuestObjectiveProgressEvent
+    {
+        public MMOQuestObjectiveProgressEvent(
+            MMOQuestDefinition quest,
+            MMOQuestObjectiveDefinition objective,
+            int objectiveIndex,
+            int previousProgress,
+            int currentProgress,
+            int requiredCount)
+        {
+            Quest = quest;
+            Objective = objective;
+            ObjectiveIndex = objectiveIndex;
+            PreviousProgress = previousProgress;
+            CurrentProgress = currentProgress;
+            RequiredCount = requiredCount;
+        }
+
+        public MMOQuestDefinition Quest { get; }
+        public MMOQuestObjectiveDefinition Objective { get; }
+        public int ObjectiveIndex { get; }
+        public int PreviousProgress { get; }
+        public int CurrentProgress { get; }
+        public int RequiredCount { get; }
+        public bool CompletedThisUpdate => PreviousProgress < RequiredCount && CurrentProgress >= RequiredCount;
+    }
 }

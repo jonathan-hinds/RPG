@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using RPGClone.Player;
 using RPGClone.Quests;
 using RPGClone.Services;
 using RPGClone.World;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.UI;
@@ -58,6 +60,7 @@ namespace RPGClone.UI
         private int lastMapRenderFrame = -1;
         private float nextMarkerRefreshTime;
         private readonly List<MMOMapMarkerData> markers = new();
+        private readonly List<MMOMapMarkerData> markerScratch = new();
         private readonly List<MapMarkerView> minimapMarkerViews = new();
         private readonly List<MapMarkerView> largeMapMarkerViews = new();
 
@@ -734,11 +737,54 @@ namespace RPGClone.UI
             }
 
             nextMarkerRefreshTime = Time.unscaledTime + MarkerRefreshSeconds;
+            markerScratch.Clear();
+            markerScratch.AddRange(MMOQuestMapMarkerProvider.BuildTrackedQuestMarkers(questLog));
+            bool rebuildViews = force || HasMarkerLayoutChanged(markerScratch);
             markers.Clear();
-            markers.AddRange(MMOQuestMapMarkerProvider.BuildTrackedQuestMarkers(questLog));
-            RebuildMarkerLayer(minimapMarkerLayer, true);
-            RebuildMarkerLayer(largeMapMarkerLayer, false);
+            markers.AddRange(markerScratch);
+            if (rebuildViews)
+            {
+                RebuildMarkerLayer(minimapMarkerLayer, true);
+                RebuildMarkerLayer(largeMapMarkerLayer, false);
+            }
+            else
+            {
+                RefreshMarkerViewData(minimapMarkerViews);
+                RefreshMarkerViewData(largeMapMarkerViews);
+            }
+
             UpdateLiveMapState(false);
+        }
+
+        private bool HasMarkerLayoutChanged(IReadOnlyList<MMOMapMarkerData> newMarkers)
+        {
+            if (markers.Count != newMarkers.Count)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < markers.Count; i++)
+            {
+                MMOMapMarkerData current = markers[i];
+                MMOMapMarkerData next = newMarkers[i];
+                if (current.MarkerId != next.MarkerId || current.MarkerType != next.MarkerType || current.IsArea != next.IsArea)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void RefreshMarkerViewData(List<MapMarkerView> markerViews)
+        {
+            int count = Mathf.Min(markerViews.Count, markers.Count);
+            for (int i = 0; i < count; i++)
+            {
+                MapMarkerView markerView = markerViews[i];
+                markerView.Marker = markers[i];
+                markerView.TooltipTrigger?.Configure(() => markerView.Marker);
+            }
         }
 
         private void RebuildMarkerLayer(RectTransform layer, bool minimap)
@@ -801,7 +847,9 @@ namespace RPGClone.UI
 
             RectTransform icon = CreateIcon($"Marker {marker.MarkerId}", minimapMarkerLayer, diamondSprite, clamped ? WithAlpha(marker.Color, 0.72f) : marker.Color, new Vector2(15f, 15f));
             icon.anchoredPosition = local;
-            minimapMarkerViews.Add(new MapMarkerView(marker, icon, area, null));
+            MapMarkerView markerView = new(marker, icon, area);
+            AttachMarkerTooltip(icon, markerView);
+            minimapMarkerViews.Add(markerView);
         }
 
         private void AddLargeMapMarker(MMOMapMarkerData marker)
@@ -824,16 +872,31 @@ namespace RPGClone.UI
 
             RectTransform icon = CreateIcon($"Marker {marker.MarkerId}", largeMapMarkerLayer, diamondSprite, marker.Color, new Vector2(18f, 18f));
             icon.anchoredPosition = local;
+            MapMarkerView markerView = new(marker, icon, area);
+            AttachMarkerTooltip(icon, markerView);
+            largeMapMarkerViews.Add(markerView);
+        }
 
-            Text label = MMOUiFactory.CreateText($"Label {marker.MarkerId}", largeMapMarkerLayer, 11, FontStyle.Bold, TextAnchor.MiddleLeft);
-            label.text = marker.Label;
-            label.color = new Color(1f, 0.94f, 0.76f, 1f);
-            label.rectTransform.pivot = new Vector2(0f, 0.5f);
-            label.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-            label.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-            label.rectTransform.anchoredPosition = local + new Vector2(13f, 0f);
-            label.rectTransform.sizeDelta = new Vector2(220f, 20f);
-            largeMapMarkerViews.Add(new MapMarkerView(marker, icon, area, label.rectTransform));
+        private static void AttachMarkerTooltip(RectTransform icon, MapMarkerView markerView)
+        {
+            if (icon == null)
+            {
+                return;
+            }
+
+            if (icon.TryGetComponent(out Image iconImage))
+            {
+                iconImage.raycastTarget = true;
+            }
+
+            MMOMapMarkerTooltipTrigger trigger = icon.GetComponent<MMOMapMarkerTooltipTrigger>();
+            if (trigger == null)
+            {
+                trigger = icon.gameObject.AddComponent<MMOMapMarkerTooltipTrigger>();
+            }
+
+            trigger.Configure(() => markerView.Marker);
+            markerView.TooltipTrigger = trigger;
         }
 
         private Vector2 WorldToMinimapPosition(Vector3 worldPosition, float halfSize, out bool clamped)
@@ -930,10 +993,6 @@ namespace RPGClone.UI
                 markerView.Area.sizeDelta = new Vector2(radiusPixels * 2f, radiusPixels * 2f);
             }
 
-            if (markerView.Label != null)
-            {
-                markerView.Label.anchoredPosition = local + new Vector2(13f, 0f);
-            }
         }
 
         private void UpdatePlayerIndicators()
@@ -1094,20 +1153,19 @@ namespace RPGClone.UI
             return new Color(color.r, color.g, color.b, alpha);
         }
 
-        private readonly struct MapMarkerView
+        private sealed class MapMarkerView
         {
-            public MapMarkerView(MMOMapMarkerData marker, RectTransform icon, RectTransform area, RectTransform label)
+            public MapMarkerView(MMOMapMarkerData marker, RectTransform icon, RectTransform area)
             {
                 Marker = marker;
                 Icon = icon;
                 Area = area;
-                Label = label;
             }
 
-            public MMOMapMarkerData Marker { get; }
+            public MMOMapMarkerData Marker { get; set; }
             public RectTransform Icon { get; }
             public RectTransform Area { get; }
-            public RectTransform Label { get; }
+            public MMOMapMarkerTooltipTrigger TooltipTrigger { get; set; }
         }
 
         private static Sprite CreateCircleSprite(int size, bool ring)
@@ -1184,6 +1242,62 @@ namespace RPGClone.UI
 
             texture.Apply();
             return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size);
+        }
+    }
+
+    public sealed class MMOMapMarkerTooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        private Func<MMOMapMarkerData> markerProvider;
+
+        public void Configure(Func<MMOMapMarkerData> newMarkerProvider)
+        {
+            markerProvider = newMarkerProvider;
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (markerProvider == null)
+            {
+                return;
+            }
+
+            MMOGameTooltipPresenter.ShowContent(BuildTooltip(markerProvider.Invoke()), eventData.position, () => BuildTooltip(markerProvider.Invoke()));
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            MMOGameTooltipPresenter.HideTooltip();
+        }
+
+        private void OnDisable()
+        {
+            MMOGameTooltipPresenter.HideTooltip();
+        }
+
+        private static MMOTooltipContent BuildTooltip(MMOMapMarkerData marker)
+        {
+            string objective = string.IsNullOrWhiteSpace(marker.Label) ? "Quest Objective" : marker.Label;
+            MMOTooltipContent content = new(objective, marker.Color);
+            if (!string.IsNullOrWhiteSpace(marker.Detail))
+            {
+                content.Add($"Quest: {marker.Detail}", 11, FontStyle.Bold, new Color(1f, 0.86f, 0.35f, 1f));
+            }
+
+            content.Add(FormatMarkerType(marker.MarkerType), 11, FontStyle.Normal, new Color(0.86f, 0.82f, 0.72f, 1f));
+            return content;
+        }
+
+        private static string FormatMarkerType(MMOMapMarkerType markerType)
+        {
+            return markerType switch
+            {
+                MMOMapMarkerType.QuestTurnIn => "Turn in objective",
+                MMOMapMarkerType.QuestNpc => "Speak objective",
+                MMOMapMarkerType.QuestCreatureArea => "Creature objective",
+                MMOMapMarkerType.QuestWorldObject => "World object objective",
+                MMOMapMarkerType.QuestArea => "Objective location",
+                _ => "Quest objective"
+            };
         }
     }
 }

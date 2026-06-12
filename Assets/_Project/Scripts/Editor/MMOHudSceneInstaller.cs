@@ -522,6 +522,7 @@ namespace RPGClone.EditorTools
             EnsureLootWindow(canvas.transform);
             EnsureQuestDialog(canvas.transform);
             EnsureQuestTracker(canvas.transform, questLog);
+            EnsureQuestProgressPopups(canvas.transform, questLog);
             EnsureItemTooltip(canvas.transform);
             EnsureAbilityTooltip(canvas.transform);
             EnsureGameTooltip(canvas.transform);
@@ -921,6 +922,24 @@ namespace RPGClone.EditorTools
             if (presenter == null)
             {
                 presenter = trackerObject.AddComponent<MMOQuestTrackerPresenter>();
+            }
+
+            presenter.Configure(questLog);
+            EditorUtility.SetDirty(presenter);
+            return presenter;
+        }
+
+        private static MMOQuestProgressPopupPresenter EnsureQuestProgressPopups(Transform canvas, MMOQuestLog questLog)
+        {
+            Transform existing = canvas.Find("Quest Progress Popups");
+            GameObject popupObject = existing != null ? existing.gameObject : new GameObject("Quest Progress Popups", typeof(RectTransform));
+            popupObject.transform.SetParent(canvas, false);
+            popupObject.SetActive(true);
+
+            MMOQuestProgressPopupPresenter presenter = popupObject.GetComponent<MMOQuestProgressPopupPresenter>();
+            if (presenter == null)
+            {
+                presenter = popupObject.AddComponent<MMOQuestProgressPopupPresenter>();
             }
 
             presenter.Configure(questLog);

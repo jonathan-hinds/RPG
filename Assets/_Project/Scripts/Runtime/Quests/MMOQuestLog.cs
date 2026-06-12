@@ -22,6 +22,7 @@ namespace RPGClone.Quests
         private MMOExperienceComponent experience;
 
         public event Action<MMOQuestLog> Changed;
+        public event Action<MMOQuestObjectiveProgressEvent> ObjectiveProgressed;
         public MMOQuestCatalog QuestCatalog => questCatalog;
         public IReadOnlyList<MMOQuestRuntimeState> ActiveQuests => activeQuests;
         public IReadOnlyList<MMOQuestDefinition> CompletedQuests => completedQuests;
@@ -30,7 +31,7 @@ namespace RPGClone.Quests
         private void Awake()
         {
             ResolveReferences();
-            RefreshCollectionObjectives();
+            RefreshCollectionObjectives(false);
         }
 
         private void OnEnable()
@@ -54,7 +55,7 @@ namespace RPGClone.Quests
         public void Configure(MMOQuestCatalog newQuestCatalog)
         {
             questCatalog = newQuestCatalog;
-            RefreshCollectionObjectives();
+            RefreshCollectionObjectives(false);
             Changed?.Invoke(this);
         }
 
@@ -63,7 +64,7 @@ namespace RPGClone.Quests
             activeQuests = restoredActiveQuests != null ? new List<MMOQuestRuntimeState>(restoredActiveQuests) : new List<MMOQuestRuntimeState>();
             completedQuests = restoredCompletedQuests != null ? new List<MMOQuestDefinition>(restoredCompletedQuests) : new List<MMOQuestDefinition>();
             pendingUsableItem = restoredPendingUsableItem;
-            RefreshCollectionObjectives();
+            RefreshCollectionObjectives(false);
             Changed?.Invoke(this);
         }
 
@@ -124,7 +125,7 @@ namespace RPGClone.Quests
             MMOQuestRuntimeState state = new(quest);
             activeQuests.Add(state);
             GrantStartItems(quest);
-            RefreshCollectionObjectives();
+            RefreshCollectionObjective(state, true);
             Changed?.Invoke(this);
             return true;
         }
@@ -242,7 +243,7 @@ namespace RPGClone.Quests
                 return false;
             }
 
-            RefreshCollectionObjectives();
+            RefreshCollectionObjectives(true);
             Changed?.Invoke(this);
             return true;
         }
@@ -276,7 +277,7 @@ namespace RPGClone.Quests
                 return false;
             }
 
-            state.AddProgress(objectiveIndex, 1);
+            SetObjectiveProgress(state, objectiveIndex, state.GetProgress(objectiveIndex) + 1, true);
             if (!HasOpenUseObjectiveForItem(pendingUsableItem))
             {
                 pendingUsableItem = null;
@@ -309,7 +310,7 @@ namespace RPGClone.Quests
                     bool matchesId = !string.IsNullOrWhiteSpace(objective.RequiredCreatureId) && objective.RequiredCreatureId == creatureId;
                     if (matchesDefinition || matchesId)
                     {
-                        state.AddProgress(i, 1);
+                        SetObjectiveProgress(state, i, state.GetProgress(i) + 1, true);
                         changed = true;
                     }
                 }
@@ -344,7 +345,7 @@ namespace RPGClone.Quests
                         && objective.RequiredNpcId == npcId
                         && state.GetProgress(i) < objective.RequiredCount)
                     {
-                        state.SetProgress(i, objective.RequiredCount);
+                        SetObjectiveProgress(state, i, objective.RequiredCount, true);
                         changed = true;
                     }
                 }
@@ -447,7 +448,7 @@ namespace RPGClone.Quests
                 return false;
             }
 
-            RefreshCollectionObjective(state);
+            RefreshCollectionObjective(state, false);
             for (int i = 0; i < state.Quest.Objectives.Count; i++)
             {
                 if (state.GetProgress(i) < state.Quest.Objectives[i].RequiredCount)
@@ -489,19 +490,19 @@ namespace RPGClone.Quests
 
         private void OnInventoryChanged()
         {
-            RefreshCollectionObjectives();
+            RefreshCollectionObjectives(true);
             Changed?.Invoke(this);
         }
 
-        private void RefreshCollectionObjectives()
+        private void RefreshCollectionObjectives(bool notifyProgress)
         {
             foreach (MMOQuestRuntimeState state in activeQuests)
             {
-                RefreshCollectionObjective(state);
+                RefreshCollectionObjective(state, notifyProgress);
             }
         }
 
-        private void RefreshCollectionObjective(MMOQuestRuntimeState state)
+        private void RefreshCollectionObjective(MMOQuestRuntimeState state, bool notifyProgress)
         {
             if (state == null || state.Quest == null)
             {
@@ -515,9 +516,34 @@ namespace RPGClone.Quests
                 if (IsCollectObjective(objective) && objective.RequiredItem != null)
                 {
                     int count = inventory != null ? inventory.CountItem(objective.RequiredItem) : 0;
-                    state.SetProgress(i, Mathf.Min(count, objective.RequiredCount));
+                    SetObjectiveProgress(state, i, Mathf.Min(count, objective.RequiredCount), notifyProgress);
                 }
             }
+        }
+
+        private void SetObjectiveProgress(MMOQuestRuntimeState state, int objectiveIndex, int value, bool notifyProgress)
+        {
+            if (state == null || state.Quest == null || objectiveIndex < 0 || objectiveIndex >= state.Quest.Objectives.Count)
+            {
+                return;
+            }
+
+            MMOQuestObjectiveDefinition objective = state.Quest.Objectives[objectiveIndex];
+            int previousProgress = state.GetProgress(objectiveIndex);
+            state.SetProgress(objectiveIndex, value);
+            int currentProgress = state.GetProgress(objectiveIndex);
+            if (!notifyProgress || currentProgress <= previousProgress)
+            {
+                return;
+            }
+
+            ObjectiveProgressed?.Invoke(new MMOQuestObjectiveProgressEvent(
+                state.Quest,
+                objective,
+                objectiveIndex,
+                previousProgress,
+                currentProgress,
+                objective.RequiredCount));
         }
 
         private static bool IsCollectObjective(MMOQuestObjectiveDefinition objective)
