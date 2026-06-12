@@ -1,4 +1,5 @@
 using UnityEngine;
+using RPGClone.Characters;
 
 namespace RPGClone.Player
 {
@@ -11,6 +12,7 @@ namespace RPGClone.Player
 
         private CharacterController characterController;
         private MMOInputReader inputReader;
+        private MMOCharacterIdentity identity;
         private Vector3 horizontalVelocity;
         private float verticalVelocity;
 
@@ -20,6 +22,7 @@ namespace RPGClone.Player
         {
             characterController = GetComponent<CharacterController>();
             inputReader = GetComponent<MMOInputReader>();
+            identity = GetComponent<MMOCharacterIdentity>();
         }
 
         private void Start()
@@ -73,13 +76,13 @@ namespace RPGClone.Player
 
             if (!Mathf.Approximately(input.Forward, 0f))
             {
-                float speed = input.Forward > 0f ? config.forwardSpeed : config.backwardSpeed;
+                float speed = (input.Forward > 0f ? config.forwardSpeed : config.backwardSpeed) * GetMovementSpeedMultiplier();
                 desiredVelocity += transform.forward * (input.Forward * speed);
             }
 
             if (!Mathf.Approximately(input.Strafe, 0f))
             {
-                desiredVelocity += transform.right * (input.Strafe * config.strafeSpeed);
+                desiredVelocity += transform.right * (input.Strafe * config.strafeSpeed * GetMovementSpeedMultiplier());
             }
 
             float moveRate = desiredVelocity.sqrMagnitude > horizontalVelocity.sqrMagnitude
@@ -105,6 +108,11 @@ namespace RPGClone.Player
             }
 
             verticalVelocity -= config.gravity * Time.deltaTime;
+        }
+
+        private float GetMovementSpeedMultiplier()
+        {
+            return identity != null && identity.Stats != null ? identity.Stats.MovementSpeedMultiplier : 1f;
         }
     }
 }

@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a4c6e6fb7e37634a9d9ad2a12dc7533, type: 3}
+  m_Name: Shaman_Frost_Shock
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Abilities.MMOAbilityDefinition
+  abilityId: shaman_frost_shock
+  displayName: Frost Shock
+  description: Shocks a hostile target with frost damage and reduces movement speed.
+  icon: {fileID: 0}
+  targetType: 2
+  autoAttack: 0
+  toggled: 0
+  range: 20
+  cooldownSeconds: 6
+  manaCost: 16
+  castTimeSeconds: 0
+  interruptOnMovement: 0
+  castOnSelfWhenFriendlyTargetInvalid: 0
+  areaRadius: 0
+  areaTargetFilter: 0
+  effects:
+  - effectType: 0
+    amountSource: 3
+    damageSchool: 2
+    flatAmount: 20
+    coefficient: 0.5
+    durationSeconds: 0
+    attackPowerBonus: 0
+    attackPowerMultiplier: 1
+    attackSpeedMultiplier: 1
+    healthRegenMultiplier: 1
+    manaRegenMultiplier: 1
+    movementSpeedMultiplier: 1
+    damageTakenAsManaPercent: 0
+    harmfulEffect: 1
+    tickSeconds: 1
+    chargeSpeed: 18
+    chargeStopDistance: 2.5
+  - effectType: 2
+    amountSource: 0
+    damageSchool: 0
+    flatAmount: 0
+    coefficient: 0
+    durationSeconds: 6
+    attackPowerBonus: 0
+    attackPowerMultiplier: 1
+    attackSpeedMultiplier: 1
+    healthRegenMultiplier: 1
+    manaRegenMultiplier: 1
+    movementSpeedMultiplier: 0.5
+    damageTakenAsManaPercent: 0
+    harmfulEffect: 1
+    tickSeconds: 1
+    chargeSpeed: 18
+    chargeStopDistance: 2.5

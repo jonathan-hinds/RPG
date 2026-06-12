@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using RPGClone.Characters;
+using RPGClone.Combat;
 using RPGClone.Player;
 using UnityEngine;
 
@@ -13,6 +14,7 @@ namespace RPGClone.Buffs
 
         private readonly List<MMOActiveBuff> activeBuffs = new();
         private MMOCharacterIdentity identity;
+        private MMOCombatant combatant;
         private MMOPlayerMotor motor;
 
         public event Action<MMOCharacterBuffController> BuffsChanged;
@@ -159,6 +161,7 @@ namespace RPGClone.Buffs
 
                 int healthAmount = buff.ConsumeHealthTick();
                 int manaAmount = buff.ConsumeManaTick();
+                int damageAmount = buff.ConsumeDamageTick();
                 if (healthAmount > 0)
                 {
                     identity.Health.SetCurrent(identity.Health.CurrentValue + healthAmount);
@@ -167,6 +170,11 @@ namespace RPGClone.Buffs
                 if (manaAmount > 0)
                 {
                     identity.Mana.SetCurrent(identity.Mana.CurrentValue + manaAmount);
+                }
+
+                if (damageAmount > 0 && combatant != null)
+                {
+                    combatant.ApplyDamage(buff.Source, buff.Ability, damageAmount);
                 }
 
                 buff.ScheduleNextTick();
@@ -185,6 +193,7 @@ namespace RPGClone.Buffs
             float attackSpeedMultiplier = 1f;
             float healthRegenMultiplier = 1f;
             float manaRegenMultiplier = 1f;
+            float movementSpeedMultiplier = 1f;
 
             foreach (MMOActiveBuff buff in activeBuffs)
             {
@@ -193,9 +202,10 @@ namespace RPGClone.Buffs
                 attackSpeedMultiplier *= buff.AttackSpeedMultiplier;
                 healthRegenMultiplier *= buff.HealthRegenMultiplier;
                 manaRegenMultiplier *= buff.ManaRegenMultiplier;
+                movementSpeedMultiplier *= buff.MovementSpeedMultiplier;
             }
 
-            identity.Stats.SetRuntimeModifiers(attackPowerBonus, attackPowerMultiplier, attackSpeedMultiplier, healthRegenMultiplier, manaRegenMultiplier);
+            identity.Stats.SetRuntimeModifiers(attackPowerBonus, attackPowerMultiplier, attackSpeedMultiplier, healthRegenMultiplier, manaRegenMultiplier, movementSpeedMultiplier);
         }
 
         private bool IsMoving()
@@ -208,6 +218,11 @@ namespace RPGClone.Buffs
             if (identity == null)
             {
                 identity = GetComponent<MMOCharacterIdentity>();
+            }
+
+            if (combatant == null)
+            {
+                combatant = GetComponent<MMOCombatant>();
             }
 
             if (motor == null)

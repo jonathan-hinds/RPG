@@ -139,6 +139,11 @@ namespace RPGClone.Quests
             }
 
             ResolveReferences();
+            if (HasChoiceRewards(quest.Rewards) && (chosenReward == null || !quest.Rewards.ChoiceItems.Contains(chosenReward)))
+            {
+                return false;
+            }
+
             if (!ConsumeTurnInItems(quest))
             {
                 return false;
@@ -278,10 +283,7 @@ namespace RPGClone.Quests
             }
 
             SetObjectiveProgress(state, objectiveIndex, state.GetProgress(objectiveIndex) + 1, true);
-            if (!HasOpenUseObjectiveForItem(pendingUsableItem))
-            {
-                pendingUsableItem = null;
-            }
+            pendingUsableItem = null;
 
             Changed?.Invoke(this);
             return true;
@@ -745,21 +747,30 @@ namespace RPGClone.Quests
                 return null;
             }
 
-            MMOCharacterEquipment equipment = GetComponent<MMOCharacterEquipment>();
-            if (chosenReward != null && rewards.ChoiceItems.Contains(chosenReward) && (equipment == null || equipment.CanEquip(chosenReward)))
+            if (chosenReward != null && rewards.ChoiceItems.Contains(chosenReward))
             {
                 return chosenReward;
             }
 
-            foreach (MMOItemDefinition candidate in rewards.ChoiceItems)
+            return null;
+        }
+
+        private static bool HasChoiceRewards(MMOQuestRewardDefinition rewards)
+        {
+            if (rewards == null)
             {
-                if (candidate != null && (equipment == null || equipment.CanEquip(candidate)))
+                return false;
+            }
+
+            foreach (MMOItemDefinition item in rewards.ChoiceItems)
+            {
+                if (item != null)
                 {
-                    return candidate;
+                    return true;
                 }
             }
 
-            return null;
+            return false;
         }
 
         private bool HasOpenUseObjectiveForItem(MMOItemDefinition item)

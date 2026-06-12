@@ -97,12 +97,12 @@ namespace RPGClone.CharacterSelection
             MMOCharacterArchetypeDefinition archetype = archetypeCatalog != null
                 ? archetypeCatalog.Find(saveData.race, saveData.characterClass)
                 : null;
+            MMOCharacterCustomization customization = GetComponent<MMOCharacterCustomization>() ?? gameObject.AddComponent<MMOCharacterCustomization>();
+            customization.Configure(saveData.race, saveData.characterClass);
 
             if (archetype != null)
             {
                 identity.Configure(archetype.StartingProfile, saveData.DisplayName, true);
-                MMOCharacterCustomization customization = GetComponent<MMOCharacterCustomization>() ?? gameObject.AddComponent<MMOCharacterCustomization>();
-                customization.Configure(saveData.race, saveData.characterClass);
                 ApplyProgression(archetype, saveData.level);
                 LearnArchetypeAbilities(archetype);
                 FillActionBar();
@@ -118,6 +118,7 @@ namespace RPGClone.CharacterSelection
                 identity.SetLevel(saveData.level);
             }
 
+            ApplyCharacterVisuals(saveData.race, archetype);
             ApplyInventory(saveData);
             ApplyEquipment(saveData);
             ApplyWeaponSkills(saveData, archetype);
@@ -590,6 +591,32 @@ namespace RPGClone.CharacterSelection
             }
 
             questLog.RestoreState(restoredActive, restoredCompleted, ResolveItem(saveData.pendingUsableItemId));
+        }
+
+        private void ApplyCharacterVisuals(MMOPlayableRace race, MMOCharacterArchetypeDefinition archetype)
+        {
+            Transform visualRoot = transform.Find("Capsule Visual");
+            Renderer renderer = visualRoot != null
+                ? visualRoot.GetComponentInChildren<Renderer>(true)
+                : GetComponentInChildren<Renderer>(true);
+
+            Transform targetTransform = renderer != null ? renderer.transform : visualRoot;
+            if (targetTransform != null)
+            {
+                targetTransform.localScale = GetRaceVisualScale(race);
+            }
+
+            if (renderer != null && archetype != null)
+            {
+                renderer.material.color = archetype.ModelTint;
+            }
+        }
+
+        private static Vector3 GetRaceVisualScale(MMOPlayableRace race)
+        {
+            return race == MMOPlayableRace.Troll
+                ? new Vector3(0.66f, 1.18f, 0.66f)
+                : new Vector3(0.72f, 1.05f, 0.72f);
         }
 
         private MMOItemDefinition ResolveItem(string itemId)

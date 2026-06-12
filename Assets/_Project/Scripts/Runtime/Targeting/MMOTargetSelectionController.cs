@@ -40,6 +40,11 @@ namespace RPGClone.Targeting
                 return;
             }
 
+            if (MMOGroundTargetingController.IsAnyTargeting)
+            {
+                return;
+            }
+
             if (ignorePointerOverUi && EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             {
                 return;

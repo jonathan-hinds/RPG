@@ -33,6 +33,7 @@ namespace RPGClone.UI
         public void OnDrop(PointerEventData eventData)
         {
             presenter?.AcceptDrop(slotIndex, MMOActionBarDragState.Current);
+            MMOActionBarDragState.EndDrag();
         }
     }
 }

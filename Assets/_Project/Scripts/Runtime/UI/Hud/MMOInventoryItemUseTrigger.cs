@@ -61,6 +61,7 @@ namespace RPGClone.UI
             }
 
             inventory.TryMoveSlot(payload.SourceSlotIndex, slotIndex);
+            MMOActionBarDragState.EndDrag();
         }
     }
 }

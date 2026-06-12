@@ -135,6 +135,40 @@ namespace RPGClone.Abilities
                 : false;
         }
 
+        public bool TryUseAbilityAtPosition(MMOAbilityDefinition ability, Vector3 targetPosition, out string failureReason)
+        {
+            EnsureInitialized();
+            failureReason = string.Empty;
+            if (ability == null)
+            {
+                return Fail(null, null, "No ability was provided.", out failureReason);
+            }
+
+            if (!ability.RequiresGroundTarget)
+            {
+                return Fail(ability, null, $"{ability.DisplayName} does not target the ground.", out failureReason);
+            }
+
+            if (!KnowsAbility(ability))
+            {
+                return Fail(ability, null, $"{identity.DisplayName} does not know {ability.DisplayName}.", out failureReason);
+            }
+
+            if (combatant == null || !combatant.IsAlive)
+            {
+                return Fail(ability, null, $"{identity.DisplayName} cannot act.", out failureReason);
+            }
+
+            if (activeCast != null || activeCharge != null)
+            {
+                return Fail(ability, null, "Another action is in progress.", out failureReason);
+            }
+
+            return TryPrepareGroundAbility(ability, targetPosition, out failureReason)
+                ? StartOrExecuteGroundAbility(ability, targetPosition, out failureReason)
+                : false;
+        }
+
         private bool StartOrExecuteAbility(MMOAbilityDefinition ability, MMOCharacterIdentity resolvedTarget, MMOCombatant targetCombatant, out string failureReason)
         {
             failureReason = string.Empty;
@@ -151,6 +185,25 @@ namespace RPGClone.Abilities
             }
 
             ExecutePreparedAbility(ability, resolvedTarget, targetCombatant);
+            return true;
+        }
+
+        private bool StartOrExecuteGroundAbility(MMOAbilityDefinition ability, Vector3 targetPosition, out string failureReason)
+        {
+            failureReason = string.Empty;
+            if (TryGetChargeEffect(ability, out _))
+            {
+                return Fail(ability, null, "Charge abilities require a target.", out failureReason);
+            }
+
+            if (ability.CastTimeSeconds > 0f)
+            {
+                activeCast = new ActiveCast(ability, null, transform.position, Time.time, ability.CastTimeSeconds, targetPosition, true);
+                CastStarted?.Invoke(this, ability, null, ability.CastTimeSeconds);
+                return true;
+            }
+
+            ExecutePreparedGroundAbility(ability, targetPosition);
             return true;
         }
 
@@ -182,6 +235,11 @@ namespace RPGClone.Abilities
         {
             failureReason = string.Empty;
             targetCombatant = null;
+            if (ability.RequiresGroundTarget)
+            {
+                return Fail(ability, null, "Choose an area to target.", out failureReason);
+            }
+
             if (resolvedTarget == null)
             {
                 return Fail(ability, null, "You have no target.", out failureReason);
@@ -219,6 +277,27 @@ namespace RPGClone.Abilities
             return true;
         }
 
+        private bool TryPrepareGroundAbility(MMOAbilityDefinition ability, Vector3 targetPosition, out string failureReason)
+        {
+            failureReason = string.Empty;
+            if (!IsPositionInRange(targetPosition, ability.Range))
+            {
+                return Fail(ability, null, "Target area is too far away.", out failureReason);
+            }
+
+            if (IsOnCooldown(ability, out _))
+            {
+                return Fail(ability, null, $"{ability.DisplayName} is not ready yet.", out failureReason);
+            }
+
+            if (ability.ManaCost > identity.Mana.CurrentValue)
+            {
+                return Fail(ability, null, "Not enough mana.", out failureReason);
+            }
+
+            return true;
+        }
+
         private void ExecutePreparedAbility(MMOAbilityDefinition ability, MMOCharacterIdentity resolvedTarget, MMOCombatant targetCombatant)
         {
             if (ability.ManaCost > 0)
@@ -226,8 +305,32 @@ namespace RPGClone.Abilities
                 identity.Mana.SetCurrent(identity.Mana.CurrentValue - ability.ManaCost);
             }
 
-            ApplyEffects(ability, targetCombatant);
+            if (ability.HasArea)
+            {
+                Vector3 center = resolvedTarget != null ? resolvedTarget.transform.position : transform.position;
+                ApplyAreaEffects(ability, center);
+            }
+            else
+            {
+                ApplyEffects(ability, targetCombatant);
+            }
+
             AbilityUsed?.Invoke(this, ability, resolvedTarget);
+            if (ability.CooldownSeconds > 0f)
+            {
+                cooldownReadyTimes[ability] = Time.time + ability.CooldownSeconds;
+            }
+        }
+
+        private void ExecutePreparedGroundAbility(MMOAbilityDefinition ability, Vector3 targetPosition)
+        {
+            if (ability.ManaCost > 0)
+            {
+                identity.Mana.SetCurrent(identity.Mana.CurrentValue - ability.ManaCost);
+            }
+
+            ApplyAreaEffects(ability, targetPosition);
+            AbilityUsed?.Invoke(this, ability, null);
             if (ability.CooldownSeconds > 0f)
             {
                 cooldownReadyTimes[ability] = Time.time + ability.CooldownSeconds;
@@ -243,6 +346,13 @@ namespace RPGClone.Abilities
 
             float sqrRange = range * range;
             return (target.transform.position - transform.position).sqrMagnitude <= sqrRange;
+        }
+
+        public bool IsPositionInRange(Vector3 targetPosition, float range)
+        {
+            Vector3 offset = targetPosition - transform.position;
+            offset.y = 0f;
+            return offset.sqrMagnitude <= range * range;
         }
 
         public bool IsOnCooldown(MMOAbilityDefinition ability, out float remainingSeconds)
@@ -305,7 +415,19 @@ namespace RPGClone.Abilities
                         buffController = target.gameObject.AddComponent<MMOCharacterBuffController>();
                     }
 
-                    buffController.ApplyBuff(MMOBuffApplication.FromAbility(ability, effect));
+                    buffController.ApplyBuff(MMOBuffApplication.FromAbility(ability, effect, combatant));
+                    continue;
+                }
+
+                if (effect.EffectType == MMOAbilityEffectType.PeriodicDamage)
+                {
+                    MMOCharacterBuffController buffController = target.GetComponent<MMOCharacterBuffController>();
+                    if (buffController == null)
+                    {
+                        buffController = target.gameObject.AddComponent<MMOCharacterBuffController>();
+                    }
+
+                    buffController.ApplyBuff(MMOBuffApplication.FromAbility(ability, effect, combatant));
                     continue;
                 }
 
@@ -328,6 +450,44 @@ namespace RPGClone.Abilities
                     target.ApplyDamage(combatant, ability, amount);
                 }
             }
+        }
+
+        private void ApplyAreaEffects(MMOAbilityDefinition ability, Vector3 center)
+        {
+            float radius = Mathf.Max(0.1f, ability.AreaRadius);
+            float sqrRadius = radius * radius;
+            foreach (MMOCombatant candidate in MMOCombatant.ActiveCombatants)
+            {
+                if (candidate == null || !candidate.IsAlive || candidate.Identity == null)
+                {
+                    continue;
+                }
+
+                Vector3 offset = candidate.transform.position - center;
+                offset.y = 0f;
+                if (offset.sqrMagnitude > sqrRadius || !IsAreaTargetAllowed(ability, candidate.Identity))
+                {
+                    continue;
+                }
+
+                ApplyEffects(ability, candidate);
+            }
+        }
+
+        private bool IsAreaTargetAllowed(MMOAbilityDefinition ability, MMOCharacterIdentity target)
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            return ability.AreaTargetFilter switch
+            {
+                MMOAbilityAreaTargetFilter.Hostile => MMOFactionRules.CanDamage(identity, target),
+                MMOAbilityAreaTargetFilter.Friendly => MMOFactionRules.CanAssist(identity, target),
+                MMOAbilityAreaTargetFilter.AnyCharacter => true,
+                _ => false
+            };
         }
 
         private static bool ShouldUseWeaponResolution(MMOAbilityDefinition ability, MMOAbilityEffectDefinition effect)
@@ -480,7 +640,22 @@ namespace RPGClone.Abilities
 
             MMOAbilityDefinition ability = activeCast.Ability;
             MMOCharacterIdentity target = activeCast.Target;
+            Vector3 groundTargetPosition = activeCast.GroundTargetPosition;
+            bool hasGroundTarget = activeCast.HasGroundTarget;
             activeCast = null;
+
+            if (hasGroundTarget)
+            {
+                if (!TryPrepareGroundAbility(ability, groundTargetPosition, out string groundFailureReason))
+                {
+                    CastInterrupted?.Invoke(this, ability, null, groundFailureReason);
+                    return;
+                }
+
+                ExecutePreparedGroundAbility(ability, groundTargetPosition);
+                CastCompleted?.Invoke(this, ability, null);
+                return;
+            }
 
             if (!TryPrepareAbility(ability, target, out string failureReason, out MMOCombatant targetCombatant))
             {
@@ -556,15 +731,24 @@ namespace RPGClone.Abilities
             public readonly MMOAbilityDefinition Ability;
             public readonly MMOCharacterIdentity Target;
             public readonly Vector3 StartPosition;
+            public readonly Vector3 GroundTargetPosition;
+            public readonly bool HasGroundTarget;
             public readonly float Duration;
             public float StartTime;
             public float AppliedKnockbackSeconds;
 
             public ActiveCast(MMOAbilityDefinition ability, MMOCharacterIdentity target, Vector3 startPosition, float startTime, float duration)
+                : this(ability, target, startPosition, startTime, duration, Vector3.zero, false)
+            {
+            }
+
+            public ActiveCast(MMOAbilityDefinition ability, MMOCharacterIdentity target, Vector3 startPosition, float startTime, float duration, Vector3 groundTargetPosition, bool hasGroundTarget)
             {
                 Ability = ability;
                 Target = target;
                 StartPosition = startPosition;
+                GroundTargetPosition = groundTargetPosition;
+                HasGroundTarget = hasGroundTarget;
                 StartTime = startTime;
                 Duration = Mathf.Max(0.01f, duration);
             }

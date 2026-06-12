@@ -132,7 +132,7 @@ namespace RPGClone.Enemies
             autoAttackController.SetHandleRightClickInput(false);
             autoAttackController.SetAutoAttackAbility(definition.AutoAttackAbility);
 
-            agent.speed = definition.WalkSpeed;
+            agent.speed = definition.WalkSpeed * GetMovementSpeedMultiplier();
             agent.stoppingDistance = definition.StoppingDistance;
             agent.autoBraking = true;
             agent.updateRotation = true;
@@ -161,7 +161,7 @@ namespace RPGClone.Enemies
 
             if (CanMoveOnNavMesh())
             {
-                agent.speed = definition.ChaseSpeed;
+                agent.speed = definition.ChaseSpeed * GetMovementSpeedMultiplier();
                 agent.stoppingDistance = Mathf.Max(0.05f, attackRange * 0.85f);
                 agent.isStopped = inAttackRange;
 
@@ -187,7 +187,7 @@ namespace RPGClone.Enemies
                 return;
             }
 
-            agent.speed = definition.WalkSpeed;
+            agent.speed = definition.WalkSpeed * GetMovementSpeedMultiplier();
             agent.stoppingDistance = 0.15f;
 
             bool hasArrived = !agent.pathPending && agent.remainingDistance <= Mathf.Max(agent.stoppingDistance, 0.25f);
@@ -282,7 +282,7 @@ namespace RPGClone.Enemies
             {
                 waitingAtRoamPoint = false;
                 nextChaseRepathTime = 0f;
-                agent.speed = definition.WalkSpeed;
+                agent.speed = definition.WalkSpeed * GetMovementSpeedMultiplier();
                 agent.stoppingDistance = 0.15f;
                 agent.isStopped = false;
                 agent.SetDestination(homePosition);
@@ -440,6 +440,11 @@ namespace RPGClone.Enemies
             }
 
             return definition.AutoAttackAbility != null ? definition.AutoAttackAbility.Range : definition.StoppingDistance;
+        }
+
+        private float GetMovementSpeedMultiplier()
+        {
+            return identity != null && identity.Stats != null ? identity.Stats.MovementSpeedMultiplier : 1f;
         }
 
         private bool TryGetRandomNavMeshPoint(Vector3 origin, float radius, out Vector3 point)

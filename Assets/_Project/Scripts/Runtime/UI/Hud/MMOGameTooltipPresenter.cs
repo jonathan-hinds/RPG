@@ -340,7 +340,8 @@ namespace RPGClone.UI
 
         private static MMOTooltipContent BuildBuffContent(MMOActiveBuff buff)
         {
-            MMOTooltipContent content = new(buff.DisplayName, new Color(1f, 0.84f, 0.35f, 1f));
+            Color titleColor = buff.IsHarmful ? new Color(1f, 0.26f, 0.2f, 1f) : new Color(1f, 0.84f, 0.35f, 1f);
+            MMOTooltipContent content = new(buff.DisplayName, titleColor);
             content.Add(buff.Description, 11, FontStyle.Normal, Color.white);
             content.Add($"Remaining: {FormatDuration(buff.RemainingSeconds)}", 11, FontStyle.Bold, buff.IsNearExpiry ? new Color(1f, 0.35f, 0.24f, 1f) : new Color(0.92f, 0.88f, 0.78f, 1f));
             return content;

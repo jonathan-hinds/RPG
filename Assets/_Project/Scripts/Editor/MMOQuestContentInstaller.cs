@@ -8,7 +8,6 @@ using RPGClone.CharacterSelection;
 using RPGClone.Inventory;
 using RPGClone.Loot;
 using RPGClone.Quests;
-using RPGClone.Trainers;
 using RPGClone.Vendors;
 using RPGClone.World;
 using UnityEditor;
@@ -31,9 +30,18 @@ namespace RPGClone.EditorTools
         private const string AbilityFolder = ConfigFolder + "/Abilities";
         private const string ScenePath = "Assets/Scenes/OrcishStarterValley.unity";
 
-        [MenuItem("Tools/RPG Clone/Quests/Install Starter Quest Content")]
+        [MenuItem("Tools/RPG Clone/Quests/DESTRUCTIVE Rebuild Starter Quest Content")]
         public static void InstallStarterQuestContent()
         {
+            if (!EditorUtility.DisplayDialog(
+                "Rebuild Starter Quest Content",
+                "This rewrites starter quest, item, loot, NPC, enemy, and scene content. Use the dedicated ability installer for ability changes.",
+                "Rebuild Scene Content",
+                "Cancel"))
+            {
+                return;
+            }
+
             EnsureFolders();
             if (SceneManager.GetActiveScene().path != ScenePath)
             {
@@ -44,14 +52,12 @@ namespace RPGClone.EditorTools
 
             StarterItems items = CreateItems();
             CreateItemCatalog(items.All);
-            TrainerAbilities trainerAbilities = CreateTrainerAbilities();
-            CreateAbilityCatalog(trainerAbilities.All);
             StarterEnemies enemies = CreateEnemies(items);
             StarterQuests quests = CreateQuests(items, enemies);
             MMOCharacterProfile friendlyNpcProfile = GetOrCreateFriendlyNpcProfile();
             CreateQuestCatalog(quests.All);
             UpdateLootTables(items, quests, enemies);
-            InstallSceneObjects(items, quests, enemies, trainerAbilities, friendlyNpcProfile);
+            InstallSceneObjects(items, quests, enemies, friendlyNpcProfile);
             MMOHudSceneInstaller.InstallIntoOpenScene(false);
 
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
@@ -485,149 +491,6 @@ namespace RPGClone.EditorTools
             EditorUtility.SetDirty(catalog);
         }
 
-        private static TrainerAbilities CreateTrainerAbilities()
-        {
-            return new TrainerAbilities
-            {
-                Berzerkitis = GetOrCreateBuffAbility("Warrior_Berzerkitis", "warrior_berzerkitis", "Berzerkitis", "Increases attack speed by 50%.", 60f, 15f, 0, 1f, 1.5f, 1f, 1f, 0f),
-                Charge = GetOrCreateChargeAbility("Warrior_Charge", "warrior_charge", "Charge", "Charges a hostile target if a valid path exists, then strikes with physical force.", 25f, 15f, 18f, 2.5f, MMOAbilityAmountSource.AttackPower, MMODamageSchool.Physical, 10f, 0.35f),
-                MageArmor = GetOrCreateBuffAbility("Mage_Mage_Armor", "mage_mage_armor", "Mage Armor", "Increases out of combat mana regeneration by 50%.", 0f, 1800f, 0, 1f, 1f, 1f, 1.5f, 0f),
-                FireBlast = GetOrCreateDamageAbility("Mage_Fire_Blast", "mage_fire_blast", "Fire Blast", "Blasts a hostile target with instant fire damage.", MMOAbilityTargetType.Hostile, 20f, 8f, 12, 0f, false, false, MMOAbilityAmountSource.SpellPower, MMODamageSchool.Fire, 18f, 0.45f),
-                WaterShield = GetOrCreateBuffAbility("Shaman_Water_Shield", "shaman_water_shield", "Water Shield", "Absorbs 20% of incoming damage and restores that amount as mana.", 0f, 600f, 0, 1f, 1f, 1f, 1f, 0.2f),
-                LightningBolt = GetOrCreateDamageAbility("Shaman_Lightning_Bolt", "shaman_lightning_bolt", "Lightning Bolt", "Calls down nature damage on a hostile target.", MMOAbilityTargetType.Hostile, 30f, 0f, 14, 2f, true, false, MMOAbilityAmountSource.SpellPower, MMODamageSchool.Nature, 22f, 0.75f)
-            };
-        }
-
-        private static MMOAbilityDefinition GetOrCreateDamageAbility(
-            string assetName,
-            string abilityId,
-            string displayName,
-            string description,
-            MMOAbilityTargetType targetType,
-            float range,
-            float cooldown,
-            int manaCost,
-            float castTime,
-            bool interruptOnMovement,
-            bool fallbackSelf,
-            MMOAbilityAmountSource amountSource,
-            MMODamageSchool school,
-            float flatAmount,
-            float coefficient)
-        {
-            string path = $"{AbilityFolder}/{assetName}.asset";
-            MMOAbilityDefinition ability = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(path);
-            if (ability == null)
-            {
-                ability = ScriptableObject.CreateInstance<MMOAbilityDefinition>();
-                AssetDatabase.CreateAsset(ability, path);
-            }
-
-            MMOAbilityEffectDefinition effect = new();
-            effect.Configure(MMOAbilityEffectType.Damage, amountSource, school, flatAmount, coefficient);
-            ability.Configure(abilityId, displayName, description, targetType, false, false, range, cooldown, manaCost, castTime, interruptOnMovement, fallbackSelf, new[] { effect });
-            EditorUtility.SetDirty(ability);
-            return ability;
-        }
-
-        private static MMOAbilityDefinition GetOrCreateChargeAbility(
-            string assetName,
-            string abilityId,
-            string displayName,
-            string description,
-            float range,
-            float cooldown,
-            float chargeSpeed,
-            float stopDistance,
-            MMOAbilityAmountSource amountSource,
-            MMODamageSchool school,
-            float flatAmount,
-            float coefficient)
-        {
-            string path = $"{AbilityFolder}/{assetName}.asset";
-            MMOAbilityDefinition ability = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(path);
-            if (ability == null)
-            {
-                ability = ScriptableObject.CreateInstance<MMOAbilityDefinition>();
-                AssetDatabase.CreateAsset(ability, path);
-            }
-
-            MMOAbilityEffectDefinition effect = new();
-            effect.ConfigureCharge(chargeSpeed, stopDistance, amountSource, school, flatAmount, coefficient);
-            ability.Configure(abilityId, displayName, description, MMOAbilityTargetType.Hostile, false, false, range, cooldown, 0, 0f, false, false, new[] { effect });
-            EditorUtility.SetDirty(ability);
-            return ability;
-        }
-
-        private static MMOAbilityDefinition GetOrCreateBuffAbility(
-            string assetName,
-            string abilityId,
-            string displayName,
-            string description,
-            float cooldown,
-            float duration,
-            int attackPowerBonus,
-            float attackPowerMultiplier,
-            float attackSpeedMultiplier,
-            float healthRegenMultiplier,
-            float manaRegenMultiplier,
-            float damageTakenAsManaPercent)
-        {
-            string path = $"{AbilityFolder}/{assetName}.asset";
-            MMOAbilityDefinition ability = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(path);
-            if (ability == null)
-            {
-                ability = ScriptableObject.CreateInstance<MMOAbilityDefinition>();
-                AssetDatabase.CreateAsset(ability, path);
-            }
-
-            MMOAbilityEffectDefinition effect = new();
-            effect.ConfigureTemporaryStatModifier(duration, attackPowerBonus, attackPowerMultiplier, attackSpeedMultiplier, healthRegenMultiplier, manaRegenMultiplier, damageTakenAsManaPercent);
-            ability.Configure(abilityId, displayName, description, MMOAbilityTargetType.Self, false, false, 0f, cooldown, 0, 0f, false, false, new[] { effect });
-            EditorUtility.SetDirty(ability);
-            return ability;
-        }
-
-        private static void CreateAbilityCatalog(MMOAbilityDefinition[] trainerAbilities)
-        {
-            string path = $"{AbilityFolder}/Starter_Ability_Catalog.asset";
-            MMOAbilityCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOAbilityCatalog>(path);
-            if (catalog == null)
-            {
-                catalog = ScriptableObject.CreateInstance<MMOAbilityCatalog>();
-                AssetDatabase.CreateAsset(catalog, path);
-            }
-
-            List<MMOAbilityDefinition> abilities = new();
-            foreach (string assetName in new[]
-            {
-                "Auto_Attack",
-                "Orc_Blood_Fury",
-                "Troll_Regeneration",
-                "Warrior_Bash",
-                "Mage_Fireball",
-                "Shaman_Healing_Beam"
-            })
-            {
-                MMOAbilityDefinition ability = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>($"{AbilityFolder}/{assetName}.asset");
-                if (ability != null)
-                {
-                    abilities.Add(ability);
-                }
-            }
-
-            foreach (MMOAbilityDefinition ability in trainerAbilities)
-            {
-                if (ability != null && !abilities.Contains(ability))
-                {
-                    abilities.Add(ability);
-                }
-            }
-
-            catalog.Configure(abilities);
-            EditorUtility.SetDirty(catalog);
-        }
-
         private static void UpdateLootTables(StarterItems items, StarterQuests quests, StarterEnemies enemies)
         {
             enemies.BristlebackLoot.Configure(new[]
@@ -648,7 +511,7 @@ namespace RPGClone.EditorTools
             EditorUtility.SetDirty(enemies.AshCanyonLoot);
         }
 
-        private static void InstallSceneObjects(StarterItems items, StarterQuests quests, StarterEnemies enemies, TrainerAbilities trainerAbilities, MMOCharacterProfile friendlyNpcProfile)
+        private static void InstallSceneObjects(StarterItems items, StarterQuests quests, StarterEnemies enemies, MMOCharacterProfile friendlyNpcProfile)
         {
             ConvertEnemyPlaceholders(enemies);
 
@@ -660,21 +523,6 @@ namespace RPGClone.EditorTools
             {
                 new MMOVendorStockEntry(items.RazorcragJerky, 1, 16),
                 new MMOVendorStockEntry(items.SpringwaterFlask, 1, 16)
-            }, friendlyNpcProfile);
-            EnsureTrainerNpc("Trainer - Warrior", "trainer_warrior_gorvak", "Gorvak Steelarm", "Warrior Trainer", MMOPlayableClass.Warrior, new Vector3(-14f, 2f, -102f), new[]
-            {
-                new MMOTrainerOfferEntry(trainerAbilities.Berzerkitis, MMOPlayableClass.Warrior, 3, 75),
-                new MMOTrainerOfferEntry(trainerAbilities.Charge, MMOPlayableClass.Warrior, 3, 75)
-            }, friendlyNpcProfile);
-            EnsureTrainerNpc("Trainer - Mage", "trainer_mage_zunari", "Zunari Embermind", "Mage Trainer", MMOPlayableClass.Mage, new Vector3(-57f, 2f, -126f), new[]
-            {
-                new MMOTrainerOfferEntry(trainerAbilities.MageArmor, MMOPlayableClass.Mage, 3, 75),
-                new MMOTrainerOfferEntry(trainerAbilities.FireBlast, MMOPlayableClass.Mage, 3, 75)
-            }, friendlyNpcProfile);
-            EnsureTrainerNpc("Trainer - Shaman", "trainer_shaman_mahru", "Mahru Raincaller", "Shaman Trainer", MMOPlayableClass.Shaman, new Vector3(-46f, 2f, -99f), new[]
-            {
-                new MMOTrainerOfferEntry(trainerAbilities.WaterShield, MMOPlayableClass.Shaman, 3, 75),
-                new MMOTrainerOfferEntry(trainerAbilities.LightningBolt, MMOPlayableClass.Shaman, 3, 75)
             }, friendlyNpcProfile);
             Physics.SyncTransforms();
 
@@ -794,35 +642,6 @@ namespace RPGClone.EditorTools
 
             EditorUtility.SetDirty(vendor);
             EditorUtility.SetDirty(vendorNpc);
-            EditorUtility.SetDirty(standardIdentity);
-            EditorUtility.SetDirty(standardIdentity.Identity);
-        }
-
-        private static void EnsureTrainerNpc(string objectName, string trainerId, string displayName, MMOPlayableClass trainerClass, Vector3 fallbackPosition, MMOTrainerOfferEntry[] offers, MMOCharacterProfile profile)
-        {
-            EnsureTrainerNpc(objectName, trainerId, displayName, $"{trainerClass} Trainer", trainerClass, fallbackPosition, offers, profile);
-        }
-
-        private static void EnsureTrainerNpc(string objectName, string trainerId, string displayName, string title, MMOPlayableClass trainerClass, Vector3 fallbackPosition, MMOTrainerOfferEntry[] offers, MMOCharacterProfile profile)
-        {
-            GameObject trainer = GameObject.Find(objectName);
-            if (trainer == null)
-            {
-                trainer = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                trainer.name = objectName;
-            }
-
-            trainer.transform.SetParent(null, true);
-            trainer.transform.position = fallbackPosition;
-            MMOGroundingUtility.SnapTransformToGround(trainer.transform, trainer.GetComponent<Collider>());
-            trainer.isStatic = false;
-            MMOClassTrainerNpc trainerNpc = trainer.GetComponent<MMOClassTrainerNpc>() ?? trainer.AddComponent<MMOClassTrainerNpc>();
-            trainerNpc.Configure(trainerId, displayName, title, trainerClass, offers);
-            MMOStandardNpcIdentity standardIdentity = trainer.GetComponent<MMOStandardNpcIdentity>() ?? trainer.AddComponent<MMOStandardNpcIdentity>();
-            standardIdentity.Configure(profile, displayName, title, MMONpcIdentityRole.Trainer, true);
-
-            EditorUtility.SetDirty(trainer);
-            EditorUtility.SetDirty(trainerNpc);
             EditorUtility.SetDirty(standardIdentity);
             EditorUtility.SetDirty(standardIdentity.Identity);
         }
@@ -956,18 +775,6 @@ namespace RPGClone.EditorTools
                     }
                 }
             }
-        }
-
-        private sealed class TrainerAbilities
-        {
-            public MMOAbilityDefinition Berzerkitis;
-            public MMOAbilityDefinition Charge;
-            public MMOAbilityDefinition MageArmor;
-            public MMOAbilityDefinition FireBlast;
-            public MMOAbilityDefinition WaterShield;
-            public MMOAbilityDefinition LightningBolt;
-
-            public MMOAbilityDefinition[] All => new[] { Berzerkitis, Charge, MageArmor, FireBlast, WaterShield, LightningBolt };
         }
 
         private sealed class StarterEnemies

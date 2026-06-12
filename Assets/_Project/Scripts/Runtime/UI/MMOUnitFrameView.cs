@@ -350,7 +350,11 @@ namespace RPGClone.UI
                 MMOActiveBuff buff = boundBuffController.ActiveBuffs[i];
                 BuffIconView iconView = buffIcons[i];
                 iconView.Icon.sprite = buff.Icon;
-                iconView.Icon.color = buff.Icon != null ? Color.white : new Color(0.16f, 0.11f, 0.06f, 1f);
+                iconView.Icon.color = buff.Icon != null
+                    ? Color.white
+                    : buff.IsHarmful ? new Color(0.2f, 0.035f, 0.03f, 1f) : new Color(0.16f, 0.11f, 0.06f, 1f);
+                iconView.BorderBaseColor = buff.IsHarmful ? new Color(0.92f, 0.12f, 0.08f, 1f) : new Color(0.72f, 0.63f, 0.42f, 1f);
+                iconView.Border.color = iconView.BorderBaseColor;
                 iconView.Initial.text = buff.Icon == null ? GetInitial(buff.DisplayName) : string.Empty;
                 iconView.Tooltip.Configure(boundBuffController, buff.BuffId);
                 RefreshBuffTimer(iconView, buff);
@@ -377,7 +381,7 @@ namespace RPGClone.UI
             float alpha = buff.IsNearExpiry ? Mathf.Lerp(0.38f, 1f, Mathf.PingPong(Time.unscaledTime * 2.2f, 1f)) : 1f;
             Color iconColor = iconView.Icon.color;
             iconView.Icon.color = new Color(iconColor.r, iconColor.g, iconColor.b, alpha);
-            Color borderColor = iconView.Border.color;
+            Color borderColor = iconView.BorderBaseColor;
             iconView.Border.color = new Color(borderColor.r, borderColor.g, borderColor.b, alpha);
         }
 
@@ -509,7 +513,7 @@ namespace RPGClone.UI
             rectTransform.offsetMax = Vector2.zero;
         }
 
-        private readonly struct BuffIconView
+        private sealed class BuffIconView
         {
             public readonly RectTransform Root;
             public readonly Image Icon;
@@ -517,6 +521,7 @@ namespace RPGClone.UI
             public readonly Text Initial;
             public readonly Text Timer;
             public readonly MMOBuffTooltipTrigger Tooltip;
+            public Color BorderBaseColor;
 
             public BuffIconView(RectTransform root, Image icon, Image border, Text initial, Text timer, MMOBuffTooltipTrigger tooltip)
             {
@@ -526,6 +531,7 @@ namespace RPGClone.UI
                 Initial = initial;
                 Timer = timer;
                 Tooltip = tooltip;
+                BorderBaseColor = border != null ? border.color : Color.white;
             }
         }
     }

@@ -19,6 +19,9 @@ namespace RPGClone.Abilities
         [SerializeField, Min(0f)] private float castTimeSeconds;
         [SerializeField] private bool interruptOnMovement;
         [SerializeField] private bool castOnSelfWhenFriendlyTargetInvalid;
+        [Header("Area")]
+        [SerializeField, Min(0f)] private float areaRadius;
+        [SerializeField] private MMOAbilityAreaTargetFilter areaTargetFilter = MMOAbilityAreaTargetFilter.Hostile;
         [SerializeField] private List<MMOAbilityEffectDefinition> effects = new();
 
         public string AbilityId => string.IsNullOrWhiteSpace(abilityId) ? name : abilityId;
@@ -34,6 +37,10 @@ namespace RPGClone.Abilities
         public float CastTimeSeconds => castTimeSeconds;
         public bool InterruptOnMovement => interruptOnMovement;
         public bool CastOnSelfWhenFriendlyTargetInvalid => castOnSelfWhenFriendlyTargetInvalid;
+        public float AreaRadius => areaRadius;
+        public MMOAbilityAreaTargetFilter AreaTargetFilter => areaTargetFilter;
+        public bool HasArea => areaRadius > 0f;
+        public bool RequiresGroundTarget => targetType == MMOAbilityTargetType.GroundArea;
         public IReadOnlyList<MMOAbilityEffectDefinition> Effects => effects;
 
         public void Configure(
@@ -79,6 +86,41 @@ namespace RPGClone.Abilities
             bool newCastOnSelfWhenFriendlyTargetInvalid,
             IEnumerable<MMOAbilityEffectDefinition> newEffects)
         {
+            Configure(
+                newAbilityId,
+                newDisplayName,
+                newDescription,
+                newTargetType,
+                newAutoAttack,
+                newToggled,
+                newRange,
+                newCooldownSeconds,
+                newManaCost,
+                newCastTimeSeconds,
+                newInterruptOnMovement,
+                newCastOnSelfWhenFriendlyTargetInvalid,
+                0f,
+                MMOAbilityAreaTargetFilter.Hostile,
+                newEffects);
+        }
+
+        public void Configure(
+            string newAbilityId,
+            string newDisplayName,
+            string newDescription,
+            MMOAbilityTargetType newTargetType,
+            bool newAutoAttack,
+            bool newToggled,
+            float newRange,
+            float newCooldownSeconds,
+            int newManaCost,
+            float newCastTimeSeconds,
+            bool newInterruptOnMovement,
+            bool newCastOnSelfWhenFriendlyTargetInvalid,
+            float newAreaRadius,
+            MMOAbilityAreaTargetFilter newAreaTargetFilter,
+            IEnumerable<MMOAbilityEffectDefinition> newEffects)
+        {
             abilityId = string.IsNullOrWhiteSpace(newAbilityId) ? name : newAbilityId;
             displayName = string.IsNullOrWhiteSpace(newDisplayName) ? abilityId : newDisplayName;
             description = newDescription;
@@ -91,6 +133,8 @@ namespace RPGClone.Abilities
             castTimeSeconds = Mathf.Max(0f, newCastTimeSeconds);
             interruptOnMovement = newInterruptOnMovement;
             castOnSelfWhenFriendlyTargetInvalid = newCastOnSelfWhenFriendlyTargetInvalid;
+            areaRadius = Mathf.Max(0f, newAreaRadius);
+            areaTargetFilter = newAreaTargetFilter;
             effects = newEffects != null ? new List<MMOAbilityEffectDefinition>(newEffects) : new List<MMOAbilityEffectDefinition>();
         }
     }

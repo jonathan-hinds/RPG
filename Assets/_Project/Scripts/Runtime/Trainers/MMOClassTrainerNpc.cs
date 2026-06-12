@@ -25,13 +25,22 @@ namespace RPGClone.Trainers
         [SerializeField] private LayerMask interactionMask = ~0;
         [SerializeField] private bool snapToGroundOnStart = true;
 
+        private readonly List<MMOTrainerOfferEntry> resolvedOffers = new();
         private MMOStandardNpcIdentity standardIdentity;
+        private bool offersDirty = true;
 
         public string TrainerId => string.IsNullOrWhiteSpace(trainerId) ? name : trainerId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayNameOverride) ? name : displayNameOverride;
         public string Title => string.IsNullOrWhiteSpace(titleOverride) ? $"{trainerClass} Trainer" : titleOverride;
         public MMOPlayableClass TrainerClass => trainerClass;
-        public IReadOnlyList<MMOTrainerOfferEntry> Offers => offers;
+        public IReadOnlyList<MMOTrainerOfferEntry> Offers
+        {
+            get
+            {
+                RebuildOffersIfNeeded();
+                return resolvedOffers;
+            }
+        }
         public float InteractionDistance => interactionDistance;
 
         private void Awake()
@@ -79,6 +88,7 @@ namespace RPGClone.Trainers
             titleOverride = string.IsNullOrWhiteSpace(newTitle) ? $"{newTrainerClass} Trainer" : newTitle;
             trainerClass = newTrainerClass;
             offers = newOffers != null ? new List<MMOTrainerOfferEntry>(newOffers) : new List<MMOTrainerOfferEntry>();
+            offersDirty = true;
             EnsureIdentity();
         }
 
@@ -167,19 +177,19 @@ namespace RPGClone.Trainers
             foreach (MMOAbilityDefinition ability in abilitySystem.KnownAbilities)
             {
                 string abilityId = ability != null ? ability.AbilityId : string.Empty;
-                if (abilityId == "mage_fireball" || abilityId == "mage_mage_armor" || abilityId == "mage_fire_blast")
+                if (abilityId == "mage_fireball" || abilityId == "mage_mage_armor" || abilityId == "mage_fire_blast" || abilityId == "mage_flamestrike")
                 {
                     playerClass = MMOPlayableClass.Mage;
                     return true;
                 }
 
-                if (abilityId == "shaman_healing_beam" || abilityId == "shaman_water_shield" || abilityId == "shaman_lightning_bolt")
+                if (abilityId == "shaman_healing_beam" || abilityId == "shaman_water_shield" || abilityId == "shaman_lightning_bolt" || abilityId == "shaman_frost_shock")
                 {
                     playerClass = MMOPlayableClass.Shaman;
                     return true;
                 }
 
-                if (abilityId == "warrior_bash" || abilityId == "warrior_berzerkitis" || abilityId == "warrior_charge")
+                if (abilityId == "warrior_bash" || abilityId == "warrior_berzerkitis" || abilityId == "warrior_charge" || abilityId == "warrior_thunderclap")
                 {
                     playerClass = MMOPlayableClass.Warrior;
                     return true;
@@ -202,6 +212,26 @@ namespace RPGClone.Trainers
             }
 
             standardIdentity.Configure(standardIdentity.Profile, DisplayName, Title, MMONpcIdentityRole.Trainer, false);
+        }
+
+        private void RebuildOffersIfNeeded()
+        {
+            if (!offersDirty)
+            {
+                return;
+            }
+
+            resolvedOffers.Clear();
+            foreach (MMOTrainerOfferEntry offer in offers)
+            {
+                if (offer != null && offer.IsValid)
+                {
+                    resolvedOffers.Add(offer);
+                }
+            }
+
+            MMOTrainerOfferCatalog.AppendOffersForClass(trainerClass, resolvedOffers);
+            offersDirty = false;
         }
 
         private void Interact(Vector2 screenPosition)

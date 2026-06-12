@@ -14,11 +14,14 @@ namespace RPGClone.Abilities
         [SerializeField, Min(0f)] private float coefficient = 1f;
         [SerializeField, Min(0f)] private float durationSeconds;
         [SerializeField, Min(0)] private int attackPowerBonus;
-        [SerializeField, Min(1f)] private float attackPowerMultiplier = 1f;
-        [SerializeField, Min(1f)] private float attackSpeedMultiplier = 1f;
-        [SerializeField, Min(1f)] private float healthRegenMultiplier = 1f;
-        [SerializeField, Min(1f)] private float manaRegenMultiplier = 1f;
+        [SerializeField, Min(0.1f)] private float attackPowerMultiplier = 1f;
+        [SerializeField, Min(0.1f)] private float attackSpeedMultiplier = 1f;
+        [SerializeField, Min(0.1f)] private float healthRegenMultiplier = 1f;
+        [SerializeField, Min(0.1f)] private float manaRegenMultiplier = 1f;
+        [SerializeField, Min(0.1f)] private float movementSpeedMultiplier = 1f;
         [SerializeField, Range(0f, 1f)] private float damageTakenAsManaPercent;
+        [SerializeField] private bool harmfulEffect;
+        [SerializeField, Min(0.1f)] private float tickSeconds = 1f;
         [SerializeField, Min(0.1f)] private float chargeSpeed = 18f;
         [SerializeField, Min(0.1f)] private float chargeStopDistance = 2.5f;
 
@@ -32,8 +35,11 @@ namespace RPGClone.Abilities
         public float AttackPowerMultiplier => attackPowerMultiplier;
         public float AttackSpeedMultiplier => attackSpeedMultiplier;
         public float HealthRegenMultiplier => healthRegenMultiplier;
-        public float ManaRegenMultiplier => Mathf.Max(1f, manaRegenMultiplier);
+        public float ManaRegenMultiplier => Mathf.Max(0.1f, manaRegenMultiplier);
+        public float MovementSpeedMultiplier => Mathf.Max(0.1f, movementSpeedMultiplier);
         public float DamageTakenAsManaPercent => Mathf.Clamp01(damageTakenAsManaPercent);
+        public bool HarmfulEffect => harmfulEffect;
+        public float TickSeconds => Mathf.Max(0.1f, tickSeconds);
         public float ChargeSpeed => Mathf.Max(0.1f, chargeSpeed);
         public float ChargeStopDistance => Mathf.Max(0.1f, chargeStopDistance);
 
@@ -68,6 +74,7 @@ namespace RPGClone.Abilities
             damageSchool = newDamageSchool;
             flatAmount = Mathf.Max(0f, newFlatAmount);
             coefficient = Mathf.Max(0f, newCoefficient);
+            harmfulEffect = effectType == MMOAbilityEffectType.Damage || effectType == MMOAbilityEffectType.PeriodicDamage;
         }
 
         public void ConfigureTemporaryStatModifier(
@@ -96,6 +103,29 @@ namespace RPGClone.Abilities
             float newManaRegenMultiplier,
             float newDamageTakenAsManaPercent)
         {
+            ConfigureTemporaryStatModifier(
+                newDurationSeconds,
+                newAttackPowerBonus,
+                newAttackPowerMultiplier,
+                newAttackSpeedMultiplier,
+                newHealthRegenMultiplier,
+                newManaRegenMultiplier,
+                newDamageTakenAsManaPercent,
+                1f,
+                false);
+        }
+
+        public void ConfigureTemporaryStatModifier(
+            float newDurationSeconds,
+            int newAttackPowerBonus,
+            float newAttackPowerMultiplier,
+            float newAttackSpeedMultiplier,
+            float newHealthRegenMultiplier,
+            float newManaRegenMultiplier,
+            float newDamageTakenAsManaPercent,
+            float newMovementSpeedMultiplier,
+            bool newHarmfulEffect)
+        {
             effectType = MMOAbilityEffectType.TemporaryStatModifier;
             amountSource = MMOAbilityAmountSource.Flat;
             damageSchool = MMODamageSchool.Physical;
@@ -103,11 +133,28 @@ namespace RPGClone.Abilities
             coefficient = 0f;
             durationSeconds = Mathf.Max(0.1f, newDurationSeconds);
             attackPowerBonus = Mathf.Max(0, newAttackPowerBonus);
-            attackPowerMultiplier = Mathf.Max(1f, newAttackPowerMultiplier);
-            attackSpeedMultiplier = Mathf.Max(1f, newAttackSpeedMultiplier);
-            healthRegenMultiplier = Mathf.Max(1f, newHealthRegenMultiplier);
-            manaRegenMultiplier = Mathf.Max(1f, newManaRegenMultiplier);
+            attackPowerMultiplier = Mathf.Max(0.1f, newAttackPowerMultiplier);
+            attackSpeedMultiplier = Mathf.Max(0.1f, newAttackSpeedMultiplier);
+            healthRegenMultiplier = Mathf.Max(0.1f, newHealthRegenMultiplier);
+            manaRegenMultiplier = Mathf.Max(0.1f, newManaRegenMultiplier);
             damageTakenAsManaPercent = Mathf.Clamp01(newDamageTakenAsManaPercent);
+            movementSpeedMultiplier = Mathf.Max(0.1f, newMovementSpeedMultiplier);
+            harmfulEffect = newHarmfulEffect;
+            tickSeconds = 1f;
+        }
+
+        public void ConfigurePeriodicDamage(
+            float newDurationSeconds,
+            float newTickSeconds,
+            MMOAbilityAmountSource newAmountSource,
+            MMODamageSchool newDamageSchool,
+            float newFlatAmount,
+            float newCoefficient)
+        {
+            Configure(MMOAbilityEffectType.PeriodicDamage, newAmountSource, newDamageSchool, newFlatAmount, newCoefficient);
+            durationSeconds = Mathf.Max(0.1f, newDurationSeconds);
+            tickSeconds = Mathf.Max(0.1f, newTickSeconds);
+            harmfulEffect = true;
         }
 
         public void ConfigureCharge(

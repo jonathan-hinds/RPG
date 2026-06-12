@@ -84,11 +84,11 @@ namespace RPGClone.UI
             }
 
             RectTransform root = (RectTransform)transform;
-            root.anchorMin = new Vector2(1f, 0.5f);
-            root.anchorMax = new Vector2(1f, 0.5f);
-            root.pivot = new Vector2(1f, 0.5f);
-            root.anchoredPosition = new Vector2(-32f, 110f);
-            root.sizeDelta = new Vector2(310f, 420f);
+            root.anchorMin = new Vector2(1f, 1f);
+            root.anchorMax = new Vector2(1f, 1f);
+            root.pivot = new Vector2(1f, 1f);
+            root.anchoredPosition = new Vector2(-24f, -292f);
+            root.sizeDelta = new Vector2(300f, 360f);
 
             trackerText = MMOUiFactory.CreateText("Tracker Text", transform, 13, FontStyle.Bold, TextAnchor.UpperLeft);
             trackerText.color = Color.white;
@@ -115,6 +115,13 @@ namespace RPGClone.UI
             {
                 if (state == null || state.Quest == null || !state.Tracked)
                 {
+                    continue;
+                }
+
+                if (questLog.IsReadyToTurnIn(state))
+                {
+                    builder.AppendLine($"{state.Quest.DisplayName} (Completed)");
+                    builder.AppendLine();
                     continue;
                 }
 

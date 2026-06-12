@@ -70,7 +70,7 @@ namespace RPGClone.Combat
             float multiplier = identity != null && identity.Stats != null
                 ? identity.Stats.AttackSpeedMultiplier
                 : 1f;
-            return weapon.SpeedSeconds / Mathf.Max(1f, multiplier);
+            return weapon.SpeedSeconds / Mathf.Max(0.1f, multiplier);
         }
 
         public static bool CanBlock(MMOCharacterIdentity identity)

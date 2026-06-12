@@ -65,6 +65,7 @@ namespace RPGClone.UI
                 return false;
             }
 
+            EndDrag();
             Current = payload;
             CreateDragVisual(owner, label, icon);
             UpdateDrag(eventData);

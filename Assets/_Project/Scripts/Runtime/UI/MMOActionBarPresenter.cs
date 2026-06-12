@@ -22,6 +22,7 @@ namespace RPGClone.UI
         [SerializeField] private MMOInventoryContainer inventory;
         [SerializeField] private MMOAutoAttackController autoAttackController;
         [SerializeField] private MMOTargetSelectionController targetSelectionController;
+        [SerializeField] private MMOGroundTargetingController groundTargetingController;
         [SerializeField] private List<MMOActionBarSlot> slots = new();
 
         private readonly List<Button> buttons = new();
@@ -113,6 +114,13 @@ namespace RPGClone.UI
             if (ability.IsAutoAttack && autoAttackController != null)
             {
                 autoAttackController.ToggleAutoAttack(target);
+                return;
+            }
+
+            if (ability.RequiresGroundTarget)
+            {
+                ResolveGroundTargetingController();
+                groundTargetingController?.BeginTargeting(abilitySystem, ability);
                 return;
             }
 
@@ -261,6 +269,22 @@ namespace RPGClone.UI
             if (targetSelectionController == null)
             {
                 targetSelectionController = FindAnyObjectByType<MMOTargetSelectionController>();
+            }
+
+            ResolveGroundTargetingController();
+        }
+
+        private void ResolveGroundTargetingController()
+        {
+            if (groundTargetingController != null)
+            {
+                return;
+            }
+
+            groundTargetingController = FindAnyObjectByType<MMOGroundTargetingController>();
+            if (groundTargetingController == null)
+            {
+                groundTargetingController = gameObject.AddComponent<MMOGroundTargetingController>();
             }
         }
 

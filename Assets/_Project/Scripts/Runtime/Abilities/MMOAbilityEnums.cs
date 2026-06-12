@@ -5,7 +5,8 @@ namespace RPGClone.Abilities
         Self = 0,
         Friendly = 1,
         Hostile = 2,
-        AnyCharacter = 3
+        AnyCharacter = 3,
+        GroundArea = 4
     }
 
     public enum MMOAbilityEffectType
@@ -13,7 +14,8 @@ namespace RPGClone.Abilities
         Damage = 0,
         Heal = 1,
         TemporaryStatModifier = 2,
-        Charge = 3
+        Charge = 3,
+        PeriodicDamage = 4
     }
 
     public enum MMOAbilityAmountSource
@@ -33,5 +35,12 @@ namespace RPGClone.Abilities
         Shadow = 4,
         Arcane = 5,
         Holy = 6
+    }
+
+    public enum MMOAbilityAreaTargetFilter
+    {
+        Hostile = 0,
+        Friendly = 1,
+        AnyCharacter = 2
     }
 }

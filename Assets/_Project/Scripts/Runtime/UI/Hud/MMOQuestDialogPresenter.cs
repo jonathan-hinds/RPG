@@ -155,8 +155,14 @@ namespace RPGClone.UI
 
         private void OpenQuest(MMOQuestDefinition quest, bool turnIn)
         {
+            bool changedQuest = selectedQuest != quest || selectedQuestTurnIn != turnIn;
             selectedQuest = quest;
             selectedQuestTurnIn = turnIn;
+            if (changedQuest)
+            {
+                selectedReward = null;
+            }
+
             MMOUiFactory.DestroyChildren(contentRoot);
 
             CreateText("Title", quest.DisplayName, 20, FontStyle.Bold, TextAnchor.MiddleLeft, 0f, 0f, 38f).color = MMONpcWindowFrame.TitleColor;
@@ -189,7 +195,7 @@ namespace RPGClone.UI
                 CreateText("Reward Summary", rewardText, 13, FontStyle.Bold, TextAnchor.UpperLeft, 0f, rewardY, 24f).color = new Color(1f, 0.82f, 0.34f, 1f);
                 rewardY += 30f;
                 rewardY = CreateGuaranteedRewards(rewards, rewardY);
-                CreateRewardChoices(rewards, rewardY);
+                CreateRewardChoices(rewards, rewardY, turnIn);
             }
 
             CreateActionButtons(turnIn);
@@ -197,7 +203,7 @@ namespace RPGClone.UI
 
         private float CreateGuaranteedRewards(MMOQuestRewardDefinition rewards, float startY)
         {
-            float y = startY;
+            int index = 0;
             foreach (MMOItemStack stack in rewards.GuaranteedItems)
             {
                 if (stack == null || stack.IsEmpty)
@@ -205,23 +211,22 @@ namespace RPGClone.UI
                     continue;
                 }
 
-                Button itemButton = CreateItemIconButton($"Reward {stack.Item.DisplayName}", stack.Item, stack.Quantity, new Vector2(0f, -y), false);
+                Button itemButton = CreateItemIconButton($"Reward {stack.Item.DisplayName}", stack.Item, stack.Quantity, new Vector2(index * 52f, -startY), false);
                 MMOItemTooltipTrigger.Bind(itemButton.gameObject, stack.Item);
-                y += 48f;
+                index++;
             }
 
-            return y;
+            return index > 0 ? startY + 54f : startY;
         }
 
-        private void CreateRewardChoices(MMOQuestRewardDefinition rewards, float startY)
+        private void CreateRewardChoices(MMOQuestRewardDefinition rewards, float startY, bool canChoose)
         {
             if (rewards.ChoiceItems.Count == 0)
             {
                 return;
             }
 
-            MMOCharacterEquipment equipment = questLog != null ? questLog.GetComponent<MMOCharacterEquipment>() : null;
-            float y = startY;
+            int index = 0;
             foreach (MMOItemDefinition item in rewards.ChoiceItems)
             {
                 if (item == null)
@@ -229,17 +234,10 @@ namespace RPGClone.UI
                     continue;
                 }
 
-                bool canEquip = equipment == null || equipment.CanEquip(item);
-                if (selectedReward == null && canEquip)
-                {
-                    selectedReward = item;
-                }
-
-                bool isSelected = selectedReward == item;
-                Button choice = CreateItemIconButton($"Reward {item.DisplayName}", item, 0, new Vector2(0f, -y), isSelected);
+                bool isSelected = canChoose && selectedReward == item;
+                Button choice = CreateItemIconButton($"Reward {item.DisplayName}", item, 0, new Vector2(index * 52f, -startY), isSelected);
                 MMOItemTooltipTrigger.Bind(choice.gameObject, item);
-                choice.interactable = canEquip;
-                if (canEquip)
+                if (canChoose)
                 {
                     choice.onClick.AddListener(() =>
                     {
@@ -247,16 +245,8 @@ namespace RPGClone.UI
                         OpenQuest(selectedQuest, selectedQuestTurnIn);
                     });
                 }
-                else
-                {
-                    Image image = choice.GetComponent<Image>();
-                    if (image != null)
-                    {
-                        image.color = new Color(image.color.r * 0.55f, image.color.g * 0.55f, image.color.b * 0.55f, 0.72f);
-                    }
-                }
 
-                y += 48f;
+                index++;
             }
         }
 
@@ -325,6 +315,7 @@ namespace RPGClone.UI
             backRect.pivot = new Vector2(0f, 0f);
 
             Button action = MMOUiFactory.CreateTextButton(turnIn ? "Complete" : "Accept", contentRoot, turnIn ? "Complete Quest" : "Accept", new Vector2(132f, 34f), MMONpcWindowFrame.AccentButtonColor);
+            action.interactable = !turnIn || !HasChoiceRewards(selectedQuest?.Rewards) || selectedReward != null;
             action.onClick.AddListener(() =>
             {
                 if (turnIn)
@@ -343,6 +334,24 @@ namespace RPGClone.UI
             actionRect.anchorMax = new Vector2(1f, 0f);
             actionRect.pivot = new Vector2(1f, 0f);
             actionRect.anchoredPosition = Vector2.zero;
+        }
+
+        private static bool HasChoiceRewards(MMOQuestRewardDefinition rewards)
+        {
+            if (rewards == null)
+            {
+                return false;
+            }
+
+            foreach (MMOItemDefinition item in rewards.ChoiceItems)
+            {
+                if (item != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private Text CreateText(string name, string value, int size, FontStyle style, TextAnchor anchor, float x, float y, float height)
