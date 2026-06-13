@@ -25,6 +25,10 @@ MonoBehaviour:
     requiredClass: 0
     requiredLevel: 5
     priceCopper: 125
+  - ability: {fileID: 11400000, guid: 93db1675e67d68a44af50e6d001326e5, type: 2}
+    requiredClass: 0
+    requiredLevel: 7
+    priceCopper: 200
   - ability: {fileID: 11400000, guid: a1f2e5ff152aaf34b907fa3ddb6f2afa, type: 2}
     requiredClass: 1
     requiredLevel: 3
@@ -37,6 +41,10 @@ MonoBehaviour:
     requiredClass: 1
     requiredLevel: 5
     priceCopper: 125
+  - ability: {fileID: 11400000, guid: 714b622b6ddf0fc458615beb9aae5c74, type: 2}
+    requiredClass: 1
+    requiredLevel: 7
+    priceCopper: 200
   - ability: {fileID: 11400000, guid: 9d4616d63c2906d42a36a7396679c55d, type: 2}
     requiredClass: 2
     requiredLevel: 3
@@ -49,3 +57,7 @@ MonoBehaviour:
     requiredClass: 2
     requiredLevel: 5
     priceCopper: 125
+  - ability: {fileID: 11400000, guid: 1ccb7fa27a4f29a4eb38e70d14fe216c, type: 2}
+    requiredClass: 2
+    requiredLevel: 7
+    priceCopper: 200

@@ -36,6 +36,7 @@ namespace RPGClone.Combat
 
             float amount = effect.FlatAmount + CalculateWeaponDamage(source.Identity, weapon, effect.Coefficient, weaponSkill);
             int roundedAmount = Mathf.Max(0, Mathf.RoundToInt(amount));
+            bool isCritical = RollCritical(source.Identity);
             int blockedAmount = TryApplyBlock(source.Identity, target.Identity, weaponSkill, ref roundedAmount);
             if (blockedAmount > 0)
             {
@@ -44,7 +45,7 @@ namespace RPGClone.Combat
 
             if (roundedAmount > 0)
             {
-                target.ApplyDamage(source, ability, roundedAmount);
+                target.ApplyDamage(source, ability, roundedAmount, isCritical);
             }
 
             MMOWeaponSkillController skillController = GetOrAddWeaponSkills(source.Identity);
@@ -119,6 +120,12 @@ namespace RPGClone.Combat
         {
             float missChance = CalculateMissChance(weaponSkill, defenseSkill);
             return Random.value < missChance / 100f;
+        }
+
+        private static bool RollCritical(MMOCharacterIdentity source)
+        {
+            float criticalChance = source != null && source.Stats != null ? source.Stats.CriticalStrikeChance : 0f;
+            return Random.value < Mathf.Clamp(criticalChance, 0f, 100f) / 100f;
         }
 
         private static float CalculateMissChance(int weaponSkill, int defenseSkill)

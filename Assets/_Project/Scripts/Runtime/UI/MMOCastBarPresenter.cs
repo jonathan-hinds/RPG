@@ -18,6 +18,7 @@ namespace RPGClone.UI
         private CanvasGroup canvasGroup;
         private MMOAbilityDefinition currentAbility;
         private string currentInteractionLabel;
+        private bool currentAbilityIsChanneled;
 
         private void Awake()
         {
@@ -166,9 +167,10 @@ namespace RPGClone.UI
         {
             currentAbility = ability;
             currentInteractionLabel = string.Empty;
+            currentAbilityIsChanneled = ability != null && ability.IsChanneled;
             SetVisible(true);
             label.text = ability != null ? ability.DisplayName : "Casting";
-            SetFill(0f);
+            SetFill(currentAbilityIsChanneled ? 1f : 0f);
         }
 
         private void OnCastProgressed(MMOAbilitySystem system, MMOAbilityDefinition ability, MMOCharacterIdentity target, float normalizedProgress)
@@ -178,7 +180,7 @@ namespace RPGClone.UI
                 return;
             }
 
-            SetFill(normalizedProgress);
+            SetFill(currentAbilityIsChanneled ? 1f - normalizedProgress : normalizedProgress);
         }
 
         private void OnCastInterrupted(MMOAbilitySystem system, MMOAbilityDefinition ability, MMOCharacterIdentity target, string reason)
@@ -195,6 +197,7 @@ namespace RPGClone.UI
         {
             currentAbility = null;
             currentInteractionLabel = castLabel;
+            currentAbilityIsChanneled = false;
             SetVisible(true);
             label.text = castLabel;
             SetFill(0f);
@@ -224,6 +227,7 @@ namespace RPGClone.UI
         {
             currentAbility = null;
             currentInteractionLabel = string.Empty;
+            currentAbilityIsChanneled = false;
             SetFill(0f);
             SetVisible(false);
         }

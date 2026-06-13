@@ -5,11 +5,13 @@ namespace RPGClone.Buffs
     public sealed class MMOActiveBuff
     {
         private readonly float startedAt;
-        private readonly float expiresAt;
+        private float tickWindowStartedAt;
+        private float expiresAt;
         private float nextTickAt;
         private int restoredHealth;
         private int restoredMana;
         private int appliedPeriodicDamage;
+        private readonly int periodicDamagePerStackTotal;
 
         public string BuffId { get; }
         public string DisplayName { get; }
@@ -27,10 +29,12 @@ namespace RPGClone.Buffs
         public float DamageTakenAsManaPercent { get; }
         public int RestoreHealthTotal { get; }
         public int RestoreManaTotal { get; }
-        public int PeriodicDamageTotal { get; }
+        public int PeriodicDamageTotal => periodicDamagePerStackTotal * StackCount;
         public float TickSeconds { get; }
-        public RPGClone.Combat.MMOCombatant Source { get; }
-        public RPGClone.Abilities.MMOAbilityDefinition Ability { get; }
+        public int MaxStacks { get; }
+        public int StackCount { get; private set; }
+        public RPGClone.Combat.MMOCombatant Source { get; private set; }
+        public RPGClone.Abilities.MMOAbilityDefinition Ability { get; private set; }
 
         public float RemainingSeconds => Mathf.Max(0f, expiresAt - Time.time);
         public float NormalizedRemaining => DurationSeconds <= 0f ? 0f : Mathf.Clamp01(RemainingSeconds / DurationSeconds);
@@ -57,13 +61,32 @@ namespace RPGClone.Buffs
             DamageTakenAsManaPercent = Mathf.Clamp01(application.DamageTakenAsManaPercent);
             RestoreHealthTotal = Mathf.Max(0, application.RestoreHealthTotal);
             RestoreManaTotal = Mathf.Max(0, application.RestoreManaTotal);
-            PeriodicDamageTotal = Mathf.Max(0, application.PeriodicDamageTotal);
+            periodicDamagePerStackTotal = Mathf.Max(0, application.PeriodicDamageTotal);
             TickSeconds = Mathf.Max(0.1f, application.TickSeconds);
+            MaxStacks = Mathf.Max(1, application.MaxStacks);
+            StackCount = 1;
             Source = application.Source;
             Ability = application.Ability;
             startedAt = Time.time;
+            tickWindowStartedAt = startedAt;
             expiresAt = startedAt + DurationSeconds;
             nextTickAt = startedAt + TickSeconds;
+        }
+
+        public void RefreshStack(MMOBuffApplication application)
+        {
+            if (application == null)
+            {
+                return;
+            }
+
+            StackCount = Mathf.Min(MaxStacks, StackCount + 1);
+            Source = application.Source;
+            Ability = application.Ability;
+            tickWindowStartedAt = Time.time;
+            expiresAt = Time.time + DurationSeconds;
+            nextTickAt = Time.time + TickSeconds;
+            appliedPeriodicDamage = 0;
         }
 
         public int ConsumeHealthTick()
@@ -93,7 +116,7 @@ namespace RPGClone.Buffs
                 return 0;
             }
 
-            float elapsedAfterTick = Mathf.Clamp(Time.time - startedAt + TickSeconds, 0f, DurationSeconds);
+            float elapsedAfterTick = Mathf.Clamp(Time.time - tickWindowStartedAt + TickSeconds, 0f, DurationSeconds);
             int expectedTotal = Mathf.RoundToInt(totalAmount * (elapsedAfterTick / DurationSeconds));
             int tickAmount = Mathf.Max(0, expectedTotal - restoredAmount);
             restoredAmount += tickAmount;

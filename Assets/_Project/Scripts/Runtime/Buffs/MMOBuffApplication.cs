@@ -24,6 +24,7 @@ namespace RPGClone.Buffs
         public int RestoreManaTotal;
         public int PeriodicDamageTotal;
         public float TickSeconds = 1f;
+        public int MaxStacks = 1;
         public MMOCombatant Source;
         public MMOAbilityDefinition Ability;
 
@@ -51,6 +52,7 @@ namespace RPGClone.Buffs
                 DamageTakenAsManaPercent = effect.DamageTakenAsManaPercent,
                 PeriodicDamageTotal = effect.EffectType == MMOAbilityEffectType.PeriodicDamage && source != null ? effect.CalculateAmount(source.Identity) : 0,
                 TickSeconds = effect.TickSeconds,
+                MaxStacks = effect.StackLimit,
                 Source = source,
                 Ability = ability
             };

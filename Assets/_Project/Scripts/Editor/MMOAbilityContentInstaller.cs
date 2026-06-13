@@ -24,9 +24,12 @@ namespace RPGClone.EditorTools
             MMOAbilityDefinition thunderclap = GetOrCreateThunderclap();
             MMOAbilityDefinition flamestrike = GetOrCreateFlamestrike();
             MMOAbilityDefinition frostShock = GetOrCreateFrostShock();
+            MMOAbilityDefinition gouge = GetOrCreateGouge();
+            MMOAbilityDefinition arcaneMissile = GetOrCreateArcaneMissile();
+            MMOAbilityDefinition earthquake = GetOrCreateEarthquake();
 
-            UpdateAbilityCatalog(new[] { thunderclap, flamestrike, frostShock });
-            UpdateTrainerOfferCatalog(thunderclap, flamestrike, frostShock);
+            UpdateAbilityCatalog(new[] { thunderclap, flamestrike, frostShock, gouge, arcaneMissile, earthquake });
+            UpdateTrainerOfferCatalog(thunderclap, flamestrike, frostShock, gouge, arcaneMissile, earthquake);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -118,6 +121,93 @@ namespace RPGClone.EditorTools
             return ability;
         }
 
+        private static MMOAbilityDefinition GetOrCreateGouge()
+        {
+            MMOAbilityDefinition ability = GetOrCreateAbility("Warrior_Gouge");
+            MMOAbilityEffectDefinition strike = new();
+            strike.Configure(MMOAbilityEffectType.Damage, MMOAbilityAmountSource.WeaponDamage, MMODamageSchool.Physical, 4f, 0.85f);
+
+            MMOAbilityEffectDefinition bleed = new();
+            bleed.ConfigurePeriodicDamage(9f, 3f, MMOAbilityAmountSource.AttackPower, MMODamageSchool.Physical, 18f, 0.25f, 3);
+
+            ability.Configure(
+                "warrior_gouge",
+                "Gouge",
+                "Cuts a hostile target for weapon damage and applies a stacking bleed. Critical hits reset Gouge's cooldown.",
+                MMOAbilityTargetType.Hostile,
+                false,
+                false,
+                3f,
+                10f,
+                0,
+                0f,
+                false,
+                false,
+                false,
+                true,
+                0f,
+                MMOAbilityAreaTargetFilter.Hostile,
+                new[] { strike, bleed });
+            EditorUtility.SetDirty(ability);
+            return ability;
+        }
+
+        private static MMOAbilityDefinition GetOrCreateArcaneMissile()
+        {
+            MMOAbilityDefinition ability = GetOrCreateAbility("Mage_Arcane_Missile");
+            MMOAbilityEffectDefinition arcaneDamage = new();
+            arcaneDamage.ConfigurePeriodicDamage(5f, 1f, MMOAbilityAmountSource.SpellPower, MMODamageSchool.Arcane, 42f, 0.85f);
+
+            ability.Configure(
+                "mage_arcane_missile",
+                "Arcane Missile",
+                "Channels arcane missiles into a hostile target, dealing damage over the channel.",
+                MMOAbilityTargetType.Hostile,
+                false,
+                false,
+                30f,
+                0f,
+                28,
+                5f,
+                true,
+                true,
+                false,
+                false,
+                0f,
+                MMOAbilityAreaTargetFilter.Hostile,
+                new[] { arcaneDamage });
+            EditorUtility.SetDirty(ability);
+            return ability;
+        }
+
+        private static MMOAbilityDefinition GetOrCreateEarthquake()
+        {
+            MMOAbilityDefinition ability = GetOrCreateAbility("Shaman_Earthquake");
+            MMOAbilityEffectDefinition damage = new();
+            damage.Configure(MMOAbilityEffectType.Damage, MMOAbilityAmountSource.SpellPower, MMODamageSchool.Nature, 24f, 0.45f);
+
+            ability.Configure(
+                "shaman_earthquake",
+                "Earthquake",
+                "Shakes the ground around the caster, damaging nearby enemies.",
+                MMOAbilityTargetType.Self,
+                false,
+                false,
+                0f,
+                10f,
+                22,
+                0f,
+                false,
+                false,
+                false,
+                false,
+                6f,
+                MMOAbilityAreaTargetFilter.Hostile,
+                new[] { damage });
+            EditorUtility.SetDirty(ability);
+            return ability;
+        }
+
         private static MMOAbilityDefinition GetOrCreateAbility(string assetName)
         {
             string path = $"{AbilityFolder}/{assetName}.asset";
@@ -168,7 +258,10 @@ namespace RPGClone.EditorTools
         private static void UpdateTrainerOfferCatalog(
             MMOAbilityDefinition thunderclap,
             MMOAbilityDefinition flamestrike,
-            MMOAbilityDefinition frostShock)
+            MMOAbilityDefinition frostShock,
+            MMOAbilityDefinition gouge,
+            MMOAbilityDefinition arcaneMissile,
+            MMOAbilityDefinition earthquake)
         {
             MMOTrainerOfferCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOTrainerOfferCatalog>(TrainerOfferCatalogPath);
             if (catalog == null)
@@ -181,12 +274,15 @@ namespace RPGClone.EditorTools
             AddOffer(offers, "Warrior_Berzerkitis", MMOPlayableClass.Warrior, 3, 75);
             AddOffer(offers, "Warrior_Charge", MMOPlayableClass.Warrior, 3, 75);
             AddOffer(offers, thunderclap, MMOPlayableClass.Warrior, 5, 125);
+            AddOffer(offers, gouge, MMOPlayableClass.Warrior, 7, 200);
             AddOffer(offers, "Mage_Mage_Armor", MMOPlayableClass.Mage, 3, 75);
             AddOffer(offers, "Mage_Fire_Blast", MMOPlayableClass.Mage, 3, 75);
             AddOffer(offers, flamestrike, MMOPlayableClass.Mage, 5, 125);
+            AddOffer(offers, arcaneMissile, MMOPlayableClass.Mage, 7, 200);
             AddOffer(offers, "Shaman_Water_Shield", MMOPlayableClass.Shaman, 3, 75);
             AddOffer(offers, "Shaman_Lightning_Bolt", MMOPlayableClass.Shaman, 3, 75);
             AddOffer(offers, frostShock, MMOPlayableClass.Shaman, 5, 125);
+            AddOffer(offers, earthquake, MMOPlayableClass.Shaman, 7, 200);
 
             catalog.Configure(offers);
             EditorUtility.SetDirty(catalog);

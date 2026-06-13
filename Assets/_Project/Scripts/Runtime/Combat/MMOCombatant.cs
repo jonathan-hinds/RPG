@@ -17,6 +17,8 @@ namespace RPGClone.Combat
         public static event Action<MMOCombatant> CombatantEnabled;
         public static event Action<MMOCombatant> CombatantDisabled;
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> Damaged;
+        public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> CriticallyDamaged;
+        public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> CriticalDamageDealt;
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> Healed;
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition> Missed;
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> Blocked;
@@ -64,11 +66,16 @@ namespace RPGClone.Combat
             }
         }
 
-        public void ApplyDamage(MMOCombatant source, MMOAbilityDefinition ability, int amount)
+        public void ApplyDamage(MMOCombatant source, MMOAbilityDefinition ability, int amount, bool isCritical = false)
         {
             if (!IsAlive || amount <= 0)
             {
                 return;
+            }
+
+            if (isCritical)
+            {
+                amount = Mathf.Max(1, Mathf.RoundToInt(amount * 2f));
             }
 
             int mitigatedAmount = CalculatePhysicalMitigation(amount);
@@ -79,6 +86,11 @@ namespace RPGClone.Combat
             source?.CombatActivity?.Invoke(source);
             CombatActivity?.Invoke(this);
             Damaged?.Invoke(source, this, ability, appliedAmount);
+            if (isCritical && appliedAmount > 0)
+            {
+                CriticallyDamaged?.Invoke(source, this, ability, appliedAmount);
+                source?.CriticalDamageDealt?.Invoke(source, this, ability, appliedAmount);
+            }
 
             if (identity.Health.CurrentValue <= 0)
             {

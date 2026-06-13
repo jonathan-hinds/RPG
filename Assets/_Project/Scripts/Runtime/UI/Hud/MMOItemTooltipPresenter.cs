@@ -639,9 +639,17 @@ namespace RPGClone.UI
                 details += $"\nRange: {ability.Range:0.#} yd";
             }
 
-            details += ability.CastTimeSeconds > 0f
-                ? $"\nCast: {ability.CastTimeSeconds:0.#} sec"
-                : "\nCast: Instant";
+            if (ability.IsChanneled)
+            {
+                details += $"\nChannel: {ability.CastTimeSeconds:0.#} sec";
+            }
+            else
+            {
+                details += ability.CastTimeSeconds > 0f
+                    ? $"\nCast: {ability.CastTimeSeconds:0.#} sec"
+                    : "\nCast: Instant";
+            }
+
             details += ability.CooldownSeconds > 0f
                 ? $"\nCooldown: {ability.CooldownSeconds:0.#} sec"
                 : "\nCooldown: None";

@@ -52,6 +52,15 @@ namespace RPGClone.Buffs
 
             EnsureReferences();
             string buffId = string.IsNullOrWhiteSpace(application.BuffId) ? application.DisplayName : application.BuffId;
+            MMOActiveBuff existingBuff = FindBuff(buffId);
+            if (existingBuff != null && application.MaxStacks > 1)
+            {
+                existingBuff.RefreshStack(application);
+                RecalculateRuntimeModifiers();
+                BuffsChanged?.Invoke(this);
+                return existingBuff;
+            }
+
             RemoveBuff(buffId, false);
             MMOActiveBuff buff = new(application);
             activeBuffs.Add(buff);

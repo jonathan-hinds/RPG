@@ -24,8 +24,10 @@ MonoBehaviour:
   cooldownSeconds: 6
   manaCost: 0
   castTimeSeconds: 0
+  channeled: 0
   interruptOnMovement: 0
   castOnSelfWhenFriendlyTargetInvalid: 0
+  resetCooldownOnCriticalHit: 0
   areaRadius: 6
   areaTargetFilter: 0
   effects:
@@ -44,6 +46,7 @@ MonoBehaviour:
     damageTakenAsManaPercent: 0
     harmfulEffect: 1
     tickSeconds: 1
+    stackLimit: 1
     chargeSpeed: 18
     chargeStopDistance: 2.5
   - effectType: 2
@@ -61,5 +64,6 @@ MonoBehaviour:
     damageTakenAsManaPercent: 0
     harmfulEffect: 1
     tickSeconds: 1
+    stackLimit: 1
     chargeSpeed: 18
     chargeStopDistance: 2.5

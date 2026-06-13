@@ -17,8 +17,10 @@ namespace RPGClone.Abilities
         [SerializeField, Min(0f)] private float cooldownSeconds;
         [SerializeField, Min(0)] private int manaCost;
         [SerializeField, Min(0f)] private float castTimeSeconds;
+        [SerializeField] private bool channeled;
         [SerializeField] private bool interruptOnMovement;
         [SerializeField] private bool castOnSelfWhenFriendlyTargetInvalid;
+        [SerializeField] private bool resetCooldownOnCriticalHit;
         [Header("Area")]
         [SerializeField, Min(0f)] private float areaRadius;
         [SerializeField] private MMOAbilityAreaTargetFilter areaTargetFilter = MMOAbilityAreaTargetFilter.Hostile;
@@ -35,8 +37,10 @@ namespace RPGClone.Abilities
         public float CooldownSeconds => cooldownSeconds;
         public int ManaCost => manaCost;
         public float CastTimeSeconds => castTimeSeconds;
+        public bool IsChanneled => channeled && castTimeSeconds > 0f;
         public bool InterruptOnMovement => interruptOnMovement;
         public bool CastOnSelfWhenFriendlyTargetInvalid => castOnSelfWhenFriendlyTargetInvalid;
+        public bool ResetCooldownOnCriticalHit => resetCooldownOnCriticalHit;
         public float AreaRadius => areaRadius;
         public MMOAbilityAreaTargetFilter AreaTargetFilter => areaTargetFilter;
         public bool HasArea => areaRadius > 0f;
@@ -68,6 +72,10 @@ namespace RPGClone.Abilities
                 0f,
                 false,
                 false,
+                false,
+                false,
+                0f,
+                MMOAbilityAreaTargetFilter.Hostile,
                 newEffects);
         }
 
@@ -97,8 +105,10 @@ namespace RPGClone.Abilities
                 newCooldownSeconds,
                 newManaCost,
                 newCastTimeSeconds,
+                false,
                 newInterruptOnMovement,
                 newCastOnSelfWhenFriendlyTargetInvalid,
+                false,
                 0f,
                 MMOAbilityAreaTargetFilter.Hostile,
                 newEffects);
@@ -121,6 +131,45 @@ namespace RPGClone.Abilities
             MMOAbilityAreaTargetFilter newAreaTargetFilter,
             IEnumerable<MMOAbilityEffectDefinition> newEffects)
         {
+            Configure(
+                newAbilityId,
+                newDisplayName,
+                newDescription,
+                newTargetType,
+                newAutoAttack,
+                newToggled,
+                newRange,
+                newCooldownSeconds,
+                newManaCost,
+                newCastTimeSeconds,
+                false,
+                newInterruptOnMovement,
+                newCastOnSelfWhenFriendlyTargetInvalid,
+                false,
+                newAreaRadius,
+                newAreaTargetFilter,
+                newEffects);
+        }
+
+        public void Configure(
+            string newAbilityId,
+            string newDisplayName,
+            string newDescription,
+            MMOAbilityTargetType newTargetType,
+            bool newAutoAttack,
+            bool newToggled,
+            float newRange,
+            float newCooldownSeconds,
+            int newManaCost,
+            float newCastTimeSeconds,
+            bool newChanneled,
+            bool newInterruptOnMovement,
+            bool newCastOnSelfWhenFriendlyTargetInvalid,
+            bool newResetCooldownOnCriticalHit,
+            float newAreaRadius,
+            MMOAbilityAreaTargetFilter newAreaTargetFilter,
+            IEnumerable<MMOAbilityEffectDefinition> newEffects)
+        {
             abilityId = string.IsNullOrWhiteSpace(newAbilityId) ? name : newAbilityId;
             displayName = string.IsNullOrWhiteSpace(newDisplayName) ? abilityId : newDisplayName;
             description = newDescription;
@@ -131,8 +180,10 @@ namespace RPGClone.Abilities
             cooldownSeconds = Mathf.Max(0f, newCooldownSeconds);
             manaCost = Mathf.Max(0, newManaCost);
             castTimeSeconds = Mathf.Max(0f, newCastTimeSeconds);
+            channeled = newChanneled;
             interruptOnMovement = newInterruptOnMovement;
             castOnSelfWhenFriendlyTargetInvalid = newCastOnSelfWhenFriendlyTargetInvalid;
+            resetCooldownOnCriticalHit = newResetCooldownOnCriticalHit;
             areaRadius = Mathf.Max(0f, newAreaRadius);
             areaTargetFilter = newAreaTargetFilter;
             effects = newEffects != null ? new List<MMOAbilityEffectDefinition>(newEffects) : new List<MMOAbilityEffectDefinition>();

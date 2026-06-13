@@ -65,6 +65,8 @@ namespace RPGClone.Abilities
             {
                 combatant.Damaged -= OnDamaged;
                 combatant.Damaged += OnDamaged;
+                combatant.CriticalDamageDealt -= OnCriticalDamageDealt;
+                combatant.CriticalDamageDealt += OnCriticalDamageDealt;
             }
         }
 
@@ -73,6 +75,7 @@ namespace RPGClone.Abilities
             if (combatant != null)
             {
                 combatant.Damaged -= OnDamaged;
+                combatant.CriticalDamageDealt -= OnCriticalDamageDealt;
             }
         }
 
@@ -179,7 +182,14 @@ namespace RPGClone.Abilities
 
             if (ability.CastTimeSeconds > 0f)
             {
-                activeCast = new ActiveCast(ability, resolvedTarget, transform.position, Time.time, ability.CastTimeSeconds);
+                activeCast = new ActiveCast(ability, resolvedTarget, targetCombatant, transform.position, Time.time, ability.CastTimeSeconds, ability.IsChanneled);
+                if (ability.IsChanneled)
+                {
+                    SpendResourceCost(ability);
+                    StartCooldown(ability);
+                    AbilityUsed?.Invoke(this, ability, resolvedTarget);
+                }
+
                 CastStarted?.Invoke(this, ability, resolvedTarget, ability.CastTimeSeconds);
                 return true;
             }
@@ -198,7 +208,14 @@ namespace RPGClone.Abilities
 
             if (ability.CastTimeSeconds > 0f)
             {
-                activeCast = new ActiveCast(ability, null, transform.position, Time.time, ability.CastTimeSeconds, targetPosition, true);
+                activeCast = new ActiveCast(ability, null, null, transform.position, Time.time, ability.CastTimeSeconds, ability.IsChanneled, targetPosition, true);
+                if (ability.IsChanneled)
+                {
+                    SpendResourceCost(ability);
+                    StartCooldown(ability);
+                    AbilityUsed?.Invoke(this, ability, null);
+                }
+
                 CastStarted?.Invoke(this, ability, null, ability.CastTimeSeconds);
                 return true;
             }
@@ -214,15 +231,8 @@ namespace RPGClone.Abilities
                 return Fail(ability, resolvedTarget, "No valid path found.", out failureReason);
             }
 
-            if (ability.ManaCost > 0)
-            {
-                identity.Mana.SetCurrent(identity.Mana.CurrentValue - ability.ManaCost);
-            }
-
-            if (ability.CooldownSeconds > 0f)
-            {
-                cooldownReadyTimes[ability] = Time.time + ability.CooldownSeconds;
-            }
+            SpendResourceCost(ability);
+            StartCooldown(ability);
 
             activeCharge = new ActiveCharge(ability, resolvedTarget, targetCombatant, chargeEffect, pathCorners);
             StartCoroutine(RunCharge(activeCharge));
@@ -300,10 +310,8 @@ namespace RPGClone.Abilities
 
         private void ExecutePreparedAbility(MMOAbilityDefinition ability, MMOCharacterIdentity resolvedTarget, MMOCombatant targetCombatant)
         {
-            if (ability.ManaCost > 0)
-            {
-                identity.Mana.SetCurrent(identity.Mana.CurrentValue - ability.ManaCost);
-            }
+            SpendResourceCost(ability);
+            StartCooldown(ability);
 
             if (ability.HasArea)
             {
@@ -316,25 +324,15 @@ namespace RPGClone.Abilities
             }
 
             AbilityUsed?.Invoke(this, ability, resolvedTarget);
-            if (ability.CooldownSeconds > 0f)
-            {
-                cooldownReadyTimes[ability] = Time.time + ability.CooldownSeconds;
-            }
         }
 
         private void ExecutePreparedGroundAbility(MMOAbilityDefinition ability, Vector3 targetPosition)
         {
-            if (ability.ManaCost > 0)
-            {
-                identity.Mana.SetCurrent(identity.Mana.CurrentValue - ability.ManaCost);
-            }
+            SpendResourceCost(ability);
+            StartCooldown(ability);
 
             ApplyAreaEffects(ability, targetPosition);
             AbilityUsed?.Invoke(this, ability, null);
-            if (ability.CooldownSeconds > 0f)
-            {
-                cooldownReadyTimes[ability] = Time.time + ability.CooldownSeconds;
-            }
         }
 
         public bool IsInRange(MMOCharacterIdentity target, float range)
@@ -379,6 +377,30 @@ namespace RPGClone.Abilities
             }
 
             return Mathf.Clamp01(GetCooldownRemaining(ability) / ability.CooldownSeconds);
+        }
+
+        public void ResetCooldown(MMOAbilityDefinition ability)
+        {
+            if (ability != null)
+            {
+                cooldownReadyTimes.Remove(ability);
+            }
+        }
+
+        private void SpendResourceCost(MMOAbilityDefinition ability)
+        {
+            if (ability != null && ability.ManaCost > 0)
+            {
+                identity.Mana.SetCurrent(identity.Mana.CurrentValue - ability.ManaCost);
+            }
+        }
+
+        private void StartCooldown(MMOAbilityDefinition ability)
+        {
+            if (ability != null && ability.CooldownSeconds > 0f)
+            {
+                cooldownReadyTimes[ability] = Time.time + ability.CooldownSeconds;
+            }
         }
 
         private MMOCharacterIdentity ResolveTarget(MMOAbilityDefinition ability, MMOCharacterIdentity target)
@@ -471,6 +493,35 @@ namespace RPGClone.Abilities
                 }
 
                 ApplyEffects(ability, candidate);
+            }
+        }
+
+        private void ApplyAreaEffect(MMOAbilityDefinition ability, MMOAbilityEffectDefinition effect, Vector3 center, int amount)
+        {
+            float radius = Mathf.Max(0.1f, ability.AreaRadius);
+            float sqrRadius = radius * radius;
+            foreach (MMOCombatant candidate in MMOCombatant.ActiveCombatants)
+            {
+                if (candidate == null || !candidate.IsAlive || candidate.Identity == null)
+                {
+                    continue;
+                }
+
+                Vector3 offset = candidate.transform.position - center;
+                offset.y = 0f;
+                if (offset.sqrMagnitude > sqrRadius || !IsAreaTargetAllowed(ability, candidate.Identity))
+                {
+                    continue;
+                }
+
+                if (effect.EffectType == MMOAbilityEffectType.Heal)
+                {
+                    candidate.ApplyHeal(combatant, ability, amount);
+                }
+                else
+                {
+                    candidate.ApplyDamage(combatant, ability, amount);
+                }
             }
         }
 
@@ -632,6 +683,28 @@ namespace RPGClone.Abilities
                 return;
             }
 
+            if (activeCast.IsChanneled)
+            {
+                if (!TryValidateChannel(activeCast, out string channelFailureReason))
+                {
+                    InterruptCast(channelFailureReason);
+                    return;
+                }
+
+                TickChanneledEffects(activeCast);
+                CastProgressed?.Invoke(this, activeCast.Ability, activeCast.Target, CurrentCastNormalized);
+                if (Time.time - activeCast.StartTime < activeCast.Duration)
+                {
+                    return;
+                }
+
+                MMOAbilityDefinition completedChannel = activeCast.Ability;
+                MMOCharacterIdentity channelTarget = activeCast.Target;
+                activeCast = null;
+                CastCompleted?.Invoke(this, completedChannel, channelTarget);
+                return;
+            }
+
             CastProgressed?.Invoke(this, activeCast.Ability, activeCast.Target, CurrentCastNormalized);
             if (Time.time - activeCast.StartTime < activeCast.Duration)
             {
@@ -665,6 +738,100 @@ namespace RPGClone.Abilities
 
             ExecutePreparedAbility(ability, target, targetCombatant);
             CastCompleted?.Invoke(this, ability, target);
+        }
+
+        private bool TryValidateChannel(ActiveCast channel, out string failureReason)
+        {
+            failureReason = string.Empty;
+            if (channel == null || channel.Ability == null)
+            {
+                failureReason = "Channel interrupted.";
+                return false;
+            }
+
+            if (channel.HasGroundTarget)
+            {
+                return true;
+            }
+
+            if (channel.TargetCombatant == null || !channel.TargetCombatant.IsAlive)
+            {
+                failureReason = "Target is invalid.";
+                return false;
+            }
+
+            if (!IsTargetAllowed(channel.Ability, channel.Target))
+            {
+                failureReason = "Cannot attack that target.";
+                return false;
+            }
+
+            if (!IsInRange(channel.Target, channel.Ability.Range))
+            {
+                failureReason = "Target is too far away.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private void TickChanneledEffects(ActiveCast channel)
+        {
+            for (int i = 0; i < channel.Ability.Effects.Count; i++)
+            {
+                MMOAbilityEffectDefinition effect = channel.Ability.Effects[i];
+                if (effect == null || effect.EffectType != MMOAbilityEffectType.PeriodicDamage || Time.time < channel.NextEffectTickTimes[i])
+                {
+                    continue;
+                }
+
+                int tickAmount = CalculateChannelTickAmount(channel, effect, i);
+                if (tickAmount > 0)
+                {
+                    ApplyChanneledTick(channel, effect, tickAmount);
+                }
+
+                channel.NextEffectTickTimes[i] = Time.time + effect.TickSeconds;
+            }
+        }
+
+        private int CalculateChannelTickAmount(ActiveCast channel, MMOAbilityEffectDefinition effect, int effectIndex)
+        {
+            int totalAmount = effect.CalculateAmount(identity);
+            if (totalAmount <= 0)
+            {
+                return 0;
+            }
+
+            float elapsedAfterTick = Mathf.Clamp(Time.time - channel.StartTime + effect.TickSeconds, 0f, channel.Duration);
+            int expectedTotal = Mathf.RoundToInt(totalAmount * (elapsedAfterTick / channel.Duration));
+            int tickAmount = Mathf.Max(0, expectedTotal - channel.AppliedChannelAmounts[effectIndex]);
+            channel.AppliedChannelAmounts[effectIndex] += tickAmount;
+            return tickAmount;
+        }
+
+        private void ApplyChanneledTick(ActiveCast channel, MMOAbilityEffectDefinition effect, int amount)
+        {
+            if (channel.Ability.HasArea)
+            {
+                Vector3 center = channel.HasGroundTarget
+                    ? channel.GroundTargetPosition
+                    : channel.Target != null
+                        ? channel.Target.transform.position
+                        : transform.position;
+                ApplyAreaEffect(channel.Ability, effect, center, amount);
+                return;
+            }
+
+            channel.TargetCombatant.ApplyDamage(combatant, channel.Ability, amount);
+        }
+
+        private void OnCriticalDamageDealt(MMOCombatant source, MMOCombatant target, MMOAbilityDefinition ability, int amount)
+        {
+            if (ability != null && ability.ResetCooldownOnCriticalHit)
+            {
+                ResetCooldown(ability);
+            }
         }
 
         private void OnDamaged(MMOCombatant source, MMOCombatant target, MMOAbilityDefinition ability, int amount)
@@ -730,27 +897,62 @@ namespace RPGClone.Abilities
         {
             public readonly MMOAbilityDefinition Ability;
             public readonly MMOCharacterIdentity Target;
+            public readonly MMOCombatant TargetCombatant;
             public readonly Vector3 StartPosition;
             public readonly Vector3 GroundTargetPosition;
             public readonly bool HasGroundTarget;
+            public readonly bool IsChanneled;
             public readonly float Duration;
+            public readonly float[] NextEffectTickTimes;
+            public readonly int[] AppliedChannelAmounts;
             public float StartTime;
             public float AppliedKnockbackSeconds;
 
             public ActiveCast(MMOAbilityDefinition ability, MMOCharacterIdentity target, Vector3 startPosition, float startTime, float duration)
-                : this(ability, target, startPosition, startTime, duration, Vector3.zero, false)
+                : this(ability, target, null, startPosition, startTime, duration, false, Vector3.zero, false)
             {
             }
 
-            public ActiveCast(MMOAbilityDefinition ability, MMOCharacterIdentity target, Vector3 startPosition, float startTime, float duration, Vector3 groundTargetPosition, bool hasGroundTarget)
+            public ActiveCast(
+                MMOAbilityDefinition ability,
+                MMOCharacterIdentity target,
+                MMOCombatant targetCombatant,
+                Vector3 startPosition,
+                float startTime,
+                float duration,
+                bool isChanneled)
+                : this(ability, target, targetCombatant, startPosition, startTime, duration, isChanneled, Vector3.zero, false)
+            {
+            }
+
+            public ActiveCast(
+                MMOAbilityDefinition ability,
+                MMOCharacterIdentity target,
+                MMOCombatant targetCombatant,
+                Vector3 startPosition,
+                float startTime,
+                float duration,
+                bool isChanneled,
+                Vector3 groundTargetPosition,
+                bool hasGroundTarget)
             {
                 Ability = ability;
                 Target = target;
+                TargetCombatant = targetCombatant;
                 StartPosition = startPosition;
                 GroundTargetPosition = groundTargetPosition;
                 HasGroundTarget = hasGroundTarget;
+                IsChanneled = isChanneled;
                 StartTime = startTime;
                 Duration = Mathf.Max(0.01f, duration);
+                int effectCount = ability != null ? ability.Effects.Count : 0;
+                NextEffectTickTimes = new float[effectCount];
+                AppliedChannelAmounts = new int[effectCount];
+                for (int i = 0; i < effectCount; i++)
+                {
+                    MMOAbilityEffectDefinition effect = ability.Effects[i];
+                    NextEffectTickTimes[i] = startTime + (effect != null ? effect.TickSeconds : 1f);
+                }
             }
         }
 
