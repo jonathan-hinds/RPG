@@ -789,17 +789,38 @@ namespace RPGClone.EditorTools
             return presenter;
         }
 
+        private static GameObject EnsureStandardWindowPrefabInstance(
+            Transform canvas,
+            string objectName,
+            MMOWindowPrefabId prefabId,
+            string prefabAssetPath)
+        {
+            Transform existing = canvas.Find(objectName);
+            if (existing != null && !IsInstanceOfPrefabAsset(existing.gameObject, prefabAssetPath))
+            {
+                Object.DestroyImmediate(existing.gameObject);
+                existing = null;
+            }
+
+            GameObject panelObject = existing != null ? existing.gameObject : MMOWindowPrefabResolver.Instantiate(prefabId, canvas, objectName);
+            panelObject.name = objectName;
+            return panelObject;
+        }
+
+        private static bool IsInstanceOfPrefabAsset(GameObject instance, string prefabAssetPath)
+        {
+            GameObject source = PrefabUtility.GetCorrespondingObjectFromSource(instance);
+            return source != null && AssetDatabase.GetAssetPath(source) == prefabAssetPath;
+        }
+
         private static MMOCharacterPanelPresenter EnsureCharacterPanel(Transform canvas, MMOCharacterIdentity playerIdentity, MMOCharacterEquipment equipment)
         {
-            Transform existing = canvas.Find("Character Panel");
-            GameObject panelObject = existing != null ? existing.gameObject : MMOWindowPrefabResolver.Instantiate(MMOWindowPrefabId.Generic, canvas, "Character Panel");
+            GameObject panelObject = EnsureStandardWindowPrefabInstance(
+                canvas,
+                "Character Panel",
+                MMOWindowPrefabId.Character,
+                "Assets/Resources/RPGClone/UI/Windows/CharacterWindow.prefab");
             panelObject.transform.SetParent(canvas, false);
-
-            RectTransform rectTransform = (RectTransform)panelObject.transform;
-            rectTransform.anchorMin = new Vector2(0f, 0.5f);
-            rectTransform.anchorMax = new Vector2(0f, 0.5f);
-            rectTransform.pivot = new Vector2(0f, 0.5f);
-            rectTransform.anchoredPosition = new Vector2(42f, 20f);
 
             MMOCharacterPanelPresenter presenter = panelObject.GetComponent<MMOCharacterPanelPresenter>();
             if (presenter == null)
@@ -874,6 +895,12 @@ namespace RPGClone.EditorTools
         private static MMOQuestDialogPresenter EnsureQuestDialog(Transform canvas)
         {
             Transform existing = canvas.Find("Quest Dialog");
+            if (existing != null && !MMOStandardWindow.HasAuthoredWindowLayout(existing.gameObject))
+            {
+                Object.DestroyImmediate(existing.gameObject);
+                existing = null;
+            }
+
             GameObject panelObject = existing != null ? existing.gameObject : MMOWindowPrefabResolver.Instantiate(MMOWindowPrefabId.Quest, canvas, "Quest Dialog");
             panelObject.transform.SetParent(canvas, false);
 
@@ -889,15 +916,12 @@ namespace RPGClone.EditorTools
 
         private static MMOQuestLogPresenter EnsureQuestLogPanel(Transform canvas, MMOQuestLog questLog)
         {
-            Transform existing = canvas.Find("Quest Log Panel");
-            GameObject panelObject = existing != null ? existing.gameObject : MMOWindowPrefabResolver.Instantiate(MMOWindowPrefabId.Generic, canvas, "Quest Log Panel");
+            GameObject panelObject = EnsureStandardWindowPrefabInstance(
+                canvas,
+                "Quest Log Panel",
+                MMOWindowPrefabId.QuestLog,
+                "Assets/Resources/RPGClone/UI/Windows/QuestLogWindow.prefab");
             panelObject.transform.SetParent(canvas, false);
-
-            RectTransform rectTransform = (RectTransform)panelObject.transform;
-            rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-            rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-            rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            rectTransform.anchoredPosition = new Vector2(0f, 32f);
 
             MMOQuestLogPresenter presenter = panelObject.GetComponent<MMOQuestLogPresenter>();
             if (presenter == null)
@@ -1022,11 +1046,17 @@ namespace RPGClone.EditorTools
         private static MMOVendorPresenter EnsureVendorPresenter(Transform canvas)
         {
             Transform existing = canvas.Find("Vendor Window");
+            if (existing != null && !MMOStandardWindow.HasAuthoredWindowLayout(existing.gameObject))
+            {
+                Object.DestroyImmediate(existing.gameObject);
+                existing = null;
+            }
+
             GameObject panelObject = existing != null ? existing.gameObject : MMOWindowPrefabResolver.Instantiate(MMOWindowPrefabId.Merchant, canvas, "Vendor Window");
             panelObject.transform.SetParent(canvas, false);
 
             RectTransform rectTransform = (RectTransform)panelObject.transform;
-            MMOStandardWindow.ApplyDefaultPlacement(rectTransform);
+            MMOStandardWindow.ApplyDefaultPlacementIfGenerated(rectTransform);
 
             MMOVendorPresenter presenter = panelObject.GetComponent<MMOVendorPresenter>();
             if (presenter == null)
@@ -1042,11 +1072,17 @@ namespace RPGClone.EditorTools
         private static MMOClassTrainerPresenter EnsureTrainerPresenter(Transform canvas)
         {
             Transform existing = canvas.Find("Class Trainer Window");
+            if (existing != null && !MMOStandardWindow.HasAuthoredWindowLayout(existing.gameObject))
+            {
+                Object.DestroyImmediate(existing.gameObject);
+                existing = null;
+            }
+
             GameObject panelObject = existing != null ? existing.gameObject : MMOWindowPrefabResolver.Instantiate(MMOWindowPrefabId.Training, canvas, "Class Trainer Window");
             panelObject.transform.SetParent(canvas, false);
 
             RectTransform rectTransform = (RectTransform)panelObject.transform;
-            MMOStandardWindow.ApplyDefaultPlacement(rectTransform);
+            MMOStandardWindow.ApplyDefaultPlacementIfGenerated(rectTransform);
 
             MMOClassTrainerPresenter presenter = panelObject.GetComponent<MMOClassTrainerPresenter>();
             if (presenter == null)
@@ -1100,15 +1136,12 @@ namespace RPGClone.EditorTools
 
         private static MMOSpellBookPresenter EnsureSpellBookPanel(Transform canvas, MMOAbilitySystem playerAbilitySystem)
         {
-            Transform existing = canvas.Find("Spellbook Panel");
-            GameObject panelObject = existing != null ? existing.gameObject : MMOWindowPrefabResolver.Instantiate(MMOWindowPrefabId.Generic, canvas, "Spellbook Panel");
+            GameObject panelObject = EnsureStandardWindowPrefabInstance(
+                canvas,
+                "Spellbook Panel",
+                MMOWindowPrefabId.Spellbook,
+                "Assets/Resources/RPGClone/UI/Windows/SpellbookWindow.prefab");
             panelObject.transform.SetParent(canvas, false);
-
-            RectTransform rectTransform = (RectTransform)panelObject.transform;
-            rectTransform.anchorMin = new Vector2(0.5f, 0f);
-            rectTransform.anchorMax = new Vector2(0.5f, 0f);
-            rectTransform.pivot = new Vector2(0.5f, 0f);
-            rectTransform.anchoredPosition = new Vector2(0f, 124f);
 
             MMOSpellBookPresenter presenter = panelObject.GetComponent<MMOSpellBookPresenter>();
             if (presenter == null)

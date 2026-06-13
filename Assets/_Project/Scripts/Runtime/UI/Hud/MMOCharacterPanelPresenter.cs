@@ -126,16 +126,16 @@ namespace RPGClone.UI
                 return;
             }
 
-            bool hasStandardWindow = TryGetComponent(out MMOStandardWindow _);
-            if (!hasStandardWindow && transform.childCount > 0)
+            bool hasAuthoredLayout = MMOStandardWindow.HasAuthoredWindowLayout(gameObject);
+            if (!hasAuthoredLayout && transform.childCount > 0)
             {
                 MMOUiFactory.DestroyChildren(transform);
             }
 
             RectTransform root = (RectTransform)transform;
-            if (root.sizeDelta == Vector2.zero)
+            if (!hasAuthoredLayout)
             {
-                root.sizeDelta = new Vector2(480f, 520f);
+                MMOStandardWindow.ApplySecondaryPlacement(root);
             }
 
             MMOStandardWindow window = MMOStandardWindow.Ensure(gameObject, "Character", () => gameObject.SetActive(false));
@@ -145,13 +145,12 @@ namespace RPGClone.UI
             if (paperDoll == null)
             {
                 paperDoll = MMOUiFactory.CreateRect("Paper Doll", content);
+                paperDoll.anchorMin = new Vector2(0.5f, 0.5f);
+                paperDoll.anchorMax = new Vector2(0.5f, 0.5f);
+                paperDoll.pivot = new Vector2(0.5f, 0.5f);
+                paperDoll.anchoredPosition = new Vector2(0f, 52f);
+                paperDoll.sizeDelta = new Vector2(168f, 250f);
             }
-
-            paperDoll.anchorMin = new Vector2(0.5f, 0.5f);
-            paperDoll.anchorMax = new Vector2(0.5f, 0.5f);
-            paperDoll.pivot = new Vector2(0.5f, 0.5f);
-            paperDoll.anchoredPosition = new Vector2(0f, 52f);
-            paperDoll.sizeDelta = new Vector2(168f, 250f);
 
             if (paperDoll.Find("Portrait") == null)
             {
@@ -159,35 +158,51 @@ namespace RPGClone.UI
                 MMOUiFactory.Stretch(portrait.rectTransform);
             }
 
-            nameText = window.FindText("Name") ?? MMOUiFactory.CreateText("Name", paperDoll, 17, FontStyle.Bold, TextAnchor.UpperCenter);
-            nameText.rectTransform.anchorMin = new Vector2(0f, 1f);
-            nameText.rectTransform.anchorMax = new Vector2(1f, 1f);
-            nameText.rectTransform.pivot = new Vector2(0.5f, 1f);
-            nameText.rectTransform.anchoredPosition = new Vector2(0f, -12f);
-            nameText.rectTransform.sizeDelta = new Vector2(0f, 28f);
+            nameText = window.FindText("Name");
+            if (nameText == null)
+            {
+                nameText = MMOUiFactory.CreateText("Name", paperDoll, 17, FontStyle.Bold, TextAnchor.UpperCenter);
+                nameText.rectTransform.anchorMin = new Vector2(0f, 1f);
+                nameText.rectTransform.anchorMax = new Vector2(1f, 1f);
+                nameText.rectTransform.pivot = new Vector2(0.5f, 1f);
+                nameText.rectTransform.anchoredPosition = new Vector2(0f, -12f);
+                nameText.rectTransform.sizeDelta = new Vector2(0f, 28f);
+            }
 
-            levelText = window.FindText("Level") ?? MMOUiFactory.CreateText("Level", paperDoll, 13, FontStyle.Bold, TextAnchor.UpperCenter);
-            levelText.rectTransform.anchorMin = new Vector2(0f, 1f);
-            levelText.rectTransform.anchorMax = new Vector2(1f, 1f);
-            levelText.rectTransform.pivot = new Vector2(0.5f, 1f);
-            levelText.rectTransform.anchoredPosition = new Vector2(0f, -40f);
-            levelText.rectTransform.sizeDelta = new Vector2(0f, 22f);
+            levelText = window.FindText("Level");
+            if (levelText == null)
+            {
+                levelText = MMOUiFactory.CreateText("Level", paperDoll, 13, FontStyle.Bold, TextAnchor.UpperCenter);
+                levelText.rectTransform.anchorMin = new Vector2(0f, 1f);
+                levelText.rectTransform.anchorMax = new Vector2(1f, 1f);
+                levelText.rectTransform.pivot = new Vector2(0.5f, 1f);
+                levelText.rectTransform.anchoredPosition = new Vector2(0f, -40f);
+                levelText.rectTransform.sizeDelta = new Vector2(0f, 22f);
+            }
 
-            statsText = window.FindText("Stats") ?? MMOUiFactory.CreateText("Stats", content, 12, FontStyle.Normal, TextAnchor.UpperLeft);
-            statsText.rectTransform.anchorMin = new Vector2(0.5f, 0f);
-            statsText.rectTransform.anchorMax = new Vector2(0.5f, 0f);
-            statsText.rectTransform.pivot = new Vector2(0.5f, 0f);
-            statsText.rectTransform.anchoredPosition = new Vector2(0f, 14f);
-            statsText.rectTransform.sizeDelta = new Vector2(280f, 150f);
+            statsText = window.FindText("Stats");
+            if (statsText == null)
+            {
+                statsText = MMOUiFactory.CreateText("Stats", content, 12, FontStyle.Normal, TextAnchor.UpperLeft);
+                statsText.rectTransform.anchorMin = new Vector2(0.5f, 0f);
+                statsText.rectTransform.anchorMax = new Vector2(0.5f, 0f);
+                statsText.rectTransform.pivot = new Vector2(0.5f, 0f);
+                statsText.rectTransform.anchoredPosition = new Vector2(0f, 14f);
+                statsText.rectTransform.sizeDelta = new Vector2(280f, 150f);
+            }
 
             leftSlots = window.FindRect("Left Slots") ?? CreateSlotColumn(content, "Left Slots", new Vector2(18f, -58f), new Vector2(0f, 1f), new Vector2(0f, 1f));
             rightSlots = window.FindRect("Right Slots") ?? CreateSlotColumn(content, "Right Slots", new Vector2(-18f, -58f), new Vector2(1f, 1f), new Vector2(1f, 1f));
-            bottomSlots = window.FindRect("Bottom Slots") ?? MMOUiFactory.CreateRect("Bottom Slots", content);
-            bottomSlots.anchorMin = new Vector2(0.5f, 0f);
-            bottomSlots.anchorMax = new Vector2(0.5f, 0f);
-            bottomSlots.pivot = new Vector2(0.5f, 0f);
-            bottomSlots.anchoredPosition = new Vector2(0f, 168f);
-            bottomSlots.sizeDelta = new Vector2(198f, 62f);
+            bottomSlots = window.FindRect("Bottom Slots");
+            if (bottomSlots == null)
+            {
+                bottomSlots = MMOUiFactory.CreateRect("Bottom Slots", content);
+                bottomSlots.anchorMin = new Vector2(0.5f, 0f);
+                bottomSlots.anchorMax = new Vector2(0.5f, 0f);
+                bottomSlots.pivot = new Vector2(0.5f, 0f);
+                bottomSlots.anchoredPosition = new Vector2(0f, 168f);
+                bottomSlots.sizeDelta = new Vector2(198f, 62f);
+            }
         }
 
         private RectTransform CreateSlotColumn(Transform parent, string objectName, Vector2 position, Vector2 anchor, Vector2 pivot)

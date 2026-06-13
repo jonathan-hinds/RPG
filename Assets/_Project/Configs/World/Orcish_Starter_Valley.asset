@@ -15,5 +15,5 @@ MonoBehaviour:
   zoneId: orcish_starter_valley
   displayName: Orcish Starter Valley
   worldBounds:
-    m_Center: {x: 0, y: 35, z: 0}
-    m_Extent: {x: 260, y: 90, z: 260}
+    m_Center: {x: 0, y: 100, z: 0}
+    m_Extent: {x: 260, y: 100, z: 260}

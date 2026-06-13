@@ -88,25 +88,29 @@ namespace RPGClone.UI
                 return;
             }
 
-            bool hasStandardWindow = TryGetComponent(out MMOStandardWindow _);
-            if (!hasStandardWindow && transform.childCount > 0)
+            bool hasAuthoredLayout = MMOStandardWindow.HasAuthoredWindowLayout(gameObject);
+            if (!hasAuthoredLayout && transform.childCount > 0)
             {
                 MMOUiFactory.DestroyChildren(transform);
             }
 
             RectTransform root = (RectTransform)transform;
-            if (root.sizeDelta == Vector2.zero)
+            if (!hasAuthoredLayout)
             {
-                root.sizeDelta = new Vector2(560f, 520f);
+                MMOStandardWindow.ApplyDefaultPlacement(root);
             }
 
             MMOStandardWindow window = MMOStandardWindow.Ensure(gameObject, "Quest Log", () => gameObject.SetActive(false));
             RectTransform content = window.ContentRoot;
-            rowsRoot = window.FindRect("Rows") ?? MMOUiFactory.CreateRect("Rows", content);
-            rowsRoot.anchorMin = new Vector2(0f, 0f);
-            rowsRoot.anchorMax = new Vector2(1f, 1f);
-            rowsRoot.offsetMin = new Vector2(18f, 18f);
-            rowsRoot.offsetMax = new Vector2(-18f, -18f);
+            rowsRoot = window.FindRect("Rows");
+            if (rowsRoot == null)
+            {
+                rowsRoot = MMOUiFactory.CreateRect("Rows", content);
+                rowsRoot.anchorMin = new Vector2(0f, 0f);
+                rowsRoot.anchorMax = new Vector2(1f, 1f);
+                rowsRoot.offsetMin = new Vector2(18f, 18f);
+                rowsRoot.offsetMax = new Vector2(-18f, -18f);
+            }
         }
 
         private void Refresh()

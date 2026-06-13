@@ -126,12 +126,17 @@ namespace RPGClone.UI
             }
 
             MMOVendorPresenter presenter = FindAnyObjectByType<MMOVendorPresenter>();
-            if (presenter != null)
+            if (presenter != null && MMOStandardWindow.HasAuthoredWindowLayout(presenter.gameObject))
             {
                 return presenter;
             }
 
-            Canvas canvas = FindAnyObjectByType<Canvas>();
+            Canvas canvas = presenter != null ? presenter.GetComponentInParent<Canvas>() : FindAnyObjectByType<Canvas>();
+            if (presenter != null)
+            {
+                Destroy(presenter.gameObject);
+            }
+
             if (canvas == null)
             {
                 return null;
@@ -156,61 +161,105 @@ namespace RPGClone.UI
             }
 
             root = (RectTransform)transform;
-            MMOStandardWindow.ApplyDefaultPlacement(root);
+            MMOStandardWindow.ApplyDefaultPlacementIfGenerated(root);
 
             MMOStandardWindow window = MMOStandardWindow.Ensure(gameObject, "Vendor", () => gameObject.SetActive(false));
             RectTransform content = window.ContentRoot;
             titleText = window.TitleText;
 
-            statusText = window.FindText("Status") ?? MMOUiFactory.CreateText("Status", content, 11, FontStyle.Normal, TextAnchor.MiddleLeft);
+            statusText = window.FindText("Status");
+            bool createdStatusText = statusText == null;
+            if (createdStatusText)
+            {
+                statusText = MMOUiFactory.CreateText("Status", content, 11, FontStyle.Normal, TextAnchor.MiddleLeft);
+            }
+
             statusText.color = new Color(0.86f, 0.78f, 0.64f, 1f);
-            statusText.rectTransform.anchorMin = new Vector2(0f, 0f);
-            statusText.rectTransform.anchorMax = new Vector2(1f, 0f);
-            statusText.rectTransform.pivot = new Vector2(0f, 0f);
-            statusText.rectTransform.anchoredPosition = new Vector2(0f, 34f);
-            statusText.rectTransform.sizeDelta = new Vector2(-12f, 22f);
+            if (createdStatusText)
+            {
+                statusText.rectTransform.anchorMin = new Vector2(0f, 0f);
+                statusText.rectTransform.anchorMax = new Vector2(1f, 0f);
+                statusText.rectTransform.pivot = new Vector2(0f, 0f);
+                statusText.rectTransform.anchoredPosition = new Vector2(0f, 34f);
+                statusText.rectTransform.sizeDelta = new Vector2(-12f, 22f);
+            }
 
-            stockRoot = window.FindRect("Stock") ?? MMOUiFactory.CreateRect("Stock", content);
-            stockRoot.anchorMin = new Vector2(0f, 0f);
-            stockRoot.anchorMax = new Vector2(1f, 1f);
-            stockRoot.offsetMin = new Vector2(0f, 78f);
-            stockRoot.offsetMax = new Vector2(0f, -28f);
+            stockRoot = window.FindRect("Stock");
+            bool createdStockRoot = stockRoot == null;
+            if (createdStockRoot)
+            {
+                stockRoot = MMOUiFactory.CreateRect("Stock", content);
+                stockRoot.anchorMin = new Vector2(0f, 0f);
+                stockRoot.anchorMax = new Vector2(1f, 1f);
+                stockRoot.offsetMin = new Vector2(0f, 78f);
+                stockRoot.offsetMax = new Vector2(0f, -28f);
+            }
 
-            previousButton = window.FindButton("Previous Button") ?? MMOUiFactory.CreateTextButton("Previous Button", content, "Prev", new Vector2(76f, 28f), MMONpcWindowFrame.ButtonColor);
-            RectTransform previousRect = previousButton.GetComponent<RectTransform>();
-            previousRect.anchorMin = new Vector2(0f, 0f);
-            previousRect.anchorMax = new Vector2(0f, 0f);
-            previousRect.pivot = new Vector2(0f, 0f);
-            previousRect.anchoredPosition = Vector2.zero;
-            previousRect.sizeDelta = new Vector2(76f, 28f);
+            previousButton = window.FindButton("Previous Button");
+            bool createdPreviousButton = previousButton == null;
+            if (createdPreviousButton)
+            {
+                previousButton = MMOUiFactory.CreateTextButton("Previous Button", content, "Prev", new Vector2(76f, 28f), MMONpcWindowFrame.ButtonColor);
+                RectTransform previousRect = previousButton.GetComponent<RectTransform>();
+                previousRect.anchorMin = new Vector2(0f, 0f);
+                previousRect.anchorMax = new Vector2(0f, 0f);
+                previousRect.pivot = new Vector2(0f, 0f);
+                previousRect.anchoredPosition = Vector2.zero;
+                previousRect.sizeDelta = new Vector2(76f, 28f);
+            }
+
             previousButton.onClick.RemoveAllListeners();
             previousButton.onClick.AddListener(PreviousPage);
 
-            nextButton = window.FindButton("Next Button") ?? MMOUiFactory.CreateTextButton("Next Button", content, "Next", new Vector2(76f, 28f), MMONpcWindowFrame.ButtonColor);
-            RectTransform nextRect = nextButton.GetComponent<RectTransform>();
-            nextRect.anchorMin = new Vector2(1f, 0f);
-            nextRect.anchorMax = new Vector2(1f, 0f);
-            nextRect.pivot = new Vector2(1f, 0f);
-            nextRect.anchoredPosition = Vector2.zero;
-            nextRect.sizeDelta = new Vector2(76f, 28f);
+            nextButton = window.FindButton("Next Button");
+            bool createdNextButton = nextButton == null;
+            if (createdNextButton)
+            {
+                nextButton = MMOUiFactory.CreateTextButton("Next Button", content, "Next", new Vector2(76f, 28f), MMONpcWindowFrame.ButtonColor);
+                RectTransform nextRect = nextButton.GetComponent<RectTransform>();
+                nextRect.anchorMin = new Vector2(1f, 0f);
+                nextRect.anchorMax = new Vector2(1f, 0f);
+                nextRect.pivot = new Vector2(1f, 0f);
+                nextRect.anchoredPosition = Vector2.zero;
+                nextRect.sizeDelta = new Vector2(76f, 28f);
+            }
+
             nextButton.onClick.RemoveAllListeners();
             nextButton.onClick.AddListener(NextPage);
 
-            pageText = window.FindText("Page") ?? MMOUiFactory.CreateText("Page", content, 12, FontStyle.Bold, TextAnchor.MiddleCenter);
-            pageText.color = MMONpcWindowFrame.TitleColor;
-            pageText.rectTransform.anchorMin = new Vector2(0f, 0f);
-            pageText.rectTransform.anchorMax = new Vector2(1f, 0f);
-            pageText.rectTransform.pivot = new Vector2(0.5f, 0f);
-            pageText.rectTransform.anchoredPosition = Vector2.zero;
-            pageText.rectTransform.sizeDelta = new Vector2(-170f, 28f);
+            pageText = window.FindText("Page");
+            bool createdPageText = pageText == null;
+            if (createdPageText)
+            {
+                pageText = MMOUiFactory.CreateText("Page", content, 12, FontStyle.Bold, TextAnchor.MiddleCenter);
+            }
 
-            moneyText = window.FindText("Money") ?? MMOUiFactory.CreateText("Money", content, 11, FontStyle.Bold, TextAnchor.MiddleRight);
+            pageText.color = MMONpcWindowFrame.TitleColor;
+            if (createdPageText)
+            {
+                pageText.rectTransform.anchorMin = new Vector2(0f, 0f);
+                pageText.rectTransform.anchorMax = new Vector2(1f, 0f);
+                pageText.rectTransform.pivot = new Vector2(0.5f, 0f);
+                pageText.rectTransform.anchoredPosition = Vector2.zero;
+                pageText.rectTransform.sizeDelta = new Vector2(-170f, 28f);
+            }
+
+            moneyText = window.FindText("Money");
+            bool createdMoneyText = moneyText == null;
+            if (createdMoneyText)
+            {
+                moneyText = MMOUiFactory.CreateText("Money", content, 11, FontStyle.Bold, TextAnchor.MiddleRight);
+            }
+
             moneyText.color = new Color(0.95f, 0.82f, 0.48f, 1f);
-            moneyText.rectTransform.anchorMin = new Vector2(0f, 1f);
-            moneyText.rectTransform.anchorMax = new Vector2(1f, 1f);
-            moneyText.rectTransform.pivot = new Vector2(1f, 1f);
-            moneyText.rectTransform.anchoredPosition = new Vector2(0f, -4f);
-            moneyText.rectTransform.sizeDelta = new Vector2(-12f, 22f);
+            if (createdMoneyText)
+            {
+                moneyText.rectTransform.anchorMin = new Vector2(0f, 1f);
+                moneyText.rectTransform.anchorMax = new Vector2(1f, 1f);
+                moneyText.rectTransform.pivot = new Vector2(1f, 1f);
+                moneyText.rectTransform.anchoredPosition = new Vector2(0f, -4f);
+                moneyText.rectTransform.sizeDelta = new Vector2(-12f, 22f);
+            }
         }
 
         private void Refresh()
@@ -377,7 +426,7 @@ namespace RPGClone.UI
 
         private void Position()
         {
-            MMOStandardWindow.ApplyDefaultPlacement(root);
+            MMOStandardWindow.ApplyDefaultPlacementIfGenerated(root);
         }
     }
 

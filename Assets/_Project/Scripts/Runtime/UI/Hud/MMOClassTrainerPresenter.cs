@@ -88,12 +88,17 @@ namespace RPGClone.UI
             }
 
             MMOClassTrainerPresenter presenter = FindAnyObjectByType<MMOClassTrainerPresenter>();
-            if (presenter != null)
+            if (presenter != null && MMOStandardWindow.HasAuthoredWindowLayout(presenter.gameObject))
             {
                 return presenter;
             }
 
-            Canvas canvas = FindAnyObjectByType<Canvas>();
+            Canvas canvas = presenter != null ? presenter.GetComponentInParent<Canvas>() : FindAnyObjectByType<Canvas>();
+            if (presenter != null)
+            {
+                Destroy(presenter.gameObject);
+            }
+
             if (canvas == null)
             {
                 return null;
@@ -118,41 +123,70 @@ namespace RPGClone.UI
             }
 
             root = (RectTransform)transform;
-            MMOStandardWindow.ApplyDefaultPlacement(root);
+            MMOStandardWindow.ApplyDefaultPlacementIfGenerated(root);
 
             MMOStandardWindow window = MMOStandardWindow.Ensure(gameObject, "Class Trainer", Close);
             RectTransform content = window.ContentRoot;
             titleText = window.TitleText;
 
-            moneyText = window.FindText("Money") ?? MMOUiFactory.CreateText("Money", content, 11, FontStyle.Bold, TextAnchor.MiddleRight);
+            moneyText = window.FindText("Money");
+            bool createdMoneyText = moneyText == null;
+            if (createdMoneyText)
+            {
+                moneyText = MMOUiFactory.CreateText("Money", content, 11, FontStyle.Bold, TextAnchor.MiddleRight);
+            }
+
             moneyText.color = new Color(0.95f, 0.82f, 0.48f, 1f);
-            moneyText.rectTransform.anchorMin = new Vector2(0f, 1f);
-            moneyText.rectTransform.anchorMax = new Vector2(1f, 1f);
-            moneyText.rectTransform.pivot = new Vector2(1f, 1f);
-            moneyText.rectTransform.anchoredPosition = new Vector2(0f, -4f);
-            moneyText.rectTransform.sizeDelta = new Vector2(-28f, 22f);
+            if (createdMoneyText)
+            {
+                moneyText.rectTransform.anchorMin = new Vector2(0f, 1f);
+                moneyText.rectTransform.anchorMax = new Vector2(1f, 1f);
+                moneyText.rectTransform.pivot = new Vector2(1f, 1f);
+                moneyText.rectTransform.anchoredPosition = new Vector2(0f, -4f);
+                moneyText.rectTransform.sizeDelta = new Vector2(-28f, 22f);
+            }
 
-            listRoot = window.FindRect("Lessons") ?? MMOUiFactory.CreateRect("Lessons", content);
-            listRoot.anchorMin = new Vector2(0f, 0f);
-            listRoot.anchorMax = new Vector2(1f, 1f);
-            listRoot.offsetMin = new Vector2(0f, 52f);
-            listRoot.offsetMax = new Vector2(0f, -34f);
+            listRoot = window.FindRect("Lessons");
+            bool createdListRoot = listRoot == null;
+            if (createdListRoot)
+            {
+                listRoot = MMOUiFactory.CreateRect("Lessons", content);
+                listRoot.anchorMin = new Vector2(0f, 0f);
+                listRoot.anchorMax = new Vector2(1f, 1f);
+                listRoot.offsetMin = new Vector2(0f, 52f);
+                listRoot.offsetMax = new Vector2(0f, -34f);
+            }
 
-            statusText = window.FindText("Status") ?? MMOUiFactory.CreateText("Status", content, 12, FontStyle.Bold, TextAnchor.MiddleLeft);
+            statusText = window.FindText("Status");
+            bool createdStatusText = statusText == null;
+            if (createdStatusText)
+            {
+                statusText = MMOUiFactory.CreateText("Status", content, 12, FontStyle.Bold, TextAnchor.MiddleLeft);
+            }
+
             statusText.color = MMONpcWindowFrame.BodyColor;
-            statusText.rectTransform.anchorMin = new Vector2(0f, 0f);
-            statusText.rectTransform.anchorMax = new Vector2(1f, 0f);
-            statusText.rectTransform.pivot = new Vector2(0f, 0f);
-            statusText.rectTransform.anchoredPosition = Vector2.zero;
-            statusText.rectTransform.sizeDelta = new Vector2(-180f, 34f);
+            if (createdStatusText)
+            {
+                statusText.rectTransform.anchorMin = new Vector2(0f, 0f);
+                statusText.rectTransform.anchorMax = new Vector2(1f, 0f);
+                statusText.rectTransform.pivot = new Vector2(0f, 0f);
+                statusText.rectTransform.anchoredPosition = Vector2.zero;
+                statusText.rectTransform.sizeDelta = new Vector2(-180f, 34f);
+            }
 
-            trainButton = window.FindButton("Train Button") ?? MMOUiFactory.CreateTextButton("Train Button", content, "Train", MMOStandardWindow.QuestButtonSize, MMONpcWindowFrame.AccentButtonColor);
-            RectTransform trainRect = trainButton.GetComponent<RectTransform>();
-            trainRect.anchorMin = new Vector2(1f, 0f);
-            trainRect.anchorMax = new Vector2(1f, 0f);
-            trainRect.pivot = new Vector2(1f, 0f);
-            trainRect.anchoredPosition = MMOStandardWindow.DefaultActionButtonPosition;
-            trainRect.sizeDelta = MMOStandardWindow.QuestButtonSize;
+            trainButton = window.FindButton("Train Button");
+            bool createdTrainButton = trainButton == null;
+            if (createdTrainButton)
+            {
+                trainButton = MMOUiFactory.CreateTextButton("Train Button", content, "Train", MMOStandardWindow.QuestButtonSize, MMONpcWindowFrame.AccentButtonColor);
+                RectTransform trainRect = trainButton.GetComponent<RectTransform>();
+                trainRect.anchorMin = new Vector2(1f, 0f);
+                trainRect.anchorMax = new Vector2(1f, 0f);
+                trainRect.pivot = new Vector2(1f, 0f);
+                trainRect.anchoredPosition = MMOStandardWindow.DefaultActionButtonPosition;
+                trainRect.sizeDelta = MMOStandardWindow.QuestButtonSize;
+            }
+
             trainButton.onClick.RemoveAllListeners();
             trainButton.onClick.AddListener(TrainSelectedOffer);
         }
@@ -327,7 +361,7 @@ namespace RPGClone.UI
 
         private void Position()
         {
-            MMOStandardWindow.ApplyDefaultPlacement(root);
+            MMOStandardWindow.ApplyDefaultPlacementIfGenerated(root);
         }
     }
 }

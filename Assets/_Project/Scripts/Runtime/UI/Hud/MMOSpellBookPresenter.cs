@@ -61,33 +61,42 @@ namespace RPGClone.UI
                 return;
             }
 
-            bool hasStandardWindow = TryGetComponent(out MMOStandardWindow _);
-            if (!hasStandardWindow && transform.childCount > 0)
+            bool hasAuthoredLayout = MMOStandardWindow.HasAuthoredWindowLayout(gameObject);
+            if (!hasAuthoredLayout && transform.childCount > 0)
             {
                 MMOUiFactory.DestroyChildren(transform);
             }
 
             RectTransform root = (RectTransform)transform;
-            if (root.sizeDelta == Vector2.zero)
+            if (!hasAuthoredLayout)
             {
-                root.sizeDelta = new Vector2(430f, 360f);
+                MMOStandardWindow.ApplyDefaultPlacement(root);
             }
 
             MMOStandardWindow window = MMOStandardWindow.Ensure(gameObject, "Spellbook", () => gameObject.SetActive(false));
             RectTransform content = window.ContentRoot;
 
-            abilityGrid = window.FindRect("Ability Grid") ?? MMOUiFactory.CreateRect("Ability Grid", content);
-            abilityGrid.anchorMin = new Vector2(0f, 0f);
-            abilityGrid.anchorMax = new Vector2(1f, 1f);
-            abilityGrid.offsetMin = new Vector2(14f, 18f);
-            abilityGrid.offsetMax = new Vector2(-14f, -18f);
+            abilityGrid = window.FindRect("Ability Grid");
+            if (abilityGrid == null)
+            {
+                abilityGrid = MMOUiFactory.CreateRect("Ability Grid", content);
+                abilityGrid.anchorMin = new Vector2(0f, 0f);
+                abilityGrid.anchorMax = new Vector2(1f, 1f);
+                abilityGrid.offsetMin = new Vector2(14f, 18f);
+                abilityGrid.offsetMax = new Vector2(-14f, -18f);
+            }
 
-            emptyText = window.FindText("Empty") ?? MMOUiFactory.CreateText("Empty", content, 13, FontStyle.Italic, TextAnchor.MiddleCenter);
+            emptyText = window.FindText("Empty");
+            if (emptyText == null)
+            {
+                emptyText = MMOUiFactory.CreateText("Empty", content, 13, FontStyle.Italic, TextAnchor.MiddleCenter);
+                emptyText.rectTransform.anchorMin = Vector2.zero;
+                emptyText.rectTransform.anchorMax = Vector2.one;
+                emptyText.rectTransform.offsetMin = new Vector2(20f, 20f);
+                emptyText.rectTransform.offsetMax = new Vector2(-20f, -20f);
+            }
+
             emptyText.text = "No known abilities";
-            emptyText.rectTransform.anchorMin = Vector2.zero;
-            emptyText.rectTransform.anchorMax = Vector2.one;
-            emptyText.rectTransform.offsetMin = new Vector2(20f, 20f);
-            emptyText.rectTransform.offsetMax = new Vector2(-20f, -20f);
         }
 
         private void Refresh()

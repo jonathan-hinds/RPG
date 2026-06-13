@@ -22,6 +22,7 @@ namespace RPGClone.UI
         private MMOQuestDefinition selectedQuest;
         private MMOItemDefinition selectedReward;
         private bool selectedQuestTurnIn;
+        private bool usesGeneratedFrame;
 
         public static MMOQuestDialogPresenter Instance { get; private set; }
 
@@ -42,22 +43,7 @@ namespace RPGClone.UI
 
         public static void Open(MMOQuestNpc npc, MMOQuestLog questLog, Vector2 screenPosition)
         {
-            MMOQuestDialogPresenter presenter = Instance != null ? Instance : FindAnyObjectByType<MMOQuestDialogPresenter>();
-            if (presenter == null)
-            {
-                Canvas canvas = FindAnyObjectByType<Canvas>();
-                if (canvas != null)
-                {
-                    GameObject dialogObject = MMOWindowPrefabResolver.Instantiate(MMOWindowPrefabId.Quest, canvas.transform, "Quest Dialog");
-                    presenter = dialogObject.GetComponent<MMOQuestDialogPresenter>();
-                    if (presenter == null)
-                    {
-                        presenter = dialogObject.AddComponent<MMOQuestDialogPresenter>();
-                    }
-                }
-            }
-
-            presenter?.OpenNpc(npc, questLog);
+            ResolvePrefabPresenter()?.OpenNpc(npc, questLog);
         }
 
         public void OpenNpc(MMOQuestNpc newNpc, MMOQuestLog newQuestLog)
@@ -99,14 +85,15 @@ namespace RPGClone.UI
 
         private void BuildFrame()
         {
-            bool hasStandardWindow = TryGetComponent(out MMOStandardWindow _);
-            if (!hasStandardWindow && transform.childCount > 0)
+            bool hasAuthoredFrame = MMOStandardWindow.HasAuthoredWindowLayout(gameObject);
+            usesGeneratedFrame = !hasAuthoredFrame;
+            if (!hasAuthoredFrame && transform.childCount > 0)
             {
                 MMOUiFactory.DestroyChildren(transform);
             }
 
             RectTransform root = (RectTransform)transform;
-            MMOStandardWindow.ApplyDefaultPlacement(root);
+            MMOStandardWindow.ApplyDefaultPlacementIfGenerated(root);
 
             MMOStandardWindow window = MMOStandardWindow.Ensure(gameObject, "Quest", Close);
             contentRoot = window.ContentRoot;
@@ -126,6 +113,46 @@ namespace RPGClone.UI
             backButton = FindOrCreateQuestButton("Back Button", "Back", new Vector2(0f, 0f), new Vector2(0f, 0f), Vector2.zero, MMOStandardWindow.QuestButtonSize);
             completeButton = FindOrCreateQuestButton("Complete Button", "Complete Quest", new Vector2(1f, 0f), new Vector2(1f, 0f), Vector2.zero, MMOStandardWindow.QuestButtonSize);
             HideActionButtons();
+        }
+
+        private static MMOQuestDialogPresenter ResolvePrefabPresenter()
+        {
+            MMOQuestDialogPresenter presenter = Instance != null ? Instance : FindExistingPresenter();
+            if (presenter != null && !presenter.usesGeneratedFrame && MMOStandardWindow.HasAuthoredWindowLayout(presenter.gameObject))
+            {
+                return presenter;
+            }
+
+            Canvas canvas = presenter != null ? presenter.GetComponentInParent<Canvas>() : FindAnyObjectByType<Canvas>();
+            if (presenter != null)
+            {
+                if (Instance == presenter)
+                {
+                    Instance = null;
+                }
+
+                Destroy(presenter.gameObject);
+            }
+
+            if (canvas == null)
+            {
+                return null;
+            }
+
+            GameObject dialogObject = MMOWindowPrefabResolver.Instantiate(MMOWindowPrefabId.Quest, canvas.transform, "Quest Dialog");
+            presenter = dialogObject.GetComponent<MMOQuestDialogPresenter>();
+            if (presenter == null)
+            {
+                presenter = dialogObject.AddComponent<MMOQuestDialogPresenter>();
+            }
+
+            return presenter;
+        }
+
+        private static MMOQuestDialogPresenter FindExistingPresenter()
+        {
+            MMOQuestDialogPresenter[] presenters = FindObjectsByType<MMOQuestDialogPresenter>(FindObjectsInactive.Include);
+            return presenters.Length > 0 ? presenters[0] : null;
         }
 
         private void RefreshList()
@@ -396,25 +423,17 @@ namespace RPGClone.UI
 
         private Button FindOrCreateQuestButton(string objectName, string label, Vector2 anchor, Vector2 pivot, Vector2 anchoredPosition, Vector2 size)
         {
-            Button button = contentRoot.GetComponentInChildren<Button>(true);
-            Button[] buttons = contentRoot.GetComponentsInChildren<Button>(true);
-            foreach (Button candidate in buttons)
-            {
-                if (candidate.name == objectName)
-                {
-                    button = candidate;
-                    break;
-                }
-            }
+            Button button = FindAuthoredQuestButton(objectName);
 
-            if (button == null || button.name != objectName)
+            if (button == null)
             {
-                button = MMOUiFactory.CreateTextButton(objectName, contentRoot, label, size, MMONpcWindowFrame.AccentButtonColor);
+                button = MMOStandardWindow.CreateQuestActionButton(objectName, contentRoot, label);
                 RectTransform rect = button.GetComponent<RectTransform>();
                 rect.anchorMin = anchor;
                 rect.anchorMax = anchor;
                 rect.pivot = pivot;
                 rect.anchoredPosition = anchoredPosition;
+                rect.sizeDelta = size;
             }
 
             Text text = MMOUiFactory.FindButtonLabel(button);
@@ -424,6 +443,20 @@ namespace RPGClone.UI
             }
 
             return button;
+        }
+
+        private Button FindAuthoredQuestButton(string objectName)
+        {
+            Button[] buttons = GetComponentsInChildren<Button>(true);
+            foreach (Button candidate in buttons)
+            {
+                if (candidate.name == objectName)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
         }
 
         private void ConfigureQuestActionButton(Button button, string label, bool interactable, UnityAction action)
