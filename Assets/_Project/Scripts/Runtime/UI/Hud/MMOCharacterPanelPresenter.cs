@@ -16,10 +16,47 @@ namespace RPGClone.UI
 
         private Text nameText;
         private Text levelText;
-        private Text statsText;
+        private Text baseStatsValuesText;
+        private Text combatStatsValuesText;
         private RectTransform leftSlots;
         private RectTransform rightSlots;
         private RectTransform bottomSlots;
+
+        private static readonly Vector2 EquipmentSlotSize = new(42f, 42f);
+        private static readonly Vector2 WeaponSlotSize = new(42f, 42f);
+        private const float EquipmentSlotSpacing = 6f;
+        private const float WeaponSlotSpacing = 8f;
+
+        private static readonly MMOEquipmentSlotType[] LeftColumnSlots =
+        {
+            MMOEquipmentSlotType.Head,
+            MMOEquipmentSlotType.Neck,
+            MMOEquipmentSlotType.Shoulders,
+            MMOEquipmentSlotType.Shirt,
+            MMOEquipmentSlotType.Chest,
+            MMOEquipmentSlotType.Waist,
+            MMOEquipmentSlotType.Legs,
+            MMOEquipmentSlotType.Feet
+        };
+
+        private static readonly MMOEquipmentSlotType[] RightColumnSlots =
+        {
+            MMOEquipmentSlotType.Wrists,
+            MMOEquipmentSlotType.Hands,
+            MMOEquipmentSlotType.Finger1,
+            MMOEquipmentSlotType.Finger2,
+            MMOEquipmentSlotType.Trinket1,
+            MMOEquipmentSlotType.Trinket2,
+            MMOEquipmentSlotType.Back,
+            MMOEquipmentSlotType.Tabard
+        };
+
+        private static readonly MMOEquipmentSlotType[] BottomSlots =
+        {
+            MMOEquipmentSlotType.MainHand,
+            MMOEquipmentSlotType.OffHand,
+            MMOEquipmentSlotType.Ranged
+        };
 
         private void Awake()
         {
@@ -180,28 +217,39 @@ namespace RPGClone.UI
                 levelText.rectTransform.sizeDelta = new Vector2(0f, 22f);
             }
 
-            statsText = window.FindText("Stats");
-            if (statsText == null)
+            baseStatsValuesText = window.FindText("Base Stats Values") ?? window.FindText("Stats");
+            if (baseStatsValuesText == null)
             {
-                statsText = MMOUiFactory.CreateText("Stats", content, 12, FontStyle.Normal, TextAnchor.UpperLeft);
-                statsText.rectTransform.anchorMin = new Vector2(0.5f, 0f);
-                statsText.rectTransform.anchorMax = new Vector2(0.5f, 0f);
-                statsText.rectTransform.pivot = new Vector2(0.5f, 0f);
-                statsText.rectTransform.anchoredPosition = new Vector2(0f, 14f);
-                statsText.rectTransform.sizeDelta = new Vector2(280f, 150f);
+                baseStatsValuesText = MMOUiFactory.CreateText("Base Stats Values", content, 10, FontStyle.Normal, TextAnchor.UpperRight);
+                baseStatsValuesText.rectTransform.anchorMin = new Vector2(0f, 0f);
+                baseStatsValuesText.rectTransform.anchorMax = new Vector2(0f, 0f);
+                baseStatsValuesText.rectTransform.pivot = new Vector2(0f, 0f);
+                baseStatsValuesText.rectTransform.anchoredPosition = new Vector2(145f, 28f);
+                baseStatsValuesText.rectTransform.sizeDelta = new Vector2(48f, 96f);
             }
 
-            leftSlots = window.FindRect("Left Slots") ?? CreateSlotColumn(content, "Left Slots", new Vector2(18f, -58f), new Vector2(0f, 1f), new Vector2(0f, 1f));
-            rightSlots = window.FindRect("Right Slots") ?? CreateSlotColumn(content, "Right Slots", new Vector2(-18f, -58f), new Vector2(1f, 1f), new Vector2(1f, 1f));
+            combatStatsValuesText = window.FindText("Combat Stats Values") ?? window.FindText("Combat Stats");
+            if (combatStatsValuesText == null)
+            {
+                combatStatsValuesText = MMOUiFactory.CreateText("Combat Stats Values", content, 10, FontStyle.Normal, TextAnchor.UpperRight);
+                combatStatsValuesText.rectTransform.anchorMin = new Vector2(1f, 0f);
+                combatStatsValuesText.rectTransform.anchorMax = new Vector2(1f, 0f);
+                combatStatsValuesText.rectTransform.pivot = new Vector2(1f, 0f);
+                combatStatsValuesText.rectTransform.anchoredPosition = new Vector2(-24f, 28f);
+                combatStatsValuesText.rectTransform.sizeDelta = new Vector2(58f, 96f);
+            }
+
+            leftSlots = window.FindRect("Left Slots") ?? CreateSlotColumn(content, "Left Slots", new Vector2(10f, -18f), new Vector2(0f, 1f), new Vector2(0f, 1f));
+            rightSlots = window.FindRect("Right Slots") ?? CreateSlotColumn(content, "Right Slots", new Vector2(-10f, -18f), new Vector2(1f, 1f), new Vector2(1f, 1f));
             bottomSlots = window.FindRect("Bottom Slots");
             if (bottomSlots == null)
             {
                 bottomSlots = MMOUiFactory.CreateRect("Bottom Slots", content);
-                bottomSlots.anchorMin = new Vector2(0.5f, 0f);
-                bottomSlots.anchorMax = new Vector2(0.5f, 0f);
-                bottomSlots.pivot = new Vector2(0.5f, 0f);
-                bottomSlots.anchoredPosition = new Vector2(0f, 168f);
-                bottomSlots.sizeDelta = new Vector2(198f, 62f);
+                bottomSlots.anchorMin = new Vector2(0.5f, 1f);
+                bottomSlots.anchorMax = new Vector2(0.5f, 1f);
+                bottomSlots.pivot = new Vector2(0.5f, 1f);
+                bottomSlots.anchoredPosition = new Vector2(0f, -318f);
+                bottomSlots.sizeDelta = new Vector2(142f, 42f);
             }
         }
 
@@ -212,7 +260,7 @@ namespace RPGClone.UI
             column.anchorMax = anchor;
             column.pivot = pivot;
             column.anchoredPosition = position;
-            column.sizeDelta = new Vector2(120f, 360f);
+            column.sizeDelta = new Vector2(EquipmentSlotSize.x, LeftColumnSlots.Length * EquipmentSlotSize.y + (LeftColumnSlots.Length - 1) * EquipmentSlotSpacing);
             return column;
         }
 
@@ -222,7 +270,8 @@ namespace RPGClone.UI
 
             nameText.text = character != null ? character.DisplayName : "Character";
             levelText.text = character != null ? $"Level {character.Level}" : string.Empty;
-            statsText.text = character != null ? FormatStats(character, equipment) : string.Empty;
+            baseStatsValuesText.text = character != null ? FormatBaseStatValues(character) : string.Empty;
+            combatStatsValuesText.text = character != null ? FormatCombatStatValues(character) : string.Empty;
 
             MMOUiFactory.DestroyChildren(leftSlots);
             MMOUiFactory.DestroyChildren(rightSlots);
@@ -232,11 +281,24 @@ namespace RPGClone.UI
                 ? equipment.EquipmentSlots
                 : MMOCharacterEquipment.GetDefaultSlots();
 
-            for (int i = 0; i < slots.Count; i++)
+            CreateSlotGroup(leftSlots, slots, LeftColumnSlots, false);
+            CreateSlotGroup(rightSlots, slots, RightColumnSlots, false);
+            CreateSlotGroup(bottomSlots, slots, BottomSlots, true);
+        }
+
+        private void CreateSlotGroup(Transform parent, IReadOnlyList<MMOEquipmentSlotType> availableSlots, IReadOnlyList<MMOEquipmentSlotType> orderedSlots, bool horizontal)
+        {
+            int visibleIndex = 0;
+            for (int i = 0; i < orderedSlots.Count; i++)
             {
-                Transform parent = i < 8 ? leftSlots : i < 16 ? rightSlots : bottomSlots;
-                int localIndex = i < 8 ? i : i < 16 ? i - 8 : i - 16;
-                CreateEquipmentSlot(parent, slots[i], localIndex, i >= 16);
+                MMOEquipmentSlotType slotType = orderedSlots[i];
+                if (!HasSlot(availableSlots, slotType))
+                {
+                    continue;
+                }
+
+                CreateEquipmentSlot(parent, slotType, visibleIndex, horizontal);
+                visibleIndex++;
             }
         }
 
@@ -247,16 +309,22 @@ namespace RPGClone.UI
             rectTransform.anchorMin = new Vector2(0f, 1f);
             rectTransform.anchorMax = new Vector2(0f, 1f);
             rectTransform.pivot = new Vector2(0f, 1f);
-            rectTransform.anchoredPosition = horizontal ? new Vector2(localIndex * 66f, 0f) : new Vector2(0f, -localIndex * 44f);
-            rectTransform.sizeDelta = horizontal ? new Vector2(62f, 58f) : new Vector2(120f, 38f);
+            rectTransform.anchoredPosition = horizontal
+                ? new Vector2(localIndex * (WeaponSlotSize.x + WeaponSlotSpacing), 0f)
+                : new Vector2(0f, -localIndex * (EquipmentSlotSize.y + EquipmentSlotSpacing));
+            rectTransform.sizeDelta = horizontal ? WeaponSlotSize : EquipmentSlotSize;
+
+            Outline outline = slot.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0.42f, 0.35f, 0.23f, 0.9f);
+            outline.effectDistance = new Vector2(1f, -1f);
 
             Text label = MMOUiFactory.CreateText("Label", rectTransform, 10, FontStyle.Bold, TextAnchor.MiddleCenter);
             MMOItemDefinition equippedItem = equipment != null ? equipment.GetEquippedItem(slotType) : null;
-            label.text = equippedItem != null ? string.Empty : MMOUiFactory.FormatEnumLabel(slotType);
+            label.text = equippedItem != null ? string.Empty : FormatSlotLabel(slotType, horizontal);
             label.color = new Color(0.78f, 0.7f, 0.52f, 1f);
             label.resizeTextForBestFit = true;
             label.resizeTextMinSize = 6;
-            label.resizeTextMaxSize = 10;
+            label.resizeTextMaxSize = 8;
             MMOUiFactory.Stretch(label.rectTransform);
             label.rectTransform.offsetMin = new Vector2(4f, 2f);
             label.rectTransform.offsetMax = new Vector2(-4f, -2f);
@@ -268,7 +336,45 @@ namespace RPGClone.UI
             }
         }
 
-        private static string FormatStats(MMOCharacterIdentity character, MMOCharacterEquipment equipment)
+        private static bool HasSlot(IReadOnlyList<MMOEquipmentSlotType> slots, MMOEquipmentSlotType slotType)
+        {
+            for (int i = 0; i < slots.Count; i++)
+            {
+                if (slots[i] == slotType)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string FormatSlotLabel(MMOEquipmentSlotType slotType, bool compact)
+        {
+            return slotType switch
+            {
+                MMOEquipmentSlotType.Shoulders => "Shldr",
+                MMOEquipmentSlotType.Finger1 or MMOEquipmentSlotType.Finger2 => "Ring",
+                MMOEquipmentSlotType.Trinket1 or MMOEquipmentSlotType.Trinket2 => "Trink",
+                MMOEquipmentSlotType.MainHand => "Main",
+                MMOEquipmentSlotType.OffHand => "Off",
+                MMOEquipmentSlotType.Ranged => "Range",
+                _ => MMOUiFactory.FormatEnumLabel(slotType)
+            };
+        }
+
+        private static string FormatBaseStatValues(MMOCharacterIdentity character)
+        {
+            MMOCharacterStats stats = character != null ? character.Stats : null;
+            if (stats == null)
+            {
+                return string.Empty;
+            }
+
+            return $"{stats.Strength}\n{stats.Agility}\n{stats.Stamina}\n{stats.Intellect}\n{stats.Spirit}\n{stats.Armor}";
+        }
+
+        private static string FormatCombatStatValues(MMOCharacterIdentity character)
         {
             MMOCharacterStats stats = character != null ? character.Stats : null;
             if (stats == null)
@@ -278,9 +384,8 @@ namespace RPGClone.UI
 
             MMOWeaponSnapshot weapon = MMOCombatResolver.GetWeaponSnapshot(character);
             int blockValue = MMOCombatResolver.GetBlockValue(character);
-            string weaponLine = $"Damage {weapon.MinDamage:0}-{weapon.MaxDamage:0}\nSpeed {MMOCombatResolver.GetAttackSpeed(character):0.00}";
-            string blockLine = blockValue > 0 ? $"\nBlock {blockValue}" : string.Empty;
-            return $"Stamina {stats.Stamina}\nStrength {stats.Strength}\nAgility {stats.Agility}\nIntellect {stats.Intellect}\nSpirit {stats.Spirit}\nArmor {stats.Armor}\nAttack Power {stats.AttackPower}\nSpell Power {stats.SpellPower}\n{weaponLine}{blockLine}\nCrit {stats.CriticalStrikeChance:0.0}%\nDodge {stats.DodgeChance:0.0}%";
+            string blockLine = blockValue > 0 ? $"\n{blockValue}" : "\n0";
+            return $"{stats.AttackPower}\n{weapon.MinDamage:0}-{weapon.MaxDamage:0}\n{MMOCombatResolver.GetAttackSpeed(character):0.00}\n{stats.SpellPower}\n{stats.CriticalStrikeChance:0.0}%\n{stats.DodgeChance:0.0}%{blockLine}";
         }
     }
 }
