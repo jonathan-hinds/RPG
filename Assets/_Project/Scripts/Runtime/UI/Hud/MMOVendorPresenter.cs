@@ -10,14 +10,13 @@ namespace RPGClone.UI
     [RequireComponent(typeof(RectTransform))]
     public sealed class MMOVendorPresenter : MonoBehaviour
     {
-        private const int Columns = 3;
+        private const int Columns = 2;
         private const int Rows = 5;
         private const int VisibleSlotCount = Columns * Rows;
-        private const float Width = 270f;
-        private const float Height = 488f;
-        private const float SlotSize = 72f;
-        private const float SlotSpacing = 6f;
-        private const float CanvasPadding = 8f;
+        private const float CardWidth = 192f;
+        private const float CardHeight = 54f;
+        private const float CardSpacing = 8f;
+        private const float IconSize = 42f;
 
         private MMOVendorNpc vendor;
         private MMOInventoryContainer inventory;
@@ -25,7 +24,12 @@ namespace RPGClone.UI
         private RectTransform root;
         private Text titleText;
         private Text statusText;
+        private Text moneyText;
+        private Text pageText;
         private RectTransform stockRoot;
+        private Button previousButton;
+        private Button nextButton;
+        private int pageIndex;
 
         public static MMOVendorPresenter Instance { get; private set; }
         public static bool HasOpenVendor => Instance != null && Instance.gameObject.activeInHierarchy && Instance.vendor != null;
@@ -70,6 +74,11 @@ namespace RPGClone.UI
 
         public void Configure(MMOVendorNpc newVendor, MMOInventoryContainer newInventory, MMOCurrencyWallet newWallet)
         {
+            if (vendor != newVendor)
+            {
+                pageIndex = 0;
+            }
+
             vendor = newVendor;
             inventory = newInventory;
             wallet = newWallet;
@@ -83,6 +92,11 @@ namespace RPGClone.UI
                 wallet.Changed -= OnWalletChanged;
             }
 
+            if (vendor != newVendor)
+            {
+                pageIndex = 0;
+            }
+
             vendor = newVendor;
             inventory = newInventory;
             wallet = newWallet;
@@ -93,7 +107,7 @@ namespace RPGClone.UI
 
             BuildIfNeeded();
             gameObject.SetActive(true);
-            Position(screenPosition);
+            Position();
             TrackNpcDistance();
             OpenInventoryPanel();
             Refresh();
@@ -123,9 +137,9 @@ namespace RPGClone.UI
                 return null;
             }
 
-            GameObject vendorObject = new("Vendor Window", typeof(RectTransform));
-            vendorObject.transform.SetParent(canvas.transform, false);
-            return vendorObject.AddComponent<MMOVendorPresenter>();
+            GameObject vendorObject = MMOWindowPrefabResolver.Instantiate(MMOWindowPrefabId.Merchant, canvas.transform, "Vendor Window");
+            MMOVendorPresenter createdPresenter = vendorObject.GetComponent<MMOVendorPresenter>();
+            return createdPresenter != null ? createdPresenter : vendorObject.AddComponent<MMOVendorPresenter>();
         }
 
         private void BuildIfNeeded()
@@ -135,76 +149,145 @@ namespace RPGClone.UI
                 return;
             }
 
+            bool hasStandardWindow = TryGetComponent(out MMOStandardWindow _);
+            if (!hasStandardWindow && transform.childCount > 0)
+            {
+                MMOUiFactory.DestroyChildren(transform);
+            }
+
             root = (RectTransform)transform;
-            root.sizeDelta = new Vector2(Width, Height);
+            MMOStandardWindow.ApplyDefaultPlacement(root);
 
-            MMONpcWindowFrame.Apply(gameObject);
-            titleText = MMONpcWindowFrame.CreateTitle(transform, "Vendor");
-            MMONpcWindowFrame.CreateCloseButton(transform, () => gameObject.SetActive(false));
+            MMOStandardWindow window = MMOStandardWindow.Ensure(gameObject, "Vendor", () => gameObject.SetActive(false));
+            RectTransform content = window.ContentRoot;
+            titleText = window.TitleText;
 
-            statusText = MMOUiFactory.CreateText("Status", transform, 11, FontStyle.Normal, TextAnchor.MiddleLeft);
+            statusText = window.FindText("Status") ?? MMOUiFactory.CreateText("Status", content, 11, FontStyle.Normal, TextAnchor.MiddleLeft);
             statusText.color = new Color(0.86f, 0.78f, 0.64f, 1f);
-            statusText.rectTransform.anchorMin = new Vector2(0f, 1f);
-            statusText.rectTransform.anchorMax = new Vector2(1f, 1f);
-            statusText.rectTransform.pivot = new Vector2(0f, 1f);
-            statusText.rectTransform.anchoredPosition = new Vector2(14f, -44f);
-            statusText.rectTransform.sizeDelta = new Vector2(-28f, 28f);
+            statusText.rectTransform.anchorMin = new Vector2(0f, 0f);
+            statusText.rectTransform.anchorMax = new Vector2(1f, 0f);
+            statusText.rectTransform.pivot = new Vector2(0f, 0f);
+            statusText.rectTransform.anchoredPosition = new Vector2(0f, 34f);
+            statusText.rectTransform.sizeDelta = new Vector2(-12f, 22f);
 
-            stockRoot = MMOUiFactory.CreateRect("Stock", transform);
+            stockRoot = window.FindRect("Stock") ?? MMOUiFactory.CreateRect("Stock", content);
             stockRoot.anchorMin = new Vector2(0f, 0f);
             stockRoot.anchorMax = new Vector2(1f, 1f);
-            stockRoot.offsetMin = new Vector2(18f, 18f);
-            stockRoot.offsetMax = new Vector2(-18f, -86f);
+            stockRoot.offsetMin = new Vector2(0f, 78f);
+            stockRoot.offsetMax = new Vector2(0f, -28f);
+
+            previousButton = window.FindButton("Previous Button") ?? MMOUiFactory.CreateTextButton("Previous Button", content, "Prev", new Vector2(76f, 28f), MMONpcWindowFrame.ButtonColor);
+            RectTransform previousRect = previousButton.GetComponent<RectTransform>();
+            previousRect.anchorMin = new Vector2(0f, 0f);
+            previousRect.anchorMax = new Vector2(0f, 0f);
+            previousRect.pivot = new Vector2(0f, 0f);
+            previousRect.anchoredPosition = Vector2.zero;
+            previousRect.sizeDelta = new Vector2(76f, 28f);
+            previousButton.onClick.RemoveAllListeners();
+            previousButton.onClick.AddListener(PreviousPage);
+
+            nextButton = window.FindButton("Next Button") ?? MMOUiFactory.CreateTextButton("Next Button", content, "Next", new Vector2(76f, 28f), MMONpcWindowFrame.ButtonColor);
+            RectTransform nextRect = nextButton.GetComponent<RectTransform>();
+            nextRect.anchorMin = new Vector2(1f, 0f);
+            nextRect.anchorMax = new Vector2(1f, 0f);
+            nextRect.pivot = new Vector2(1f, 0f);
+            nextRect.anchoredPosition = Vector2.zero;
+            nextRect.sizeDelta = new Vector2(76f, 28f);
+            nextButton.onClick.RemoveAllListeners();
+            nextButton.onClick.AddListener(NextPage);
+
+            pageText = window.FindText("Page") ?? MMOUiFactory.CreateText("Page", content, 12, FontStyle.Bold, TextAnchor.MiddleCenter);
+            pageText.color = MMONpcWindowFrame.TitleColor;
+            pageText.rectTransform.anchorMin = new Vector2(0f, 0f);
+            pageText.rectTransform.anchorMax = new Vector2(1f, 0f);
+            pageText.rectTransform.pivot = new Vector2(0.5f, 0f);
+            pageText.rectTransform.anchoredPosition = Vector2.zero;
+            pageText.rectTransform.sizeDelta = new Vector2(-170f, 28f);
+
+            moneyText = window.FindText("Money") ?? MMOUiFactory.CreateText("Money", content, 11, FontStyle.Bold, TextAnchor.MiddleRight);
+            moneyText.color = new Color(0.95f, 0.82f, 0.48f, 1f);
+            moneyText.rectTransform.anchorMin = new Vector2(0f, 1f);
+            moneyText.rectTransform.anchorMax = new Vector2(1f, 1f);
+            moneyText.rectTransform.pivot = new Vector2(1f, 1f);
+            moneyText.rectTransform.anchoredPosition = new Vector2(0f, -4f);
+            moneyText.rectTransform.sizeDelta = new Vector2(-12f, 22f);
         }
 
         private void Refresh()
         {
             BuildIfNeeded();
             titleText.text = vendor != null ? vendor.DisplayName : "Vendor";
+            int pageCount = GetPageCount();
+            pageIndex = Mathf.Clamp(pageIndex, 0, pageCount - 1);
+            moneyText.text = wallet != null ? $"Money: {MMOCurrencyWallet.FormatCopper(wallet.Copper)}" : "Money: 0c";
+            pageText.text = $"Page {pageIndex + 1} of {pageCount}";
+            previousButton.interactable = pageIndex > 0;
+            nextButton.interactable = pageIndex < pageCount - 1;
             MMOUiFactory.DestroyChildren(stockRoot);
 
             for (int i = 0; i < VisibleSlotCount; i++)
             {
-                MMOVendorStockEntry entry = vendor != null && i < vendor.Stock.Count ? vendor.Stock[i] : null;
+                int stockIndex = pageIndex * VisibleSlotCount + i;
+                MMOVendorStockEntry entry = vendor != null && stockIndex < vendor.Stock.Count ? vendor.Stock[stockIndex] : null;
                 CreateStockSlot(entry, i);
             }
         }
 
         private void CreateStockSlot(MMOVendorStockEntry entry, int index)
         {
-            Image slot = MMOUiFactory.CreateImage($"Vendor Slot {index + 1}", stockRoot, MMONpcWindowFrame.PanelColor);
-            RectTransform rect = slot.rectTransform;
+            Button card = MMOUiFactory.CreateTextButton($"Vendor Slot {index + 1}", stockRoot, string.Empty, new Vector2(CardWidth, CardHeight), MMONpcWindowFrame.PanelColor);
+            RectTransform rect = card.GetComponent<RectTransform>();
             int column = index % Columns;
             int row = index / Columns;
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 1f);
-            rect.anchoredPosition = new Vector2(column * (SlotSize + SlotSpacing), -row * (SlotSize + SlotSpacing));
-            rect.sizeDelta = new Vector2(SlotSize, SlotSize);
+            rect.anchoredPosition = new Vector2(column * (CardWidth + CardSpacing), -row * (CardHeight + CardSpacing));
+            rect.sizeDelta = new Vector2(CardWidth, CardHeight);
 
             if (entry == null || !entry.IsValid)
             {
+                card.interactable = false;
                 return;
             }
 
-            slot.color = MMOItemIconView.GetSlotBackgroundColor(entry.Item);
-            MMOItemIconView.AddToSlot(rect, entry.Item, 0, false, false, 5f);
+            Image iconSlot = MMOUiFactory.CreateImage("Item Icon Slot", rect, MMOItemIconView.GetSlotBackgroundColor(entry.Item), false);
+            RectTransform iconRect = iconSlot.rectTransform;
+            iconRect.anchorMin = new Vector2(0f, 0.5f);
+            iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0f, 0.5f);
+            iconRect.anchoredPosition = new Vector2(6f, 0f);
+            iconRect.sizeDelta = new Vector2(IconSize, IconSize);
+            MMOItemIconView.AddToSlot(iconRect, entry.Item, entry.Quantity, false, false, 4f);
+
+            Text itemName = MMOUiFactory.CreateText("Name", rect, 11, FontStyle.Bold, TextAnchor.MiddleLeft);
+            itemName.text = entry.Item.DisplayName;
+            itemName.color = MMOItemIconView.GetQualityTextColor(entry.Item.Quality);
+            itemName.horizontalOverflow = HorizontalWrapMode.Wrap;
+            itemName.verticalOverflow = VerticalWrapMode.Truncate;
+            itemName.rectTransform.anchorMin = new Vector2(0f, 1f);
+            itemName.rectTransform.anchorMax = new Vector2(1f, 1f);
+            itemName.rectTransform.pivot = new Vector2(0f, 1f);
+            itemName.rectTransform.anchoredPosition = new Vector2(56f, -7f);
+            itemName.rectTransform.sizeDelta = new Vector2(-64f, 24f);
 
             Text price = MMOUiFactory.CreateText("Price", rect, 9, FontStyle.Bold, TextAnchor.LowerCenter);
             price.text = MMOCurrencyWallet.FormatCopper(entry.PriceCopper);
             price.color = new Color(0.95f, 0.82f, 0.48f, 1f);
-            MMOUiFactory.Stretch(price.rectTransform);
-            price.rectTransform.offsetMin = new Vector2(4f, 3f);
-            price.rectTransform.offsetMax = new Vector2(-4f, -3f);
+            price.rectTransform.anchorMin = new Vector2(0f, 0f);
+            price.rectTransform.anchorMax = new Vector2(1f, 0f);
+            price.rectTransform.pivot = new Vector2(0f, 0f);
+            price.rectTransform.anchoredPosition = new Vector2(56f, 6f);
+            price.rectTransform.sizeDelta = new Vector2(-64f, 18f);
 
-            MMOVendorItemPurchaseTrigger buyTrigger = slot.gameObject.GetComponent<MMOVendorItemPurchaseTrigger>();
+            MMOVendorItemPurchaseTrigger buyTrigger = card.gameObject.GetComponent<MMOVendorItemPurchaseTrigger>();
             if (buyTrigger == null)
             {
-                buyTrigger = slot.gameObject.AddComponent<MMOVendorItemPurchaseTrigger>();
+                buyTrigger = card.gameObject.AddComponent<MMOVendorItemPurchaseTrigger>();
             }
 
             buyTrigger.Configure(this, entry);
-            MMOItemTooltipTrigger.Bind(slot.gameObject, entry.Item);
+            MMOItemTooltipTrigger.Bind(card.gameObject, entry.Item);
         }
 
         public void Buy(MMOVendorStockEntry entry)
@@ -217,6 +300,24 @@ namespace RPGClone.UI
             bool bought = vendor.TryBuy(entry, inventory, wallet);
             statusText.text = bought ? $"Bought {entry.Item.DisplayName}." : "Cannot buy that.";
             Refresh();
+        }
+
+        private void PreviousPage()
+        {
+            pageIndex = Mathf.Max(0, pageIndex - 1);
+            Refresh();
+        }
+
+        private void NextPage()
+        {
+            pageIndex = Mathf.Min(GetPageCount() - 1, pageIndex + 1);
+            Refresh();
+        }
+
+        private int GetPageCount()
+        {
+            int stockCount = vendor != null ? vendor.Stock.Count : 0;
+            return Mathf.Max(1, Mathf.CeilToInt(stockCount / (float)VisibleSlotCount));
         }
 
         private bool SellInventorySlot(MMOInventoryContainer sourceInventory, int slotIndex)
@@ -274,34 +375,9 @@ namespace RPGClone.UI
             Refresh();
         }
 
-        private void Position(Vector2 screenPosition)
+        private void Position()
         {
-            Canvas canvas = GetComponentInParent<Canvas>();
-            RectTransform canvasRect = canvas != null ? (RectTransform)canvas.transform : null;
-            if (canvasRect == null)
-            {
-                return;
-            }
-
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                canvasRect,
-                screenPosition,
-                canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera,
-                out Vector2 localPosition);
-
-            root.anchorMin = new Vector2(0.5f, 0.5f);
-            root.anchorMax = new Vector2(0.5f, 0.5f);
-            root.pivot = new Vector2(0f, 1f);
-            root.anchoredPosition = ClampToCanvas(localPosition + new Vector2(24f, -20f), canvasRect);
-        }
-
-        private Vector2 ClampToCanvas(Vector2 position, RectTransform canvasRect)
-        {
-            Rect rect = canvasRect.rect;
-            Vector2 size = root.sizeDelta;
-            position.x = Mathf.Clamp(position.x, rect.xMin + CanvasPadding, rect.xMax - size.x - CanvasPadding);
-            position.y = Mathf.Clamp(position.y, rect.yMin + size.y + CanvasPadding, rect.yMax - CanvasPadding);
-            return position;
+            MMOStandardWindow.ApplyDefaultPlacement(root);
         }
     }
 

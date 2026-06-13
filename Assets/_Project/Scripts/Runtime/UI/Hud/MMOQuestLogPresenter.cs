@@ -88,32 +88,25 @@ namespace RPGClone.UI
                 return;
             }
 
+            bool hasStandardWindow = TryGetComponent(out MMOStandardWindow _);
+            if (!hasStandardWindow && transform.childCount > 0)
+            {
+                MMOUiFactory.DestroyChildren(transform);
+            }
+
             RectTransform root = (RectTransform)transform;
-            root.sizeDelta = new Vector2(560f, 520f);
-            Image background = gameObject.GetComponent<Image>() ?? gameObject.AddComponent<Image>();
-            background.color = new Color(0.034f, 0.029f, 0.023f, 0.98f);
+            if (root.sizeDelta == Vector2.zero)
+            {
+                root.sizeDelta = new Vector2(560f, 520f);
+            }
 
-            Text title = MMOUiFactory.CreateText("Title", transform, 18, FontStyle.Bold, TextAnchor.MiddleLeft);
-            title.text = "Quest Log";
-            title.rectTransform.anchorMin = new Vector2(0f, 1f);
-            title.rectTransform.anchorMax = new Vector2(1f, 1f);
-            title.rectTransform.pivot = new Vector2(0f, 1f);
-            title.rectTransform.anchoredPosition = new Vector2(14f, -10f);
-            title.rectTransform.sizeDelta = new Vector2(-28f, 28f);
-
-            Button closeButton = MMOUiFactory.CreateTextButton("Close", transform, "X", new Vector2(26f, 24f), new Color(0.12f, 0.09f, 0.07f, 0.95f));
-            closeButton.onClick.AddListener(() => gameObject.SetActive(false));
-            RectTransform closeRect = closeButton.GetComponent<RectTransform>();
-            closeRect.anchorMin = new Vector2(1f, 1f);
-            closeRect.anchorMax = new Vector2(1f, 1f);
-            closeRect.pivot = new Vector2(1f, 1f);
-            closeRect.anchoredPosition = new Vector2(-10f, -10f);
-
-            rowsRoot = MMOUiFactory.CreateRect("Rows", transform);
+            MMOStandardWindow window = MMOStandardWindow.Ensure(gameObject, "Quest Log", () => gameObject.SetActive(false));
+            RectTransform content = window.ContentRoot;
+            rowsRoot = window.FindRect("Rows") ?? MMOUiFactory.CreateRect("Rows", content);
             rowsRoot.anchorMin = new Vector2(0f, 0f);
             rowsRoot.anchorMax = new Vector2(1f, 1f);
             rowsRoot.offsetMin = new Vector2(18f, 18f);
-            rowsRoot.offsetMax = new Vector2(-18f, -54f);
+            rowsRoot.offsetMax = new Vector2(-18f, -18f);
         }
 
         private void Refresh()

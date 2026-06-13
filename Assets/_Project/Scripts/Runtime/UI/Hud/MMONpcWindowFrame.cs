@@ -15,6 +15,12 @@ namespace RPGClone.UI
 
         public static void Apply(GameObject panelObject)
         {
+            if (panelObject.TryGetComponent(out MMOStandardWindow standardWindow))
+            {
+                standardWindow.Initialize(null, null);
+                return;
+            }
+
             Image background = panelObject.GetComponent<Image>() ?? panelObject.AddComponent<Image>();
             background.color = BackgroundColor;
 

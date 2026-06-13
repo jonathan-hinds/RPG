@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using RPGClone.Inventory;
 using RPGClone.Quests;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace RPGClone.UI
@@ -10,6 +11,12 @@ namespace RPGClone.UI
     public sealed class MMOQuestDialogPresenter : MonoBehaviour
     {
         private RectTransform contentRoot;
+        private RectTransform dynamicRoot;
+        private Button goodbyeButton;
+        private Button acceptButton;
+        private Button declineButton;
+        private Button backButton;
+        private Button completeButton;
         private MMOQuestNpc npc;
         private MMOQuestLog questLog;
         private MMOQuestDefinition selectedQuest;
@@ -36,6 +43,20 @@ namespace RPGClone.UI
         public static void Open(MMOQuestNpc npc, MMOQuestLog questLog, Vector2 screenPosition)
         {
             MMOQuestDialogPresenter presenter = Instance != null ? Instance : FindAnyObjectByType<MMOQuestDialogPresenter>();
+            if (presenter == null)
+            {
+                Canvas canvas = FindAnyObjectByType<Canvas>();
+                if (canvas != null)
+                {
+                    GameObject dialogObject = MMOWindowPrefabResolver.Instantiate(MMOWindowPrefabId.Quest, canvas.transform, "Quest Dialog");
+                    presenter = dialogObject.GetComponent<MMOQuestDialogPresenter>();
+                    if (presenter == null)
+                    {
+                        presenter = dialogObject.AddComponent<MMOQuestDialogPresenter>();
+                    }
+                }
+            }
+
             presenter?.OpenNpc(npc, questLog);
         }
 
@@ -78,24 +99,39 @@ namespace RPGClone.UI
 
         private void BuildFrame()
         {
+            bool hasStandardWindow = TryGetComponent(out MMOStandardWindow _);
+            if (!hasStandardWindow && transform.childCount > 0)
+            {
+                MMOUiFactory.DestroyChildren(transform);
+            }
+
             RectTransform root = (RectTransform)transform;
-            root.anchorMin = new Vector2(0.5f, 0.5f);
-            root.anchorMax = new Vector2(0.5f, 0.5f);
-            root.pivot = new Vector2(0.5f, 0.5f);
-            root.anchoredPosition = new Vector2(0f, 20f);
-            root.sizeDelta = new Vector2(520f, 580f);
+            MMOStandardWindow.ApplyDefaultPlacement(root);
 
-            MMONpcWindowFrame.Apply(gameObject);
+            MMOStandardWindow window = MMOStandardWindow.Ensure(gameObject, "Quest", Close);
+            contentRoot = window.ContentRoot;
 
-            contentRoot = MMOUiFactory.CreateRect("Content", transform);
-            MMOUiFactory.Stretch(contentRoot);
-            contentRoot.offsetMin = new Vector2(22f, 18f);
-            contentRoot.offsetMax = new Vector2(-22f, -18f);
+            dynamicRoot = window.FindRect("Dynamic Content");
+            if (dynamicRoot == null)
+            {
+                dynamicRoot = MMOUiFactory.CreateRect("Dynamic Content", contentRoot);
+                MMOUiFactory.Stretch(dynamicRoot);
+                dynamicRoot.offsetMin = new Vector2(0f, 50f);
+                dynamicRoot.offsetMax = new Vector2(0f, 0f);
+            }
+
+            goodbyeButton = FindOrCreateQuestButton("Goodbye Button", "Goodbye", new Vector2(1f, 0f), new Vector2(1f, 0f), Vector2.zero, MMOStandardWindow.QuestButtonSize);
+            acceptButton = FindOrCreateQuestButton("Accept Button", "Accept", new Vector2(1f, 0f), new Vector2(1f, 0f), Vector2.zero, MMOStandardWindow.QuestButtonSize);
+            declineButton = FindOrCreateQuestButton("Decline Button", "Decline", new Vector2(0f, 0f), new Vector2(0f, 0f), Vector2.zero, MMOStandardWindow.QuestButtonSize);
+            backButton = FindOrCreateQuestButton("Back Button", "Back", new Vector2(0f, 0f), new Vector2(0f, 0f), Vector2.zero, MMOStandardWindow.QuestButtonSize);
+            completeButton = FindOrCreateQuestButton("Complete Button", "Complete Quest", new Vector2(1f, 0f), new Vector2(1f, 0f), Vector2.zero, MMOStandardWindow.QuestButtonSize);
+            HideActionButtons();
         }
 
         private void RefreshList()
         {
-            MMOUiFactory.DestroyChildren(contentRoot);
+            MMOUiFactory.DestroyChildren(dynamicRoot);
+            HideActionButtons();
 
             Text title = CreateText("Title", npc != null ? npc.DisplayName : "Quest Giver", 20, FontStyle.Bold, TextAnchor.MiddleLeft, 0f, 0f, 40f);
             title.color = MMONpcWindowFrame.TitleColor;
@@ -126,24 +162,19 @@ namespace RPGClone.UI
                 empty.color = MMONpcWindowFrame.BodyColor;
             }
 
-            Button close = MMOUiFactory.CreateTextButton("Goodbye", contentRoot, "Goodbye", new Vector2(116f, 34f), MMONpcWindowFrame.ButtonColor);
-            close.onClick.AddListener(Close);
-            RectTransform closeRect = close.GetComponent<RectTransform>();
-            closeRect.anchorMin = new Vector2(1f, 0f);
-            closeRect.anchorMax = new Vector2(1f, 0f);
-            closeRect.pivot = new Vector2(1f, 0f);
-            closeRect.anchoredPosition = Vector2.zero;
+            ConfigureQuestActionButton(goodbyeButton, "Goodbye", true, Close);
         }
 
         private void CreateQuestListButton(MMOQuestDefinition quest, string marker, float y, bool turnIn)
         {
-            Button button = MMOUiFactory.CreateTextButton($"Quest {quest.DisplayName}", contentRoot, string.Empty, new Vector2(476f, 36f), MMONpcWindowFrame.PanelColor);
+            Button button = MMOUiFactory.CreateTextButton($"Quest {quest.DisplayName}", dynamicRoot, string.Empty, new Vector2(0f, 36f), MMONpcWindowFrame.PanelColor);
             button.onClick.AddListener(() => OpenQuest(quest, turnIn));
             RectTransform rect = button.GetComponent<RectTransform>();
             rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
             rect.pivot = new Vector2(0f, 1f);
             rect.anchoredPosition = new Vector2(0f, -y);
+            rect.sizeDelta = new Vector2(0f, 36f);
 
             Text label = MMOUiFactory.CreateText("Label", rect, 14, FontStyle.Bold, TextAnchor.MiddleLeft);
             label.text = $"{marker}  {quest.DisplayName}";
@@ -163,7 +194,8 @@ namespace RPGClone.UI
                 selectedReward = null;
             }
 
-            MMOUiFactory.DestroyChildren(contentRoot);
+            MMOUiFactory.DestroyChildren(dynamicRoot);
+            HideActionButtons();
 
             CreateText("Title", quest.DisplayName, 20, FontStyle.Bold, TextAnchor.MiddleLeft, 0f, 0f, 38f).color = MMONpcWindowFrame.TitleColor;
 
@@ -252,7 +284,7 @@ namespace RPGClone.UI
 
         private void CreateObjectiveItemIcon(MMOItemDefinition item, float y)
         {
-            Image slot = MMOUiFactory.CreateImage($"Objective Item {item.DisplayName}", contentRoot, MMOItemIconView.GetSlotBackgroundColor(item));
+            Image slot = MMOUiFactory.CreateImage($"Objective Item {item.DisplayName}", dynamicRoot, MMOItemIconView.GetSlotBackgroundColor(item));
             RectTransform rect = slot.rectTransform;
             rect.anchorMin = new Vector2(1f, 1f);
             rect.anchorMax = new Vector2(1f, 1f);
@@ -264,7 +296,7 @@ namespace RPGClone.UI
 
         private Button CreateItemIconButton(string objectName, MMOItemDefinition item, int quantity, Vector2 anchoredPosition, bool selected)
         {
-            Image slot = MMOUiFactory.CreateImage(objectName, contentRoot, MMOItemIconView.GetSlotBackgroundColor(item));
+            Image slot = MMOUiFactory.CreateImage(objectName, dynamicRoot, MMOItemIconView.GetSlotBackgroundColor(item));
             RectTransform rect = slot.rectTransform;
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(0f, 1f);
@@ -307,33 +339,29 @@ namespace RPGClone.UI
 
         private void CreateActionButtons(bool turnIn)
         {
-            Button back = MMOUiFactory.CreateTextButton("Back", contentRoot, "Back", new Vector2(96f, 34f), MMONpcWindowFrame.ButtonColor);
-            back.onClick.AddListener(RefreshList);
-            RectTransform backRect = back.GetComponent<RectTransform>();
-            backRect.anchorMin = new Vector2(0f, 0f);
-            backRect.anchorMax = new Vector2(0f, 0f);
-            backRect.pivot = new Vector2(0f, 0f);
-
-            Button action = MMOUiFactory.CreateTextButton(turnIn ? "Complete" : "Accept", contentRoot, turnIn ? "Complete Quest" : "Accept", new Vector2(132f, 34f), MMONpcWindowFrame.AccentButtonColor);
-            action.interactable = !turnIn || !HasChoiceRewards(selectedQuest?.Rewards) || selectedReward != null;
-            action.onClick.AddListener(() =>
+            if (turnIn)
             {
-                if (turnIn)
-                {
-                    questLog?.TryComplete(selectedQuest, selectedReward);
-                }
-                else
-                {
-                    questLog?.TryAccept(selectedQuest);
-                }
+                ConfigureQuestActionButton(backButton, "Back", true, RefreshList);
+                ConfigureQuestActionButton(completeButton, "Complete Quest", !HasChoiceRewards(selectedQuest?.Rewards) || selectedReward != null, CompleteOrAcceptSelectedQuest);
+                return;
+            }
 
-                RefreshList();
-            });
-            RectTransform actionRect = action.GetComponent<RectTransform>();
-            actionRect.anchorMin = new Vector2(1f, 0f);
-            actionRect.anchorMax = new Vector2(1f, 0f);
-            actionRect.pivot = new Vector2(1f, 0f);
-            actionRect.anchoredPosition = Vector2.zero;
+            ConfigureQuestActionButton(declineButton, "Decline", true, RefreshList);
+            ConfigureQuestActionButton(acceptButton, "Accept", true, CompleteOrAcceptSelectedQuest);
+        }
+
+        private void CompleteOrAcceptSelectedQuest()
+        {
+            if (selectedQuestTurnIn)
+            {
+                questLog?.TryComplete(selectedQuest, selectedReward);
+            }
+            else
+            {
+                questLog?.TryAccept(selectedQuest);
+            }
+
+            RefreshList();
         }
 
         private static bool HasChoiceRewards(MMOQuestRewardDefinition rewards)
@@ -356,7 +384,7 @@ namespace RPGClone.UI
 
         private Text CreateText(string name, string value, int size, FontStyle style, TextAnchor anchor, float x, float y, float height)
         {
-            Text text = MMOUiFactory.CreateText(name, contentRoot, size, style, anchor);
+            Text text = MMOUiFactory.CreateText(name, dynamicRoot, size, style, anchor);
             text.text = value;
             text.rectTransform.anchorMin = new Vector2(0f, 1f);
             text.rectTransform.anchorMax = new Vector2(1f, 1f);
@@ -364,6 +392,74 @@ namespace RPGClone.UI
             text.rectTransform.anchoredPosition = new Vector2(x, -y);
             text.rectTransform.sizeDelta = new Vector2(-x, height);
             return text;
+        }
+
+        private Button FindOrCreateQuestButton(string objectName, string label, Vector2 anchor, Vector2 pivot, Vector2 anchoredPosition, Vector2 size)
+        {
+            Button button = contentRoot.GetComponentInChildren<Button>(true);
+            Button[] buttons = contentRoot.GetComponentsInChildren<Button>(true);
+            foreach (Button candidate in buttons)
+            {
+                if (candidate.name == objectName)
+                {
+                    button = candidate;
+                    break;
+                }
+            }
+
+            if (button == null || button.name != objectName)
+            {
+                button = MMOUiFactory.CreateTextButton(objectName, contentRoot, label, size, MMONpcWindowFrame.AccentButtonColor);
+                RectTransform rect = button.GetComponent<RectTransform>();
+                rect.anchorMin = anchor;
+                rect.anchorMax = anchor;
+                rect.pivot = pivot;
+                rect.anchoredPosition = anchoredPosition;
+            }
+
+            Text text = MMOUiFactory.FindButtonLabel(button);
+            if (text != null)
+            {
+                text.text = label;
+            }
+
+            return button;
+        }
+
+        private void ConfigureQuestActionButton(Button button, string label, bool interactable, UnityAction action)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.gameObject.SetActive(true);
+            button.interactable = interactable;
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(action);
+
+            Text text = MMOUiFactory.FindButtonLabel(button);
+            if (text != null)
+            {
+                text.text = label;
+            }
+        }
+
+        private void HideActionButtons()
+        {
+            SetButtonActive(goodbyeButton, false);
+            SetButtonActive(acceptButton, false);
+            SetButtonActive(declineButton, false);
+            SetButtonActive(backButton, false);
+            SetButtonActive(completeButton, false);
+        }
+
+        private static void SetButtonActive(Button button, bool active)
+        {
+            if (button != null)
+            {
+                button.gameObject.SetActive(active);
+            }
         }
     }
 }

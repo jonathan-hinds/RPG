@@ -39,14 +39,60 @@ namespace RPGClone.UI
 
         public static Button CreateTextButton(string objectName, Transform parent, string label, Vector2 size, Color backgroundColor)
         {
+            return CreateTextButton(objectName, parent, label, size, backgroundColor, null, null, null);
+        }
+
+        public static Button CreateTextButton(string objectName, Transform parent, string label, Vector2 size, Color backgroundColor, Sprite normalSprite, Sprite highlightedSprite, Sprite pressedSprite)
+        {
             Image image = CreateImage(objectName, parent, backgroundColor);
             image.rectTransform.sizeDelta = size;
+            if (normalSprite != null)
+            {
+                image.sprite = normalSprite;
+                image.type = normalSprite.border.sqrMagnitude > 0f ? Image.Type.Sliced : Image.Type.Simple;
+                image.color = Color.white;
+            }
 
             Button button = image.gameObject.AddComponent<Button>();
+            ConfigureButtonSprites(button, normalSprite, highlightedSprite, pressedSprite);
             Text text = CreateText("Label", image.transform, 11, FontStyle.Bold, TextAnchor.MiddleCenter);
             text.text = label;
             Stretch(text.rectTransform);
             return button;
+        }
+
+        public static void ConfigureButtonSprites(Button button, Sprite normalSprite, Sprite highlightedSprite, Sprite pressedSprite)
+        {
+            if (button == null || normalSprite == null)
+            {
+                return;
+            }
+
+            if (button.targetGraphic is Image image)
+            {
+                image.sprite = normalSprite;
+                image.type = normalSprite.border.sqrMagnitude > 0f ? Image.Type.Sliced : Image.Type.Simple;
+                image.color = Color.white;
+            }
+
+            SpriteState spriteState = button.spriteState;
+            spriteState.highlightedSprite = highlightedSprite != null ? highlightedSprite : normalSprite;
+            spriteState.pressedSprite = pressedSprite != null ? pressedSprite : normalSprite;
+            spriteState.selectedSprite = highlightedSprite != null ? highlightedSprite : normalSprite;
+            spriteState.disabledSprite = normalSprite;
+            button.spriteState = spriteState;
+            button.transition = Selectable.Transition.SpriteSwap;
+        }
+
+        public static Text FindButtonLabel(Button button)
+        {
+            if (button == null)
+            {
+                return null;
+            }
+
+            Transform label = button.transform.Find("Label");
+            return label != null ? label.GetComponent<Text>() : button.GetComponentInChildren<Text>(true);
         }
 
         public static void Stretch(RectTransform rectTransform)

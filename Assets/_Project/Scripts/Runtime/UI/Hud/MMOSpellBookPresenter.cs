@@ -61,46 +61,33 @@ namespace RPGClone.UI
                 return;
             }
 
-            MMOUiFactory.DestroyChildren(transform);
-
-            RectTransform root = (RectTransform)transform;
-            root.sizeDelta = new Vector2(430f, 360f);
-
-            Image background = gameObject.GetComponent<Image>();
-            if (background == null)
+            bool hasStandardWindow = TryGetComponent(out MMOStandardWindow _);
+            if (!hasStandardWindow && transform.childCount > 0)
             {
-                background = gameObject.AddComponent<Image>();
+                MMOUiFactory.DestroyChildren(transform);
             }
 
-            background.color = new Color(0.035f, 0.032f, 0.028f, 0.96f);
+            RectTransform root = (RectTransform)transform;
+            if (root.sizeDelta == Vector2.zero)
+            {
+                root.sizeDelta = new Vector2(430f, 360f);
+            }
 
-            Text title = MMOUiFactory.CreateText("Title", transform, 18, FontStyle.Bold, TextAnchor.MiddleLeft);
-            title.text = "Spellbook";
-            title.rectTransform.anchorMin = new Vector2(0f, 1f);
-            title.rectTransform.anchorMax = new Vector2(1f, 1f);
-            title.rectTransform.pivot = new Vector2(0f, 1f);
-            title.rectTransform.anchoredPosition = new Vector2(14f, -10f);
-            title.rectTransform.sizeDelta = new Vector2(-28f, 28f);
+            MMOStandardWindow window = MMOStandardWindow.Ensure(gameObject, "Spellbook", () => gameObject.SetActive(false));
+            RectTransform content = window.ContentRoot;
 
-            Button closeButton = MMOUiFactory.CreateTextButton("Close", transform, "X", new Vector2(26f, 24f), new Color(0.12f, 0.09f, 0.07f, 0.95f));
-            closeButton.onClick.AddListener(() => gameObject.SetActive(false));
-            closeButton.GetComponent<RectTransform>().anchorMin = new Vector2(1f, 1f);
-            closeButton.GetComponent<RectTransform>().anchorMax = new Vector2(1f, 1f);
-            closeButton.GetComponent<RectTransform>().pivot = new Vector2(1f, 1f);
-            closeButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(-10f, -10f);
-
-            abilityGrid = MMOUiFactory.CreateRect("Ability Grid", transform);
+            abilityGrid = window.FindRect("Ability Grid") ?? MMOUiFactory.CreateRect("Ability Grid", content);
             abilityGrid.anchorMin = new Vector2(0f, 0f);
             abilityGrid.anchorMax = new Vector2(1f, 1f);
             abilityGrid.offsetMin = new Vector2(14f, 18f);
-            abilityGrid.offsetMax = new Vector2(-14f, -52f);
+            abilityGrid.offsetMax = new Vector2(-14f, -18f);
 
-            emptyText = MMOUiFactory.CreateText("Empty", transform, 13, FontStyle.Italic, TextAnchor.MiddleCenter);
+            emptyText = window.FindText("Empty") ?? MMOUiFactory.CreateText("Empty", content, 13, FontStyle.Italic, TextAnchor.MiddleCenter);
             emptyText.text = "No known abilities";
             emptyText.rectTransform.anchorMin = Vector2.zero;
             emptyText.rectTransform.anchorMax = Vector2.one;
             emptyText.rectTransform.offsetMin = new Vector2(20f, 20f);
-            emptyText.rectTransform.offsetMax = new Vector2(-20f, -56f);
+            emptyText.rectTransform.offsetMax = new Vector2(-20f, -20f);
         }
 
         private void Refresh()

@@ -126,69 +126,63 @@ namespace RPGClone.UI
                 return;
             }
 
-            MMOUiFactory.DestroyChildren(transform);
-
-            RectTransform root = (RectTransform)transform;
-            root.sizeDelta = new Vector2(480f, 520f);
-
-            Image background = gameObject.GetComponent<Image>();
-            if (background == null)
+            bool hasStandardWindow = TryGetComponent(out MMOStandardWindow _);
+            if (!hasStandardWindow && transform.childCount > 0)
             {
-                background = gameObject.AddComponent<Image>();
+                MMOUiFactory.DestroyChildren(transform);
             }
 
-            background.color = new Color(0.035f, 0.032f, 0.028f, 0.96f);
+            RectTransform root = (RectTransform)transform;
+            if (root.sizeDelta == Vector2.zero)
+            {
+                root.sizeDelta = new Vector2(480f, 520f);
+            }
 
-            Text title = MMOUiFactory.CreateText("Title", transform, 18, FontStyle.Bold, TextAnchor.MiddleLeft);
-            title.text = "Character";
-            title.rectTransform.anchorMin = new Vector2(0f, 1f);
-            title.rectTransform.anchorMax = new Vector2(1f, 1f);
-            title.rectTransform.pivot = new Vector2(0f, 1f);
-            title.rectTransform.anchoredPosition = new Vector2(14f, -10f);
-            title.rectTransform.sizeDelta = new Vector2(-28f, 28f);
+            MMOStandardWindow window = MMOStandardWindow.Ensure(gameObject, "Character", () => gameObject.SetActive(false));
+            RectTransform content = window.ContentRoot;
 
-            Button closeButton = MMOUiFactory.CreateTextButton("Close", transform, "X", new Vector2(26f, 24f), new Color(0.12f, 0.09f, 0.07f, 0.95f));
-            closeButton.onClick.AddListener(() => gameObject.SetActive(false));
-            RectTransform closeRect = closeButton.GetComponent<RectTransform>();
-            closeRect.anchorMin = new Vector2(1f, 1f);
-            closeRect.anchorMax = new Vector2(1f, 1f);
-            closeRect.pivot = new Vector2(1f, 1f);
-            closeRect.anchoredPosition = new Vector2(-10f, -10f);
+            RectTransform paperDoll = window.FindRect("Paper Doll");
+            if (paperDoll == null)
+            {
+                paperDoll = MMOUiFactory.CreateRect("Paper Doll", content);
+            }
 
-            RectTransform paperDoll = MMOUiFactory.CreateRect("Paper Doll", transform);
             paperDoll.anchorMin = new Vector2(0.5f, 0.5f);
             paperDoll.anchorMax = new Vector2(0.5f, 0.5f);
             paperDoll.pivot = new Vector2(0.5f, 0.5f);
             paperDoll.anchoredPosition = new Vector2(0f, 52f);
             paperDoll.sizeDelta = new Vector2(168f, 250f);
 
-            Image portrait = MMOUiFactory.CreateImage("Portrait", paperDoll, new Color(0.09f, 0.07f, 0.052f, 0.92f), false);
-            MMOUiFactory.Stretch(portrait.rectTransform);
+            if (paperDoll.Find("Portrait") == null)
+            {
+                Image portrait = MMOUiFactory.CreateImage("Portrait", paperDoll, new Color(0.09f, 0.07f, 0.052f, 0.92f), false);
+                MMOUiFactory.Stretch(portrait.rectTransform);
+            }
 
-            nameText = MMOUiFactory.CreateText("Name", paperDoll, 17, FontStyle.Bold, TextAnchor.UpperCenter);
+            nameText = window.FindText("Name") ?? MMOUiFactory.CreateText("Name", paperDoll, 17, FontStyle.Bold, TextAnchor.UpperCenter);
             nameText.rectTransform.anchorMin = new Vector2(0f, 1f);
             nameText.rectTransform.anchorMax = new Vector2(1f, 1f);
             nameText.rectTransform.pivot = new Vector2(0.5f, 1f);
             nameText.rectTransform.anchoredPosition = new Vector2(0f, -12f);
             nameText.rectTransform.sizeDelta = new Vector2(0f, 28f);
 
-            levelText = MMOUiFactory.CreateText("Level", paperDoll, 13, FontStyle.Bold, TextAnchor.UpperCenter);
+            levelText = window.FindText("Level") ?? MMOUiFactory.CreateText("Level", paperDoll, 13, FontStyle.Bold, TextAnchor.UpperCenter);
             levelText.rectTransform.anchorMin = new Vector2(0f, 1f);
             levelText.rectTransform.anchorMax = new Vector2(1f, 1f);
             levelText.rectTransform.pivot = new Vector2(0.5f, 1f);
             levelText.rectTransform.anchoredPosition = new Vector2(0f, -40f);
             levelText.rectTransform.sizeDelta = new Vector2(0f, 22f);
 
-            statsText = MMOUiFactory.CreateText("Stats", transform, 12, FontStyle.Normal, TextAnchor.UpperLeft);
+            statsText = window.FindText("Stats") ?? MMOUiFactory.CreateText("Stats", content, 12, FontStyle.Normal, TextAnchor.UpperLeft);
             statsText.rectTransform.anchorMin = new Vector2(0.5f, 0f);
             statsText.rectTransform.anchorMax = new Vector2(0.5f, 0f);
             statsText.rectTransform.pivot = new Vector2(0.5f, 0f);
             statsText.rectTransform.anchoredPosition = new Vector2(0f, 14f);
             statsText.rectTransform.sizeDelta = new Vector2(280f, 150f);
 
-            leftSlots = CreateSlotColumn("Left Slots", new Vector2(18f, -58f), new Vector2(0f, 1f), new Vector2(0f, 1f));
-            rightSlots = CreateSlotColumn("Right Slots", new Vector2(-18f, -58f), new Vector2(1f, 1f), new Vector2(1f, 1f));
-            bottomSlots = MMOUiFactory.CreateRect("Bottom Slots", transform);
+            leftSlots = window.FindRect("Left Slots") ?? CreateSlotColumn(content, "Left Slots", new Vector2(18f, -58f), new Vector2(0f, 1f), new Vector2(0f, 1f));
+            rightSlots = window.FindRect("Right Slots") ?? CreateSlotColumn(content, "Right Slots", new Vector2(-18f, -58f), new Vector2(1f, 1f), new Vector2(1f, 1f));
+            bottomSlots = window.FindRect("Bottom Slots") ?? MMOUiFactory.CreateRect("Bottom Slots", content);
             bottomSlots.anchorMin = new Vector2(0.5f, 0f);
             bottomSlots.anchorMax = new Vector2(0.5f, 0f);
             bottomSlots.pivot = new Vector2(0.5f, 0f);
@@ -196,9 +190,9 @@ namespace RPGClone.UI
             bottomSlots.sizeDelta = new Vector2(198f, 62f);
         }
 
-        private RectTransform CreateSlotColumn(string objectName, Vector2 position, Vector2 anchor, Vector2 pivot)
+        private RectTransform CreateSlotColumn(Transform parent, string objectName, Vector2 position, Vector2 anchor, Vector2 pivot)
         {
-            RectTransform column = MMOUiFactory.CreateRect(objectName, transform);
+            RectTransform column = MMOUiFactory.CreateRect(objectName, parent);
             column.anchorMin = anchor;
             column.anchorMax = anchor;
             column.pivot = pivot;

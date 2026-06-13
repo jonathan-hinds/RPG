@@ -10,19 +10,19 @@ namespace RPGClone.UI
     [RequireComponent(typeof(RectTransform))]
     public sealed class MMOClassTrainerPresenter : MonoBehaviour
     {
-        private const float Width = 560f;
-        private const float Height = 500f;
-        private const float CanvasPadding = 8f;
+        private const float RowHeight = 46f;
+        private const float RowSpacing = 6f;
+        private const float IconSize = 38f;
 
         private MMOClassTrainerNpc trainer;
         private GameObject player;
         private MMOTrainerOfferEntry selectedOffer;
         private RectTransform root;
         private RectTransform listRoot;
-        private RectTransform detailRoot;
         private Text titleText;
         private Text moneyText;
         private Text statusText;
+        private Button trainButton;
 
         public static MMOClassTrainerPresenter Instance { get; private set; }
 
@@ -53,7 +53,7 @@ namespace RPGClone.UI
             selectedOffer = trainer != null && trainer.Offers.Count > 0 ? trainer.Offers[0] : null;
             BuildIfNeeded();
             gameObject.SetActive(true);
-            Position(screenPosition);
+            Position();
             TrackNpcDistance();
             Refresh();
             transform.SetAsLastSibling();
@@ -99,9 +99,9 @@ namespace RPGClone.UI
                 return null;
             }
 
-            GameObject trainerObject = new("Class Trainer Window", typeof(RectTransform));
-            trainerObject.transform.SetParent(canvas.transform, false);
-            return trainerObject.AddComponent<MMOClassTrainerPresenter>();
+            GameObject trainerObject = MMOWindowPrefabResolver.Instantiate(MMOWindowPrefabId.Training, canvas.transform, "Class Trainer Window");
+            MMOClassTrainerPresenter createdPresenter = trainerObject.GetComponent<MMOClassTrainerPresenter>();
+            return createdPresenter != null ? createdPresenter : trainerObject.AddComponent<MMOClassTrainerPresenter>();
         }
 
         private void BuildIfNeeded()
@@ -111,49 +111,50 @@ namespace RPGClone.UI
                 return;
             }
 
-            root = (RectTransform)transform;
-            root.sizeDelta = new Vector2(Width, Height);
-            MMONpcWindowFrame.Apply(gameObject);
-            titleText = MMONpcWindowFrame.CreateTitle(transform, "Class Trainer");
-            MMONpcWindowFrame.CreateCloseButton(transform, Close);
+            bool hasStandardWindow = TryGetComponent(out MMOStandardWindow _);
+            if (!hasStandardWindow && transform.childCount > 0)
+            {
+                MMOUiFactory.DestroyChildren(transform);
+            }
 
-            moneyText = MMOUiFactory.CreateText("Money", transform, 11, FontStyle.Bold, TextAnchor.MiddleRight);
+            root = (RectTransform)transform;
+            MMOStandardWindow.ApplyDefaultPlacement(root);
+
+            MMOStandardWindow window = MMOStandardWindow.Ensure(gameObject, "Class Trainer", Close);
+            RectTransform content = window.ContentRoot;
+            titleText = window.TitleText;
+
+            moneyText = window.FindText("Money") ?? MMOUiFactory.CreateText("Money", content, 11, FontStyle.Bold, TextAnchor.MiddleRight);
             moneyText.color = new Color(0.95f, 0.82f, 0.48f, 1f);
             moneyText.rectTransform.anchorMin = new Vector2(0f, 1f);
             moneyText.rectTransform.anchorMax = new Vector2(1f, 1f);
             moneyText.rectTransform.pivot = new Vector2(1f, 1f);
-            moneyText.rectTransform.anchoredPosition = new Vector2(-46f, -44f);
+            moneyText.rectTransform.anchoredPosition = new Vector2(0f, -4f);
             moneyText.rectTransform.sizeDelta = new Vector2(-28f, 22f);
 
-            Text header = MMOUiFactory.CreateText("Header", transform, 11, FontStyle.Bold, TextAnchor.MiddleLeft);
-            header.text = "Name                                      Level       Cost";
-            header.color = new Color(0.86f, 0.78f, 0.64f, 1f);
-            header.rectTransform.anchorMin = new Vector2(0f, 1f);
-            header.rectTransform.anchorMax = new Vector2(0f, 1f);
-            header.rectTransform.pivot = new Vector2(0f, 1f);
-            header.rectTransform.anchoredPosition = new Vector2(18f, -76f);
-            header.rectTransform.sizeDelta = new Vector2(330f, 20f);
-
-            listRoot = MMOUiFactory.CreateRect("Lessons", transform);
+            listRoot = window.FindRect("Lessons") ?? MMOUiFactory.CreateRect("Lessons", content);
             listRoot.anchorMin = new Vector2(0f, 0f);
-            listRoot.anchorMax = new Vector2(0f, 1f);
-            listRoot.offsetMin = new Vector2(18f, 68f);
-            listRoot.offsetMax = new Vector2(350f, -100f);
+            listRoot.anchorMax = new Vector2(1f, 1f);
+            listRoot.offsetMin = new Vector2(0f, 52f);
+            listRoot.offsetMax = new Vector2(0f, -34f);
 
-            detailRoot = MMOUiFactory.CreateRect("Details", transform);
-            detailRoot.anchorMin = new Vector2(1f, 0f);
-            detailRoot.anchorMax = new Vector2(1f, 1f);
-            detailRoot.pivot = new Vector2(1f, 0.5f);
-            detailRoot.offsetMin = new Vector2(-190f, 68f);
-            detailRoot.offsetMax = new Vector2(-18f, -76f);
-
-            statusText = MMOUiFactory.CreateText("Status", transform, 12, FontStyle.Bold, TextAnchor.MiddleLeft);
+            statusText = window.FindText("Status") ?? MMOUiFactory.CreateText("Status", content, 12, FontStyle.Bold, TextAnchor.MiddleLeft);
             statusText.color = MMONpcWindowFrame.BodyColor;
             statusText.rectTransform.anchorMin = new Vector2(0f, 0f);
             statusText.rectTransform.anchorMax = new Vector2(1f, 0f);
             statusText.rectTransform.pivot = new Vector2(0f, 0f);
-            statusText.rectTransform.anchoredPosition = new Vector2(18f, 18f);
+            statusText.rectTransform.anchoredPosition = Vector2.zero;
             statusText.rectTransform.sizeDelta = new Vector2(-180f, 34f);
+
+            trainButton = window.FindButton("Train Button") ?? MMOUiFactory.CreateTextButton("Train Button", content, "Train", MMOStandardWindow.QuestButtonSize, MMONpcWindowFrame.AccentButtonColor);
+            RectTransform trainRect = trainButton.GetComponent<RectTransform>();
+            trainRect.anchorMin = new Vector2(1f, 0f);
+            trainRect.anchorMax = new Vector2(1f, 0f);
+            trainRect.pivot = new Vector2(1f, 0f);
+            trainRect.anchoredPosition = MMOStandardWindow.DefaultActionButtonPosition;
+            trainRect.sizeDelta = MMOStandardWindow.QuestButtonSize;
+            trainButton.onClick.RemoveAllListeners();
+            trainButton.onClick.AddListener(TrainSelectedOffer);
         }
 
         private void Refresh()
@@ -162,7 +163,7 @@ namespace RPGClone.UI
             MMOCurrencyWallet wallet = player != null ? player.GetComponent<MMOCurrencyWallet>() : null;
             moneyText.text = wallet != null ? $"Money: {MMOCurrencyWallet.FormatCopper(wallet.Copper)}" : "Money: 0c";
             RefreshList();
-            RefreshDetails();
+            RefreshTrainState();
         }
 
         private void RefreshList()
@@ -177,46 +178,41 @@ namespace RPGClone.UI
 
         private void CreateOfferRow(MMOTrainerOfferEntry offer, int index)
         {
-            Button row = MMOUiFactory.CreateTextButton($"Lesson {index + 1}", listRoot, string.Empty, new Vector2(330f, 32f), GetRowColor(offer));
+            Button row = MMOUiFactory.CreateTextButton($"Lesson {index + 1}", listRoot, string.Empty, new Vector2(0f, RowHeight), GetRowColor(offer));
             row.onClick.AddListener(() =>
             {
                 selectedOffer = offer;
-                RefreshDetails();
+                RefreshTrainState();
                 RefreshList();
             });
 
             RectTransform rowRect = row.GetComponent<RectTransform>();
             rowRect.anchorMin = new Vector2(0f, 1f);
-            rowRect.anchorMax = new Vector2(0f, 1f);
+            rowRect.anchorMax = new Vector2(1f, 1f);
             rowRect.pivot = new Vector2(0f, 1f);
-            rowRect.anchoredPosition = new Vector2(0f, -index * 36f);
+            rowRect.anchoredPosition = new Vector2(0f, -index * (RowHeight + RowSpacing));
+            rowRect.sizeDelta = new Vector2(0f, RowHeight);
 
             MMOAbilityDefinition ability = offer.Ability;
+            CreateAbilityIcon(rowRect, ability);
+
             Text name = MMOUiFactory.CreateText("Name", rowRect, 12, FontStyle.Bold, TextAnchor.MiddleLeft);
             name.text = ability != null ? ability.DisplayName : "Unknown";
             name.color = GetRowTextColor(offer);
-            name.rectTransform.anchorMin = Vector2.zero;
-            name.rectTransform.anchorMax = Vector2.one;
-            name.rectTransform.offsetMin = new Vector2(9f, 0f);
-            name.rectTransform.offsetMax = new Vector2(-122f, 0f);
+            name.rectTransform.anchorMin = new Vector2(0f, 1f);
+            name.rectTransform.anchorMax = new Vector2(1f, 1f);
+            name.rectTransform.pivot = new Vector2(0f, 1f);
+            name.rectTransform.anchoredPosition = new Vector2(54f, -6f);
+            name.rectTransform.sizeDelta = new Vector2(-66f, 20f);
 
-            Text level = MMOUiFactory.CreateText("Level", rowRect, 11, FontStyle.Bold, TextAnchor.MiddleCenter);
-            level.text = offer.RequiredLevel.ToString();
-            level.color = name.color;
-            level.rectTransform.anchorMin = new Vector2(1f, 0f);
-            level.rectTransform.anchorMax = new Vector2(1f, 1f);
-            level.rectTransform.pivot = new Vector2(1f, 0.5f);
-            level.rectTransform.anchoredPosition = new Vector2(-78f, 0f);
-            level.rectTransform.sizeDelta = new Vector2(34f, 0f);
-
-            Text cost = MMOUiFactory.CreateText("Cost", rowRect, 11, FontStyle.Bold, TextAnchor.MiddleRight);
-            cost.text = MMOCurrencyWallet.FormatCopper(offer.PriceCopper);
-            cost.color = new Color(0.95f, 0.82f, 0.48f, 1f);
-            cost.rectTransform.anchorMin = new Vector2(1f, 0f);
-            cost.rectTransform.anchorMax = new Vector2(1f, 1f);
-            cost.rectTransform.pivot = new Vector2(1f, 0.5f);
-            cost.rectTransform.anchoredPosition = new Vector2(-9f, 0f);
-            cost.rectTransform.sizeDelta = new Vector2(64f, 0f);
+            Text requirement = MMOUiFactory.CreateText("Requirement", rowRect, 11, FontStyle.Bold, TextAnchor.MiddleLeft);
+            requirement.text = $"Requires Level {offer.RequiredLevel}    Cost: {MMOCurrencyWallet.FormatCopper(offer.PriceCopper)}";
+            requirement.color = new Color(0.95f, 0.82f, 0.48f, 1f);
+            requirement.rectTransform.anchorMin = new Vector2(0f, 0f);
+            requirement.rectTransform.anchorMax = new Vector2(1f, 0f);
+            requirement.rectTransform.pivot = new Vector2(0f, 0f);
+            requirement.rectTransform.anchoredPosition = new Vector2(54f, 6f);
+            requirement.rectTransform.sizeDelta = new Vector2(-66f, 18f);
 
             if (ability != null)
             {
@@ -225,61 +221,77 @@ namespace RPGClone.UI
             }
         }
 
-        private void RefreshDetails()
+        private void RefreshTrainState()
         {
-            MMOUiFactory.DestroyChildren(detailRoot);
-            if (selectedOffer == null || selectedOffer.Ability == null)
+            if (trainButton == null)
             {
                 return;
             }
 
-            MMOAbilityDefinition ability = selectedOffer.Ability;
-            Text name = MMOUiFactory.CreateText("Ability Name", detailRoot, 16, FontStyle.Bold, TextAnchor.UpperLeft);
-            name.text = ability.DisplayName;
-            name.color = MMONpcWindowFrame.TitleColor;
-            name.rectTransform.anchorMin = new Vector2(0f, 1f);
-            name.rectTransform.anchorMax = new Vector2(1f, 1f);
-            name.rectTransform.pivot = new Vector2(0f, 1f);
-            name.rectTransform.sizeDelta = new Vector2(0f, 28f);
-
-            Text details = MMOUiFactory.CreateText("Ability Details", detailRoot, 12, FontStyle.Normal, TextAnchor.UpperLeft);
             string trainState = string.Empty;
-            bool canTrain = trainer != null && trainer.CanTrain(selectedOffer, player, out trainState);
-            string availability = canTrain || string.IsNullOrWhiteSpace(trainState) || trainState == "Available." ? string.Empty : $"\n\n{trainState}";
-            details.text = $"{ability.Description}\n\nRequires: Level {selectedOffer.RequiredLevel} {selectedOffer.RequiredClass}\nCost: {MMOCurrencyWallet.FormatCopper(selectedOffer.PriceCopper)}{availability}";
-            details.color = MMONpcWindowFrame.BodyColor;
-            details.horizontalOverflow = HorizontalWrapMode.Wrap;
-            details.verticalOverflow = VerticalWrapMode.Overflow;
-            details.rectTransform.anchorMin = new Vector2(0f, 1f);
-            details.rectTransform.anchorMax = new Vector2(1f, 1f);
-            details.rectTransform.pivot = new Vector2(0f, 1f);
-            details.rectTransform.anchoredPosition = new Vector2(0f, -36f);
-            details.rectTransform.sizeDelta = new Vector2(0f, 200f);
-
-            Button train = MMOUiFactory.CreateTextButton("Train", detailRoot, "Train", new Vector2(118f, 34f), MMONpcWindowFrame.AccentButtonColor);
-            train.interactable = canTrain;
+            bool canTrain = selectedOffer != null && trainer != null && trainer.CanTrain(selectedOffer, player, out trainState);
+            trainButton.interactable = canTrain;
             statusText.text = canTrain ? string.Empty : trainState;
-            train.onClick.AddListener(() =>
+        }
+
+        private void TrainSelectedOffer()
+        {
+            string result;
+            if (trainer != null && selectedOffer != null)
             {
-                string result;
-                if (trainer != null)
-                {
-                    trainer.TryTrain(selectedOffer, player, out result);
-                }
-                else
-                {
-                    result = "Trainer unavailable.";
-                }
+                trainer.TryTrain(selectedOffer, player, out result);
+            }
+            else
+            {
+                result = "Trainer unavailable.";
+            }
 
-                statusText.text = result;
-                Refresh();
-            });
+            statusText.text = result;
+            Refresh();
+        }
 
-            RectTransform trainRect = train.GetComponent<RectTransform>();
-            trainRect.anchorMin = new Vector2(1f, 0f);
-            trainRect.anchorMax = new Vector2(1f, 0f);
-            trainRect.pivot = new Vector2(1f, 0f);
-            trainRect.anchoredPosition = Vector2.zero;
+        private void CreateAbilityIcon(RectTransform rowRect, MMOAbilityDefinition ability)
+        {
+            Image icon = MMOUiFactory.CreateImage("Icon", rowRect, ability != null && ability.Icon != null ? Color.white : new Color(0.18f, 0.12f, 0.055f, 1f), false);
+            icon.sprite = ability != null ? ability.Icon : null;
+            icon.preserveAspect = true;
+            icon.rectTransform.anchorMin = new Vector2(0f, 0.5f);
+            icon.rectTransform.anchorMax = new Vector2(0f, 0.5f);
+            icon.rectTransform.pivot = new Vector2(0f, 0.5f);
+            icon.rectTransform.anchoredPosition = new Vector2(5f, 0f);
+            icon.rectTransform.sizeDelta = new Vector2(IconSize, IconSize);
+
+            Outline outline = icon.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0.55f, 0.45f, 0.24f, 1f);
+            outline.effectDistance = new Vector2(1f, -1f);
+
+            if (ability == null || ability.Icon != null)
+            {
+                return;
+            }
+
+            Text placeholder = MMOUiFactory.CreateText("Icon Placeholder", icon.transform, 12, FontStyle.Bold, TextAnchor.MiddleCenter);
+            placeholder.text = BuildFallbackLabel(ability.DisplayName);
+            placeholder.color = MMONpcWindowFrame.TitleColor;
+            MMOUiFactory.Stretch(placeholder.rectTransform);
+        }
+
+        private static string BuildFallbackLabel(string displayName)
+        {
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                return "?";
+            }
+
+            string[] words = displayName.Split(' ');
+            if (words.Length == 1)
+            {
+                return displayName.Length <= 2 ? displayName.ToUpperInvariant() : displayName[..2].ToUpperInvariant();
+            }
+
+            char first = words[0].Length > 0 ? words[0][0] : '?';
+            char second = words[^1].Length > 0 ? words[^1][0] : '?';
+            return $"{char.ToUpperInvariant(first)}{char.ToUpperInvariant(second)}";
         }
 
         private bool CanTrain(MMOTrainerOfferEntry offer)
@@ -313,34 +325,9 @@ namespace RPGClone.UI
             return new Color(1f, 0.35f, 0.24f, 1f);
         }
 
-        private void Position(Vector2 screenPosition)
+        private void Position()
         {
-            Canvas canvas = GetComponentInParent<Canvas>();
-            RectTransform canvasRect = canvas != null ? (RectTransform)canvas.transform : null;
-            if (canvasRect == null)
-            {
-                return;
-            }
-
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                canvasRect,
-                screenPosition,
-                canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera,
-                out Vector2 localPosition);
-
-            root.anchorMin = new Vector2(0.5f, 0.5f);
-            root.anchorMax = new Vector2(0.5f, 0.5f);
-            root.pivot = new Vector2(0f, 1f);
-            root.anchoredPosition = ClampToCanvas(localPosition + new Vector2(24f, -20f), canvasRect);
-        }
-
-        private Vector2 ClampToCanvas(Vector2 position, RectTransform canvasRect)
-        {
-            Rect rect = canvasRect.rect;
-            Vector2 size = root.sizeDelta;
-            position.x = Mathf.Clamp(position.x, rect.xMin + CanvasPadding, rect.xMax - size.x - CanvasPadding);
-            position.y = Mathf.Clamp(position.y, rect.yMin + size.y + CanvasPadding, rect.yMax - CanvasPadding);
-            return position;
+            MMOStandardWindow.ApplyDefaultPlacement(root);
         }
     }
 }
