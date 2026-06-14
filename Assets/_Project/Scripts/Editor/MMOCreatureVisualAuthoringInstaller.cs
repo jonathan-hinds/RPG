@@ -27,6 +27,15 @@ namespace RPGClone.EditorTools
         private const string AshCanyonAnimationSourceFolder = "Assets/Characters/AshCanyonCreature/Animations/Source";
         private const string AshCanyonAnimationClipFolder = "Assets/Characters/AshCanyonCreature/Animations/Clips";
         private const string AshCanyonAnimationSetPath = AshCanyonAnimationClipFolder + "/AshCanyonCreature_AnimationSet.asset";
+        private const string AshGeneralFolder = "Assets/Characters/AshLeader";
+        private const string AshGeneralModelPath = AshGeneralFolder + "/Models/AshGeneral.fbx";
+        private const string AshGeneralDiffusePath = AshGeneralFolder + "/Models/AshGeneral.fbm/Material_001_Pbr_Diffuse.jpg";
+        private const string AshGeneralNormalPath = AshGeneralFolder + "/Models/AshGeneral.fbm/Material_001_Pbr_Normal.jpg";
+        private const string AshGeneralAnimationClipFolder = AshGeneralFolder + "/Animations/Clips";
+        private const string AshGeneralAnimationSetPath = AshGeneralAnimationClipFolder + "/AshGeneral_AnimationSet.asset";
+        private const string AshGeneralEnemyDefinitionPath = RootFolder + "/Configs/Enemies/AshGeneral_Aggressive.asset";
+        private const string AshGeneralProfilePath = RootFolder + "/Configs/Characters/AshGeneral.asset";
+        private const string AshGeneralLootPath = RootFolder + "/Configs/Loot/AshGeneral_Trash_Loot.asset";
         private const string WolfModelPath = "Assets/Characters/Wolf/Models/wolf2.fbx";
         private const string WolfAnimationClipFolder = "Assets/Characters/Wolf/Animations/Clips";
         private const string WolfAnimationSetPath = WolfAnimationClipFolder + "/Wolf_AnimationSet.asset";
@@ -38,7 +47,9 @@ namespace RPGClone.EditorTools
         public static void CreateStandardCreatureVisualDefinitions()
         {
             CreateOrUpdateAshCanyonAnimationSet();
+            CreateOrUpdateAshGeneralAnimationSet();
             CreateOrUpdateWolfAnimationSet();
+            CreateOrUpdateAshGeneralEnemyDefinition();
             CreateOrUpdateWolfEnemyDefinition();
 
             CreateOrUpdateVisualDefinition(
@@ -90,6 +101,28 @@ namespace RPGClone.EditorTools
                 0f);
 
             CreateOrUpdateVisualDefinition(
+                AshGeneralFolder + "/AshGeneral_Visual.asset",
+                "AshGeneral",
+                "Ash General",
+                AshGeneralModelPath,
+                AshGeneralDiffusePath,
+                AshGeneralNormalPath,
+                AshGeneralAnimationSetPath,
+                AshGeneralEnemyDefinitionPath,
+                new[] { AshGeneralEnemyDefinitionPath },
+                new[] { "Ash General", "AshGeneral", "Ash Leader", "AshLeader" },
+                MMOCreatureBodyType.Biped,
+                2.45f,
+                0.65f,
+                2.45f,
+                new Vector3(0f, 1.225f, 0f),
+                Vector3.zero,
+                Vector3.zero,
+                0f,
+                0.38f,
+                0f);
+
+            CreateOrUpdateVisualDefinition(
                 "Assets/Characters/Wolf/Wolf_Visual.asset",
                 "Wolf",
                 "Wolf",
@@ -123,6 +156,15 @@ namespace RPGClone.EditorTools
             CreateStandardCreatureVisualDefinitions();
             RebuildCreatureVisualPrefabs();
             Debug.Log("Ash Canyon creature animations rebuilt from the Ash-specific source FBXs.");
+        }
+
+        [MenuItem("Tools/RPG Clone/Creatures/Rebuild Ash General Animations")]
+        public static void RebuildAshGeneralAnimations()
+        {
+            CreateOrUpdateAshGeneralAnimationSet();
+            CreateStandardCreatureVisualDefinitions();
+            RebuildCreatureVisualPrefabs();
+            Debug.Log("Ash General animations rebuilt from the AshLeader source FBXs.");
         }
 
         [MenuItem("Tools/RPG Clone/Creatures/Rebuild Creature Visual Prefabs")]
@@ -436,6 +478,83 @@ namespace RPGClone.EditorTools
             return animationSet;
         }
 
+        private static MMOCreatureAnimationSet CreateOrUpdateAshGeneralAnimationSet()
+        {
+            CreateFolderIfMissing(AshGeneralAnimationClipFolder);
+
+            AnimationClip idle = ExtractAnimationClip(
+                ResolveFirstExistingAssetPath(AshGeneralFolder + "/ashleader_idle.fbx", AshGeneralModelPath),
+                null,
+                AshGeneralAnimationClipFolder + "/AshGeneral_Idle.anim",
+                "AshGeneral_Idle",
+                true);
+            AnimationClip walk = ExtractAnimationClip(
+                AshGeneralFolder + "/ashleader_walking.fbx",
+                null,
+                AshGeneralAnimationClipFolder + "/AshGeneral_Walk.anim",
+                "AshGeneral_Walk",
+                true);
+            AnimationClip run = ExtractAnimationClip(
+                AshGeneralFolder + "/ashleader_run.fbx",
+                null,
+                AshGeneralAnimationClipFolder + "/AshGeneral_Run.anim",
+                "AshGeneral_Run",
+                true);
+            AnimationClip attack1 = ExtractAnimationClip(
+                AshGeneralFolder + "/ashleader_attack1.fbx",
+                null,
+                AshGeneralAnimationClipFolder + "/AshGeneral_Attack1.anim",
+                "AshGeneral_Attack1",
+                false);
+            AnimationClip attack2 = ExtractAnimationClip(
+                AshGeneralFolder + "/ashleader_attack2.fbx",
+                null,
+                AshGeneralAnimationClipFolder + "/AshGeneral_Attack2.anim",
+                "AshGeneral_Attack2",
+                false);
+            AnimationClip damage = ExtractAnimationClip(
+                AshGeneralFolder + "/ashleader_damage.fbx",
+                null,
+                AshGeneralAnimationClipFolder + "/AshGeneral_Damage.anim",
+                "AshGeneral_Damage",
+                false);
+            AnimationClip death = ExtractAnimationClip(
+                AshGeneralFolder + "/ashleader_death.fbx",
+                null,
+                AshGeneralAnimationClipFolder + "/AshGeneral_Death.anim",
+                "AshGeneral_Death",
+                false);
+            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(BaseControllerPath);
+
+            MMOCreatureAnimationSet animationSet = AssetDatabase.LoadAssetAtPath<MMOCreatureAnimationSet>(AshGeneralAnimationSetPath);
+            if (animationSet == null)
+            {
+                animationSet = ScriptableObject.CreateInstance<MMOCreatureAnimationSet>();
+                AssetDatabase.CreateAsset(animationSet, AshGeneralAnimationSetPath);
+            }
+
+            animationSet.name = "AshGeneral_AnimationSet";
+            animationSet.Configure(
+                baseController,
+                idle,
+                walk,
+                run,
+                attack1,
+                attack2,
+                damage,
+                death,
+                1.5f,
+                4.4f,
+                0.9f,
+                0.45f,
+                0.12f,
+                false,
+                0f);
+            EditorUtility.SetDirty(animationSet);
+            OrganizeAshGeneralAssets();
+            return animationSet;
+        }
+
         private static MMOEnemyDefinition CreateOrUpdateWolfEnemyDefinition()
         {
             CreateFolderIfMissing(Path.GetDirectoryName(WolfProfilePath)?.Replace('\\', '/') ?? RootFolder + "/Configs/Characters");
@@ -496,6 +615,76 @@ namespace RPGClone.EditorTools
             return definition;
         }
 
+        private static MMOEnemyDefinition CreateOrUpdateAshGeneralEnemyDefinition()
+        {
+            CreateFolderIfMissing(Path.GetDirectoryName(AshGeneralProfilePath)?.Replace('\\', '/') ?? RootFolder + "/Configs/Characters");
+            CreateFolderIfMissing(Path.GetDirectoryName(AshGeneralEnemyDefinitionPath)?.Replace('\\', '/') ?? RootFolder + "/Configs/Enemies");
+            CreateFolderIfMissing(Path.GetDirectoryName(AshGeneralLootPath)?.Replace('\\', '/') ?? RootFolder + "/Configs/Loot");
+
+            MMOCharacterProfile profile = AssetDatabase.LoadAssetAtPath<MMOCharacterProfile>(AshGeneralProfilePath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<MMOCharacterProfile>();
+                AssetDatabase.CreateAsset(profile, AshGeneralProfilePath);
+            }
+
+            MMOCharacterStats stats = new();
+            stats.Configure(15, 18, 9, 6, 8, 16, 18, 0, 6.5f, 11f, 2.5f, 3f);
+            profile.Configure("Ash General", 5, 170, 60, new Color(0.72f, 0.23f, 0.12f), null, true, MMOEntityFaction.Hostile, stats);
+            EditorUtility.SetDirty(profile);
+
+            MMOLootTable lootTable = AssetDatabase.LoadAssetAtPath<MMOLootTable>(AshGeneralLootPath);
+            if (lootTable == null)
+            {
+                lootTable = ScriptableObject.CreateInstance<MMOLootTable>();
+                AssetDatabase.CreateAsset(lootTable, AshGeneralLootPath);
+            }
+
+            MMOItemDefinition emberCore = AssetDatabase.LoadAssetAtPath<MMOItemDefinition>(RootFolder + "/Configs/Items/Ember_Core.asset");
+            MMOItemDefinition runeShard = AssetDatabase.LoadAssetAtPath<MMOItemDefinition>(RootFolder + "/Configs/Items/Valley_Rune_Shard.asset");
+            List<MMOLootTableEntry> entries = new();
+            if (emberCore != null)
+            {
+                entries.Add(new MMOLootTableEntry(emberCore, 0.45f, 1, 1));
+            }
+
+            if (runeShard != null)
+            {
+                entries.Add(new MMOLootTableEntry(runeShard, 0.12f, 1, 1));
+            }
+
+            lootTable.Configure(entries);
+            EditorUtility.SetDirty(lootTable);
+
+            MMOAbilityDefinition autoAttack = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(AutoAttackPath);
+            MMOEnemyDefinition definition = AssetDatabase.LoadAssetAtPath<MMOEnemyDefinition>(AshGeneralEnemyDefinitionPath);
+            if (definition == null)
+            {
+                definition = ScriptableObject.CreateInstance<MMOEnemyDefinition>();
+                AssetDatabase.CreateAsset(definition, AshGeneralEnemyDefinitionPath);
+            }
+
+            definition.Configure(
+                profile,
+                MMOEnemyDisposition.Aggressive,
+                autoAttack,
+                autoAttack != null ? new[] { autoAttack } : Array.Empty<MMOAbilityDefinition>(),
+                16f,
+                40f,
+                0.25f,
+                true,
+                6f,
+                2f,
+                5f,
+                1.5f,
+                4.4f,
+                2.4f,
+                85,
+                lootTable);
+            EditorUtility.SetDirty(definition);
+            return definition;
+        }
+
         private static void OrganizeAshCanyonAnimationSources()
         {
             MoveAssetIfNeeded("Assets/AshCanyonCreature.json", "Assets/Characters/AshCanyonCreature/Models/AshCanyonCreature.json");
@@ -520,6 +709,46 @@ namespace RPGClone.EditorTools
                 DeleteAssetIfPresent($"Assets/{assetName}.fbm");
                 DeleteAssetIfPresent($"Assets/textures/{assetName}");
             }
+        }
+
+        private static void OrganizeAshGeneralAssets()
+        {
+            MoveAssetIfNeeded(AshGeneralFolder + "/ashleader_idle.fbx", AshGeneralModelPath);
+            MoveAssetIfNeeded(AshGeneralFolder + "/ashleader_idle.json", AshGeneralFolder + "/Models/AshGeneral.json");
+            MoveAssetIfNeeded(AshGeneralFolder + "/ashleader_idle.fbm", AshGeneralFolder + "/Models/AshGeneral.fbm");
+
+            string[] animationNames =
+            {
+                "walking",
+                "run",
+                "attack1",
+                "attack2",
+                "damage",
+                "death"
+            };
+
+            foreach (string animationName in animationNames)
+            {
+                string assetName = $"ashleader_{animationName}";
+                DeleteAssetIfPresent($"{AshGeneralFolder}/{assetName}.fbx");
+                DeleteAssetIfPresent($"{AshGeneralFolder}/{assetName}.json");
+                DeleteAssetIfPresent($"{AshGeneralFolder}/{assetName}.fbm");
+            }
+
+            DeleteAssetIfPresent(AshGeneralFolder + "/textures");
+        }
+
+        private static string ResolveFirstExistingAssetPath(params string[] assetPaths)
+        {
+            foreach (string assetPath in assetPaths)
+            {
+                if (AssetDatabase.LoadMainAssetAtPath(assetPath) != null)
+                {
+                    return assetPath;
+                }
+            }
+
+            return assetPaths.FirstOrDefault();
         }
 
         private static void MoveAssetIfNeeded(string sourcePath, string destinationPath)

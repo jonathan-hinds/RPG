@@ -1,0 +1,338 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &9112715249025712577
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1125061619478941837}
+  - component: {fileID: 5420198569349579214}
+  - component: {fileID: 5043901511595317817}
+  - component: {fileID: 8128649536488283017}
+  - component: {fileID: 2849841691385056561}
+  - component: {fileID: 6327468445838486821}
+  - component: {fileID: 3720838658129339147}
+  - component: {fileID: 2218617759618683105}
+  - component: {fileID: 6152409053053292979}
+  - component: {fileID: 1643661523216325010}
+  - component: {fileID: 4470676896918648968}
+  m_Layer: 0
+  m_Name: AshGeneralEnemy
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1125061619478941837
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9112715249025712577}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7178239310580613942}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &5420198569349579214
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9112715249025712577}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.65
+  m_Height: 2.45
+  m_Direction: 1
+  m_Center: {x: 0, y: 1.225, z: 0}
+--- !u!195 &5043901511595317817
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9112715249025712577}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.65
+  m_Speed: 1.5
+  m_Acceleration: 16
+  avoidancePriority: 50
+  m_AngularSpeed: 720
+  m_StoppingDistance: 2.4
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2.45
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &8128649536488283017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9112715249025712577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterIdentity
+  profile: {fileID: 11400000, guid: e5a847c86caab3f418d97a9a965987d3, type: 2}
+  displayName: Ash General
+  level: 5
+  portrait: {fileID: 0}
+  portraitTint: {r: 0.72, g: 0.23, b: 0.12, a: 1}
+  faction: 3
+  selectable: 1
+  stats:
+    stamina: 15
+    strength: 18
+    agility: 9
+    intellect: 6
+    spirit: 8
+    armor: 16
+    attackPower: 18
+    spellPower: 0
+    meleeMinDamage: 6.5
+    meleeMaxDamage: 11
+    meleeAttackSpeed: 2.5
+    meleeRange: 3
+  health:
+    currentValue: 320
+    maxValue: 320
+  mana:
+    currentValue: 150
+    maxValue: 150
+--- !u!114 &2849841691385056561
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9112715249025712577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 435fe087e6bff5749a08c97991818a52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Combat.MMOCombatant
+--- !u!114 &6327468445838486821
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9112715249025712577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbd1ef234955ff94581217c98b9d6f06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Abilities.MMOAbilitySystem
+  startingAbilities:
+  - {fileID: 11400000, guid: 3c1aade4e9bf68c4c9c6ac4e85e35f96, type: 2}
+  castKnockbackSeconds: 0.5
+  maxCastKnockbackSeconds: 2
+--- !u!114 &3720838658129339147
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9112715249025712577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba4da20881c39594382695b3fa3590f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterRegeneration
+  outOfCombatDelaySeconds: 5
+  tickSeconds: 1
+--- !u!114 &2218617759618683105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9112715249025712577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77cf9a6fa07c49d4f91b042f4521a182, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Loot.MMOLootableCorpse
+  loot: []
+  interactionDistance: 5
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &6152409053053292979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9112715249025712577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36843d1ce910e804f840f567cd102b6a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Combat.MMOAutoAttackController
+  autoAttackAbility: {fileID: 11400000, guid: 3c1aade4e9bf68c4c9c6ac4e85e35f96, type: 2}
+  targetSelectionController: {fileID: 0}
+  interactionCamera: {fileID: 0}
+  handleRightClickInput: 0
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  maxInteractionDistance: 250
+  selectRightClickedTarget: 1
+  ignorePointerOverUi: 1
+  faceTargetWhileAttacking: 1
+  facingDegreesPerSecond: 720
+  failedAttemptRetrySeconds: 0.5
+--- !u!114 &1643661523216325010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9112715249025712577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85a4e166f90a09c4ba42d316228cedd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Enemies.MMOEnemyController
+  definition: {fileID: 11400000, guid: 114bc3b8ada49854081fdadef2396681, type: 2}
+  displayNameOverride: 
+  aggroMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  resetResourcesOnLeash: 1
+  drawDebugGizmos: 1
+  chaseRepathInterval: 0.2
+  chaseRepathDistance: 0.35
+--- !u!114 &4470676896918648968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9112715249025712577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c65118628d2d6d49ab49c66681665c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureAnimator
+  animationSet: {fileID: 11400000, guid: 3c5c0ae3335bbf442b77c2fabec9ebca, type: 2}
+  animator: {fileID: 3854542840283191628}
+  visualRoot: {fileID: 7178239310580613942}
+  agent: {fileID: 5043901511595317817}
+  abilitySystem: {fileID: 6327468445838486821}
+  combatant: {fileID: 2849841691385056561}
+  visualYawOffsetDegrees: 0
+--- !u!1001 &7211533916545115357
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1125061619478941837}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.9700928
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.9700928
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.9700928
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_Name
+      value: Ash General Visual
+      objectReference: {fileID: 0}
+    - target: {fileID: 2664098864995057252, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 4d9c4a45ef9ac9c4096e6b82d67fe59c, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+--- !u!95 &3854542840283191628 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+  m_PrefabInstance: {fileID: 7211533916545115357}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7178239310580613942 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+  m_PrefabInstance: {fileID: 7211533916545115357}
+  m_PrefabAsset: {fileID: 0}
