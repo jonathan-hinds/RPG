@@ -95,7 +95,7 @@ namespace RPGClone.EditorTools
                 normalizedCount++;
             }
 
-            ConnectNeighbors(terrains);
+            ConnectNeighbors(terrains, source.groupingID);
 
             Scene activeScene = SceneManager.GetActiveScene();
             EditorSceneManager.MarkSceneDirty(activeScene);
@@ -103,7 +103,7 @@ namespace RPGClone.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"Normalized {normalizedCount} neighbor terrain(s) against {source.name} and refreshed terrain neighbor links.");
+            Debug.Log($"Normalized {normalizedCount} neighbor terrain(s) against {source.name}, enabled terrain auto-connect, and refreshed terrain neighbor links.");
         }
 
         private static Terrain FindSourceTerrain(Terrain[] terrains)
@@ -159,7 +159,7 @@ namespace RPGClone.EditorTools
             target.drawInstanced = source.drawInstanced;
             target.drawHeightmap = source.drawHeightmap;
             target.drawTreesAndFoliage = source.drawTreesAndFoliage;
-            target.allowAutoConnect = false;
+            target.allowAutoConnect = true;
             target.groupingID = source.groupingID;
             target.heightmapPixelError = source.heightmapPixelError;
             target.heightmapMaximumLOD = source.heightmapMaximumLOD;
@@ -341,10 +341,15 @@ namespace RPGClone.EditorTools
             EditorUtility.SetDirty(synchronizer);
         }
 
-        private static void ConnectNeighbors(Terrain[] terrains)
+        private static void ConnectNeighbors(Terrain[] terrains, int groupingID)
         {
             foreach (Terrain terrain in terrains)
             {
+                Undo.RecordObject(terrain, "Connect Terrain Neighbors");
+
+                terrain.groupingID = groupingID;
+                terrain.allowAutoConnect = true;
+
                 Terrain left = FindNeighbor(terrain, terrains, -1, 0);
                 Terrain right = FindNeighbor(terrain, terrains, 1, 0);
                 Terrain top = FindNeighbor(terrain, terrains, 0, 1);
@@ -352,6 +357,8 @@ namespace RPGClone.EditorTools
                 terrain.SetNeighbors(left, top, right, bottom);
                 EditorUtility.SetDirty(terrain);
             }
+
+            Terrain.SetConnectivityDirty();
         }
 
         private static Terrain FindNeighbor(Terrain terrain, Terrain[] terrains, int xDirection, int zDirection)
