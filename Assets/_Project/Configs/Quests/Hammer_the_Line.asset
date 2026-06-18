@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: ancestral_watch_02
   displayName: Hammer the Line
-  minimumLevel: 1
+  questLevel: 3
+  minimumLevel: 2
   offeredByNpcId: seer_mahka
   turnedInToNpcId: seer_mahka
   prerequisiteQuests:
@@ -40,7 +41,8 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: c280170f533700141a79a7884362e537, type: 2}
     quantity: 1
   rewards:
-    experience: 75
+    experience: 260
     moneyCopper: 45
     guaranteedItems: []
     choiceItems: []
+

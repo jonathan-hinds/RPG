@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: ancestral_watch_03
   displayName: Words for the Warchief
-  minimumLevel: 1
+  questLevel: 4
+  minimumLevel: 2
   offeredByNpcId: seer_mahka
   turnedInToNpcId: warchief_korga
   prerequisiteQuests:
@@ -38,10 +39,11 @@ MonoBehaviour:
     consumeRequiredItemsOnTurnIn: 1
   startItems: []
   rewards:
-    experience: 95
+    experience: 340
     moneyCopper: 70
     guaranteedItems: []
     choiceItems:
     - {fileID: 11400000, guid: a8e15ae34c4f78e4e953f7254b3e1737, type: 2}
     - {fileID: 11400000, guid: 1c7af54dbd8412e4dab49867c1eac580, type: 2}
     - {fileID: 11400000, guid: 0a9a9f66032dca244aa662525bd0deae, type: 2}
+

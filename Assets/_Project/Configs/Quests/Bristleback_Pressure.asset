@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: razorcrag_supplies_02
   displayName: Bristleback Pressure
-  minimumLevel: 1
+  questLevel: 4
+  minimumLevel: 2
   offeredByNpcId: scout_gorrek
   turnedInToNpcId: scout_gorrek
   prerequisiteQuests:
@@ -38,7 +39,8 @@ MonoBehaviour:
     consumeRequiredItemsOnTurnIn: 1
   startItems: []
   rewards:
-    experience: 75
+    experience: 420
     moneyCopper: 45
     guaranteedItems: []
     choiceItems: []
+

@@ -204,8 +204,10 @@ namespace RPGClone.UI
             rect.sizeDelta = new Vector2(0f, 36f);
 
             Text label = MMOUiFactory.CreateText("Label", rect, 14, FontStyle.Bold, TextAnchor.MiddleLeft);
-            label.text = $"{marker}  {quest.DisplayName}";
-            label.color = new Color(1f, 0.84f, 0.28f, 1f);
+            label.text = $"{marker}  {MMOExperienceScaling.FormatQuestTitle(quest)}";
+            label.color = questLog != null
+                ? MMOExperienceScaling.GetDifficultyColor(questLog.PlayerLevel, quest.QuestLevel)
+                : new Color(1f, 0.84f, 0.28f, 1f);
             MMOUiFactory.Stretch(label.rectTransform);
             label.rectTransform.offsetMin = new Vector2(12f, 0f);
             label.rectTransform.offsetMax = new Vector2(-12f, 0f);
@@ -224,7 +226,10 @@ namespace RPGClone.UI
             MMOUiFactory.DestroyChildren(dynamicRoot);
             HideActionButtons();
 
-            CreateText("Title", quest.DisplayName, 20, FontStyle.Bold, TextAnchor.MiddleLeft, 0f, 0f, 38f).color = MMONpcWindowFrame.TitleColor;
+            Text title = CreateText("Title", MMOExperienceScaling.FormatQuestTitle(quest), 20, FontStyle.Bold, TextAnchor.MiddleLeft, 0f, 0f, 38f);
+            title.color = questLog != null
+                ? MMOExperienceScaling.GetDifficultyColor(questLog.PlayerLevel, quest.QuestLevel)
+                : MMONpcWindowFrame.TitleColor;
 
             string bodyText = turnIn
                 ? (string.IsNullOrWhiteSpace(quest.CompletionText) ? quest.ObjectiveSummary : quest.CompletionText)
@@ -245,7 +250,8 @@ namespace RPGClone.UI
             MMOQuestRewardDefinition rewards = quest.Rewards;
             if (rewards != null)
             {
-                string rewardText = $"Rewards: {rewards.Experience} XP";
+                int displayedExperience = questLog != null ? questLog.GetExperienceReward(quest) : rewards.Experience;
+                string rewardText = $"Rewards: {displayedExperience} XP";
                 if (rewards.MoneyCopper > 0)
                 {
                     rewardText += $"  {MMOCurrencyWallet.FormatCopper(rewards.MoneyCopper)}";

@@ -92,6 +92,7 @@ namespace RPGClone.UI
 
             trackerText = MMOUiFactory.CreateText("Tracker Text", transform, 13, FontStyle.Bold, TextAnchor.UpperLeft);
             trackerText.color = Color.white;
+            trackerText.supportRichText = true;
             MMOUiFactory.Stretch(trackerText.rectTransform);
         }
 
@@ -120,12 +121,12 @@ namespace RPGClone.UI
 
                 if (questLog.IsReadyToTurnIn(state))
                 {
-                    builder.AppendLine($"{state.Quest.DisplayName} (Completed)");
+                    builder.AppendLine($"{MMOExperienceScaling.FormatRichQuestTitle(state.Quest, questLog.PlayerLevel)} (Completed)");
                     builder.AppendLine();
                     continue;
                 }
 
-                builder.AppendLine(state.Quest.DisplayName);
+                builder.AppendLine(MMOExperienceScaling.FormatRichQuestTitle(state.Quest, questLog.PlayerLevel));
                 for (int i = 0; i < state.Quest.Objectives.Count; i++)
                 {
                     MMOQuestObjectiveDefinition objective = state.Quest.Objectives[i];

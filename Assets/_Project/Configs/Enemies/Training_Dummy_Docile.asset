@@ -33,3 +33,4 @@ MonoBehaviour:
   emptyCorpseDespawnSeconds: 1
   unlootedCorpseDespawnSeconds: 1
   respawnSeconds: 10
+

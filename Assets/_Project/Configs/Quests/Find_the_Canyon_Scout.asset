@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: ember_watch_01
   displayName: Find the Canyon Scout
-  minimumLevel: 1
+  questLevel: 4
+  minimumLevel: 2
   offeredByNpcId: warchief_korga
   turnedInToNpcId: canyon_scout_rakka
   prerequisiteQuests:
@@ -39,7 +40,8 @@ MonoBehaviour:
     consumeRequiredItemsOnTurnIn: 1
   startItems: []
   rewards:
-    experience: 80
+    experience: 320
     moneyCopper: 55
     guaranteedItems: []
     choiceItems: []
+

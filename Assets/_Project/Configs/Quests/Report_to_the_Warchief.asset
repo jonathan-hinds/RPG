@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: warchiefs_mandate_03
   displayName: Report to the Warchief
-  minimumLevel: 1
+  questLevel: 7
+  minimumLevel: 5
   offeredByNpcId: warchief_korga
   turnedInToNpcId: warchief_korga
   prerequisiteQuests:
@@ -38,10 +39,11 @@ MonoBehaviour:
     consumeRequiredItemsOnTurnIn: 1
   startItems: []
   rewards:
-    experience: 135
+    experience: 900
     moneyCopper: 120
     guaranteedItems: []
     choiceItems:
     - {fileID: 11400000, guid: 5ac5024d1d564144e9d2c50f56a2f337, type: 2}
     - {fileID: 11400000, guid: 4d3f8739520be7747bdc30fb5f3f8513, type: 2}
     - {fileID: 11400000, guid: 360f3d9b64b0e1d4eadd09fe5bd08c55, type: 2}
+

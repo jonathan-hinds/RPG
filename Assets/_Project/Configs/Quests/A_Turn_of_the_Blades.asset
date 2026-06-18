@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: windmill_repair_weapons
   displayName: A Turn of the Blades
-  minimumLevel: 1
+  questLevel: 4
+  minimumLevel: 2
   offeredByNpcId: millwright_torga
   turnedInToNpcId: millwright_torga
   prerequisiteQuests: []
@@ -41,10 +42,11 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 3e56f08fcc4053d4ca7b967c4985d9b7, type: 2}
     quantity: 1
   rewards:
-    experience: 95
+    experience: 380
     moneyCopper: 55
     guaranteedItems: []
     choiceItems:
     - {fileID: 11400000, guid: 05d3201fd3bfebd4fb9e69c7e536eae2, type: 2}
     - {fileID: 11400000, guid: e0dce1f3300d42541bb5571a226732d3, type: 2}
     - {fileID: 11400000, guid: 95764ea0c88bc6a428641fba0366df45, type: 2}
+

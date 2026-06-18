@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: AshGeneral
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterProfile
   displayName: Ash General
-  level: 5
+  level: 7
   portrait: {fileID: 0}
   portraitTint: {r: 0.72, g: 0.23, b: 0.12, a: 1}
   maxHealth: 170
@@ -33,3 +33,4 @@ MonoBehaviour:
     meleeAttackSpeed: 2.5
     meleeRange: 3
   selectable: 1
+

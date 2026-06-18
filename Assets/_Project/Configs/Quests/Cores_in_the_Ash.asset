@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: ember_watch_02
   displayName: Cores in the Ash
-  minimumLevel: 1
+  questLevel: 5
+  minimumLevel: 3
   offeredByNpcId: canyon_scout_rakka
   turnedInToNpcId: canyon_scout_rakka
   prerequisiteQuests:
@@ -38,7 +39,8 @@ MonoBehaviour:
     consumeRequiredItemsOnTurnIn: 1
   startItems: []
   rewards:
-    experience: 105
+    experience: 520
     moneyCopper: 80
     guaranteedItems: []
     choiceItems: []
+

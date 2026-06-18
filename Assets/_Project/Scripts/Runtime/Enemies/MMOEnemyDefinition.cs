@@ -55,6 +55,7 @@ namespace RPGClone.Enemies
         public float WalkSpeed => walkSpeed;
         public float ChaseSpeed => chaseSpeed;
         public float StoppingDistance => stoppingDistance;
+        public int Level => characterProfile != null ? characterProfile.Level : 1;
         public int ExperienceReward => experienceReward;
         public MMOLootTable LootTable => lootTable;
         public float LootedCorpseDespawnSeconds => lootedCorpseDespawnSeconds;

@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: razorcrag_supplies_03
   displayName: Charms of Challenge
-  minimumLevel: 1
+  questLevel: 5
+  minimumLevel: 3
   offeredByNpcId: scout_gorrek
   turnedInToNpcId: scout_gorrek
   prerequisiteQuests:
@@ -38,10 +39,11 @@ MonoBehaviour:
     consumeRequiredItemsOnTurnIn: 1
   startItems: []
   rewards:
-    experience: 95
+    experience: 540
     moneyCopper: 70
     guaranteedItems: []
     choiceItems:
     - {fileID: 11400000, guid: 8da82982c13966840b66b02cc0b9ea83, type: 2}
     - {fileID: 11400000, guid: e41139562aeb4034b8816b4663f76275, type: 2}
     - {fileID: 11400000, guid: c1cc0a9f3c2783c42aedeb673daff08f, type: 2}
+

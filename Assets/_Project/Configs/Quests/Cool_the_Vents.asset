@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: ember_watch_03
   displayName: Cool the Vents
-  minimumLevel: 1
+  questLevel: 6
+  minimumLevel: 4
   offeredByNpcId: canyon_scout_rakka
   turnedInToNpcId: canyon_scout_rakka
   prerequisiteQuests:
@@ -40,10 +41,11 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 3f79c4000cb3f99498c9a3d630ee603b, type: 2}
     quantity: 1
   rewards:
-    experience: 120
+    experience: 720
     moneyCopper: 95
     guaranteedItems: []
     choiceItems:
     - {fileID: 11400000, guid: 59e3098987740d44c85edce444e450f8, type: 2}
     - {fileID: 11400000, guid: 3d377abd44eaf11448105138510afa0f, type: 2}
     - {fileID: 11400000, guid: 6300c8f1e8e79344ab3f24b34fde5c0e, type: 2}
+

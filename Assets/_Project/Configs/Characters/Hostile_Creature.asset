@@ -33,3 +33,4 @@ MonoBehaviour:
     meleeAttackSpeed: 2.4
     meleeRange: 3
   selectable: 1
+

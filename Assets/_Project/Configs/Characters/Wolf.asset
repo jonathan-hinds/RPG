@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Wolf
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterProfile
   displayName: Wolf
-  level: 3
+  level: 2
   portrait: {fileID: 0}
   portraitTint: {r: 0.55, g: 0.62, b: 0.64, a: 1}
   maxHealth: 80
@@ -33,3 +33,4 @@ MonoBehaviour:
     meleeAttackSpeed: 2.1
     meleeRange: 2.8
   selectable: 1
+

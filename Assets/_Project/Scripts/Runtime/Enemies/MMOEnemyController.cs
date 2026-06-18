@@ -315,13 +315,13 @@ namespace RPGClone.Enemies
 
         private void AwardExperience()
         {
-            if (definition == null || definition.ExperienceReward <= 0 || lastDamageSource == null || lastDamageSource.Identity == null)
+            if (definition == null || lastDamageSource == null || lastDamageSource.Identity == null)
             {
                 return;
             }
 
             MMOExperienceComponent experience = lastDamageSource.Identity.GetComponent<MMOExperienceComponent>();
-            experience?.AddExperience(definition.ExperienceReward);
+            experience?.AddExperience(MMOExperienceScaling.CalculateMobExperience(definition, lastDamageSource.Identity));
         }
 
         private void BecomeCorpse()

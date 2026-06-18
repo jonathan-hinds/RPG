@@ -27,6 +27,14 @@ namespace RPGClone.Quests
         public IReadOnlyList<MMOQuestRuntimeState> ActiveQuests => activeQuests;
         public IReadOnlyList<MMOQuestDefinition> CompletedQuests => completedQuests;
         public MMOItemDefinition PendingUsableItem => pendingUsableItem;
+        public int PlayerLevel
+        {
+            get
+            {
+                ResolveReferences();
+                return identity != null ? identity.Level : 1;
+            }
+        }
 
         private void Awake()
         {
@@ -430,6 +438,16 @@ namespace RPGClone.Quests
             return quests;
         }
 
+        public int GetExperienceReward(MMOQuestDefinition quest)
+        {
+            if (quest == null || quest.Rewards == null)
+            {
+                return 0;
+            }
+
+            return MMOExperienceScaling.CalculateQuestExperience(quest.Rewards.Experience, PlayerLevel, quest.QuestLevel);
+        }
+
         public MMOQuestRuntimeState FindActiveState(MMOQuestDefinition quest)
         {
             foreach (MMOQuestRuntimeState state in activeQuests)
@@ -714,7 +732,8 @@ namespace RPGClone.Quests
 
             if (rewards.Experience > 0)
             {
-                experience?.AddExperience(rewards.Experience);
+                int scaledExperience = MMOExperienceScaling.CalculateQuestExperience(rewards.Experience, PlayerLevel, quest.QuestLevel);
+                experience?.AddExperience(scaledExperience);
             }
 
             if (rewards.MoneyCopper > 0)

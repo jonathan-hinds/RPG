@@ -27,4 +27,830 @@ MonoBehaviour:
     spellPower: 3
     meleeMinDamage: 0.05
     meleeMaxDamage: 0.1
-  levelOverrides: []
+  levelOverrides:
+  - level: 2
+    experienceRequired: 400
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 3
+    experienceRequired: 900
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 4
+    experienceRequired: 1400
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 5
+    experienceRequired: 2100
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 6
+    experienceRequired: 2800
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 7
+    experienceRequired: 3600
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 8
+    experienceRequired: 4500
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 9
+    experienceRequired: 5400
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 10
+    experienceRequired: 6500
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 11
+    experienceRequired: 7600
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 12
+    experienceRequired: 8800
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 13
+    experienceRequired: 10100
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 14
+    experienceRequired: 11400
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 15
+    experienceRequired: 12900
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 16
+    experienceRequired: 14400
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 17
+    experienceRequired: 16000
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 18
+    experienceRequired: 17700
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 19
+    experienceRequired: 19400
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 20
+    experienceRequired: 21300
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 21
+    experienceRequired: 23200
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 22
+    experienceRequired: 25200
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 23
+    experienceRequired: 27300
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 24
+    experienceRequired: 29400
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 25
+    experienceRequired: 31700
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 26
+    experienceRequired: 34000
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 27
+    experienceRequired: 36400
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 28
+    experienceRequired: 38900
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 29
+    experienceRequired: 41400
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 30
+    experienceRequired: 44300
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 31
+    experienceRequired: 47400
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 32
+    experienceRequired: 50800
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 33
+    experienceRequired: 54500
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 34
+    experienceRequired: 58600
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 35
+    experienceRequired: 62800
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 36
+    experienceRequired: 67100
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 37
+    experienceRequired: 71600
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 38
+    experienceRequired: 76100
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 39
+    experienceRequired: 80800
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 40
+    experienceRequired: 85700
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 41
+    experienceRequired: 90700
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 42
+    experienceRequired: 95800
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 43
+    experienceRequired: 101000
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 44
+    experienceRequired: 106300
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 45
+    experienceRequired: 111800
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 46
+    experienceRequired: 117500
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 47
+    experienceRequired: 123200
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 48
+    experienceRequired: 129100
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 49
+    experienceRequired: 135100
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 50
+    experienceRequired: 141200
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 51
+    experienceRequired: 147500
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 52
+    experienceRequired: 153900
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 53
+    experienceRequired: 160400
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 54
+    experienceRequired: 167100
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 55
+    experienceRequired: 173900
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 56
+    experienceRequired: 180800
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 57
+    experienceRequired: 187900
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 58
+    experienceRequired: 195000
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 59
+    experienceRequired: 202300
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0
+  - level: 60
+    experienceRequired: 209800
+    overrideStatGains: 0
+    statGains:
+      stamina: 0
+      strength: 0
+      agility: 0
+      intellect: 0
+      spirit: 0
+      armor: 0
+      attackPower: 0
+      spellPower: 0
+      meleeMinDamage: 0
+      meleeMaxDamage: 0

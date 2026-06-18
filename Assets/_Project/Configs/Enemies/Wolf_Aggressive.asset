@@ -27,9 +27,10 @@ MonoBehaviour:
   walkSpeed: 1.65
   chaseSpeed: 5.1
   stoppingDistance: 2.2
-  experienceReward: 50
+  experienceReward: 45
   lootTable: {fileID: 11400000, guid: 6e18903b7a4c24942945f314abb30910, type: 2}
   lootedCorpseDespawnSeconds: 2.5
   emptyCorpseDespawnSeconds: 6
   unlootedCorpseDespawnSeconds: 120
   respawnSeconds: 30
+

@@ -37,7 +37,7 @@ namespace RPGClone.Characters
         public MMOCharacterStatGrowth GetStatGainsForLevel(int newLevel)
         {
             MMOLevelProgressionOverride levelOverride = FindOverride(newLevel);
-            return levelOverride != null && levelOverride.StatGains != null
+            return levelOverride != null && levelOverride.HasStatGainsOverride && levelOverride.StatGains != null
                 ? levelOverride.StatGains
                 : defaultStatGainsPerLevel;
         }
@@ -78,10 +78,12 @@ namespace RPGClone.Characters
     {
         [SerializeField, Min(2)] private int level = 2;
         [SerializeField, Min(0)] private int experienceRequired;
+        [SerializeField] private bool overrideStatGains;
         [SerializeField] private MMOCharacterStatGrowth statGains;
 
         public int Level => level;
         public int ExperienceRequired => experienceRequired;
+        public bool HasStatGainsOverride => overrideStatGains;
         public MMOCharacterStatGrowth StatGains => statGains;
     }
 }

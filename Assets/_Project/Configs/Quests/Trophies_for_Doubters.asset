@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: warchiefs_mandate_02
   displayName: Trophies for Doubters
-  minimumLevel: 1
+  questLevel: 6
+  minimumLevel: 4
   offeredByNpcId: warchief_korga
   turnedInToNpcId: warchief_korga
   prerequisiteQuests:
@@ -38,7 +39,8 @@ MonoBehaviour:
     consumeRequiredItemsOnTurnIn: 1
   startItems: []
   rewards:
-    experience: 105
+    experience: 620
     moneyCopper: 85
     guaranteedItems: []
     choiceItems: []
+

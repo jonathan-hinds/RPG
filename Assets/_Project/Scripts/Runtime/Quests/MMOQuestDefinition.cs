@@ -10,6 +10,7 @@ namespace RPGClone.Quests
         [Header("Identity")]
         [SerializeField] private string questId = "quest";
         [SerializeField] private string displayName = "Quest";
+        [SerializeField, Min(1)] private int questLevel = 1;
         [SerializeField, Min(1)] private int minimumLevel = 1;
 
         [Header("NPC Routing")]
@@ -32,6 +33,7 @@ namespace RPGClone.Quests
 
         public string QuestId => string.IsNullOrWhiteSpace(questId) ? name : questId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? name : displayName;
+        public int QuestLevel => Mathf.Max(1, questLevel);
         public int MinimumLevel => Mathf.Max(1, minimumLevel);
         public string OfferedByNpcId => offeredByNpcId;
         public string TurnedInToNpcId => string.IsNullOrWhiteSpace(turnedInToNpcId) ? offeredByNpcId : turnedInToNpcId;
@@ -43,6 +45,38 @@ namespace RPGClone.Quests
         public IReadOnlyList<MMOQuestObjectiveDefinition> Objectives => objectives;
         public IReadOnlyList<MMOItemStack> StartItems => startItems;
         public MMOQuestRewardDefinition Rewards => rewards;
+
+        public void Configure(
+            string newQuestId,
+            string newDisplayName,
+            int newQuestLevel,
+            int newMinimumLevel,
+            string newOfferedByNpcId,
+            string newTurnedInToNpcId,
+            string newOfferText,
+            string newProgressText,
+            string newCompletionText,
+            string newObjectiveSummary,
+            IEnumerable<MMOQuestObjectiveDefinition> newObjectives,
+            MMOQuestRewardDefinition newRewards,
+            IEnumerable<MMOQuestDefinition> newPrerequisiteQuests = null,
+            IEnumerable<MMOItemStack> newStartItems = null)
+        {
+            questId = string.IsNullOrWhiteSpace(newQuestId) ? name : newQuestId.Trim();
+            displayName = string.IsNullOrWhiteSpace(newDisplayName) ? questId : newDisplayName;
+            questLevel = Mathf.Max(1, newQuestLevel);
+            minimumLevel = Mathf.Max(1, newMinimumLevel);
+            offeredByNpcId = newOfferedByNpcId;
+            turnedInToNpcId = string.IsNullOrWhiteSpace(newTurnedInToNpcId) ? newOfferedByNpcId : newTurnedInToNpcId;
+            offerText = newOfferText;
+            progressText = newProgressText;
+            completionText = newCompletionText;
+            objectiveSummary = newObjectiveSummary;
+            objectives = newObjectives != null ? new List<MMOQuestObjectiveDefinition>(newObjectives) : new List<MMOQuestObjectiveDefinition>();
+            rewards = newRewards ?? new MMOQuestRewardDefinition();
+            prerequisiteQuests = newPrerequisiteQuests != null ? new List<MMOQuestDefinition>(newPrerequisiteQuests) : new List<MMOQuestDefinition>();
+            startItems = newStartItems != null ? new List<MMOItemStack>(newStartItems) : new List<MMOItemStack>();
+        }
 
         public void Configure(
             string newQuestId,
@@ -59,19 +93,21 @@ namespace RPGClone.Quests
             IEnumerable<MMOQuestDefinition> newPrerequisiteQuests = null,
             IEnumerable<MMOItemStack> newStartItems = null)
         {
-            questId = string.IsNullOrWhiteSpace(newQuestId) ? name : newQuestId.Trim();
-            displayName = string.IsNullOrWhiteSpace(newDisplayName) ? questId : newDisplayName;
-            minimumLevel = Mathf.Max(1, newMinimumLevel);
-            offeredByNpcId = newOfferedByNpcId;
-            turnedInToNpcId = string.IsNullOrWhiteSpace(newTurnedInToNpcId) ? newOfferedByNpcId : newTurnedInToNpcId;
-            offerText = newOfferText;
-            progressText = newProgressText;
-            completionText = newCompletionText;
-            objectiveSummary = newObjectiveSummary;
-            objectives = newObjectives != null ? new List<MMOQuestObjectiveDefinition>(newObjectives) : new List<MMOQuestObjectiveDefinition>();
-            rewards = newRewards ?? new MMOQuestRewardDefinition();
-            prerequisiteQuests = newPrerequisiteQuests != null ? new List<MMOQuestDefinition>(newPrerequisiteQuests) : new List<MMOQuestDefinition>();
-            startItems = newStartItems != null ? new List<MMOItemStack>(newStartItems) : new List<MMOItemStack>();
+            Configure(
+                newQuestId,
+                newDisplayName,
+                newMinimumLevel,
+                newMinimumLevel,
+                newOfferedByNpcId,
+                newTurnedInToNpcId,
+                newOfferText,
+                newProgressText,
+                newCompletionText,
+                newObjectiveSummary,
+                newObjectives,
+                newRewards,
+                newPrerequisiteQuests,
+                newStartItems);
         }
     }
 }

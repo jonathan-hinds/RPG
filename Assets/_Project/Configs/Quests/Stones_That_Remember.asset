@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: ancestral_watch_01
   displayName: Stones That Remember
+  questLevel: 2
   minimumLevel: 1
   offeredByNpcId: seer_mahka
   turnedInToNpcId: seer_mahka
@@ -37,7 +38,8 @@ MonoBehaviour:
     consumeRequiredItemsOnTurnIn: 1
   startItems: []
   rewards:
-    experience: 60
+    experience: 180
     moneyCopper: 35
     guaranteedItems: []
     choiceItems: []
+

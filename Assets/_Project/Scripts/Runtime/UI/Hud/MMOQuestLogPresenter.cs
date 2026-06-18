@@ -151,8 +151,10 @@ namespace RPGClone.UI
             rect.sizeDelta = new Vector2(0f, 104f);
 
             Text name = MMOUiFactory.CreateText("Name", rect, 14, FontStyle.Bold, TextAnchor.UpperLeft);
-            name.text = questLog.IsReadyToTurnIn(state) ? $"{quest.DisplayName} (Complete)" : quest.DisplayName;
-            name.color = new Color(1f, 0.84f, 0.28f, 1f);
+            name.text = questLog.IsReadyToTurnIn(state)
+                ? $"{MMOExperienceScaling.FormatQuestTitle(quest)} (Complete)"
+                : MMOExperienceScaling.FormatQuestTitle(quest);
+            name.color = MMOExperienceScaling.GetDifficultyColor(questLog.PlayerLevel, quest.QuestLevel);
             name.rectTransform.anchorMin = new Vector2(0f, 1f);
             name.rectTransform.anchorMax = new Vector2(1f, 1f);
             name.rectTransform.pivot = new Vector2(0f, 1f);
