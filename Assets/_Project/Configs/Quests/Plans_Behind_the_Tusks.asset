@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: bristleback_battle_plans
   displayName: Plans Behind the Tusks
-  questLevel: 3
-  minimumLevel: 1
+  questLevel: 4
+  minimumLevel: 4
   offeredByNpcId: shieldguard_roka
   turnedInToNpcId: shieldguard_roka
   prerequisiteQuests: []

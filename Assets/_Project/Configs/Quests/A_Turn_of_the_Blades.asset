@@ -15,7 +15,7 @@ MonoBehaviour:
   questId: windmill_repair_weapons
   displayName: A Turn of the Blades
   questLevel: 4
-  minimumLevel: 2
+  minimumLevel: 4
   offeredByNpcId: millwright_torga
   turnedInToNpcId: millwright_torga
   prerequisiteQuests: []

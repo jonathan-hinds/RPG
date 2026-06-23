@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: ember_watch_02
   displayName: Cores in the Ash
-  questLevel: 5
+  questLevel: 3
   minimumLevel: 3
   offeredByNpcId: canyon_scout_rakka
   turnedInToNpcId: canyon_scout_rakka

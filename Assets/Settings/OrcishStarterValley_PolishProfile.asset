@@ -34,13 +34,13 @@ MonoBehaviour:
   active: 1
   shadows:
     m_OverrideState: 1
-    m_Value: {x: 0.88, y: 0.94, z: 1.08, w: 0}
+    m_Value: {x: 0.8148148, y: 0.87037027, z: 1, w: 0}
   midtones:
     m_OverrideState: 1
-    m_Value: {x: 1.02, y: 1, z: 0.96, w: 0}
+    m_Value: {x: 1, y: 0.98039216, z: 0.9411765, w: 0}
   highlights:
     m_OverrideState: 1
-    m_Value: {x: 1.08, y: 1.02, z: 0.9, w: 0}
+    m_Value: {x: 1, y: 0.9444444, z: 0.83333325, w: 0}
   shadowsStart:
     m_OverrideState: 1
     m_Value: 0
@@ -72,6 +72,7 @@ MonoBehaviour:
   - {fileID: -1007247562843652973}
   - {fileID: 6269951662179964467}
   - {fileID: 3872029666819267800}
+  - {fileID: 821698949097499829}
 --- !u!114 &213369545613309640
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -100,6 +101,22 @@ MonoBehaviour:
   saturation:
     m_OverrideState: 1
     m_Value: 10
+--- !u!114 &821698949097499829
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3081c66c7862d63428217aa5d6f1b8e5, type: 3}
+  m_Name: PixelationVolume
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Rendering.PixelationVolume
+  active: 1
+  pixelAmount:
+    m_OverrideState: 1
+    m_Value: 3
 --- !u!114 &3872029666819267800
 MonoBehaviour:
   m_ObjectHideFlags: 3

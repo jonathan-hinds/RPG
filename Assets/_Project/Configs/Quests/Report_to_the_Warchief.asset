@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: warchiefs_mandate_03
   displayName: Report to the Warchief
-  questLevel: 7
-  minimumLevel: 5
+  questLevel: 3
+  minimumLevel: 3
   offeredByNpcId: warchief_korga
   turnedInToNpcId: warchief_korga
   prerequisiteQuests:

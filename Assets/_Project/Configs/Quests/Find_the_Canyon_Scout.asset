@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: ember_watch_01
   displayName: Find the Canyon Scout
-  questLevel: 4
+  questLevel: 2
   minimumLevel: 2
   offeredByNpcId: warchief_korga
   turnedInToNpcId: canyon_scout_rakka

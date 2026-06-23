@@ -15,7 +15,7 @@ MonoBehaviour:
   questId: weapon_training_hunt
   displayName: Meat for the Weaponmaster
   questLevel: 3
-  minimumLevel: 1
+  minimumLevel: 3
   offeredByNpcId: huntmaster_krul
   turnedInToNpcId: huntmaster_krul
   prerequisiteQuests: []

@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: ancestral_watch_02
   displayName: Hammer the Line
-  questLevel: 3
-  minimumLevel: 2
+  questLevel: 1
+  minimumLevel: 1
   offeredByNpcId: seer_mahka
   turnedInToNpcId: seer_mahka
   prerequisiteQuests:

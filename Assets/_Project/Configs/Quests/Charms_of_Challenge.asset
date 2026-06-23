@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: razorcrag_supplies_03
   displayName: Charms of Challenge
-  questLevel: 5
-  minimumLevel: 3
+  questLevel: 2
+  minimumLevel: 2
   offeredByNpcId: scout_gorrek
   turnedInToNpcId: scout_gorrek
   prerequisiteQuests:

@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
   questId: ancestral_watch_03
   displayName: Words for the Warchief
-  questLevel: 4
-  minimumLevel: 2
+  questLevel: 1
+  minimumLevel: 1
   offeredByNpcId: seer_mahka
   turnedInToNpcId: warchief_korga
   prerequisiteQuests:
