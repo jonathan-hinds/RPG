@@ -19,6 +19,11 @@ MonoBehaviour:
   deceleration: 42
   keyboardTurnDegreesPerSecond: 150
   mouseFacingSharpness: 24
-  jumpHeight: 1.35
+  jumpHeight: 1.55
   gravity: 28
+  maxFallSpeed: 45
   groundedStickVelocity: -2
+  jumpInputBufferSeconds: 0.12
+  jumpCoyoteSeconds: 0.08
+  airAcceleration: 14
+  airDeceleration: 1.5

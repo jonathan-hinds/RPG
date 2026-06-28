@@ -13,6 +13,7 @@ namespace RPGClone.Animation
         public const string DeadParameter = "Dead";
 
         public const string IdlePlaceholderName = "MMO_Idle";
+        public const string WalkBackwardsPlaceholderName = "MMO_WalkBackwards";
         public const string WalkPlaceholderName = "MMO_Walk";
         public const string RunPlaceholderName = "MMO_Run";
         public const string Attack1PlaceholderName = "MMO_Attack1";

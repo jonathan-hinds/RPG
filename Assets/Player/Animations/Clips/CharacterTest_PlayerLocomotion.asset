@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef9cbaebe9e6cd745b058ba7d1d900d7, type: 3}
+  m_Name: CharacterTest_PlayerLocomotion
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Player.MMOPlayerLocomotionAnimationSet
+  baseController: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+  idle: {fileID: 7400000, guid: 028def45a350fae43bca21223ca45ee4, type: 2}
+  walkBackwards: {fileID: 7400000, guid: c3a979066e25fdc488dbf82f5eee9e52, type: 2}
+  walk: {fileID: 7400000, guid: bb867cc553ab11848ab9ac10038c50d1, type: 2}
+  run: {fileID: 7400000, guid: bb867cc553ab11848ab9ac10038c50d1, type: 2}
+  jumpStart: {fileID: 7400000, guid: c6bc9d3ee25ad52439e3c872764bfa5c, type: 2}
+  jumpEnd: {fileID: 7400000, guid: 3036f6f6b903be542ba42a5cb5cda138, type: 2}
+  backwardWalkSpeed: 4.1
+  walkSpeed: 1.45
+  runSpeed: 7.25
+  movementDampSeconds: 0.12
+  applyRootMotion: 0
+  modelYawOffsetDegrees: 0
+  movingLandingPlanarSpeedThreshold: 1.2
+  movingLandingHoldSeconds: 0.08
+  movingLandingTransitionSeconds: 0.12

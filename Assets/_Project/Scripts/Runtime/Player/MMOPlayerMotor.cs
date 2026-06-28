@@ -1,5 +1,6 @@
-using UnityEngine;
 using RPGClone.Characters;
+using System;
+using UnityEngine;
 
 namespace RPGClone.Player
 {
@@ -15,14 +16,34 @@ namespace RPGClone.Player
         private MMOCharacterIdentity identity;
         private Vector3 horizontalVelocity;
         private float verticalVelocity;
+        private bool isGrounded;
+        private bool wasGrounded;
+        private float lastGroundedTime = float.NegativeInfinity;
+        private float jumpBufferedUntil = float.NegativeInfinity;
 
         public float CurrentPlanarSpeed => new Vector2(horizontalVelocity.x, horizontalVelocity.z).magnitude;
+        public Vector3 CurrentPlanarVelocity => horizontalVelocity;
+        public float VerticalVelocity => verticalVelocity;
+        public bool IsGrounded => isGrounded;
+        public bool IsAirborne => !isGrounded;
+        public event Action Jumped;
+        public event Action Landed;
+        public Vector2 CurrentLocalPlanarVelocity
+        {
+            get
+            {
+                Vector3 localVelocity = transform.InverseTransformDirection(horizontalVelocity);
+                return new Vector2(localVelocity.x, localVelocity.z);
+            }
+        }
 
         private void Awake()
         {
             characterController = GetComponent<CharacterController>();
             inputReader = GetComponent<MMOInputReader>();
             identity = GetComponent<MMOCharacterIdentity>();
+            isGrounded = characterController.isGrounded;
+            wasGrounded = isGrounded;
         }
 
         private void Start()
@@ -43,13 +64,25 @@ namespace RPGClone.Player
                 return;
             }
 
+            if (input.JumpPressed)
+            {
+                jumpBufferedUntil = Time.time + config.jumpInputBufferSeconds;
+            }
+
+            bool groundedForMovement = isGrounded || characterController.isGrounded;
+            if (groundedForMovement)
+            {
+                lastGroundedTime = Time.time;
+            }
+
             UpdateFacing(input, config);
-            UpdateHorizontalVelocity(input, config);
-            UpdateVerticalVelocity(input, config);
+            UpdateHorizontalVelocity(input, config, groundedForMovement);
+            UpdateVerticalVelocity(config, groundedForMovement);
 
             Vector3 motion = horizontalVelocity;
             motion.y = verticalVelocity;
-            characterController.Move(motion * Time.deltaTime);
+            CollisionFlags collisionFlags = characterController.Move(motion * Time.deltaTime);
+            UpdateGrounding(collisionFlags);
         }
 
         private void UpdateFacing(MMOInputState input, MMOPlayerMovementConfig config)
@@ -70,7 +103,7 @@ namespace RPGClone.Player
             }
         }
 
-        private void UpdateHorizontalVelocity(MMOInputState input, MMOPlayerMovementConfig config)
+        private void UpdateHorizontalVelocity(MMOInputState input, MMOPlayerMovementConfig config, bool groundedForMovement)
         {
             Vector3 desiredVelocity = Vector3.zero;
 
@@ -86,8 +119,8 @@ namespace RPGClone.Player
             }
 
             float moveRate = desiredVelocity.sqrMagnitude > horizontalVelocity.sqrMagnitude
-                ? config.acceleration
-                : config.deceleration;
+                ? (groundedForMovement ? config.acceleration : config.airAcceleration)
+                : (groundedForMovement ? config.deceleration : config.airDeceleration);
 
             horizontalVelocity = Vector3.MoveTowards(
                 horizontalVelocity,
@@ -95,19 +128,50 @@ namespace RPGClone.Player
                 moveRate * Time.deltaTime);
         }
 
-        private void UpdateVerticalVelocity(MMOInputState input, MMOPlayerMovementConfig config)
+        private void UpdateVerticalVelocity(MMOPlayerMovementConfig config, bool groundedForMovement)
         {
-            if (characterController.isGrounded && verticalVelocity < 0f)
+            if (groundedForMovement && verticalVelocity < 0f)
             {
                 verticalVelocity = config.groundedStickVelocity;
             }
 
-            if (characterController.isGrounded && input.JumpPressed)
+            if (Time.time <= jumpBufferedUntil && Time.time <= lastGroundedTime + config.jumpCoyoteSeconds)
             {
                 verticalVelocity = Mathf.Sqrt(2f * config.gravity * config.jumpHeight);
+                jumpBufferedUntil = float.NegativeInfinity;
+                isGrounded = false;
+                Jumped?.Invoke();
             }
 
             verticalVelocity -= config.gravity * Time.deltaTime;
+            verticalVelocity = Mathf.Max(verticalVelocity, -config.maxFallSpeed);
+        }
+
+        private void UpdateGrounding(CollisionFlags collisionFlags)
+        {
+            wasGrounded = isGrounded;
+            isGrounded = (collisionFlags & CollisionFlags.Below) != 0;
+
+            if ((collisionFlags & CollisionFlags.Above) != 0 && verticalVelocity > 0f)
+            {
+                verticalVelocity = 0f;
+            }
+
+            if (isGrounded)
+            {
+                lastGroundedTime = Time.time;
+                if (verticalVelocity < 0f)
+                {
+                    verticalVelocity = movementConfig != null
+                        ? movementConfig.groundedStickVelocity
+                        : -2f;
+                }
+
+                if (!wasGrounded)
+                {
+                    Landed?.Invoke();
+                }
+            }
         }
 
         private float GetMovementSpeedMultiplier()

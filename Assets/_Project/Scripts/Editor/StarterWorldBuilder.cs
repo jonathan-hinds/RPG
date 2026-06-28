@@ -146,9 +146,14 @@ namespace RPGClone.EditorTools
             config.deceleration = 42f;
             config.keyboardTurnDegreesPerSecond = 150f;
             config.mouseFacingSharpness = 24f;
-            config.jumpHeight = 1.35f;
+            config.jumpHeight = 1.55f;
             config.gravity = 28f;
+            config.maxFallSpeed = 45f;
             config.groundedStickVelocity = -2f;
+            config.jumpInputBufferSeconds = 0.12f;
+            config.jumpCoyoteSeconds = 0.08f;
+            config.airAcceleration = 14f;
+            config.airDeceleration = 1.5f;
             EditorUtility.SetDirty(config);
             return config;
         }

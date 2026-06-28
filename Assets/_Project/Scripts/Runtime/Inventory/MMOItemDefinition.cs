@@ -27,6 +27,7 @@ namespace RPGClone.Inventory
         [SerializeField] private MMOEquipmentSlotType equipmentSlot = MMOEquipmentSlotType.Chest;
         [SerializeField] private MMOArmorWeight armorWeight = MMOArmorWeight.Cloth;
         [SerializeField] private MMOCharacterStats statBonuses = new();
+        [SerializeField] private MMOEquipmentVisualDefinition equipmentVisual;
         [Header("Weapon And Shield")]
         [SerializeField] private MMOWeaponType weaponType = MMOWeaponType.None;
         [SerializeField, Min(0f)] private float weaponMinDamage;
@@ -52,6 +53,7 @@ namespace RPGClone.Inventory
         public MMOEquipmentSlotType EquipmentSlot => equipmentSlot;
         public MMOArmorWeight ArmorWeight => armorWeight;
         public MMOCharacterStats StatBonuses => statBonuses;
+        public MMOEquipmentVisualDefinition EquipmentVisual => equipmentVisual;
         public MMOWeaponType WeaponType => weaponType;
         public float WeaponMinDamage => Mathf.Max(0f, weaponMinDamage);
         public float WeaponMaxDamage => Mathf.Max(WeaponMinDamage, weaponMaxDamage);

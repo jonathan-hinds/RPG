@@ -1,0 +1,60 @@
+using RPGClone.Inventory;
+using UnityEngine;
+
+namespace RPGClone.Characters
+{
+    [CreateAssetMenu(menuName = "RPG Clone/Characters/Equipment Visual", fileName = "EquipmentVisual")]
+    public sealed class MMOEquipmentVisualDefinition : ScriptableObject
+    {
+        [Header("Binding")]
+        [SerializeField] private MMOEquipmentSlotType equipmentSlot = MMOEquipmentSlotType.Chest;
+        [SerializeField] private MMOCharacterBodyPart bodyPart = MMOCharacterBodyPart.Torso;
+        [SerializeField] private bool hideBaseBodyPart = true;
+
+        [Header("Replacement")]
+        [SerializeField] private GameObject modelPrefab;
+        [SerializeField] private Material materialOverride;
+        [SerializeField] private Texture2D diffuseTexture;
+        [SerializeField] private Texture2D normalTexture;
+
+        [Header("Placement")]
+        [SerializeField] private Vector3 localPosition;
+        [SerializeField] private Vector3 localEulerAngles;
+        [SerializeField] private Vector3 localScale = Vector3.one;
+
+        public MMOEquipmentSlotType EquipmentSlot => equipmentSlot;
+        public MMOCharacterBodyPart BodyPart => bodyPart;
+        public bool HideBaseBodyPart => hideBaseBodyPart;
+        public GameObject ModelPrefab => modelPrefab;
+        public Material MaterialOverride => materialOverride;
+        public Texture2D DiffuseTexture => diffuseTexture;
+        public Texture2D NormalTexture => normalTexture;
+        public Vector3 LocalPosition => localPosition;
+        public Vector3 LocalEulerAngles => localEulerAngles;
+        public Vector3 LocalScale => localScale == Vector3.zero ? Vector3.one : localScale;
+
+        public void Configure(
+            MMOEquipmentSlotType newEquipmentSlot,
+            MMOCharacterBodyPart newBodyPart,
+            bool newHideBaseBodyPart,
+            GameObject newModelPrefab,
+            Material newMaterialOverride,
+            Texture2D newDiffuseTexture,
+            Texture2D newNormalTexture,
+            Vector3 newLocalPosition,
+            Vector3 newLocalEulerAngles,
+            Vector3 newLocalScale)
+        {
+            equipmentSlot = newEquipmentSlot;
+            bodyPart = newBodyPart;
+            hideBaseBodyPart = newHideBaseBodyPart;
+            modelPrefab = newModelPrefab;
+            materialOverride = newMaterialOverride;
+            diffuseTexture = newDiffuseTexture;
+            normalTexture = newNormalTexture;
+            localPosition = newLocalPosition;
+            localEulerAngles = newLocalEulerAngles;
+            localScale = newLocalScale == Vector3.zero ? Vector3.one : newLocalScale;
+        }
+    }
+}
