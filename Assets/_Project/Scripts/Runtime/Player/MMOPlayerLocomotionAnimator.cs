@@ -147,6 +147,7 @@ namespace RPGClone.Player
         private AnimatorOverrideController overrideController;
         private AnimationClip idleOverride;
         private AnimationClip combatIdleOverride;
+        private MMOPlayerCombatAnimationSet combatAnimationOverrideSet;
         private float currentVisualYaw;
         private float movingLandingReturnTime = float.PositiveInfinity;
 
@@ -256,6 +257,17 @@ namespace RPGClone.Player
             }
 
             combatIdleOverride = newCombatIdleOverride;
+            ApplyClipOverrides();
+        }
+
+        public void SetCombatAnimationOverrideSet(MMOPlayerCombatAnimationSet newCombatAnimationOverrideSet)
+        {
+            if (combatAnimationOverrideSet == newCombatAnimationOverrideSet)
+            {
+                return;
+            }
+
+            combatAnimationOverrideSet = newCombatAnimationOverrideSet;
             ApplyClipOverrides();
         }
 
@@ -464,10 +476,9 @@ namespace RPGClone.Player
             for (int i = 0; i < clipOverrides.Count; i++)
             {
                 AnimationClip replacement = GetReplacementClip(clipOverrides[i].Key);
-                if (replacement != null)
-                {
-                    clipOverrides[i] = new KeyValuePair<AnimationClip, AnimationClip>(clipOverrides[i].Key, replacement);
-                }
+                clipOverrides[i] = new KeyValuePair<AnimationClip, AnimationClip>(
+                    clipOverrides[i].Key,
+                    replacement != null ? replacement : clipOverrides[i].Key);
             }
 
             overrideController.ApplyOverrides(clipOverrides);
@@ -487,6 +498,14 @@ namespace RPGClone.Player
                 && combatIdleOverride != null)
             {
                 return combatIdleOverride;
+            }
+
+            AnimationClip combatReplacement = combatAnimationOverrideSet != null
+                ? combatAnimationOverrideSet.GetReplacementClip(placeholder)
+                : null;
+            if (combatReplacement != null)
+            {
+                return combatReplacement;
             }
 
             return animationSet.GetReplacementClip(placeholder);

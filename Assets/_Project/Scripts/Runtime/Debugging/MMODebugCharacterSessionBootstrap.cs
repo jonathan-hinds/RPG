@@ -8,8 +8,7 @@ namespace RPGClone.Debugging
     {
         private const string DebugCharacterId = "debug-default-player";
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void EnsureDefaultCharacterSession()
+        public static void SelectDefaultDebugCharacter()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (MMOCharacterSession.HasSelectedCharacter)

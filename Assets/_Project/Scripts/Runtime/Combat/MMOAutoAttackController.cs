@@ -26,10 +26,12 @@ namespace RPGClone.Combat
 
         private MMOAbilitySystem abilitySystem;
         private MMOCombatant combatant;
+        private IMMOAutoAttackPresentation attackPresentation;
         private MMOCharacterIdentity currentTarget;
         private float nextSwingTime;
         private float currentSwingDuration = 2f;
         private bool hasSwingTimer;
+        private bool swingWindupStarted;
 
         public MMOAbilityDefinition AutoAttackAbility => autoAttackAbility;
         public MMOCharacterIdentity CurrentTarget => currentTarget;
@@ -116,11 +118,12 @@ namespace RPGClone.Combat
                 ScheduleNextSwing();
             }
 
-            float effectiveRange = combatant.Identity.Stats != null ? combatant.Identity.Stats.MeleeRange : autoAttackAbility.Range;
+            float effectiveRange = GetEffectiveAttackRange();
             if (!abilitySystem.IsInRange(target, effectiveRange))
             {
                 abilitySystem.TryUseAbility(autoAttackAbility, target, out _);
                 nextSwingTime = Time.time + failedAttemptRetrySeconds;
+                swingWindupStarted = false;
             }
 
             return true;
@@ -131,6 +134,7 @@ namespace RPGClone.Combat
             MMOCombatant targetCombatant = currentTarget != null ? currentTarget.GetComponent<MMOCombatant>() : null;
             combatant?.DisengageCombatWith(targetCombatant);
             currentTarget = null;
+            swingWindupStarted = false;
         }
 
         public float GetAutoAttackCooldownRemaining()
@@ -195,6 +199,8 @@ namespace RPGClone.Combat
 
             FaceCurrentTarget();
 
+            TryStartSwingWindup();
+
             if (Time.time < nextSwingTime)
             {
                 return;
@@ -203,6 +209,7 @@ namespace RPGClone.Combat
             if (!abilitySystem.TryUseAbility(autoAttackAbility, currentTarget, out _))
             {
                 nextSwingTime = Time.time + failedAttemptRetrySeconds;
+                swingWindupStarted = false;
                 return;
             }
 
@@ -210,6 +217,7 @@ namespace RPGClone.Combat
             currentSwingDuration = Mathf.Max(0.1f, currentSwingDuration);
             nextSwingTime = Time.time + currentSwingDuration;
             hasSwingTimer = true;
+            swingWindupStarted = false;
         }
 
         private void ScheduleNextSwing()
@@ -220,6 +228,47 @@ namespace RPGClone.Combat
             currentSwingDuration = Mathf.Max(0.1f, currentSwingDuration);
             nextSwingTime = Time.time + currentSwingDuration;
             hasSwingTimer = true;
+            swingWindupStarted = false;
+        }
+
+        private void TryStartSwingWindup()
+        {
+            if (swingWindupStarted || currentTarget == null || autoAttackAbility == null)
+            {
+                return;
+            }
+
+            if (abilitySystem == null || !abilitySystem.IsInRange(currentTarget, GetEffectiveAttackRange()))
+            {
+                return;
+            }
+
+            float leadSeconds = attackPresentation != null
+                ? attackPresentation.GetAutoAttackLeadSeconds(currentSwingDuration)
+                : 0f;
+            leadSeconds = Mathf.Clamp(leadSeconds, 0f, currentSwingDuration);
+            if (Time.time < nextSwingTime - leadSeconds)
+            {
+                return;
+            }
+
+            swingWindupStarted = true;
+            attackPresentation?.NotifyAutoAttackWindup(
+                this,
+                autoAttackAbility,
+                currentTarget,
+                currentSwingDuration,
+                nextSwingTime);
+        }
+
+        private float GetEffectiveAttackRange()
+        {
+            if (combatant != null && combatant.Identity != null && combatant.Identity.Stats != null)
+            {
+                return combatant.Identity.Stats.MeleeRange;
+            }
+
+            return autoAttackAbility != null ? autoAttackAbility.Range : 0f;
         }
 
         private void FaceCurrentTarget()
@@ -271,6 +320,11 @@ namespace RPGClone.Combat
             if (combatant == null)
             {
                 combatant = GetComponent<MMOCombatant>();
+            }
+
+            if (attackPresentation == null)
+            {
+                attackPresentation = GetComponent<IMMOAutoAttackPresentation>();
             }
         }
     }
