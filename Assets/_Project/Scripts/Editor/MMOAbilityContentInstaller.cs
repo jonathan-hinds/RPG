@@ -61,6 +61,7 @@ namespace RPGClone.EditorTools
                 6f,
                 MMOAbilityAreaTargetFilter.Hostile,
                 new[] { damage, attackSpeedDebuff });
+            ability.SetAnimationStyle(MMOAbilityAnimationStyle.WeaponAttack);
             EditorUtility.SetDirty(ability);
             return ability;
         }
@@ -90,6 +91,7 @@ namespace RPGClone.EditorTools
                 5f,
                 MMOAbilityAreaTargetFilter.Hostile,
                 new[] { impact, burning });
+            ability.SetAnimationStyle(MMOAbilityAnimationStyle.SpellCast);
             EditorUtility.SetDirty(ability);
             return ability;
         }
@@ -117,6 +119,7 @@ namespace RPGClone.EditorTools
                 false,
                 false,
                 new[] { damage, snare });
+            ability.SetAnimationStyle(MMOAbilityAnimationStyle.SpellCast);
             EditorUtility.SetDirty(ability);
             return ability;
         }
@@ -148,6 +151,7 @@ namespace RPGClone.EditorTools
                 0f,
                 MMOAbilityAreaTargetFilter.Hostile,
                 new[] { strike, bleed });
+            ability.SetAnimationStyle(MMOAbilityAnimationStyle.WeaponAttack);
             EditorUtility.SetDirty(ability);
             return ability;
         }
@@ -176,6 +180,7 @@ namespace RPGClone.EditorTools
                 0f,
                 MMOAbilityAreaTargetFilter.Hostile,
                 new[] { arcaneDamage });
+            ability.SetAnimationStyle(MMOAbilityAnimationStyle.SpellCast);
             EditorUtility.SetDirty(ability);
             return ability;
         }
@@ -204,6 +209,7 @@ namespace RPGClone.EditorTools
                 6f,
                 MMOAbilityAreaTargetFilter.Hostile,
                 new[] { damage });
+            ability.SetAnimationStyle(MMOAbilityAnimationStyle.SpellCast);
             EditorUtility.SetDirty(ability);
             return ability;
         }

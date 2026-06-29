@@ -30,6 +30,9 @@ namespace RPGClone.Abilities
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity, float> CastProgressed;
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity, string> CastInterrupted;
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity> CastCompleted;
+        public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity> ChargeStarted;
+        public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity, float> ChargeImpactStarted;
+        public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity> ChargeCompleted;
         public event Action<MMOAbilitySystem, MMOAbilityDefinition> AbilityLearned;
 
         public IReadOnlyList<MMOAbilityDefinition> KnownAbilities => startingAbilities;
@@ -233,9 +236,11 @@ namespace RPGClone.Abilities
 
             SpendResourceCost(ability);
             StartCooldown(ability);
+            combatant.EngageCombatWith(targetCombatant);
 
             activeCharge = new ActiveCharge(ability, resolvedTarget, targetCombatant, chargeEffect, pathCorners);
             StartCoroutine(RunCharge(activeCharge));
+            ChargeStarted?.Invoke(this, ability, resolvedTarget);
             AbilityUsed?.Invoke(this, ability, resolvedTarget);
             failureReason = string.Empty;
             return true;
@@ -634,8 +639,19 @@ namespace RPGClone.Abilities
 
             if (activeCharge == charge && charge.TargetCombatant != null && charge.TargetCombatant.IsAlive && IsInRange(charge.Target, charge.Effect.ChargeStopDistance + 0.25f))
             {
-                int amount = charge.Effect.CalculateAmount(identity);
-                charge.TargetCombatant.ApplyDamage(combatant, charge.Ability, amount);
+                float impactDelaySeconds = charge.Effect.ChargeImpactDelaySeconds;
+                ChargeImpactStarted?.Invoke(this, charge.Ability, charge.Target, impactDelaySeconds);
+                if (impactDelaySeconds > 0f)
+                {
+                    yield return new WaitForSeconds(impactDelaySeconds);
+                }
+
+                if (activeCharge == charge && charge.TargetCombatant != null && charge.TargetCombatant.IsAlive)
+                {
+                    int amount = charge.Effect.CalculateAmount(identity);
+                    charge.TargetCombatant.ApplyDamage(combatant, charge.Ability, amount);
+                    ChargeCompleted?.Invoke(this, charge.Ability, charge.Target);
+                }
             }
 
             if (restorePlayerMotor && playerMotor != null)

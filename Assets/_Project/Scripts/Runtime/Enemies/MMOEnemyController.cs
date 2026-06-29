@@ -259,6 +259,8 @@ namespace RPGClone.Enemies
             }
 
             currentTarget = target;
+            MMOCombatant targetCombatant = target.GetComponent<MMOCombatant>();
+            combatant.EngageCombatWith(targetCombatant);
             waitingAtRoamPoint = false;
             nextRoamDecisionTime = 0f;
             nextChaseRepathTime = 0f;
@@ -270,8 +272,10 @@ namespace RPGClone.Enemies
 
         private void ClearCombat(bool leashReset)
         {
+            MMOCombatant targetCombatant = currentTarget != null ? currentTarget.GetComponent<MMOCombatant>() : null;
             currentTarget = null;
             autoAttackController.StopAutoAttack();
+            combatant.DisengageCombatWith(targetCombatant);
 
             if (resetResourcesOnLeash && leashReset)
             {

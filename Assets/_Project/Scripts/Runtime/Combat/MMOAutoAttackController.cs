@@ -28,11 +28,15 @@ namespace RPGClone.Combat
         private MMOCombatant combatant;
         private MMOCharacterIdentity currentTarget;
         private float nextSwingTime;
+        private float currentSwingDuration = 2f;
         private bool hasSwingTimer;
 
         public MMOAbilityDefinition AutoAttackAbility => autoAttackAbility;
         public MMOCharacterIdentity CurrentTarget => currentTarget;
         public bool IsAutoAttacking => currentTarget != null;
+        public bool HasActiveSwingTimer => hasSwingTimer && currentTarget != null;
+        public float NextSwingTime => nextSwingTime;
+        public float CurrentSwingDuration => Mathf.Max(0.1f, currentSwingDuration);
 
         private void Awake()
         {
@@ -106,6 +110,7 @@ namespace RPGClone.Combat
             }
 
             currentTarget = target;
+            combatant.EngageCombatWith(targetCombatant);
             if (!hasSwingTimer || nextSwingTime <= Time.time)
             {
                 ScheduleNextSwing();
@@ -123,6 +128,8 @@ namespace RPGClone.Combat
 
         public void StopAutoAttack()
         {
+            MMOCombatant targetCombatant = currentTarget != null ? currentTarget.GetComponent<MMOCombatant>() : null;
+            combatant?.DisengageCombatWith(targetCombatant);
             currentTarget = null;
         }
 
@@ -199,17 +206,19 @@ namespace RPGClone.Combat
                 return;
             }
 
-            float swingDelay = combatant.Identity.Stats != null ? MMOCombatResolver.GetAttackSpeed(combatant.Identity) : 2f;
-            nextSwingTime = Time.time + Mathf.Max(0.1f, swingDelay);
+            currentSwingDuration = combatant.Identity.Stats != null ? MMOCombatResolver.GetAttackSpeed(combatant.Identity) : 2f;
+            currentSwingDuration = Mathf.Max(0.1f, currentSwingDuration);
+            nextSwingTime = Time.time + currentSwingDuration;
             hasSwingTimer = true;
         }
 
         private void ScheduleNextSwing()
         {
-            float swingDelay = combatant != null && combatant.Identity != null && combatant.Identity.Stats != null
+            currentSwingDuration = combatant != null && combatant.Identity != null && combatant.Identity.Stats != null
                 ? MMOCombatResolver.GetAttackSpeed(combatant.Identity)
                 : 2f;
-            nextSwingTime = Time.time + Mathf.Max(0.1f, swingDelay);
+            currentSwingDuration = Mathf.Max(0.1f, currentSwingDuration);
+            nextSwingTime = Time.time + currentSwingDuration;
             hasSwingTimer = true;
         }
 

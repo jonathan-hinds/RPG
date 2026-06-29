@@ -43,4 +43,13 @@ namespace RPGClone.Abilities
         Friendly = 1,
         AnyCharacter = 2
     }
+
+    public enum MMOAbilityAnimationStyle
+    {
+        Automatic = 0,
+        None = 1,
+        WeaponAttack = 2,
+        SpellCast = 3,
+        Charge = 4
+    }
 }

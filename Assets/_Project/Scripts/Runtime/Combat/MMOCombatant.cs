@@ -12,7 +12,12 @@ namespace RPGClone.Combat
     {
         private static readonly HashSet<MMOCombatant> ActiveCombatantSet = new();
 
+        [SerializeField, Min(0.1f)] private float combatDropDelaySeconds = 5f;
+
+        private readonly HashSet<MMOCombatant> combatOpponents = new();
         private MMOCharacterIdentity identity;
+        private float lastCombatActivityTime = float.NegativeInfinity;
+        private bool inCombat;
 
         public static event Action<MMOCombatant> CombatantEnabled;
         public static event Action<MMOCombatant> CombatantDisabled;
@@ -24,7 +29,9 @@ namespace RPGClone.Combat
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> Blocked;
         public event Action<MMOCombatant> Died;
         public event Action<MMOCombatant> CombatActivity;
+        public event Action<MMOCombatant, bool> CombatStateChanged;
         public static IReadOnlyCollection<MMOCombatant> ActiveCombatants => ActiveCombatantSet;
+        public bool IsInCombat => inCombat;
 
         public MMOCharacterIdentity Identity
         {
@@ -60,9 +67,30 @@ namespace RPGClone.Combat
 
         private void OnDisable()
         {
+            ForceLeaveCombat();
             if (ActiveCombatantSet.Remove(this))
             {
                 CombatantDisabled?.Invoke(this);
+            }
+        }
+
+        private void Update()
+        {
+            if (!inCombat)
+            {
+                return;
+            }
+
+            if (!IsAlive)
+            {
+                ForceLeaveCombat();
+                return;
+            }
+
+            PruneCombatOpponents();
+            if (combatOpponents.Count == 0 && Time.time - lastCombatActivityTime >= combatDropDelaySeconds)
+            {
+                SetInCombat(false);
             }
         }
 
@@ -83,8 +111,8 @@ namespace RPGClone.Combat
             int absorbedAmount = buffController != null ? buffController.AbsorbDamageAsMana(mitigatedAmount) : 0;
             int appliedAmount = Mathf.Max(0, mitigatedAmount - absorbedAmount);
             identity.Health.SetCurrent(identity.Health.CurrentValue - appliedAmount);
-            source?.CombatActivity?.Invoke(source);
-            CombatActivity?.Invoke(this);
+            source?.RegisterCombatActivity(this);
+            RegisterCombatActivity(source);
             Damaged?.Invoke(source, this, ability, appliedAmount);
             if (isCritical && appliedAmount > 0)
             {
@@ -94,14 +122,15 @@ namespace RPGClone.Combat
 
             if (identity.Health.CurrentValue <= 0)
             {
+                ForceLeaveCombat();
                 Died?.Invoke(this);
             }
         }
 
         public void NotifyMiss(MMOCombatant source, MMOAbilityDefinition ability)
         {
-            source?.CombatActivity?.Invoke(source);
-            CombatActivity?.Invoke(this);
+            source?.RegisterCombatActivity(this);
+            RegisterCombatActivity(source);
             Missed?.Invoke(source, this, ability);
         }
 
@@ -131,6 +160,83 @@ namespace RPGClone.Combat
 
             identity.Health.SetCurrent(identity.Health.CurrentValue + appliedAmount);
             Healed?.Invoke(source, this, ability, appliedAmount);
+        }
+
+        public void RegisterCombatActivity(MMOCombatant opponent = null)
+        {
+            lastCombatActivityTime = Time.time;
+            AddCombatOpponent(opponent);
+            SetInCombat(true);
+            CombatActivity?.Invoke(this);
+        }
+
+        public void EngageCombatWith(MMOCombatant opponent)
+        {
+            if (opponent == null || opponent == this)
+            {
+                RegisterCombatActivity();
+                return;
+            }
+
+            RegisterCombatActivity(opponent);
+            opponent.RegisterCombatActivity(this);
+        }
+
+        public void DisengageCombatWith(MMOCombatant opponent)
+        {
+            if (opponent == null)
+            {
+                return;
+            }
+
+            combatOpponents.Remove(opponent);
+            opponent.combatOpponents.Remove(this);
+            lastCombatActivityTime = Time.time;
+            opponent.lastCombatActivityTime = Time.time;
+        }
+
+        private void AddCombatOpponent(MMOCombatant opponent)
+        {
+            if (opponent == null || opponent == this || !opponent.IsAlive)
+            {
+                return;
+            }
+
+            combatOpponents.Add(opponent);
+        }
+
+        private void PruneCombatOpponents()
+        {
+            combatOpponents.RemoveWhere(opponent => opponent == null || !opponent.IsAlive || !opponent.isActiveAndEnabled);
+        }
+
+        private void ForceLeaveCombat()
+        {
+            if (combatOpponents.Count > 0)
+            {
+                foreach (MMOCombatant opponent in combatOpponents)
+                {
+                    if (opponent != null)
+                    {
+                        opponent.combatOpponents.Remove(this);
+                    }
+                }
+
+                combatOpponents.Clear();
+            }
+
+            SetInCombat(false);
+        }
+
+        private void SetInCombat(bool value)
+        {
+            if (inCombat == value)
+            {
+                return;
+            }
+
+            inCombat = value;
+            CombatStateChanged?.Invoke(this, inCombat);
         }
 
         private int CalculatePhysicalMitigation(int amount)

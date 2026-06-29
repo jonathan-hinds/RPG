@@ -25,6 +25,7 @@ namespace RPGClone.Abilities
         [SerializeField, Min(1)] private int stackLimit = 1;
         [SerializeField, Min(0.1f)] private float chargeSpeed = 18f;
         [SerializeField, Min(0.1f)] private float chargeStopDistance = 2.5f;
+        [SerializeField, Min(0f)] private float chargeImpactDelaySeconds = 0.18f;
 
         public MMOAbilityEffectType EffectType => effectType;
         public MMOAbilityAmountSource AmountSource => amountSource;
@@ -44,6 +45,7 @@ namespace RPGClone.Abilities
         public int StackLimit => Mathf.Max(1, stackLimit);
         public float ChargeSpeed => Mathf.Max(0.1f, chargeSpeed);
         public float ChargeStopDistance => Mathf.Max(0.1f, chargeStopDistance);
+        public float ChargeImpactDelaySeconds => Mathf.Max(0f, chargeImpactDelaySeconds);
 
         public int CalculateAmount(MMOCharacterIdentity caster)
         {
@@ -182,9 +184,29 @@ namespace RPGClone.Abilities
             float newFlatAmount,
             float newCoefficient)
         {
+            ConfigureCharge(
+                newSpeed,
+                newStopDistance,
+                newAmountSource,
+                newDamageSchool,
+                newFlatAmount,
+                newCoefficient,
+                chargeImpactDelaySeconds);
+        }
+
+        public void ConfigureCharge(
+            float newSpeed,
+            float newStopDistance,
+            MMOAbilityAmountSource newAmountSource,
+            MMODamageSchool newDamageSchool,
+            float newFlatAmount,
+            float newCoefficient,
+            float newImpactDelaySeconds)
+        {
             Configure(MMOAbilityEffectType.Charge, newAmountSource, newDamageSchool, newFlatAmount, newCoefficient);
             chargeSpeed = Mathf.Max(0.1f, newSpeed);
             chargeStopDistance = Mathf.Max(0.1f, newStopDistance);
+            chargeImpactDelaySeconds = Mathf.Max(0f, newImpactDelaySeconds);
         }
     }
 }

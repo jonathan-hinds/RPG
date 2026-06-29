@@ -21,8 +21,18 @@ namespace RPGClone.EditorTools
         private const string BaseControllerPath = "Assets/_Project/Animations/Creatures/MMOCreatureBase.controller";
         private const string AnimationClipFolder = "Assets/Player/Animations/Clips";
         private const string AnimationSetPath = AnimationClipFolder + "/CharacterTest_PlayerLocomotion.asset";
+        private const string CombatAnimationSetPath = AnimationClipFolder + "/CharacterTest_PlayerCombat.asset";
+        private const string UpperBodyMaskPath = AnimationClipFolder + "/CharacterTest_UpperBody.mask";
         private const string JumpStartPlaceholderPath = "Assets/_Project/Animations/Creatures/MMO_JumpStart.anim";
         private const string JumpEndPlaceholderPath = "Assets/_Project/Animations/Creatures/MMO_JumpEnd.anim";
+        private const string CombatIdlePlaceholderPath = "Assets/_Project/Animations/Creatures/MMO_CombatIdle.anim";
+        private const string OneHandAttackPlaceholderPath = "Assets/_Project/Animations/Creatures/MMO_Attack1H.anim";
+        private const string TwoHandAttackPlaceholderPath = "Assets/_Project/Animations/Creatures/MMO_Attack2H.anim";
+        private const string UnarmedAttackPlaceholderPath = "Assets/_Project/Animations/Creatures/MMO_AttackUnarmed.anim";
+        private const string CombatDamagePlaceholderPath = "Assets/_Project/Animations/Creatures/MMO_CombatDamage.anim";
+        private const string CastingPlaceholderPath = "Assets/_Project/Animations/Creatures/MMO_Casting.anim";
+        private const string CastPlaceholderPath = "Assets/_Project/Animations/Creatures/MMO_Cast.anim";
+        private const string UpperBodyEmptyPlaceholderPath = "Assets/_Project/Animations/Creatures/MMO_UpperBodyEmpty.anim";
         private const float TargetHeight = 2.05f;
         private const float StrafeVisualYawSharpness = 16f;
         private const float MaxStrafeVisualYawDegrees = 78f;
@@ -38,9 +48,11 @@ namespace RPGClone.EditorTools
             CreateFolderIfMissing(AnimationClipFolder);
             ConfigurePlayerModelImporters();
             EnsureBaseControllerSupportsPlayerJump();
+            EnsureBaseControllerSupportsPlayerCombat();
             MMOPlayerLocomotionAnimationSet animationSet = CreateOrUpdateAnimationSet();
-            GameObject prefab = UpdatePlayerPrefab(animationSet);
-            UpdateActiveScenePlayer(animationSet);
+            MMOPlayerCombatAnimationSet combatAnimationSet = CreateOrUpdateCombatAnimationSet();
+            GameObject prefab = UpdatePlayerPrefab(animationSet, combatAnimationSet);
+            UpdateActiveScenePlayer(animationSet, combatAnimationSet);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -125,6 +137,67 @@ namespace RPGClone.EditorTools
             return animationSet;
         }
 
+        private static MMOPlayerCombatAnimationSet CreateOrUpdateCombatAnimationSet()
+        {
+            AnimationClip combatIdle = ExtractBestAnimationClip(
+                PlayerModelFolder + "/CombatIdle.fbx",
+                new[] { "combatidle", "combat_idle", "idle" },
+                AnimationClipFolder + "/CharacterTest_CombatIdle.anim",
+                "CharacterTest_CombatIdle",
+                true,
+                0);
+            AnimationClip attack = ExtractBestAnimationClip(
+                PlayerModelFolder + "/Attack.fbx",
+                new[] { "attack", "1h", "onehand" },
+                AnimationClipFolder + "/CharacterTest_Attack1H.anim",
+                "CharacterTest_Attack1H",
+                false,
+                0);
+            AnimationClip damage = ExtractBestAnimationClip(
+                PlayerModelFolder + "/CombatDamage.fbx",
+                new[] { "damage", "hit", "hurt" },
+                AnimationClipFolder + "/CharacterTest_CombatDamage.anim",
+                "CharacterTest_CombatDamage",
+                false,
+                0);
+            AnimationClip casting = ExtractBestAnimationClip(
+                PlayerModelFolder + "/Casting.fbx",
+                new[] { "casting", "channel", "loop" },
+                AnimationClipFolder + "/CharacterTest_Casting.anim",
+                "CharacterTest_Casting",
+                true,
+                0);
+            AnimationClip cast = ExtractBestAnimationClip(
+                PlayerModelFolder + "/Cast.fbx",
+                new[] { "cast", "release" },
+                AnimationClipFolder + "/CharacterTest_Cast.anim",
+                "CharacterTest_Cast",
+                false,
+                0);
+
+            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(BaseControllerPath);
+            MMOPlayerCombatAnimationSet combatAnimationSet = AssetDatabase.LoadAssetAtPath<MMOPlayerCombatAnimationSet>(CombatAnimationSetPath);
+            if (combatAnimationSet == null)
+            {
+                combatAnimationSet = ScriptableObject.CreateInstance<MMOPlayerCombatAnimationSet>();
+                AssetDatabase.CreateAsset(combatAnimationSet, CombatAnimationSetPath);
+            }
+
+            combatAnimationSet.name = "CharacterTest_PlayerCombat";
+            combatAnimationSet.Configure(
+                baseController,
+                combatIdle,
+                attack,
+                null,
+                null,
+                damage,
+                casting,
+                cast,
+                0.65f);
+            EditorUtility.SetDirty(combatAnimationSet);
+            return combatAnimationSet;
+        }
+
         private static void EnsureBaseControllerSupportsPlayerJump()
         {
             AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(BaseControllerPath);
@@ -177,6 +250,84 @@ namespace RPGClone.EditorTools
             EditorUtility.SetDirty(controller);
         }
 
+        private static void EnsureBaseControllerSupportsPlayerCombat()
+        {
+            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(BaseControllerPath);
+            if (controller == null)
+            {
+                Debug.LogError($"Could not load base animator controller at {BaseControllerPath}.");
+                return;
+            }
+
+            EnsureBoolParameter(controller, MMOPlayerCombatAnimationSet.InCombatParameter);
+            EnsureFloatParameter(controller, MMOPlayerCombatAnimationSet.ActionSpeedParameter, 1f);
+
+            AnimationClip combatIdlePlaceholder = EnsurePlaceholderClip(
+                CombatIdlePlaceholderPath,
+                MMOPlayerCombatAnimationSet.CombatIdlePlaceholderName,
+                true);
+            AnimationClip oneHandAttackPlaceholder = EnsurePlaceholderClip(
+                OneHandAttackPlaceholderPath,
+                MMOPlayerCombatAnimationSet.OneHandAttackPlaceholderName);
+            AnimationClip twoHandAttackPlaceholder = EnsurePlaceholderClip(
+                TwoHandAttackPlaceholderPath,
+                MMOPlayerCombatAnimationSet.TwoHandAttackPlaceholderName);
+            AnimationClip unarmedAttackPlaceholder = EnsurePlaceholderClip(
+                UnarmedAttackPlaceholderPath,
+                MMOPlayerCombatAnimationSet.UnarmedAttackPlaceholderName);
+            AnimationClip damagePlaceholder = EnsurePlaceholderClip(
+                CombatDamagePlaceholderPath,
+                MMOPlayerCombatAnimationSet.DamagePlaceholderName);
+            AnimationClip castingPlaceholder = EnsurePlaceholderClip(
+                CastingPlaceholderPath,
+                MMOPlayerCombatAnimationSet.CastingPlaceholderName,
+                true);
+            AnimationClip castPlaceholder = EnsurePlaceholderClip(
+                CastPlaceholderPath,
+                MMOPlayerCombatAnimationSet.CastPlaceholderName);
+            AnimationClip emptyPlaceholder = EnsurePlaceholderClip(
+                UpperBodyEmptyPlaceholderPath,
+                "MMO_UpperBodyEmpty");
+
+            AnimatorStateMachine baseStateMachine = controller.layers[0].stateMachine;
+            EnsureState(
+                baseStateMachine,
+                "CombatIdle",
+                combatIdlePlaceholder,
+                new Vector3(250f, -430f, 0f),
+                "Idle");
+            EnsureActionState(baseStateMachine, "Attack1H", oneHandAttackPlaceholder, new Vector3(520f, -430f, 0f), "Attack");
+            EnsureActionState(baseStateMachine, "Attack2H", twoHandAttackPlaceholder, new Vector3(520f, -540f, 0f), "Attack");
+            EnsureActionState(baseStateMachine, "AttackUnarmed", unarmedAttackPlaceholder, new Vector3(520f, -650f, 0f), "Attack");
+            EnsureActionState(baseStateMachine, "CombatDamage", damagePlaceholder, new Vector3(520f, -760f, 0f), "Damage");
+            EnsureActionState(baseStateMachine, "Casting", castingPlaceholder, new Vector3(790f, -430f, 0f), "Cast");
+            EnsureActionState(baseStateMachine, "Cast", castPlaceholder, new Vector3(790f, -540f, 0f), "Cast");
+
+            AvatarMask upperBodyMask = CreateOrUpdateUpperBodyMask();
+            AnimatorControllerLayer upperBodyLayer = EnsureLayer(
+                controller,
+                MMOPlayerCombatAnimationSet.UpperBodyLayerName,
+                upperBodyMask);
+            AnimatorStateMachine upperBodyStateMachine = upperBodyLayer.stateMachine;
+            AnimatorState emptyState = EnsureState(
+                upperBodyStateMachine,
+                "Empty",
+                emptyPlaceholder,
+                new Vector3(240f, 40f, 0f),
+                string.Empty);
+            upperBodyStateMachine.defaultState = emptyState;
+
+            RemoveStateIfPresent(upperBodyStateMachine, "Attack1H");
+            RemoveStateIfPresent(upperBodyStateMachine, "Attack2H");
+            RemoveStateIfPresent(upperBodyStateMachine, "AttackUnarmed");
+            RemoveStateIfPresent(upperBodyStateMachine, "Casting");
+            RemoveStateIfPresent(upperBodyStateMachine, "Cast");
+            EnsureActionState(upperBodyStateMachine, "Damage", damagePlaceholder, new Vector3(520f, -40f, 0f), "Damage");
+
+            EditorUtility.SetDirty(upperBodyStateMachine);
+            EditorUtility.SetDirty(controller);
+        }
+
         private static void EnsureTriggerParameter(AnimatorController controller, string parameterName)
         {
             if (controller.parameters.Any(parameter => parameter.name == parameterName))
@@ -187,7 +338,38 @@ namespace RPGClone.EditorTools
             controller.AddParameter(parameterName, AnimatorControllerParameterType.Trigger);
         }
 
+        private static void EnsureBoolParameter(AnimatorController controller, string parameterName)
+        {
+            if (controller.parameters.Any(parameter => parameter.name == parameterName))
+            {
+                return;
+            }
+
+            controller.AddParameter(parameterName, AnimatorControllerParameterType.Bool);
+        }
+
+        private static void EnsureFloatParameter(AnimatorController controller, string parameterName, float defaultValue)
+        {
+            AnimatorControllerParameter parameter = controller.parameters.FirstOrDefault(candidate => candidate.name == parameterName);
+            if (parameter != null)
+            {
+                return;
+            }
+
+            controller.AddParameter(parameterName, AnimatorControllerParameterType.Float);
+            parameter = controller.parameters.FirstOrDefault(candidate => candidate.name == parameterName);
+            if (parameter != null)
+            {
+                parameter.defaultFloat = defaultValue;
+            }
+        }
+
         private static AnimationClip EnsurePlaceholderClip(string path, string clipName)
+        {
+            return EnsurePlaceholderClip(path, clipName, false);
+        }
+
+        private static AnimationClip EnsurePlaceholderClip(string path, string clipName, bool loop)
         {
             AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
             if (clip == null)
@@ -198,8 +380,8 @@ namespace RPGClone.EditorTools
 
             clip.name = clipName;
             AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(clip);
-            settings.loopTime = false;
-            settings.loopBlend = false;
+            settings.loopTime = loop;
+            settings.loopBlend = loop;
             AnimationUtility.SetAnimationClipSettings(clip, settings);
             EditorUtility.SetDirty(clip);
             return clip;
@@ -211,6 +393,16 @@ namespace RPGClone.EditorTools
             AnimationClip motion,
             Vector3 position)
         {
+            return EnsureState(stateMachine, stateName, motion, position, "Jump");
+        }
+
+        private static AnimatorState EnsureState(
+            AnimatorStateMachine stateMachine,
+            string stateName,
+            AnimationClip motion,
+            Vector3 position,
+            string stateTag)
+        {
             AnimatorState state = FindState(stateMachine, stateName);
             if (state == null)
             {
@@ -218,10 +410,128 @@ namespace RPGClone.EditorTools
             }
 
             state.motion = motion;
-            state.tag = "Jump";
+            state.tag = stateTag;
             state.writeDefaultValues = true;
             EditorUtility.SetDirty(state);
             return state;
+        }
+
+        private static AnimatorState EnsureActionState(
+            AnimatorStateMachine stateMachine,
+            string stateName,
+            AnimationClip motion,
+            Vector3 position,
+            string stateTag)
+        {
+            AnimatorState state = EnsureState(stateMachine, stateName, motion, position, stateTag);
+            state.speedParameter = MMOPlayerCombatAnimationSet.ActionSpeedParameter;
+            state.speedParameterActive = true;
+            return state;
+        }
+
+        private static void RemoveStateIfPresent(AnimatorStateMachine stateMachine, string stateName)
+        {
+            AnimatorState state = FindState(stateMachine, stateName);
+            if (state != null)
+            {
+                stateMachine.RemoveState(state);
+                EditorUtility.SetDirty(stateMachine);
+            }
+        }
+
+        private static AnimatorControllerLayer EnsureLayer(
+            AnimatorController controller,
+            string layerName,
+            AvatarMask avatarMask)
+        {
+            AnimatorControllerLayer[] layers = controller.layers;
+            int layerIndex = Array.FindIndex(layers, layer => layer.name == layerName);
+            AnimatorControllerLayer existingLayer = layerIndex >= 0 ? layers[layerIndex] : null;
+            if (existingLayer == null)
+            {
+                controller.AddLayer(layerName);
+                layers = controller.layers;
+                layerIndex = Array.FindIndex(layers, layer => layer.name == layerName);
+                existingLayer = layers[layerIndex];
+            }
+
+            existingLayer.avatarMask = avatarMask;
+            existingLayer.blendingMode = AnimatorLayerBlendingMode.Override;
+            existingLayer.defaultWeight = 0f;
+            existingLayer.iKPass = false;
+            layers[layerIndex] = existingLayer;
+            controller.layers = layers;
+            return existingLayer;
+        }
+
+        private static AvatarMask CreateOrUpdateUpperBodyMask()
+        {
+            AvatarMask mask = AssetDatabase.LoadAssetAtPath<AvatarMask>(UpperBodyMaskPath);
+            if (mask == null)
+            {
+                mask = new AvatarMask();
+                AssetDatabase.CreateAsset(mask, UpperBodyMaskPath);
+            }
+
+            GameObject modelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerModelPath);
+            Transform root = modelPrefab != null ? modelPrefab.transform : null;
+            if (root != null)
+            {
+                List<(string Path, bool Active)> paths = new();
+                BuildUpperBodyMaskPaths(root, root, paths);
+                mask.transformCount = paths.Count;
+                for (int i = 0; i < paths.Count; i++)
+                {
+                    mask.SetTransformPath(i, paths[i].Path);
+                    mask.SetTransformActive(i, paths[i].Active);
+                }
+            }
+
+            for (AvatarMaskBodyPart part = AvatarMaskBodyPart.Root; part < AvatarMaskBodyPart.LastBodyPart; part++)
+            {
+                mask.SetHumanoidBodyPartActive(part, true);
+            }
+
+            EditorUtility.SetDirty(mask);
+            return mask;
+        }
+
+        private static void BuildUpperBodyMaskPaths(Transform root, Transform current, List<(string Path, bool Active)> paths)
+        {
+            string path = AnimationUtility.CalculateTransformPath(current, root);
+            paths.Add((path, IsUpperBodyMaskTransform(current.name)));
+
+            for (int i = 0; i < current.childCount; i++)
+            {
+                BuildUpperBodyMaskPaths(root, current.GetChild(i), paths);
+            }
+        }
+
+        private static bool IsUpperBodyMaskTransform(string transformName)
+        {
+            string normalizedName = NormalizeName(transformName);
+            if (string.IsNullOrWhiteSpace(normalizedName)
+                || normalizedName.Contains("root")
+                || normalizedName.Contains("hips")
+                || normalizedName.Contains("pelvis")
+                || normalizedName.Contains("thigh")
+                || normalizedName.Contains("calf")
+                || normalizedName.Contains("leg")
+                || normalizedName.Contains("foot")
+                || normalizedName.Contains("toe"))
+            {
+                return false;
+            }
+
+            return normalizedName.Contains("spine")
+                || normalizedName.Contains("chest")
+                || normalizedName.Contains("neck")
+                || normalizedName.Contains("head")
+                || normalizedName.Contains("clavicle")
+                || normalizedName.Contains("shoulder")
+                || normalizedName.Contains("arm")
+                || normalizedName.Contains("hand")
+                || normalizedName.Contains("finger");
         }
 
         private static AnimatorState FindState(AnimatorStateMachine stateMachine, string stateName)
@@ -293,24 +603,27 @@ namespace RPGClone.EditorTools
             List<AnimationClip> sourceClips = AssetDatabase.LoadAllAssetsAtPath(sourcePath)
                 .OfType<AnimationClip>()
                 .Where(IsUsableSourceClip)
+                .Where(HasTransformCurveBindings)
                 .ToList();
             if (sourceClips.Count == 0)
             {
-                Debug.LogError($"No usable animation clips were found in {sourcePath}.");
+                Debug.LogError($"No usable transform-bound animation clips were found in {sourcePath}.");
                 return AssetDatabase.LoadAssetAtPath<AnimationClip>(outputPath);
             }
 
             AnimationClip sourceClip = sourceClips.FirstOrDefault(clip => MatchesAnyToken(clip.name, nameTokens));
             if (sourceClip == null)
             {
-                int clampedIndex = Mathf.Clamp(fallbackIndex, 0, sourceClips.Count - 1);
-                sourceClip = sourceClips[clampedIndex];
                 if (sourceClips.Count > 1)
                 {
-                    Debug.LogWarning(
-                        $"Could not find a CharacterTest clip matching [{string.Join(", ", nameTokens)}]. " +
-                        $"Using '{sourceClip.name}' from {sourcePath}. Available clips: {string.Join(", ", sourceClips.Select(clip => clip.name))}.");
+                    Debug.LogError(
+                        $"Could not find a CharacterTest clip matching [{string.Join(", ", nameTokens)}] in {sourcePath}. " +
+                        $"Refusing to guess from multiple clips: {string.Join(", ", sourceClips.Select(clip => clip.name))}.");
+                    return AssetDatabase.LoadAssetAtPath<AnimationClip>(outputPath);
                 }
+
+                int clampedIndex = Mathf.Clamp(fallbackIndex, 0, sourceClips.Count - 1);
+                sourceClip = sourceClips[clampedIndex];
             }
 
             AnimationClip outputClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(outputPath);
@@ -328,6 +641,12 @@ namespace RPGClone.EditorTools
             AnimationUtility.SetAnimationClipSettings(outputClip, settings);
             EditorUtility.SetDirty(outputClip);
             return outputClip;
+        }
+
+        private static bool HasTransformCurveBindings(AnimationClip clip)
+        {
+            return AnimationUtility.GetCurveBindings(clip)
+                .Any(binding => binding.type == typeof(Transform));
         }
 
         private static bool IsUsableSourceClip(AnimationClip clip)
@@ -369,7 +688,7 @@ namespace RPGClone.EditorTools
                     .ToLowerInvariant();
         }
 
-        private static GameObject UpdatePlayerPrefab(MMOPlayerLocomotionAnimationSet animationSet)
+        private static GameObject UpdatePlayerPrefab(MMOPlayerLocomotionAnimationSet animationSet, MMOPlayerCombatAnimationSet combatAnimationSet)
         {
             GameObject prefabRoot = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
             if (prefabRoot == null)
@@ -380,7 +699,7 @@ namespace RPGClone.EditorTools
 
             try
             {
-                ApplyVisualSetup(prefabRoot, animationSet);
+                ApplyVisualSetup(prefabRoot, animationSet, combatAnimationSet);
                 return PrefabUtility.SaveAsPrefabAsset(prefabRoot, PlayerPrefabPath);
             }
             finally
@@ -389,7 +708,7 @@ namespace RPGClone.EditorTools
             }
         }
 
-        private static void UpdateActiveScenePlayer(MMOPlayerLocomotionAnimationSet animationSet)
+        private static void UpdateActiveScenePlayer(MMOPlayerLocomotionAnimationSet animationSet, MMOPlayerCombatAnimationSet combatAnimationSet)
         {
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if (player == null)
@@ -398,13 +717,13 @@ namespace RPGClone.EditorTools
                 return;
             }
 
-            ApplyVisualSetup(player, animationSet);
+            ApplyVisualSetup(player, animationSet, combatAnimationSet);
             EditorUtility.SetDirty(player);
             EditorSceneManager.MarkSceneDirty(player.scene);
             EditorSceneManager.SaveScene(player.scene);
         }
 
-        private static void ApplyVisualSetup(GameObject root, MMOPlayerLocomotionAnimationSet animationSet)
+        private static void ApplyVisualSetup(GameObject root, MMOPlayerLocomotionAnimationSet animationSet, MMOPlayerCombatAnimationSet combatAnimationSet)
         {
             if (root == null || animationSet == null)
             {
@@ -453,6 +772,20 @@ namespace RPGClone.EditorTools
                 UpperBodyCounterYawWeight,
                 MaxUpperBodyCounterYawDegrees,
                 BuildUpperBodyCounterYawBones(visual.transform));
+
+            MMOPlayerCombatAnimator combatAnimator = root.GetComponent<MMOPlayerCombatAnimator>();
+            if (combatAnimator == null)
+            {
+                combatAnimator = root.AddComponent<MMOPlayerCombatAnimator>();
+            }
+
+            combatAnimator.Configure(
+                combatAnimationSet,
+                animator,
+                motor,
+                root.GetComponent<RPGClone.Combat.MMOCombatant>(),
+                root.GetComponent<RPGClone.Abilities.MMOAbilitySystem>(),
+                root.GetComponent<RPGClone.Combat.MMOAutoAttackController>());
 
             MMOPlayerEquipmentVisuals equipmentVisuals = root.GetComponent<MMOPlayerEquipmentVisuals>();
             if (equipmentVisuals == null)

@@ -145,6 +145,8 @@ namespace RPGClone.Player
 
         private readonly List<KeyValuePair<AnimationClip, AnimationClip>> clipOverrides = new();
         private AnimatorOverrideController overrideController;
+        private AnimationClip idleOverride;
+        private AnimationClip combatIdleOverride;
         private float currentVisualYaw;
         private float movingLandingReturnTime = float.PositiveInfinity;
 
@@ -233,6 +235,28 @@ namespace RPGClone.Player
             }
 
             ResolveUpperBodyCounterYawBones();
+        }
+
+        public void SetIdleOverride(AnimationClip newIdleOverride)
+        {
+            if (idleOverride == newIdleOverride)
+            {
+                return;
+            }
+
+            idleOverride = newIdleOverride;
+            ApplyClipOverrides();
+        }
+
+        public void SetCombatIdleOverride(AnimationClip newCombatIdleOverride)
+        {
+            if (combatIdleOverride == newCombatIdleOverride)
+            {
+                return;
+            }
+
+            combatIdleOverride = newCombatIdleOverride;
+            ApplyClipOverrides();
         }
 
         private void UpdateVisualYaw(float planarSpeed)
@@ -426,9 +450,20 @@ namespace RPGClone.Player
 
             overrideController = new AnimatorOverrideController(animationSet.BaseController);
             overrideController.GetOverrides(clipOverrides);
+            ApplyClipOverrides();
+            animator.runtimeAnimatorController = overrideController;
+        }
+
+        private void ApplyClipOverrides()
+        {
+            if (overrideController == null || animationSet == null)
+            {
+                return;
+            }
+
             for (int i = 0; i < clipOverrides.Count; i++)
             {
-                AnimationClip replacement = animationSet.GetReplacementClip(clipOverrides[i].Key);
+                AnimationClip replacement = GetReplacementClip(clipOverrides[i].Key);
                 if (replacement != null)
                 {
                     clipOverrides[i] = new KeyValuePair<AnimationClip, AnimationClip>(clipOverrides[i].Key, replacement);
@@ -436,7 +471,25 @@ namespace RPGClone.Player
             }
 
             overrideController.ApplyOverrides(clipOverrides);
-            animator.runtimeAnimatorController = overrideController;
+        }
+
+        private AnimationClip GetReplacementClip(AnimationClip placeholder)
+        {
+            if (placeholder != null
+                && placeholder.name == RPGClone.Animation.MMOCreatureAnimationSet.IdlePlaceholderName
+                && idleOverride != null)
+            {
+                return idleOverride;
+            }
+
+            if (placeholder != null
+                && placeholder.name == MMOPlayerCombatAnimationSet.CombatIdlePlaceholderName
+                && combatIdleOverride != null)
+            {
+                return combatIdleOverride;
+            }
+
+            return animationSet.GetReplacementClip(placeholder);
         }
 
         private void EnsureReferences()

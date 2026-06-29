@@ -115,7 +115,12 @@ namespace RPGClone.EditorTools
         {
             MMOAbilityEffectDefinition effect = new();
             effect.Configure(MMOAbilityEffectType.Damage, amountSource, school, flatAmount, coefficient);
-            return GetOrCreateAbility(assetName, abilityId, displayName, description, targetType, autoAttack, toggled, range, cooldown, manaCost, castTime, interruptOnMovement, fallbackSelf, new[] { effect });
+            MMOAbilityDefinition ability = GetOrCreateAbility(assetName, abilityId, displayName, description, targetType, autoAttack, toggled, range, cooldown, manaCost, castTime, interruptOnMovement, fallbackSelf, new[] { effect });
+            ability.SetAnimationStyle(autoAttack || amountSource == MMOAbilityAmountSource.WeaponDamage || (school == MMODamageSchool.Physical && castTime <= 0f)
+                ? MMOAbilityAnimationStyle.WeaponAttack
+                : MMOAbilityAnimationStyle.SpellCast);
+            EditorUtility.SetDirty(ability);
+            return ability;
         }
 
         private static MMOAbilityDefinition GetOrCreateChargeAbility(
@@ -133,8 +138,11 @@ namespace RPGClone.EditorTools
             float coefficient)
         {
             MMOAbilityEffectDefinition effect = new();
-            effect.ConfigureCharge(chargeSpeed, stopDistance, amountSource, school, flatAmount, coefficient);
-            return GetOrCreateAbility(assetName, abilityId, displayName, description, MMOAbilityTargetType.Hostile, false, false, range, cooldown, 0, 0f, false, false, new[] { effect });
+            effect.ConfigureCharge(chargeSpeed, stopDistance, amountSource, school, flatAmount, coefficient, 0.18f);
+            MMOAbilityDefinition ability = GetOrCreateAbility(assetName, abilityId, displayName, description, MMOAbilityTargetType.Hostile, false, false, range, cooldown, 0, 0f, false, false, new[] { effect });
+            ability.SetAnimationStyle(MMOAbilityAnimationStyle.Charge);
+            EditorUtility.SetDirty(ability);
+            return ability;
         }
 
         private static MMOAbilityDefinition GetOrCreateHealAbility(
@@ -153,7 +161,10 @@ namespace RPGClone.EditorTools
         {
             MMOAbilityEffectDefinition effect = new();
             effect.Configure(MMOAbilityEffectType.Heal, MMOAbilityAmountSource.SpellPower, MMODamageSchool.Holy, flatAmount, coefficient);
-            return GetOrCreateAbility(assetName, abilityId, displayName, description, MMOAbilityTargetType.Friendly, false, false, range, cooldown, manaCost, castTime, interruptOnMovement, fallbackSelf, new[] { effect });
+            MMOAbilityDefinition ability = GetOrCreateAbility(assetName, abilityId, displayName, description, MMOAbilityTargetType.Friendly, false, false, range, cooldown, manaCost, castTime, interruptOnMovement, fallbackSelf, new[] { effect });
+            ability.SetAnimationStyle(MMOAbilityAnimationStyle.SpellCast);
+            EditorUtility.SetDirty(ability);
+            return ability;
         }
 
         private static MMOAbilityDefinition GetOrCreateBuffAbility(
@@ -199,7 +210,10 @@ namespace RPGClone.EditorTools
         {
             MMOAbilityEffectDefinition effect = new();
             effect.ConfigureTemporaryStatModifier(duration, attackPowerBonus, attackPowerMultiplier, attackSpeedMultiplier, healthRegenMultiplier, manaRegenMultiplier, damageTakenAsManaPercent);
-            return GetOrCreateAbility(assetName, abilityId, displayName, description, MMOAbilityTargetType.Self, false, false, 0f, cooldown, 0, 0f, false, false, new[] { effect });
+            MMOAbilityDefinition ability = GetOrCreateAbility(assetName, abilityId, displayName, description, MMOAbilityTargetType.Self, false, false, 0f, cooldown, 0, 0f, false, false, new[] { effect });
+            ability.SetAnimationStyle(MMOAbilityAnimationStyle.SpellCast);
+            EditorUtility.SetDirty(ability);
+            return ability;
         }
 
         private static MMOAbilityCatalog CreateAbilityCatalog(IEnumerable<MMOAbilityDefinition> abilities)

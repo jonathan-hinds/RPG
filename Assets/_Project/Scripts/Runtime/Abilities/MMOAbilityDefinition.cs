@@ -21,6 +21,7 @@ namespace RPGClone.Abilities
         [SerializeField] private bool interruptOnMovement;
         [SerializeField] private bool castOnSelfWhenFriendlyTargetInvalid;
         [SerializeField] private bool resetCooldownOnCriticalHit;
+        [SerializeField] private MMOAbilityAnimationStyle animationStyle = MMOAbilityAnimationStyle.Automatic;
         [Header("Area")]
         [SerializeField, Min(0f)] private float areaRadius;
         [SerializeField] private MMOAbilityAreaTargetFilter areaTargetFilter = MMOAbilityAreaTargetFilter.Hostile;
@@ -41,6 +42,7 @@ namespace RPGClone.Abilities
         public bool InterruptOnMovement => interruptOnMovement;
         public bool CastOnSelfWhenFriendlyTargetInvalid => castOnSelfWhenFriendlyTargetInvalid;
         public bool ResetCooldownOnCriticalHit => resetCooldownOnCriticalHit;
+        public MMOAbilityAnimationStyle AnimationStyle => animationStyle;
         public float AreaRadius => areaRadius;
         public MMOAbilityAreaTargetFilter AreaTargetFilter => areaTargetFilter;
         public bool HasArea => areaRadius > 0f;
@@ -187,6 +189,11 @@ namespace RPGClone.Abilities
             areaRadius = Mathf.Max(0f, newAreaRadius);
             areaTargetFilter = newAreaTargetFilter;
             effects = newEffects != null ? new List<MMOAbilityEffectDefinition>(newEffects) : new List<MMOAbilityEffectDefinition>();
+        }
+
+        public void SetAnimationStyle(MMOAbilityAnimationStyle newAnimationStyle)
+        {
+            animationStyle = newAnimationStyle;
         }
     }
 }
