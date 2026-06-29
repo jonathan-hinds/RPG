@@ -35,10 +35,11 @@ namespace RPGClone.Player
         private float lastObservedPlanarSpeed;
         private float activeActionEndTime = float.NegativeInfinity;
         private float attackPriorityUntil;
-        private float castPriorityUntil;
+        private float finalCastPriorityUntil;
         private float nextDamageReactionTime;
         private float deferredDamageReactionUntil;
         private bool hasDeferredDamageReaction;
+        private bool damageReactionActive;
         private bool castInProgress;
 
         public string DebugLastRequestedState => lastRequestedState;
@@ -303,7 +304,8 @@ namespace RPGClone.Player
             }
 
             castInProgress = false;
-            castPriorityUntil = 0f;
+            finalCastPriorityUntil = 0f;
+            damageReactionActive = false;
             activeActionEndTime = Time.time;
             ReturnToLocomotion();
         }
@@ -365,7 +367,8 @@ namespace RPGClone.Player
             float duration = animationSet.GetAttackDurationSeconds(weaponType, playbackSpeed);
             activeActionEndTime = Time.time + duration;
             attackPriorityUntil = activeActionEndTime;
-            castPriorityUntil = 0f;
+            finalCastPriorityUntil = 0f;
+            damageReactionActive = false;
             lastRequestedState = $"Attack: {animationSet.GetAttackStatePath(weaponType)}";
         }
 
@@ -382,7 +385,8 @@ namespace RPGClone.Player
             nextDamageReactionTime = Time.time + animationSet.DamageReactionCooldownSeconds;
             hasDeferredDamageReaction = false;
             attackPriorityUntil = 0f;
-            castPriorityUntil = 0f;
+            finalCastPriorityUntil = 0f;
+            damageReactionActive = true;
             lastRequestedState = "Damage: CombatDamage";
         }
 
@@ -396,8 +400,9 @@ namespace RPGClone.Player
             castInProgress = true;
             animator.SetFloat(ActionSpeedHash, 1f);
             animator.CrossFadeInFixedTime(CastingStateHash, animationSet.CastingTransitionSeconds, 0, 0f);
-            activeActionEndTime = Time.time + Mathf.Max(0.01f, duration);
-            castPriorityUntil = activeActionEndTime;
+            activeActionEndTime = float.PositiveInfinity;
+            finalCastPriorityUntil = 0f;
+            damageReactionActive = false;
             lastRequestedState = "Cast: Casting";
         }
 
@@ -412,7 +417,8 @@ namespace RPGClone.Player
             animator.SetFloat(ActionSpeedHash, 1f);
             animator.CrossFadeInFixedTime(CastStateHash, animationSet.CastTransitionSeconds, 0, 0f);
             activeActionEndTime = Time.time + animationSet.GetCastDurationSeconds();
-            castPriorityUntil = activeActionEndTime;
+            finalCastPriorityUntil = activeActionEndTime;
+            damageReactionActive = false;
             lastRequestedState = "Cast: Release";
         }
 
@@ -437,13 +443,42 @@ namespace RPGClone.Player
 
         private void UpdateActionReturn()
         {
-            if (castInProgress || Time.time < activeActionEndTime)
+            if (Time.time < activeActionEndTime)
             {
                 return;
             }
 
+            if (damageReactionActive)
+            {
+                damageReactionActive = false;
+                if (TryResumeCastingLoop())
+                {
+                    return;
+                }
+            }
+
             activeActionEndTime = float.PositiveInfinity;
             ReturnToLocomotion();
+        }
+
+        private bool TryResumeCastingLoop()
+        {
+            if (!castInProgress || abilitySystem == null || !abilitySystem.IsCasting)
+            {
+                return false;
+            }
+
+            if (!IsAnimatorReady() || animationSet == null || !animator.HasState(0, CastingStateHash))
+            {
+                return false;
+            }
+
+            animator.SetFloat(ActionSpeedHash, 1f);
+            animator.CrossFadeInFixedTime(CastingStateHash, animationSet.CastingTransitionSeconds, 0, 0f);
+            activeActionEndTime = float.PositiveInfinity;
+            finalCastPriorityUntil = 0f;
+            lastRequestedState = "Cast: Casting";
+            return true;
         }
 
         private void ReturnToLocomotion()
@@ -469,8 +504,7 @@ namespace RPGClone.Player
         private bool IsActionTakingPriority()
         {
             return Time.time < attackPriorityUntil
-                || castInProgress
-                || Time.time < castPriorityUntil;
+                || Time.time < finalCastPriorityUntil;
         }
 
         private bool IsBaseLayerBusy()
