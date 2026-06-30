@@ -36,6 +36,7 @@ namespace RPGClone.Combat
         public MMOAbilityDefinition AutoAttackAbility => autoAttackAbility;
         public MMOCharacterIdentity CurrentTarget => currentTarget;
         public bool IsAutoAttacking => currentTarget != null;
+        public bool IsAutoAttackSuspended => IsAutoAttackSuspendedByAbility();
         public bool HasActiveSwingTimer => hasSwingTimer && currentTarget != null;
         public float NextSwingTime => nextSwingTime;
         public float CurrentSwingDuration => Mathf.Max(0.1f, currentSwingDuration);
@@ -197,7 +198,16 @@ namespace RPGClone.Combat
                 return;
             }
 
-            FaceCurrentTarget();
+            if (IsAutoAttackSuspendedByAbility())
+            {
+                swingWindupStarted = false;
+                return;
+            }
+
+            if (abilitySystem.IsInRange(currentTarget, GetEffectiveAttackRange()))
+            {
+                FaceCurrentTarget();
+            }
 
             TryStartSwingWindup();
 
@@ -269,6 +279,11 @@ namespace RPGClone.Combat
             }
 
             return autoAttackAbility != null ? autoAttackAbility.Range : 0f;
+        }
+
+        private bool IsAutoAttackSuspendedByAbility()
+        {
+            return abilitySystem != null && abilitySystem.IsCasting;
         }
 
         private void FaceCurrentTarget()

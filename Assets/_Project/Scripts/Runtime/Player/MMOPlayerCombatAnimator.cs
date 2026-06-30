@@ -202,6 +202,11 @@ namespace RPGClone.Player
                 return;
             }
 
+            if ((abilitySystem != null && abilitySystem.IsCasting) || IsActionTakingPriority())
+            {
+                return;
+            }
+
             PlayWeaponAttack(swingDurationSeconds);
         }
 
