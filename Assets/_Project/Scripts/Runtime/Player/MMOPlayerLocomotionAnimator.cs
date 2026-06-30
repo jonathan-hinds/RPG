@@ -170,15 +170,23 @@ namespace RPGClone.Player
                 return;
             }
 
-            float planarSpeed = motor.CurrentPlanarSpeed;
+            float planarSpeed = motor.IsGrounded ? motor.CurrentPlanarSpeed : 0f;
             Vector2 localVelocity = motor.CurrentLocalPlanarVelocity;
-            bool movingBackward = localVelocity.y < -movingSpeedThreshold;
+            bool movingBackward = motor.IsGrounded && localVelocity.y < -movingSpeedThreshold;
 
-            animator.SetFloat(
-                MoveSpeedHash,
-                animationSet.NormalizeMoveSpeed(planarSpeed, movingBackward),
-                animationSet.MovementDampSeconds,
-                Time.deltaTime);
+            float normalizedMoveSpeed = animationSet.NormalizeMoveSpeed(planarSpeed, movingBackward);
+            if (motor.IsGrounded)
+            {
+                animator.SetFloat(
+                    MoveSpeedHash,
+                    normalizedMoveSpeed,
+                    animationSet.MovementDampSeconds,
+                    Time.deltaTime);
+            }
+            else
+            {
+                animator.SetFloat(MoveSpeedHash, normalizedMoveSpeed);
+            }
 
             UpdateVisualYaw(planarSpeed);
             UpdateMovingLandingReturn();
@@ -327,8 +335,10 @@ namespace RPGClone.Player
             }
 
             motor.Jumped -= OnJumped;
+            motor.BecameAirborne -= OnBecameAirborne;
             motor.Landed -= OnLanded;
             motor.Jumped += OnJumped;
+            motor.BecameAirborne += OnBecameAirborne;
             motor.Landed += OnLanded;
         }
 
@@ -340,10 +350,21 @@ namespace RPGClone.Player
             }
 
             motor.Jumped -= OnJumped;
+            motor.BecameAirborne -= OnBecameAirborne;
             motor.Landed -= OnLanded;
         }
 
         private void OnJumped()
+        {
+            PlayJumpHoldPose();
+        }
+
+        private void OnBecameAirborne()
+        {
+            PlayJumpHoldPose();
+        }
+
+        private void PlayJumpHoldPose()
         {
             if (animator == null || animationSet == null || animationSet.JumpStart == null)
             {

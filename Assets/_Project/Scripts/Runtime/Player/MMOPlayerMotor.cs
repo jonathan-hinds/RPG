@@ -14,19 +14,24 @@ namespace RPGClone.Player
         private CharacterController characterController;
         private MMOInputReader inputReader;
         private MMOCharacterIdentity identity;
+        private readonly RaycastHit[] groundProbeHits = new RaycastHit[8];
         private Vector3 horizontalVelocity;
         private float verticalVelocity;
         private bool isGrounded;
+        private bool hasGroundContact;
         private bool wasGrounded;
         private float lastGroundedTime = float.NegativeInfinity;
         private float jumpBufferedUntil = float.NegativeInfinity;
+        private float ignoreGroundingUntil = float.NegativeInfinity;
 
         public float CurrentPlanarSpeed => new Vector2(horizontalVelocity.x, horizontalVelocity.z).magnitude;
         public Vector3 CurrentPlanarVelocity => horizontalVelocity;
         public float VerticalVelocity => verticalVelocity;
         public bool IsGrounded => isGrounded;
         public bool IsAirborne => !isGrounded;
+        public bool HasGroundContact => hasGroundContact;
         public event Action Jumped;
+        public event Action BecameAirborne;
         public event Action Landed;
         public Vector2 CurrentLocalPlanarVelocity
         {
@@ -43,6 +48,7 @@ namespace RPGClone.Player
             inputReader = GetComponent<MMOInputReader>();
             identity = GetComponent<MMOCharacterIdentity>();
             isGrounded = characterController.isGrounded;
+            hasGroundContact = isGrounded;
             wasGrounded = isGrounded;
         }
 
@@ -69,7 +75,9 @@ namespace RPGClone.Player
                 jumpBufferedUntil = Time.time + config.jumpInputBufferSeconds;
             }
 
-            bool groundedForMovement = isGrounded || characterController.isGrounded;
+            bool canUseContactForMovement = Time.time >= ignoreGroundingUntil && verticalVelocity <= 0f;
+            bool groundedForMovement = isGrounded
+                || (canUseContactForMovement && (hasGroundContact || characterController.isGrounded));
             if (groundedForMovement)
             {
                 lastGroundedTime = Time.time;
@@ -77,12 +85,12 @@ namespace RPGClone.Player
 
             UpdateFacing(input, config);
             UpdateHorizontalVelocity(input, config, groundedForMovement);
-            UpdateVerticalVelocity(config, groundedForMovement);
+            bool jumpedThisFrame = UpdateVerticalVelocity(config, groundedForMovement);
 
             Vector3 motion = horizontalVelocity;
             motion.y = verticalVelocity;
             CollisionFlags collisionFlags = characterController.Move(motion * Time.deltaTime);
-            UpdateGrounding(collisionFlags);
+            UpdateGrounding(collisionFlags, config, jumpedThisFrame);
         }
 
         private void UpdateFacing(MMOInputState input, MMOPlayerMovementConfig config)
@@ -128,37 +136,46 @@ namespace RPGClone.Player
                 moveRate * Time.deltaTime);
         }
 
-        private void UpdateVerticalVelocity(MMOPlayerMovementConfig config, bool groundedForMovement)
+        private bool UpdateVerticalVelocity(MMOPlayerMovementConfig config, bool groundedForMovement)
         {
             if (groundedForMovement && verticalVelocity < 0f)
             {
                 verticalVelocity = config.groundedStickVelocity;
             }
 
+            bool jumpedThisFrame = false;
             if (Time.time <= jumpBufferedUntil && Time.time <= lastGroundedTime + config.jumpCoyoteSeconds)
             {
                 verticalVelocity = Mathf.Sqrt(2f * config.gravity * config.jumpHeight);
                 jumpBufferedUntil = float.NegativeInfinity;
                 isGrounded = false;
+                hasGroundContact = false;
+                ignoreGroundingUntil = Time.time + config.jumpGroundingLockSeconds;
+                jumpedThisFrame = true;
                 Jumped?.Invoke();
             }
 
             verticalVelocity -= config.gravity * Time.deltaTime;
             verticalVelocity = Mathf.Max(verticalVelocity, -config.maxFallSpeed);
+            return jumpedThisFrame;
         }
 
-        private void UpdateGrounding(CollisionFlags collisionFlags)
+        private void UpdateGrounding(CollisionFlags collisionFlags, MMOPlayerMovementConfig config, bool jumpedThisFrame)
         {
             wasGrounded = isGrounded;
-            isGrounded = (collisionFlags & CollisionFlags.Below) != 0;
+            hasGroundContact = !jumpedThisFrame && HasSupportedGround(collisionFlags, config);
+            bool acceptsGrounding = hasGroundContact
+                && Time.time >= ignoreGroundingUntil
+                && verticalVelocity <= 0f;
 
             if ((collisionFlags & CollisionFlags.Above) != 0 && verticalVelocity > 0f)
             {
                 verticalVelocity = 0f;
             }
 
-            if (isGrounded)
+            if (acceptsGrounding)
             {
+                isGrounded = true;
                 lastGroundedTime = Time.time;
                 if (verticalVelocity < 0f)
                 {
@@ -171,7 +188,82 @@ namespace RPGClone.Player
                 {
                     Landed?.Invoke();
                 }
+
+                return;
             }
+
+            if (CanKeepGroundedDuringGrace(config))
+            {
+                isGrounded = true;
+                return;
+            }
+
+            isGrounded = false;
+            if (wasGrounded)
+            {
+                BecameAirborne?.Invoke();
+            }
+        }
+
+        private bool HasSupportedGround(CollisionFlags collisionFlags, MMOPlayerMovementConfig config)
+        {
+            if ((collisionFlags & CollisionFlags.Below) != 0 || characterController.isGrounded)
+            {
+                return true;
+            }
+
+            return ProbeGround(config);
+        }
+
+        private bool ProbeGround(MMOPlayerMovementConfig config)
+        {
+            if (config.groundProbeDistance <= 0f || characterController == null)
+            {
+                return false;
+            }
+
+            float radius = Mathf.Max(0.01f, characterController.radius * config.groundProbeRadiusScale);
+            float halfHeight = Mathf.Max(characterController.height * 0.5f, radius);
+            Vector3 center = transform.TransformPoint(characterController.center);
+            Vector3 origin = center + Vector3.up * config.groundProbeDistance;
+            float castDistance = Mathf.Max(0f, halfHeight - radius)
+                + config.groundProbeDistance
+                + characterController.skinWidth;
+            float maxSlopeAngle = Mathf.Min(config.groundProbeMaxSlopeAngle, characterController.slopeLimit + 0.1f);
+            int hitCount = Physics.SphereCastNonAlloc(
+                origin,
+                radius,
+                Vector3.down,
+                groundProbeHits,
+                castDistance,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider hitCollider = groundProbeHits[i].collider;
+                if (hitCollider == null
+                    || hitCollider == characterController
+                    || hitCollider.transform.IsChildOf(transform))
+                {
+                    continue;
+                }
+
+                if (Vector3.Angle(groundProbeHits[i].normal, Vector3.up) <= maxSlopeAngle)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool CanKeepGroundedDuringGrace(MMOPlayerMovementConfig config)
+        {
+            return wasGrounded
+                && Time.time >= ignoreGroundingUntil
+                && verticalVelocity <= 0f
+                && Time.time <= lastGroundedTime + config.groundedGraceSeconds;
         }
 
         private float GetMovementSpeedMultiplier()

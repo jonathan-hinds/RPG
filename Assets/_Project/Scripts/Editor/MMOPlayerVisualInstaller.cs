@@ -243,7 +243,7 @@ namespace RPGClone.EditorTools
 
             if (locomotionState != null)
             {
-                EnsureExitTransition(jumpStartState, locomotionState, 0.74f, 0.08f);
+                RemoveExitTransition(jumpStartState, locomotionState);
                 EnsureExitTransition(jumpEndState, locomotionState, 0.78f, 0.08f);
             }
 
@@ -583,6 +583,19 @@ namespace RPGClone.EditorTools
             transition.canTransitionToSelf = false;
             transition.interruptionSource = TransitionInterruptionSource.SourceThenDestination;
             EditorUtility.SetDirty(transition);
+        }
+
+        private static void RemoveExitTransition(AnimatorState source, AnimatorState destination)
+        {
+            AnimatorStateTransition transition = source.transitions
+                .FirstOrDefault(candidate => candidate.destinationState == destination && candidate.hasExitTime);
+            if (transition == null)
+            {
+                return;
+            }
+
+            source.RemoveTransition(transition);
+            EditorUtility.SetDirty(source);
         }
 
         private static bool HasCondition(AnimatorStateTransition transition, string parameterName)

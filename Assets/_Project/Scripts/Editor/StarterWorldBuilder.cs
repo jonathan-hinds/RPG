@@ -150,8 +150,13 @@ namespace RPGClone.EditorTools
             config.gravity = 28f;
             config.maxFallSpeed = 45f;
             config.groundedStickVelocity = -2f;
+            config.groundedGraceSeconds = 0.08f;
+            config.groundProbeDistance = 0.18f;
+            config.groundProbeRadiusScale = 0.85f;
+            config.groundProbeMaxSlopeAngle = 55f;
             config.jumpInputBufferSeconds = 0.12f;
             config.jumpCoyoteSeconds = 0.08f;
+            config.jumpGroundingLockSeconds = 0.08f;
             config.airAcceleration = 14f;
             config.airDeceleration = 1.5f;
             EditorUtility.SetDirty(config);

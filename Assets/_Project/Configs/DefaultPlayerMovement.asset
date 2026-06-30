@@ -23,7 +23,12 @@ MonoBehaviour:
   gravity: 28
   maxFallSpeed: 45
   groundedStickVelocity: -2
+  groundedGraceSeconds: 0.08
+  groundProbeDistance: 0.18
+  groundProbeRadiusScale: 0.85
+  groundProbeMaxSlopeAngle: 55
   jumpInputBufferSeconds: 0.12
   jumpCoyoteSeconds: 0.08
+  jumpGroundingLockSeconds: 0.08
   airAcceleration: 14
   airDeceleration: 1.5

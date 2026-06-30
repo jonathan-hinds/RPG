@@ -22,9 +22,16 @@ namespace RPGClone.Player
         [Min(0f)] public float maxFallSpeed = 45f;
         public float groundedStickVelocity = -2f;
 
+        [Header("Grounding")]
+        [Min(0f)] public float groundedGraceSeconds = 0.08f;
+        [Min(0f)] public float groundProbeDistance = 0.18f;
+        [Range(0.1f, 1f)] public float groundProbeRadiusScale = 0.85f;
+        [Range(0f, 89f)] public float groundProbeMaxSlopeAngle = 55f;
+
         [Header("Jump Feel")]
         [Min(0f)] public float jumpInputBufferSeconds = 0.12f;
         [Min(0f)] public float jumpCoyoteSeconds = 0.08f;
+        [Min(0f)] public float jumpGroundingLockSeconds = 0.08f;
         [Min(0f)] public float airAcceleration = 14f;
         [Min(0f)] public float airDeceleration = 1.5f;
     }
