@@ -4,10 +4,10 @@
 *.hlsl text
 *.asmdef text
 *.asmref text
-*.unity text
+*.unity -text
 *.prefab text
 *.mat text
-*.asset text
+*.asset -text
 *.meta text
 *.controller text
 *.anim text
