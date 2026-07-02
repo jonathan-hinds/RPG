@@ -7,7 +7,7 @@ This folder contains designer-authored `MMOEquipmentVisualDefinition` assets for
 1. Create a new asset from `Create > RPG Clone > Characters > Equipment Visual`.
 2. For armor, keep `Binding Mode` as `Body Part`, set `Equipment Slot` to the item slot, and set `Body Part` to the visible character part it should affect.
 3. For color-only gear, leave `Hide Base Body Part` off, turn `Use Color Override` on, and pick the color.
-4. For one-handed weapons, set `Binding Mode` to `Attachment Socket`, set `Equipment Slot` to `Main Hand`, set `Socket Name` to `cc_weapon_r`, and assign a wrapper prefab whose root is the socket point.
+4. For one-handed weapons, set `Binding Mode` to `Attachment Socket`, set `Equipment Slot` to `Main Hand`, set `Socket Name` to `cc_weapon_r`, set `Stowed Socket Name` to `cc_hip.l`, and assign a wrapper prefab whose root is the socket point.
 5. Assign the Equipment Visual asset to the item's `Equipment > Equipment Visual` field.
 
 Current visible mappings:
@@ -31,6 +31,8 @@ Open the wrapper prefab, keep the prefab root at the intended socket origin, and
 
 The guide points and line are tagged `EditorOnly`; they are visible while authoring the prefab and stripped from spawned equipment visuals at runtime. Designers should move the weapon mesh child, not the guide points, unless deliberately changing the grip convention for that weapon family.
 
+At runtime, attachment visuals use `Socket Name` while the character is in combat and `Stowed Socket Name` while the character is out of combat. For the current 1H weapon setup, this means the sword is held at `cc_weapon_r` in combat and stowed at `cc_hip.l` out of combat.
+
 ## Authored Gear
 
 | Item | Slot | Binding | Target | Equipment visual asset | Visual |
@@ -47,6 +49,6 @@ The guide points and line are tagged `EditorOnly`; they are visible while author
 | Trailbreaker's Boots (Cloth) | Feet | Body Part | Feet | `EV_Trailbreakers_Boots_Cloth` | Color `#6F5E9E` |
 | Trailbreaker's Boots (Leather) | Feet | Body Part | Feet | `EV_Trailbreakers_Boots_Leather` | Color `#4A2F1E` |
 | Trailbreaker's Boots (Mail) | Feet | Body Part | Feet | `EV_Trailbreakers_Boots_Mail` | Color `#535F68` |
-| Recruit's Shortsword | Main Hand | Attachment Socket | `cc_weapon_r` | `EV_Recruits_Shortsword_1H` | Prefab `PF_Recruits_Shortsword_Attachment` |
+| Recruit's Shortsword | Main Hand | Attachment Socket | `cc_weapon_r` in combat, `cc_hip.l` stowed | `EV_Recruits_Shortsword_1H` | Prefab `PF_Recruits_Shortsword_Attachment` |
 
 No current item assets use the Head slot, so no head visuals were authored in this pass.

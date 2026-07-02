@@ -27,8 +27,10 @@ namespace RPGClone.Characters
         [SerializeField] private Texture2D normalTexture;
 
         [Header("Attachment")]
-        [Tooltip("Skeleton transform name used when Binding Mode is Attachment Socket.")]
+        [Tooltip("Skeleton transform name used while the item is drawn/in combat.")]
         [SerializeField] private string socketName = "cc_weapon_r";
+        [Tooltip("Skeleton transform name used while the item is stowed/out of combat.")]
+        [SerializeField] private string stowedSocketName = "cc_hip.l";
 
         [Header("Placement")]
         [SerializeField] private Vector3 localPosition;
@@ -46,6 +48,7 @@ namespace RPGClone.Characters
         public Texture2D DiffuseTexture => diffuseTexture;
         public Texture2D NormalTexture => normalTexture;
         public string SocketName => string.IsNullOrWhiteSpace(socketName) ? "cc_weapon_r" : socketName;
+        public string StowedSocketName => string.IsNullOrWhiteSpace(stowedSocketName) ? SocketName : stowedSocketName;
         public Vector3 LocalPosition => localPosition;
         public Vector3 LocalEulerAngles => localEulerAngles;
         public Vector3 LocalScale => localScale == Vector3.zero ? Vector3.one : localScale;
@@ -82,6 +85,7 @@ namespace RPGClone.Characters
         public void ConfigureAttachment(
             MMOEquipmentSlotType newEquipmentSlot,
             string newSocketName,
+            string newStowedSocketName,
             GameObject newModelPrefab,
             Vector3 newLocalPosition,
             Vector3 newLocalEulerAngles,
@@ -90,6 +94,7 @@ namespace RPGClone.Characters
             bindingMode = MMOEquipmentVisualBindingMode.AttachmentSocket;
             equipmentSlot = newEquipmentSlot;
             socketName = string.IsNullOrWhiteSpace(newSocketName) ? "cc_weapon_r" : newSocketName;
+            stowedSocketName = string.IsNullOrWhiteSpace(newStowedSocketName) ? socketName : newStowedSocketName;
             modelPrefab = newModelPrefab;
             localPosition = newLocalPosition;
             localEulerAngles = newLocalEulerAngles;
@@ -99,6 +104,24 @@ namespace RPGClone.Characters
             useColorOverride = false;
             diffuseTexture = null;
             normalTexture = null;
+        }
+
+        public void ConfigureAttachment(
+            MMOEquipmentSlotType newEquipmentSlot,
+            string newSocketName,
+            GameObject newModelPrefab,
+            Vector3 newLocalPosition,
+            Vector3 newLocalEulerAngles,
+            Vector3 newLocalScale)
+        {
+            ConfigureAttachment(
+                newEquipmentSlot,
+                newSocketName,
+                string.Empty,
+                newModelPrefab,
+                newLocalPosition,
+                newLocalEulerAngles,
+                newLocalScale);
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using RPGClone.Characters;
+using RPGClone.Combat;
 using RPGClone.Inventory;
 using UnityEngine;
 
@@ -12,12 +13,14 @@ namespace RPGClone.Player
         private const string EditorOnlyTag = "EditorOnly";
 
         [SerializeField] private MMOCharacterEquipment equipment;
+        [SerializeField] private MMOCombatant combatant;
         [SerializeField] private List<MMOBodyPartRendererSlot> bodyPartSlots = new();
 
         private readonly List<GameObject> activeVisualInstances = new();
         private readonly List<Material> activeMaterialInstances = new();
         private readonly Dictionary<Renderer, Material[]> originalMaterials = new();
         private MMOCharacterEquipment subscribedEquipment;
+        private MMOCombatant subscribedCombatant;
         private int lastEquipmentSignature;
 
         private void Awake()
@@ -34,6 +37,7 @@ namespace RPGClone.Player
             CacheOriginalMaterials();
 
             SubscribeToEquipment();
+            SubscribeToCombatant();
             RebuildEquipmentVisuals();
         }
 
@@ -45,6 +49,12 @@ namespace RPGClone.Player
                 subscribedEquipment = null;
             }
 
+            if (subscribedCombatant != null)
+            {
+                subscribedCombatant.CombatStateChanged -= OnCombatStateChanged;
+                subscribedCombatant = null;
+            }
+
             ClearRuntimeVisuals();
             RestoreBaseBody();
         }
@@ -53,6 +63,7 @@ namespace RPGClone.Player
         {
             EnsureReferences();
             SubscribeToEquipment();
+            SubscribeToCombatant();
             int equipmentSignature = CalculateEquipmentSignature();
             if (equipmentSignature != lastEquipmentSignature)
             {
@@ -69,18 +80,28 @@ namespace RPGClone.Player
             }
 
             equipment = newEquipment;
+            combatant = GetComponent<MMOCombatant>();
             bodyPartSlots = newBodyPartSlots != null
                 ? new List<MMOBodyPartRendererSlot>(newBodyPartSlots)
                 : new List<MMOBodyPartRendererSlot>();
             EnsureBodyPartSlots();
             CacheOriginalMaterials();
             SubscribeToEquipment();
+            SubscribeToCombatant();
             RebuildEquipmentVisuals();
         }
 
         private void OnEquipmentChanged(MMOCharacterEquipment changedEquipment)
         {
             if (changedEquipment == equipment)
+            {
+                RebuildEquipmentVisuals();
+            }
+        }
+
+        private void OnCombatStateChanged(MMOCombatant changedCombatant, bool isInCombat)
+        {
+            if (changedCombatant == combatant)
             {
                 RebuildEquipmentVisuals();
             }
@@ -155,11 +176,12 @@ namespace RPGClone.Player
                 return;
             }
 
-            Transform socket = FindDeepChildByName(transform, visualDefinition.SocketName);
+            string socketName = ResolveAttachmentSocketName(visualDefinition);
+            Transform socket = FindDeepChildByName(transform, socketName);
             if (socket == null)
             {
                 Debug.LogWarning(
-                    $"Equipment visual '{visualDefinition.name}' could not find attachment socket '{visualDefinition.SocketName}' under '{name}'.",
+                    $"Equipment visual '{visualDefinition.name}' could not find attachment socket '{socketName}' under '{name}'.",
                     this);
                 return;
             }
@@ -171,6 +193,18 @@ namespace RPGClone.Player
             instance.transform.localScale = visualDefinition.LocalScale;
             StripEditorOnlyChildren(instance);
             activeVisualInstances.Add(instance);
+        }
+
+        private string ResolveAttachmentSocketName(MMOEquipmentVisualDefinition visualDefinition)
+        {
+            if (visualDefinition == null)
+            {
+                return "cc_weapon_r";
+            }
+
+            return IsInCombat()
+                ? visualDefinition.SocketName
+                : visualDefinition.StowedSocketName;
         }
 
         private static void StripEditorOnlyChildren(GameObject instance)
@@ -509,6 +543,11 @@ namespace RPGClone.Player
             {
                 equipment = GetComponent<MMOCharacterEquipment>();
             }
+
+            if (combatant == null)
+            {
+                combatant = GetComponent<MMOCombatant>();
+            }
         }
 
         private void SubscribeToEquipment()
@@ -531,16 +570,38 @@ namespace RPGClone.Player
             }
         }
 
+        private void SubscribeToCombatant()
+        {
+            if (subscribedCombatant == combatant)
+            {
+                return;
+            }
+
+            if (subscribedCombatant != null)
+            {
+                subscribedCombatant.CombatStateChanged -= OnCombatStateChanged;
+            }
+
+            subscribedCombatant = combatant;
+            if (subscribedCombatant != null)
+            {
+                subscribedCombatant.CombatStateChanged -= OnCombatStateChanged;
+                subscribedCombatant.CombatStateChanged += OnCombatStateChanged;
+            }
+        }
+
         private int CalculateEquipmentSignature()
         {
+            int combatState = IsInCombat() ? 1 : 0;
             if (equipment == null)
             {
-                return 0;
+                return combatState;
             }
 
             unchecked
             {
                 int hash = 17;
+                hash = hash * 31 + combatState;
                 foreach (MMOEquippedItemSlot equippedItem in equipment.EquippedItems)
                 {
                     if (equippedItem == null)
@@ -549,11 +610,16 @@ namespace RPGClone.Player
                     }
 
                     hash = hash * 31 + (int)equippedItem.SlotType;
-                    hash = hash * 31 + (equippedItem.Item != null ? equippedItem.Item.GetInstanceID() : 0);
+                    hash = hash * 31 + (equippedItem.Item != null ? equippedItem.Item.ItemId.GetHashCode() : 0);
                 }
 
                 return hash;
             }
+        }
+
+        private bool IsInCombat()
+        {
+            return combatant != null && combatant.IsInCombat;
         }
 
         private static void SetRenderersEnabled(Renderer[] renderers, bool enabled)

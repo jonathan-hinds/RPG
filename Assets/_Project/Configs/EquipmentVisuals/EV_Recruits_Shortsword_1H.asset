@@ -23,6 +23,7 @@ MonoBehaviour:
   diffuseTexture: {fileID: 0}
   normalTexture: {fileID: 0}
   socketName: cc_weapon_r
+  stowedSocketName: cc_hip.l
   localPosition: {x: 0, y: 0, z: 0}
   localEulerAngles: {x: 0, y: 0, z: 0}
   localScale: {x: 1, y: 1, z: 1}

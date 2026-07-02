@@ -23,10 +23,16 @@ AvatarMask:
     m_Weight: 0
   - m_Path: root/root.x
     m_Weight: 0
+  - m_Path: root/root.x/cc_hip.l
+    m_Weight: 0
   - m_Path: root/root.x/spine_01.x
     m_Weight: 1
   - m_Path: root/root.x/spine_01.x/spine_02.x
     m_Weight: 1
+  - m_Path: root/root.x/spine_01.x/spine_02.x/cc_back.x
+    m_Weight: 0
+  - m_Path: root/root.x/spine_01.x/spine_02.x/cc_back_center.x
+    m_Weight: 0
   - m_Path: root/root.x/spine_01.x/spine_02.x/neck.x
     m_Weight: 1
   - m_Path: root/root.x/spine_01.x/spine_02.x/neck.x/head.x
@@ -43,6 +49,8 @@ AvatarMask:
     m_Weight: 1
   - m_Path: root/root.x/spine_01.x/spine_02.x/shoulder.l/arm_stretch.l/forearm_stretch.l/hand.l
     m_Weight: 1
+  - m_Path: root/root.x/spine_01.x/spine_02.x/shoulder.l/arm_stretch.l/forearm_stretch.l/hand.l/cc_shield.l
+    m_Weight: 0
   - m_Path: root/root.x/spine_01.x/spine_02.x/shoulder.r
     m_Weight: 1
   - m_Path: root/root.x/spine_01.x/spine_02.x/shoulder.r/arm_stretch.r
