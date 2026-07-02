@@ -35,6 +35,7 @@ namespace RPGClone.Player
 
         [Header("Combat Stance")]
         [SerializeField] private AnimationClip combatIdle;
+        [SerializeField] private AnimationClip twoHandCombatIdle;
         [SerializeField, Min(0f)] private float idleEnterTransitionSeconds = 0.16f;
         [SerializeField, Min(0f)] private float idleExitTransitionSeconds = 0.12f;
         [SerializeField, Min(0f)] private float stationarySpeedThreshold = 0.08f;
@@ -64,6 +65,7 @@ namespace RPGClone.Player
 
         public RuntimeAnimatorController BaseController => baseController;
         public AnimationClip CombatIdle => combatIdle;
+        public AnimationClip TwoHandCombatIdle => twoHandCombatIdle;
         public AnimationClip OneHandAttack => oneHandAttack;
         public AnimationClip TwoHandAttack => twoHandAttack;
         public AnimationClip UnarmedAttack => unarmedAttack;
@@ -94,6 +96,16 @@ namespace RPGClone.Player
             }
 
             return oneHandAttack != null ? oneHandAttack : twoHandAttack != null ? twoHandAttack : unarmedAttack;
+        }
+
+        public AnimationClip GetCombatIdleClip(MMOWeaponType weaponType)
+        {
+            if (IsTwoHanded(weaponType) && twoHandCombatIdle != null)
+            {
+                return twoHandCombatIdle;
+            }
+
+            return combatIdle;
         }
 
         public string GetAttackStatePath(MMOWeaponType weaponType)
@@ -169,6 +181,7 @@ namespace RPGClone.Player
         public void Configure(
             RuntimeAnimatorController newBaseController,
             AnimationClip newCombatIdle,
+            AnimationClip newTwoHandCombatIdle,
             AnimationClip newOneHandAttack,
             AnimationClip newTwoHandAttack,
             AnimationClip newUnarmedAttack,
@@ -179,6 +192,7 @@ namespace RPGClone.Player
         {
             baseController = newBaseController;
             combatIdle = newCombatIdle;
+            twoHandCombatIdle = newTwoHandCombatIdle;
             oneHandAttack = newOneHandAttack;
             twoHandAttack = newTwoHandAttack;
             unarmedAttack = newUnarmedAttack;

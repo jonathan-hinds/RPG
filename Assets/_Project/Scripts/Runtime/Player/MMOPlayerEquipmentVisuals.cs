@@ -171,12 +171,14 @@ namespace RPGClone.Player
 
         private void ApplyAttachmentVisualDefinition(MMOEquipmentVisualDefinition visualDefinition)
         {
-            if (visualDefinition.ModelPrefab == null)
+            bool isInCombat = IsInCombat();
+            GameObject modelPrefab = visualDefinition.GetAttachmentModelPrefab(isInCombat);
+            if (modelPrefab == null)
             {
                 return;
             }
 
-            string socketName = ResolveAttachmentSocketName(visualDefinition);
+            string socketName = ResolveAttachmentSocketName(visualDefinition, isInCombat);
             Transform socket = FindDeepChildByName(transform, socketName);
             if (socket == null)
             {
@@ -186,8 +188,8 @@ namespace RPGClone.Player
                 return;
             }
 
-            GameObject instance = Instantiate(visualDefinition.ModelPrefab, socket);
-            instance.name = visualDefinition.ModelPrefab.name;
+            GameObject instance = Instantiate(modelPrefab, socket);
+            instance.name = modelPrefab.name;
             instance.transform.localPosition = visualDefinition.LocalPosition;
             instance.transform.localRotation = Quaternion.Euler(visualDefinition.LocalEulerAngles);
             instance.transform.localScale = visualDefinition.LocalScale;
@@ -195,14 +197,14 @@ namespace RPGClone.Player
             activeVisualInstances.Add(instance);
         }
 
-        private string ResolveAttachmentSocketName(MMOEquipmentVisualDefinition visualDefinition)
+        private string ResolveAttachmentSocketName(MMOEquipmentVisualDefinition visualDefinition, bool isInCombat)
         {
             if (visualDefinition == null)
             {
                 return "cc_weapon_r";
             }
 
-            return IsInCombat()
+            return isInCombat
                 ? visualDefinition.SocketName
                 : visualDefinition.StowedSocketName;
         }

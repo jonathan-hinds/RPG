@@ -14,11 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Player.MMOPlayerCombatAnimationSet
   baseController: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
   combatIdle: {fileID: 7400000, guid: a50e88802e3391c4b8f32531a3c0255f, type: 2}
+  twoHandCombatIdle: {fileID: 7400000, guid: bcd7316fb6fcdce4a83223288f3c9590, type: 2}
   idleEnterTransitionSeconds: 0.16
   idleExitTransitionSeconds: 0.12
   stationarySpeedThreshold: 0.08
   oneHandAttack: {fileID: 7400000, guid: f67803b0a0c338e40bc8f8b2690df9ef, type: 2}
-  twoHandAttack: {fileID: 0}
+  twoHandAttack: {fileID: 7400000, guid: b57ecfc92fba1924597139ab1d8ba9cc, type: 2}
   unarmedAttack: {fileID: 0}
   attackImpactNormalizedTime: 0.65
   minAttackPlaybackSpeed: 1

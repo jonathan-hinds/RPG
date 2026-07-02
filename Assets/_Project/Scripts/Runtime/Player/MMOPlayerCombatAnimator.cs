@@ -28,6 +28,7 @@ namespace RPGClone.Player
         [SerializeField] private MMOAutoAttackController autoAttackController;
 
         private bool lastAppliedInCombat;
+        private MMOWeaponType lastAppliedCombatIdleWeaponType = MMOWeaponType.None;
         private bool hasAppliedCombatState;
         private string lastRequestedState = "<none>";
         private bool lastBaseLayerBusy;
@@ -232,21 +233,29 @@ namespace RPGClone.Player
                 animator.SetBool(InCombatHash, inCombat);
             }
 
-            if (!force && hasAppliedCombatState && inCombat == lastAppliedInCombat)
+            MMOWeaponType weaponType = inCombat && combatant != null && combatant.Identity != null
+                ? MMOCombatResolver.GetWeaponSnapshot(combatant.Identity).WeaponType
+                : MMOWeaponType.None;
+
+            if (!force
+                && hasAppliedCombatState
+                && inCombat == lastAppliedInCombat
+                && weaponType == lastAppliedCombatIdleWeaponType)
             {
                 return;
             }
 
-            AnimationClip targetIdle = inCombat && animationSet != null && animationSet.CombatIdle != null
-                ? animationSet.CombatIdle
+            AnimationClip targetIdle = inCombat && animationSet != null
+                ? animationSet.GetCombatIdleClip(weaponType)
                 : null;
 
             locomotionAnimator.SetIdleOverride(targetIdle);
-            locomotionAnimator.SetCombatIdleOverride(animationSet != null ? animationSet.CombatIdle : null);
+            locomotionAnimator.SetCombatIdleOverride(targetIdle);
             lastRequestedState = targetIdle != null
                 ? $"Idle clip override: {targetIdle.name}"
                 : "Idle clip override: <normal idle>";
             lastAppliedInCombat = inCombat;
+            lastAppliedCombatIdleWeaponType = weaponType;
             hasAppliedCombatState = true;
         }
 

@@ -146,11 +146,25 @@ namespace RPGClone.EditorTools
                 "CharacterTest_CombatIdle",
                 true,
                 0);
+            AnimationClip twoHandCombatIdle = ExtractBestAnimationClip(
+                PlayerModelFolder + "/CombatIdle2H.fbx",
+                new[] { "2h", "twohand", "combatidle", "combat_idle", "idle" },
+                AnimationClipFolder + "/CharacterTest_CombatIdle2H.anim",
+                "CharacterTest_CombatIdle2H",
+                true,
+                0);
             AnimationClip attack = ExtractBestAnimationClip(
                 PlayerModelFolder + "/Attack.fbx",
                 new[] { "attack", "1h", "onehand" },
                 AnimationClipFolder + "/CharacterTest_Attack1H.anim",
                 "CharacterTest_Attack1H",
+                false,
+                0);
+            AnimationClip twoHandAttack = ExtractBestAnimationClip(
+                PlayerModelFolder + "/Attack2H.fbx",
+                new[] { "attack", "2h", "twohand" },
+                AnimationClipFolder + "/CharacterTest_Attack2H.anim",
+                "CharacterTest_Attack2H",
                 false,
                 0);
             AnimationClip damage = ExtractBestAnimationClip(
@@ -187,8 +201,9 @@ namespace RPGClone.EditorTools
             combatAnimationSet.Configure(
                 baseController,
                 combatIdle,
+                twoHandCombatIdle,
                 attack,
-                null,
+                twoHandAttack,
                 null,
                 damage,
                 casting,

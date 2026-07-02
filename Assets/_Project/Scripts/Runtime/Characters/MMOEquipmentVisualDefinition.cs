@@ -20,6 +20,8 @@ namespace RPGClone.Characters
 
         [Header("Replacement")]
         [SerializeField] private GameObject modelPrefab;
+        [Tooltip("Optional prefab used for attachment visuals while stowed/out of combat. Falls back to Model Prefab when empty.")]
+        [SerializeField] private GameObject stowedModelPrefab;
         [SerializeField] private Material materialOverride;
         [SerializeField] private bool useColorOverride;
         [SerializeField] private Color colorOverride = Color.white;
@@ -42,6 +44,7 @@ namespace RPGClone.Characters
         public MMOCharacterBodyPart BodyPart => bodyPart;
         public bool HideBaseBodyPart => hideBaseBodyPart;
         public GameObject ModelPrefab => modelPrefab;
+        public GameObject StowedModelPrefab => stowedModelPrefab;
         public Material MaterialOverride => materialOverride;
         public bool UseColorOverride => useColorOverride;
         public Color ColorOverride => colorOverride;
@@ -52,6 +55,10 @@ namespace RPGClone.Characters
         public Vector3 LocalPosition => localPosition;
         public Vector3 LocalEulerAngles => localEulerAngles;
         public Vector3 LocalScale => localScale == Vector3.zero ? Vector3.one : localScale;
+        public GameObject GetAttachmentModelPrefab(bool isInCombat)
+        {
+            return !isInCombat && stowedModelPrefab != null ? stowedModelPrefab : modelPrefab;
+        }
 
         public void Configure(
             MMOEquipmentSlotType newEquipmentSlot,
@@ -72,6 +79,7 @@ namespace RPGClone.Characters
             bodyPart = newBodyPart;
             hideBaseBodyPart = newHideBaseBodyPart;
             modelPrefab = newModelPrefab;
+            stowedModelPrefab = null;
             materialOverride = newMaterialOverride;
             useColorOverride = newUseColorOverride;
             colorOverride = newColorOverride;
@@ -87,6 +95,7 @@ namespace RPGClone.Characters
             string newSocketName,
             string newStowedSocketName,
             GameObject newModelPrefab,
+            GameObject newStowedModelPrefab,
             Vector3 newLocalPosition,
             Vector3 newLocalEulerAngles,
             Vector3 newLocalScale)
@@ -96,6 +105,7 @@ namespace RPGClone.Characters
             socketName = string.IsNullOrWhiteSpace(newSocketName) ? "cc_weapon_r" : newSocketName;
             stowedSocketName = string.IsNullOrWhiteSpace(newStowedSocketName) ? socketName : newStowedSocketName;
             modelPrefab = newModelPrefab;
+            stowedModelPrefab = newStowedModelPrefab;
             localPosition = newLocalPosition;
             localEulerAngles = newLocalEulerAngles;
             localScale = newLocalScale == Vector3.zero ? Vector3.one : newLocalScale;
@@ -119,6 +129,27 @@ namespace RPGClone.Characters
                 newSocketName,
                 string.Empty,
                 newModelPrefab,
+                null,
+                newLocalPosition,
+                newLocalEulerAngles,
+                newLocalScale);
+        }
+
+        public void ConfigureAttachment(
+            MMOEquipmentSlotType newEquipmentSlot,
+            string newSocketName,
+            string newStowedSocketName,
+            GameObject newModelPrefab,
+            Vector3 newLocalPosition,
+            Vector3 newLocalEulerAngles,
+            Vector3 newLocalScale)
+        {
+            ConfigureAttachment(
+                newEquipmentSlot,
+                newSocketName,
+                newStowedSocketName,
+                newModelPrefab,
+                null,
                 newLocalPosition,
                 newLocalEulerAngles,
                 newLocalScale);

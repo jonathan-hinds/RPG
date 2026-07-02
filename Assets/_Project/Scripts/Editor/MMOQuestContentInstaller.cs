@@ -522,7 +522,14 @@ namespace RPGClone.EditorTools
             EnsureVendorNpc("Vendor - Quartermaster", "quartermaster_grakka", "Quartermaster Grakka", "General Goods Merchant", new Vector3(-13f, 2f, -128f), new[]
             {
                 new MMOVendorStockEntry(items.RazorcragJerky, 1, 16),
-                new MMOVendorStockEntry(items.SpringwaterFlask, 1, 16)
+                new MMOVendorStockEntry(items.SpringwaterFlask, 1, 16),
+                new MMOVendorStockEntry(LoadItem("Recruits_Shortsword"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Recruits_Greatsword"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Recruits_Staff"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Recruits_Shield"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Initiates_Cudgel"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Millwrights_Hammer"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Cleavers_Stone_Maul"), 1, 0)
             }, friendlyNpcProfile);
             Physics.SyncTransforms();
 
@@ -704,6 +711,11 @@ namespace RPGClone.EditorTools
             }
 
             return value.Replace(' ', '_').Replace("(", string.Empty).Replace(")", string.Empty);
+        }
+
+        private static MMOItemDefinition LoadItem(string assetName)
+        {
+            return AssetDatabase.LoadAssetAtPath<MMOItemDefinition>($"{ItemFolder}/{assetName}.asset");
         }
 
         private static string MMOUiFactoryName(MMOEquipmentSlotType slot)

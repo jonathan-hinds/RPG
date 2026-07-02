@@ -40,6 +40,7 @@ MonoBehaviour:
     meleeMaxDamage: 0
     meleeAttackSpeed: 2
     meleeRange: 3
+  equipmentVisual: {fileID: 11400000, guid: d125e8fc792e531428792f62674458e4, type: 2}
   weaponType: 5
   weaponMinDamage: 6
   weaponMaxDamage: 10
