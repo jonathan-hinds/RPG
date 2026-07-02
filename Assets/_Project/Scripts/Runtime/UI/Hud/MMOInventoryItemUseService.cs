@@ -1,6 +1,6 @@
 using RPGClone.Inventory;
 using RPGClone.Quests;
-using UnityEngine;
+using RPGClone.Services;
 
 namespace RPGClone.UI
 {
@@ -29,8 +29,7 @@ namespace RPGClone.UI
                 return false;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player == null)
+            if (!MMOInteractionContext.TryCreateForLocalPlayer(out MMOInteractionContext context))
             {
                 return false;
             }
@@ -40,21 +39,20 @@ namespace RPGClone.UI
                 return true;
             }
 
-            MMOCharacterEquipment equipment = player.GetComponent<MMOCharacterEquipment>();
+            MMOCharacterEquipment equipment = context.ActorObject.GetComponent<MMOCharacterEquipment>();
             if (equipment != null && stack.Item.IsEquipment && equipment.TryEquipFromInventory(inventory, slotIndex))
             {
                 return true;
             }
 
-            MMOConsumableEffectController consumables = player.GetComponent<MMOConsumableEffectController>();
+            MMOConsumableEffectController consumables = context.ActorObject.GetComponent<MMOConsumableEffectController>();
             if (consumables != null && stack.Item.IsConsumable && consumables.TryConsume(stack.Item))
             {
                 inventory.TryRemoveItem(stack.Item, 1);
                 return true;
             }
 
-            MMOQuestLog questLog = player.GetComponent<MMOQuestLog>();
-            return questLog != null && questLog.TryBeginUseQuestItem(stack.Item);
+            return context.QuestLog != null && context.QuestLog.TryBeginUseQuestItem(stack.Item);
         }
     }
 }

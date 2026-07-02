@@ -58,8 +58,7 @@ namespace RPGClone.UI
                 return;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            questLog = player != null ? player.GetComponent<MMOQuestLog>() : null;
+            MMOGameplaySessionService.LocalPlayer.TryGetComponent(out questLog);
         }
 
         private void Subscribe()
@@ -245,14 +244,7 @@ namespace RPGClone.UI
                 return;
             }
 
-            if (MMORuntimeSceneReferences.TryGetPlayerComponent(out MMOQuestLog playerQuestLog))
-            {
-                questLog = playerQuestLog;
-                return;
-            }
-
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            questLog = player != null ? player.GetComponent<MMOQuestLog>() : null;
+            MMOGameplaySessionService.LocalPlayer.TryGetComponent(out questLog);
         }
 
         private void Subscribe()

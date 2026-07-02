@@ -160,6 +160,7 @@ namespace RPGClone.Combat
 
             identity.Health.SetCurrent(identity.Health.CurrentValue + appliedAmount);
             Healed?.Invoke(source, this, ability, appliedAmount);
+            MMOCombatEventStream.PublishHealResolved(source, this, ability, appliedAmount);
         }
 
         public void RegisterCombatActivity(MMOCombatant opponent = null)

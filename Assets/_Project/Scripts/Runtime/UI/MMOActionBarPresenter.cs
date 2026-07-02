@@ -3,6 +3,7 @@ using RPGClone.Abilities;
 using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Inventory;
+using RPGClone.Services;
 using RPGClone.Targeting;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -246,24 +247,18 @@ namespace RPGClone.UI
         {
             if (abilitySystem == null || inventory == null)
             {
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
-                {
-                    if (abilitySystem == null)
-                    {
-                        abilitySystem = player.GetComponent<MMOAbilitySystem>();
-                    }
+                MMOGameplaySessionService.LocalPlayer.TryGetComponent(out MMOAbilitySystem resolvedAbilitySystem);
+                MMOGameplaySessionService.LocalPlayer.TryGetComponent(out MMOInventoryContainer resolvedInventory);
+                MMOGameplaySessionService.LocalPlayer.TryGetComponent(out MMOAutoAttackController resolvedAutoAttackController);
 
-                    if (inventory == null)
-                    {
-                        inventory = player.GetComponent<MMOInventoryContainer>();
-                    }
+                abilitySystem ??= resolvedAbilitySystem;
+                inventory ??= resolvedInventory;
+                autoAttackController ??= resolvedAutoAttackController;
+            }
 
-                    if (autoAttackController == null)
-                    {
-                        autoAttackController = player.GetComponent<MMOAutoAttackController>();
-                    }
-                }
+            if (autoAttackController == null)
+            {
+                MMOGameplaySessionService.LocalPlayer.TryGetComponent(out autoAttackController);
             }
 
             if (targetSelectionController == null)

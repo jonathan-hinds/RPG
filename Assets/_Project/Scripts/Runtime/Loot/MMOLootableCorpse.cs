@@ -74,8 +74,8 @@ namespace RPGClone.Loot
 
         public bool TryLootToPlayer()
         {
-            return MMORuntimeSceneReferences.TryGetPlayerComponent(out MMOInventoryContainer inventory)
-                && TryLootToInventory(inventory);
+            return MMOInteractionContext.TryCreateForLocalPlayer(out MMOInteractionContext context)
+                && TryLootToInventory(context.Inventory);
         }
 
         public bool TryLootToInventory(MMOInventoryContainer inventory)
@@ -173,7 +173,7 @@ namespace RPGClone.Loot
                 return false;
             }
 
-            Transform playerTransform = MMORuntimeSceneReferences.PlayerTransform;
+            Transform playerTransform = MMOGameplaySessionService.LocalPlayer.PlayerTransform;
             Vector3 interactorPosition = playerTransform != null ? playerTransform.position : camera.transform.position;
             float sqrInteractionDistance = interactionDistance * interactionDistance;
             return (interactorPosition - transform.position).sqrMagnitude <= sqrInteractionDistance;

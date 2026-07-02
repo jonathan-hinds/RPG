@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RPGClone.Services;
 using UnityEngine;
 
 namespace RPGClone.World
@@ -58,8 +59,7 @@ namespace RPGClone.World
                 return;
             }
 
-            GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-            player = playerObject != null ? playerObject.transform : null;
+            player = MMOGameplaySessionService.LocalPlayer.PlayerTransform;
         }
 
         private void EnsureCurrentZone()

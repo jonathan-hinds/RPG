@@ -1,4 +1,5 @@
 using RPGClone.CharacterSelection;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -14,6 +15,7 @@ namespace RPGClone.UI
         [SerializeField] private MMOInventoryPresenter inventoryPanel;
         [SerializeField] private MMOSpellBookPresenter spellBookPanel;
         [SerializeField] private MMOQuestLogPresenter questLogPanel;
+        [SerializeField] private MMOSocialWindowPresenter socialPanel;
         [SerializeField] private MMOReturnToCharacterSelectionController returnToCharacterSelectionController;
 
         private RectTransform menuButtons;
@@ -53,6 +55,11 @@ namespace RPGClone.UI
             {
                 questLogPanel?.Toggle();
             }
+
+            if (keyboard.oKey.wasPressedThisFrame)
+            {
+                socialPanel?.Toggle();
+            }
         }
 
         public void Configure(
@@ -61,6 +68,7 @@ namespace RPGClone.UI
             MMOInventoryPresenter newInventoryPanel,
             MMOSpellBookPresenter newSpellBookPanel,
             MMOQuestLogPresenter newQuestLogPanel = null,
+            MMOSocialWindowPresenter newSocialPanel = null,
             MMOReturnToCharacterSelectionController newReturnToCharacterSelectionController = null)
         {
             actionBar = newActionBar;
@@ -68,6 +76,7 @@ namespace RPGClone.UI
             inventoryPanel = newInventoryPanel;
             spellBookPanel = newSpellBookPanel;
             questLogPanel = newQuestLogPanel;
+            socialPanel = newSocialPanel;
             returnToCharacterSelectionController = newReturnToCharacterSelectionController;
             BuildIfNeeded();
         }
@@ -88,6 +97,7 @@ namespace RPGClone.UI
             }
 
             background.color = new Color(0.024f, 0.022f, 0.02f, 0.86f);
+            ResolveSocialPanel();
 
             if (menuButtons == null)
             {
@@ -97,9 +107,9 @@ namespace RPGClone.UI
                 menuButtons.anchorMax = new Vector2(1f, 0.5f);
                 menuButtons.pivot = new Vector2(1f, 0.5f);
                 menuButtons.anchoredPosition = new Vector2(-12f, 0f);
-                menuButtons.sizeDelta = new Vector2(314f, 48f);
             }
 
+            menuButtons.sizeDelta = new Vector2(378f, 48f);
             BuildMenuButtons();
 
             if (actionBar != null)
@@ -118,18 +128,15 @@ namespace RPGClone.UI
             MMOUiFactory.DestroyChildren(menuButtons);
             if (returnToCharacterSelectionController == null)
             {
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
-                {
-                    returnToCharacterSelectionController = player.GetComponent<MMOReturnToCharacterSelectionController>();
-                }
+                MMOGameplaySessionService.LocalPlayer.TryGetComponent(out returnToCharacterSelectionController);
             }
 
             CreateMenuButton("Character", "Char", 0, () => characterPanel?.Toggle());
             CreateMenuButton("Inventory", "Bag", 1, () => inventoryPanel?.Toggle());
             CreateMenuButton("Spellbook", "Book", 2, () => spellBookPanel?.Toggle());
             CreateMenuButton("Quest Log", "Quest", 3, () => questLogPanel?.Toggle());
-            CreateMenuButton("Exit", "Exit", 4, () => returnToCharacterSelectionController?.ReturnToCharacterSelection());
+            CreateMenuButton("Friends", "Social", 4, () => socialPanel?.Toggle());
+            CreateMenuButton("Exit", "Exit", 5, () => returnToCharacterSelectionController?.ReturnToCharacterSelection());
         }
 
         private void CreateMenuButton(string objectName, string label, int index, UnityEngine.Events.UnityAction onClick)
@@ -142,6 +149,35 @@ namespace RPGClone.UI
             rectTransform.anchorMax = new Vector2(0f, 0.5f);
             rectTransform.pivot = new Vector2(0f, 0.5f);
             rectTransform.anchoredPosition = new Vector2(index * 64f, 0f);
+        }
+
+        private void ResolveSocialPanel()
+        {
+            if (socialPanel != null)
+            {
+                return;
+            }
+
+            socialPanel = FindAnyObjectByType<MMOSocialWindowPresenter>(FindObjectsInactive.Include);
+            if (socialPanel != null)
+            {
+                return;
+            }
+
+            Transform canvas = transform.parent;
+            if (canvas == null)
+            {
+                return;
+            }
+
+            GameObject panelObject = MMOWindowPrefabResolver.Instantiate(MMOWindowPrefabId.Social, canvas, "Friends Panel");
+            socialPanel = panelObject.GetComponent<MMOSocialWindowPresenter>();
+            if (socialPanel == null)
+            {
+                socialPanel = panelObject.AddComponent<MMOSocialWindowPresenter>();
+            }
+
+            panelObject.SetActive(false);
         }
     }
 }

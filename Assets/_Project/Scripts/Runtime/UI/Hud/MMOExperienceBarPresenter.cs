@@ -1,4 +1,5 @@
 using RPGClone.Characters;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -51,11 +52,7 @@ namespace RPGClone.UI
                 return;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                experience = player.GetComponent<MMOExperienceComponent>();
-            }
+            MMOGameplaySessionService.LocalPlayer.TryGetComponent(out experience);
         }
 
         private void Subscribe()

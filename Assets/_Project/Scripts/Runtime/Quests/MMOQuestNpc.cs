@@ -119,14 +119,14 @@ namespace RPGClone.Quests
 
         private void Interact(Vector2 screenPosition)
         {
-            MMOQuestLog questLog = ResolvePlayerQuestLog();
-            if (questLog == null)
+            if (!MMOInteractionContext.TryCreateForLocalPlayer(out MMOInteractionContext context)
+                || context.QuestLog == null)
             {
                 return;
             }
 
-            questLog.RecordSpeakToNpc(NpcId);
-            MMOQuestDialogPresenter.Open(this, questLog, screenPosition);
+            context.QuestLog.RecordSpeakToNpc(NpcId);
+            MMOQuestDialogPresenter.Open(this, context.QuestLog, screenPosition);
         }
 
         private bool IsPointerOverThisNpc(Vector2 pointerPosition)
@@ -145,7 +145,7 @@ namespace RPGClone.Quests
                 return false;
             }
 
-            Transform playerTransform = MMORuntimeSceneReferences.PlayerTransform;
+            Transform playerTransform = MMOGameplaySessionService.LocalPlayer.PlayerTransform;
             Vector3 interactorPosition = playerTransform != null ? playerTransform.position : camera.transform.position;
             float sqrInteractionDistance = interactionDistance * interactionDistance;
             return (interactorPosition - transform.position).sqrMagnitude <= sqrInteractionDistance;

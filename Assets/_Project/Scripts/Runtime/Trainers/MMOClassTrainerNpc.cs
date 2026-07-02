@@ -236,13 +236,12 @@ namespace RPGClone.Trainers
 
         private void Interact(Vector2 screenPosition)
         {
-            GameObject player = MMORuntimeSceneReferences.PlayerObject;
-            if (player == null)
+            if (!MMOInteractionContext.TryCreateForLocalPlayer(out MMOInteractionContext context))
             {
                 return;
             }
 
-            MMOClassTrainerPresenter.Open(this, player, screenPosition);
+            MMOClassTrainerPresenter.Open(this, context.ActorObject, screenPosition);
         }
 
         private bool IsPointerOverThisTrainer(Vector2 pointerPosition)
@@ -261,7 +260,7 @@ namespace RPGClone.Trainers
                 return false;
             }
 
-            Transform playerTransform = MMORuntimeSceneReferences.PlayerTransform;
+            Transform playerTransform = MMOGameplaySessionService.LocalPlayer.PlayerTransform;
             Vector3 interactorPosition = playerTransform != null ? playerTransform.position : camera.transform.position;
             float sqrInteractionDistance = interactionDistance * interactionDistance;
             return (interactorPosition - transform.position).sqrMagnitude <= sqrInteractionDistance;

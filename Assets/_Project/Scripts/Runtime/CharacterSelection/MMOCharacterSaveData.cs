@@ -19,7 +19,9 @@ namespace RPGClone.CharacterSelection
     public sealed class MMOCharacterSaveData
     {
         public string characterId;
+        public string accountId;
         public string characterName;
+        public string normalizedCharacterName;
         public MMOPlayableRace race;
         public MMOPlayableClass characterClass;
         public int level = 1;

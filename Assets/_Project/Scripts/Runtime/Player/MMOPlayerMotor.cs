@@ -1,4 +1,5 @@
 using RPGClone.Characters;
+using RPGClone.Services;
 using System;
 using UnityEngine;
 
@@ -54,9 +55,10 @@ namespace RPGClone.Player
 
         private void Start()
         {
-            if (cameraController == null && Camera.main != null)
+            Camera localCamera = MMOGameplaySessionService.LocalPlayer.MainCamera;
+            if (cameraController == null && localCamera != null)
             {
-                cameraController = Camera.main.GetComponent<MMOThirdPersonCamera>();
+                cameraController = localCamera.GetComponent<MMOThirdPersonCamera>();
             }
         }
 

@@ -1,0 +1,126 @@
+using System.Threading.Tasks;
+using RPGClone.CharacterSelection;
+using UnityEngine.SceneManagement;
+
+namespace RPGClone.Social
+{
+    public static class MMOSocialPresenceController
+    {
+        public static Task RegisterSelectedCharacterNameAsync()
+        {
+            if (!MMOCharacterSession.HasSelectedCharacter)
+            {
+                return Task.CompletedTask;
+            }
+
+            return RegisterCharacterNameAsync(MMOCharacterSession.SelectedCharacter);
+        }
+
+        public static Task RegisterCharacterNameAsync(MMOCharacterSaveData character)
+        {
+            if (character == null || string.IsNullOrWhiteSpace(character.characterId))
+            {
+                return Task.CompletedTask;
+            }
+
+            EnsureCharacterNameData(character);
+            return MMOSocialServices.CharacterNames.RegisterOrUpdateAsync(new MMOCharacterNameRecord
+            {
+                playerId = MMOSocialIdentityService.AccountId,
+                characterId = character.characterId,
+                characterName = character.characterName,
+                normalizedCharacterName = character.normalizedCharacterName
+            });
+        }
+
+        public static async Task SetSelectedCharacterPresenceAsync(MMOCharacterPresenceStatus status, bool joinsAllowed)
+        {
+            if (!MMOCharacterSession.HasSelectedCharacter)
+            {
+                return;
+            }
+
+            MMOCharacterSaveData character = MMOCharacterSession.SelectedCharacter;
+            EnsureCharacterNameData(character);
+            await MMOSocialServices.Presence.UpdatePresenceAsync(new MMOCharacterPresenceRecord
+            {
+                playerId = MMOSocialIdentityService.AccountId,
+                characterId = character.characterId,
+                characterName = character.characterName,
+                normalizedCharacterName = character.normalizedCharacterName,
+                status = status,
+                sessionId = joinsAllowed ? RPGClone.Services.MMOGameplaySessionService.SessionId : string.Empty,
+                currentSceneName = SceneManager.GetActiveScene().name,
+                joinsAllowed = joinsAllowed
+            });
+        }
+
+        public static async Task AdvertiseSelectedLocalSessionAsync()
+        {
+            if (!MMOCharacterSession.HasSelectedCharacter)
+            {
+                return;
+            }
+
+            MMOCharacterSaveData character = MMOCharacterSession.SelectedCharacter;
+            EnsureCharacterNameData(character);
+            if (!RPGClone.Services.MMOGameplaySessionService.IsLocalHostedSession)
+            {
+                await SetSelectedCharacterPresenceAsync(MMOCharacterPresenceStatus.OnlineInWorld, false);
+                return;
+            }
+
+            IActiveGameplaySession activeSession = MMOLocalHostedGameplaySession.FromCurrentGameplaySession();
+            MMOSessionPresenceRecord sessionRecord = activeSession.CreatePresenceRecord(
+                MMOSocialIdentityService.AccountId,
+                character.characterId,
+                character.characterName);
+            await MMOSocialServices.Sessions.AdvertiseSessionAsync(sessionRecord);
+            await SetSelectedCharacterPresenceAsync(MMOCharacterPresenceStatus.HostingJoinableSession, activeSession.JoinsAllowed);
+        }
+
+        public static async Task SetSelectedCharacterOfflineAsync()
+        {
+            if (!MMOCharacterSession.HasSelectedCharacter)
+            {
+                return;
+            }
+
+            string characterId = MMOCharacterSession.SelectedCharacter.characterId;
+            await MMOSocialServices.Presence.SetOfflineAsync(characterId);
+            await MMOSocialServices.Sessions.ClearHostedSessionAsync(characterId);
+        }
+
+        public static void EnsureCharacterNameData(MMOCharacterSaveData character)
+        {
+            if (character == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(character.characterId))
+            {
+                character.characterId = System.Guid.NewGuid().ToString("N");
+            }
+
+            if (MMOSocialIdentityService.IsAuthenticated)
+            {
+                character.accountId = MMOSocialIdentityService.AccountId;
+            }
+
+            if (string.IsNullOrWhiteSpace(character.characterName))
+            {
+                character.characterName = MMOCharacterNameUtility.CreateFallbackName($"{character.race}{character.characterClass}", character.characterId);
+            }
+
+            if (!MMOCharacterNameUtility.TryValidate(character.characterName, out string displayName, out string normalizedName, out _))
+            {
+                displayName = MMOCharacterNameUtility.CreateFallbackName($"{character.race}{character.characterClass}", character.characterId);
+                normalizedName = MMOCharacterNameUtility.NormalizeLookupName(displayName);
+            }
+
+            character.characterName = displayName;
+            character.normalizedCharacterName = normalizedName;
+        }
+    }
+}

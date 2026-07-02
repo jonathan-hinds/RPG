@@ -11,7 +11,8 @@ namespace RPGClone.UI
         Training,
         Character,
         Spellbook,
-        QuestLog
+        QuestLog,
+        Social
     }
 
     public static class MMOWindowPrefabResolver
@@ -24,7 +25,8 @@ namespace RPGClone.UI
             { MMOWindowPrefabId.Training, "RPGClone/UI/Windows/TrainingWindow" },
             { MMOWindowPrefabId.Character, "RPGClone/UI/Windows/CharacterWindow" },
             { MMOWindowPrefabId.Spellbook, "RPGClone/UI/Windows/SpellbookWindow" },
-            { MMOWindowPrefabId.QuestLog, "RPGClone/UI/Windows/QuestLogWindow" }
+            { MMOWindowPrefabId.QuestLog, "RPGClone/UI/Windows/QuestLogWindow" },
+            { MMOWindowPrefabId.Social, "RPGClone/UI/Windows/GenericWindow" }
         };
 
         public static GameObject Instantiate(MMOWindowPrefabId prefabId, Transform parent, string fallbackName)

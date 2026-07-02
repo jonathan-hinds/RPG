@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using RPGClone.Characters;
 using RPGClone.Inventory;
 using RPGClone.Quests;
+using RPGClone.Services;
 using RPGClone.UI;
 using RPGClone.World;
 using UnityEngine;
@@ -175,22 +176,21 @@ namespace RPGClone.Vendors
 
         private void Interact(Vector2 screenPosition)
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player == null)
+            if (!MMOInteractionContext.TryCreateForLocalPlayer(out MMOInteractionContext context))
             {
                 return;
             }
 
             MMOVendorPresenter.Open(
                 this,
-                player.GetComponent<MMOInventoryContainer>(),
-                player.GetComponent<MMOCurrencyWallet>(),
+                context.Inventory,
+                context.Wallet,
                 screenPosition);
         }
 
         private bool IsPointerOverThisVendor(Vector2 pointerPosition)
         {
-            Camera camera = Camera.main;
+            Camera camera = MMOGameplaySessionService.LocalPlayer.MainCamera;
             if (camera == null)
             {
                 return false;
@@ -204,8 +204,8 @@ namespace RPGClone.Vendors
                 return false;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            Vector3 interactorPosition = player != null ? player.transform.position : camera.transform.position;
+            Transform playerTransform = MMOGameplaySessionService.LocalPlayer.PlayerTransform;
+            Vector3 interactorPosition = playerTransform != null ? playerTransform.position : camera.transform.position;
             return Vector3.Distance(interactorPosition, transform.position) <= interactionDistance;
         }
     }

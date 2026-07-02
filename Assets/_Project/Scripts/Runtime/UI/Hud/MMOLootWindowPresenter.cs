@@ -1,6 +1,7 @@
 using System.Collections;
 using RPGClone.Inventory;
 using RPGClone.Loot;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -137,8 +138,9 @@ namespace RPGClone.UI
 
         private MMOInventoryContainer ResolvePlayerInventory()
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            return player != null ? player.GetComponent<MMOInventoryContainer>() : null;
+            return MMOGameplaySessionService.LocalPlayer.TryGetComponent(out MMOInventoryContainer inventory)
+                ? inventory
+                : null;
         }
 
         private void BuildIfNeeded()

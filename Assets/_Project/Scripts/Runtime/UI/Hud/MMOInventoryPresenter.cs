@@ -1,5 +1,6 @@
 using RPGClone.Inventory;
 using RPGClone.Quests;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -67,12 +68,8 @@ namespace RPGClone.UI
                 return;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                inventory = player.GetComponent<MMOInventoryContainer>();
-                wallet = player.GetComponent<MMOCurrencyWallet>();
-            }
+            MMOGameplaySessionService.LocalPlayer.TryGetComponent(out inventory);
+            MMOGameplaySessionService.LocalPlayer.TryGetComponent(out wallet);
         }
 
         private void ResolveWalletFromInventory()

@@ -17,6 +17,7 @@ namespace RPGClone.Targeting
         public event Action<MMOCharacterIdentity> TargetChanged;
 
         public MMOCharacterIdentity CurrentTarget { get; private set; }
+        public MMOTargetContext CurrentTargetContext => new(CurrentTarget);
 
         public void SetSelectionCamera(Camera newSelectionCamera)
         {

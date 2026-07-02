@@ -231,20 +231,20 @@ namespace RPGClone.UI
         {
             if (player == null)
             {
-                player = MMORuntimeSceneReferences.PlayerTransform;
+                player = MMOGameplaySessionService.LocalPlayer.PlayerTransform;
             }
 
             if (questLog == null && player != null)
             {
-                MMORuntimeSceneReferences.TryGetPlayerComponent(out questLog);
+                MMOGameplaySessionService.LocalPlayer.TryGetComponent(out questLog);
             }
 
             if (inputReader == null && player != null)
             {
-                MMORuntimeSceneReferences.TryGetPlayerComponent(out inputReader);
+                MMOGameplaySessionService.LocalPlayer.TryGetComponent(out inputReader);
             }
 
-            Camera mainCamera = MMORuntimeSceneReferences.MainCamera;
+            Camera mainCamera = MMOGameplaySessionService.LocalPlayer.MainCamera;
             if (gameplayCameraController == null && mainCamera != null)
             {
                 gameplayCameraController = mainCamera.GetComponent<MMOThirdPersonCamera>();

@@ -175,15 +175,15 @@ namespace RPGClone.Quests
                 return;
             }
 
-            MMORuntimeSceneReferences.TryGetPlayerComponent(out MMOInteractionCastController castController);
+            MMOInteractionContext.TryCreateForLocalPlayer(out MMOInteractionContext context);
             pendingScreenPosition = screenPosition;
-            if (castController == null)
+            if (context.InteractionCaster == null)
             {
                 CompleteInteraction();
                 return;
             }
 
-            castController.TryBeginCast($"Opening {DisplayName}", interactionCastSeconds, CompleteInteraction, out _);
+            context.InteractionCaster.TryBeginCast($"Opening {DisplayName}", interactionCastSeconds, CompleteInteraction, out _);
         }
 
         private void CompleteInteraction()
@@ -249,7 +249,7 @@ namespace RPGClone.Quests
                 return false;
             }
 
-            Transform playerTransform = MMORuntimeSceneReferences.PlayerTransform;
+            Transform playerTransform = MMOGameplaySessionService.LocalPlayer.PlayerTransform;
             Vector3 interactorPosition = playerTransform != null ? playerTransform.position : camera.transform.position;
             float sqrInteractionDistance = interactionDistance * interactionDistance;
             return (interactorPosition - transform.position).sqrMagnitude <= sqrInteractionDistance;

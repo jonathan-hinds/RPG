@@ -517,6 +517,7 @@ namespace RPGClone.EditorTools
             MMOInventoryPresenter inventoryPanel = EnsureInventoryPanel(canvas.transform, inventory);
             MMOSpellBookPresenter spellBookPanel = EnsureSpellBookPanel(canvas.transform, playerAbilitySystem);
             MMOQuestLogPresenter questLogPanel = EnsureQuestLogPanel(canvas.transform, questLog);
+            MMOSocialWindowPresenter socialPanel = EnsureSocialPanel(canvas.transform);
             MMOActionBarPresenter actionBar = EnsureActionBar(canvas.transform, playerAbilitySystem, autoAttackController, selectionController, autoAttackAbility);
             EnsureExperienceBar(canvas.transform, experience);
             EnsureLootWindow(canvas.transform);
@@ -531,7 +532,7 @@ namespace RPGClone.EditorTools
             EnsureCastBar(canvas.transform, playerAbilitySystem, interactionCastController);
             EnsureWorldHoverTooltip(canvas.transform, gameplayCamera, questLog);
             EnsureMapHud(canvas.transform, zoneService, playerIdentity != null ? playerIdentity.transform : null, questLog);
-            EnsureBottomHud(canvas.transform, actionBar, characterPanel, inventoryPanel, spellBookPanel, questLogPanel);
+            EnsureBottomHud(canvas.transform, actionBar, characterPanel, inventoryPanel, spellBookPanel, questLogPanel, socialPanel);
             EnsureCombatFeedback(canvas.transform, playerAbilitySystem, gameplayCamera);
 
             EditorUtility.SetDirty(playerFrame);
@@ -771,7 +772,8 @@ namespace RPGClone.EditorTools
             MMOCharacterPanelPresenter characterPanel,
             MMOInventoryPresenter inventoryPanel,
             MMOSpellBookPresenter spellBookPanel,
-            MMOQuestLogPresenter questLogPanel)
+            MMOQuestLogPresenter questLogPanel,
+            MMOSocialWindowPresenter socialPanel)
         {
             Transform existing = canvas.Find("Bottom HUD");
             GameObject bottomHudObject = existing != null ? existing.gameObject : new GameObject("Bottom HUD", typeof(RectTransform));
@@ -784,7 +786,7 @@ namespace RPGClone.EditorTools
                 presenter = bottomHudObject.AddComponent<MMOBottomHudPresenter>();
             }
 
-            presenter.Configure(actionBar, characterPanel, inventoryPanel, spellBookPanel, questLogPanel);
+            presenter.Configure(actionBar, characterPanel, inventoryPanel, spellBookPanel, questLogPanel, socialPanel);
             EditorUtility.SetDirty(presenter);
             return presenter;
         }
@@ -930,6 +932,26 @@ namespace RPGClone.EditorTools
             }
 
             presenter.Configure(questLog);
+            panelObject.SetActive(false);
+            EditorUtility.SetDirty(presenter);
+            return presenter;
+        }
+
+        private static MMOSocialWindowPresenter EnsureSocialPanel(Transform canvas)
+        {
+            GameObject panelObject = EnsureStandardWindowPrefabInstance(
+                canvas,
+                "Friends Panel",
+                MMOWindowPrefabId.Social,
+                "Assets/Resources/RPGClone/UI/Windows/GenericWindow.prefab");
+            panelObject.transform.SetParent(canvas, false);
+
+            MMOSocialWindowPresenter presenter = panelObject.GetComponent<MMOSocialWindowPresenter>();
+            if (presenter == null)
+            {
+                presenter = panelObject.AddComponent<MMOSocialWindowPresenter>();
+            }
+
             panelObject.SetActive(false);
             EditorUtility.SetDirty(presenter);
             return presenter;

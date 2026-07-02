@@ -3,15 +3,20 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using RPGClone.Services;
+using RPGClone.Social;
 using UnityEngine;
 
 namespace RPGClone.CharacterSelection
 {
     public sealed class MMOCloudCharacterRosterRepository : MMOCharacterRosterRepository
     {
-        private const string RosterKey = "character_roster_json";
+        private const string BaseRosterKey = "character_roster_json";
 
         private readonly MMOCharacterRosterRepository fallback = new MMOLocalCharacterRosterRepository();
+
+        private static string RosterKey => MMOSocialIdentityService.IsAuthenticated
+            ? $"{BaseRosterKey}_{MMOSocialIdentityService.AccountId}"
+            : BaseRosterKey;
 
         public async Task<MMOCharacterRosterSaveData> LoadAsync()
         {

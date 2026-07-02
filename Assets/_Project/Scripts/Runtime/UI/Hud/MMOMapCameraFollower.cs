@@ -1,3 +1,4 @@
+using RPGClone.Services;
 using RPGClone.World;
 using UnityEngine;
 
@@ -58,8 +59,7 @@ namespace RPGClone.UI
         {
             if (player == null)
             {
-                GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-                player = playerObject != null ? playerObject.transform : null;
+                player = MMOGameplaySessionService.LocalPlayer.PlayerTransform;
             }
 
             if (zoneService == null)

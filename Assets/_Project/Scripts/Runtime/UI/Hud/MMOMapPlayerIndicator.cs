@@ -1,4 +1,5 @@
 using RPGClone.Player;
+using RPGClone.Services;
 using RPGClone.World;
 using UnityEngine;
 
@@ -56,8 +57,7 @@ namespace RPGClone.UI
         {
             if (player == null)
             {
-                GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-                player = playerObject != null ? playerObject.transform : null;
+                player = MMOGameplaySessionService.LocalPlayer.PlayerTransform;
             }
 
             if (inputReader == null && player != null)
@@ -65,9 +65,10 @@ namespace RPGClone.UI
                 inputReader = player.GetComponent<MMOInputReader>();
             }
 
-            if (gameplayCameraController == null && Camera.main != null)
+            Camera localCamera = MMOGameplaySessionService.LocalPlayer.MainCamera;
+            if (gameplayCameraController == null && localCamera != null)
             {
-                gameplayCameraController = Camera.main.GetComponent<MMOThirdPersonCamera>();
+                gameplayCameraController = localCamera.GetComponent<MMOThirdPersonCamera>();
             }
 
             if (zoneService == null)

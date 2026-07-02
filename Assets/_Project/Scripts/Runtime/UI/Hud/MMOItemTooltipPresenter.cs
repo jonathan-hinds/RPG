@@ -3,6 +3,7 @@ using RPGClone.Inventory;
 using RPGClone.Abilities;
 using RPGClone.Characters;
 using RPGClone.Quests;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -333,8 +334,7 @@ namespace RPGClone.UI
                 yield break;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            MMOQuestLog questLog = player != null ? player.GetComponent<MMOQuestLog>() : null;
+            MMOGameplaySessionService.LocalPlayer.TryGetComponent(out MMOQuestLog questLog);
             if (questLog == null)
             {
                 yield return "Quest Item";

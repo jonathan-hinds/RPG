@@ -4,7 +4,10 @@ using RPGClone.Abilities;
 using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Inventory;
+using RPGClone.Multiplayer;
 using RPGClone.Quests;
+using RPGClone.Services;
+using RPGClone.Social;
 using RPGClone.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -34,6 +37,9 @@ namespace RPGClone.CharacterSelection
         private MMOCharacterRosterRepository repository;
         private bool appliedSession;
         private bool isQuittingOrUnloading;
+        private float nextAccountHeartbeatTime;
+        private bool refreshingSocialSession;
+        private bool isRemoteSessionReplica;
 
         private void Awake()
         {
@@ -50,17 +56,57 @@ namespace RPGClone.CharacterSelection
 
         private void Start()
         {
+            if (isRemoteSessionReplica)
+            {
+                return;
+            }
+
             ApplySelectedCharacter();
+            RegisterLocalSessionPlayer();
+            EnsureSharedSessionBridge();
+            _ = RefreshAdvertisedSessionAsync();
+        }
+
+        private void Update()
+        {
+            if (isRemoteSessionReplica)
+            {
+                return;
+            }
+
+            if (!MMOSocialIdentityService.IsAuthenticated || Time.unscaledTime < nextAccountHeartbeatTime)
+            {
+                return;
+            }
+
+            nextAccountHeartbeatTime = Time.unscaledTime + 5f;
+            MMOServiceResult heartbeat = MMOSocialIdentityService.Heartbeat();
+            if (!heartbeat.Succeeded)
+            {
+                Debug.LogWarning($"Account session ended while in world. {heartbeat.Message}");
+                _ = MMOSocialPresenceController.SetSelectedCharacterOfflineAsync();
+                MMOSocialIdentityService.Logout();
+                return;
+            }
+
+            _ = RefreshAdvertisedSessionAsync();
         }
 
         private void OnApplicationQuit()
         {
             isQuittingOrUnloading = true;
             _ = SaveCurrentCharacterAsync();
+            _ = MMOSocialPresenceController.SetSelectedCharacterOfflineAsync();
+            MMOSocialIdentityService.Logout();
         }
 
         private void OnDisable()
         {
+            if (isRemoteSessionReplica)
+            {
+                return;
+            }
+
             if (!gameObject.scene.isLoaded)
             {
                 return;
@@ -68,6 +114,13 @@ namespace RPGClone.CharacterSelection
 
             isQuittingOrUnloading = true;
             _ = SaveCurrentCharacterAsync();
+            _ = MMOSocialPresenceController.SetSelectedCharacterOfflineAsync();
+            MMOGameplaySessionService.UnregisterLocalPlayer(gameObject);
+        }
+
+        public void MarkAsRemoteSessionReplica()
+        {
+            isRemoteSessionReplica = true;
         }
 
         public void SetArchetypeCatalog(MMOCharacterArchetypeCatalog catalog)
@@ -142,6 +195,8 @@ namespace RPGClone.CharacterSelection
             {
                 transform.SetPositionAndRotation(savedPosition, Quaternion.Euler(saveData.rotationEuler.ToVector3()));
             }
+
+            RegisterLocalSessionPlayer();
         }
 
         public async Task SaveCurrentCharacterAsync()
@@ -176,16 +231,66 @@ namespace RPGClone.CharacterSelection
             }
         }
 
-        private MMOCharacterSaveData CaptureCurrentCharacterData()
+        public MMOCharacterSaveData CaptureCurrentCharacterData()
         {
             MMOCharacterSaveData saveData = new();
             Capture(saveData);
             return saveData;
         }
 
+        public void ApplySessionReplica(MMOCharacterSaveData saveData, bool includeInventory)
+        {
+            if (saveData == null)
+            {
+                return;
+            }
+
+            MarkAsRemoteSessionReplica();
+            MMOCharacterArchetypeDefinition archetype = archetypeCatalog != null
+                ? archetypeCatalog.Find(saveData.race, saveData.characterClass)
+                : null;
+            MMOCharacterCustomization customization = GetComponent<MMOCharacterCustomization>() ?? gameObject.AddComponent<MMOCharacterCustomization>();
+            customization.Configure(saveData.race, saveData.characterClass);
+
+            if (archetype != null)
+            {
+                identity.Configure(archetype.StartingProfile, saveData.DisplayName, true);
+                ApplyProgression(archetype, saveData.level);
+                LearnArchetypeAbilities(archetype);
+            }
+            else
+            {
+                identity.SetDisplayName(saveData.DisplayName);
+                identity.SetLevel(saveData.level);
+            }
+
+            ApplyCharacterVisuals(saveData.race, archetype);
+            if (includeInventory)
+            {
+                ApplyInventory(saveData);
+            }
+
+            ApplyEquipment(saveData);
+            ApplyWeaponSkills(saveData, archetype);
+            ApplyLearnedAbilities(saveData);
+
+            if (saveData.currentHealth > 0)
+            {
+                identity.Health.SetCurrent(saveData.currentHealth);
+            }
+
+            if (saveData.currentMana > 0)
+            {
+                identity.Mana.SetCurrent(saveData.currentMana);
+            }
+        }
+
         private void Capture(MMOCharacterSaveData saveData)
         {
+            saveData.characterId = MMOCharacterSession.HasSelectedCharacter ? MMOCharacterSession.SelectedCharacter.characterId : saveData.characterId;
+            saveData.accountId = MMOCharacterSession.HasSelectedCharacter ? MMOCharacterSession.SelectedCharacter.accountId : string.Empty;
             saveData.characterName = identity.DisplayName;
+            saveData.normalizedCharacterName = MMOCharacterNameUtility.NormalizeLookupName(identity.DisplayName);
             MMOCharacterCustomization customization = GetComponent<MMOCharacterCustomization>();
             if (customization != null)
             {
@@ -215,9 +320,49 @@ namespace RPGClone.CharacterSelection
             CaptureQuests(saveData);
         }
 
+        private void RegisterLocalSessionPlayer()
+        {
+            string characterId = MMOCharacterSession.HasSelectedCharacter
+                ? MMOCharacterSession.SelectedCharacter.characterId
+                : string.Empty;
+            MMOGameplaySessionService.RegisterLocalPlayer(gameObject, characterId);
+        }
+
+        private void EnsureSharedSessionBridge()
+        {
+            if (GetComponent<MMOLocalSharedSessionBridge>() == null)
+            {
+                gameObject.AddComponent<MMOLocalSharedSessionBridge>();
+            }
+        }
+
+        private async Task RefreshAdvertisedSessionAsync()
+        {
+            if (refreshingSocialSession)
+            {
+                return;
+            }
+
+            refreshingSocialSession = true;
+            try
+            {
+                await MMOSocialPresenceController.AdvertiseSelectedLocalSessionAsync();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Failed to refresh hosted social session. {exception.Message}");
+            }
+            finally
+            {
+                refreshingSocialSession = false;
+            }
+        }
+
         private static void CopyCapturedData(MMOCharacterSaveData source, MMOCharacterSaveData destination)
         {
+            destination.accountId = source.accountId;
             destination.characterName = source.characterName;
+            destination.normalizedCharacterName = source.normalizedCharacterName;
             destination.race = source.race;
             destination.characterClass = source.characterClass;
             destination.level = source.level;

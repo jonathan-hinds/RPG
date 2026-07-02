@@ -1,6 +1,7 @@
 using RPGClone.Abilities;
 using RPGClone.Characters;
 using RPGClone.Quests;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -62,19 +63,11 @@ namespace RPGClone.UI
                 return;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                if (abilitySystem == null)
-                {
-                    abilitySystem = player.GetComponent<MMOAbilitySystem>();
-                }
+            MMOGameplaySessionService.LocalPlayer.TryGetComponent(out MMOAbilitySystem resolvedAbilitySystem);
+            MMOGameplaySessionService.LocalPlayer.TryGetComponent(out MMOInteractionCastController resolvedInteractionCastController);
 
-                if (interactionCastController == null)
-                {
-                    interactionCastController = player.GetComponent<MMOInteractionCastController>();
-                }
-            }
+            abilitySystem ??= resolvedAbilitySystem;
+            interactionCastController ??= resolvedInteractionCastController;
         }
 
         private void Subscribe()

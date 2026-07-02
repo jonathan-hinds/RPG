@@ -1,18 +1,19 @@
 using System.IO;
 using System.Threading.Tasks;
+using RPGClone.Social;
 using UnityEngine;
 
 namespace RPGClone.CharacterSelection
 {
     public sealed class MMOLocalCharacterRosterRepository : MMOCharacterRosterRepository
     {
-        private const string FileName = "rpg_clone_character_roster.json";
+        private const string FileNameFormat = "rpg_clone_character_roster_{0}.json";
 
         private readonly string path;
 
         public MMOLocalCharacterRosterRepository()
         {
-            path = Path.Combine(Application.persistentDataPath, FileName);
+            path = Path.Combine(Application.persistentDataPath, string.Format(FileNameFormat, Sanitize(MMOSocialIdentityService.AccountId)));
         }
 
         public async Task<MMOCharacterRosterSaveData> LoadAsync()
@@ -39,6 +40,21 @@ namespace RPGClone.CharacterSelection
             }
 
             await Task.Run(() => File.WriteAllText(path, json));
+        }
+
+        private static string Sanitize(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "offline";
+            }
+
+            foreach (char invalid in Path.GetInvalidFileNameChars())
+            {
+                value = value.Replace(invalid, '_');
+            }
+
+            return value.Replace(' ', '_');
         }
     }
 }

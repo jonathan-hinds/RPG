@@ -1,4 +1,5 @@
 using RPGClone.Abilities;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -47,11 +48,7 @@ namespace RPGClone.UI
                 return;
             }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                abilitySystem = player.GetComponent<MMOAbilitySystem>();
-            }
+            MMOGameplaySessionService.LocalPlayer.TryGetComponent(out abilitySystem);
         }
 
         private void BuildIfNeeded()

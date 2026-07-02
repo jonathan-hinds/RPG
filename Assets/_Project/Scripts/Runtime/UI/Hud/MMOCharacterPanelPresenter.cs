@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Inventory;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -102,25 +103,19 @@ namespace RPGClone.UI
 
         private void ResolveReferences()
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player == null)
-            {
-                return;
-            }
-
             if (character == null)
             {
-                character = player.GetComponent<MMOCharacterIdentity>();
+                MMOGameplaySessionService.LocalPlayer.TryGetComponent(out character);
             }
 
             if (equipment == null)
             {
-                equipment = player.GetComponent<MMOCharacterEquipment>();
+                MMOGameplaySessionService.LocalPlayer.TryGetComponent(out equipment);
             }
 
             if (inventory == null)
             {
-                inventory = player.GetComponent<MMOInventoryContainer>();
+                MMOGameplaySessionService.LocalPlayer.TryGetComponent(out inventory);
             }
         }
 
