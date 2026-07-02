@@ -55,12 +55,20 @@ namespace RPGClone.UI
         public void OnDrop(PointerEventData eventData)
         {
             MMOActionBarDragPayload payload = MMOActionBarDragState.Current;
-            if (!payload.FromInventory || inventory == null || payload.SourceInventory != inventory)
+            if (inventory == null)
             {
                 return;
             }
 
-            inventory.TryMoveSlot(payload.SourceSlotIndex, slotIndex);
+            if (payload.FromInventory && payload.SourceInventory == inventory)
+            {
+                inventory.TryMoveSlot(payload.SourceSlotIndex, slotIndex);
+            }
+            else if (payload.FromEquipment)
+            {
+                payload.SourceEquipment.TryUnequipToInventory(inventory, payload.SourceEquipmentSlot, slotIndex);
+            }
+
             MMOActionBarDragState.EndDrag();
         }
     }

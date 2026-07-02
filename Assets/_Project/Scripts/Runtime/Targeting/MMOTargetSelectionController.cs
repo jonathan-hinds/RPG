@@ -12,7 +12,6 @@ namespace RPGClone.Targeting
         [SerializeField] private Camera selectionCamera;
         [SerializeField] private LayerMask selectionMask = ~0;
         [SerializeField, Min(1f)] private float maxSelectionDistance = 250f;
-        [SerializeField] private bool clearTargetOnMiss = true;
         [SerializeField] private bool ignorePointerOverUi = true;
 
         public event Action<MMOCharacterIdentity> TargetChanged;
@@ -34,6 +33,13 @@ namespace RPGClone.Targeting
 
         private void Update()
         {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+            {
+                ClearTarget();
+                return;
+            }
+
             Mouse mouse = Mouse.current;
             if (mouse == null || !mouse.leftButton.wasPressedThisFrame || mouse.rightButton.isPressed)
             {
@@ -89,11 +95,6 @@ namespace RPGClone.Targeting
             Ray ray = selectionCamera.ScreenPointToRay(pointerPosition);
             if (!Physics.Raycast(ray, out RaycastHit hit, maxSelectionDistance, selectionMask, QueryTriggerInteraction.Ignore))
             {
-                if (clearTargetOnMiss)
-                {
-                    ClearTarget();
-                }
-
                 return;
             }
 
@@ -104,10 +105,6 @@ namespace RPGClone.Targeting
                 return;
             }
 
-            if (clearTargetOnMiss)
-            {
-                ClearTarget();
-            }
         }
     }
 }

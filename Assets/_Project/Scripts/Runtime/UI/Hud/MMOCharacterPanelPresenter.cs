@@ -13,6 +13,7 @@ namespace RPGClone.UI
         [SerializeField] private bool autoBuild = true;
         [SerializeField] private MMOCharacterIdentity character;
         [SerializeField] private MMOCharacterEquipment equipment;
+        [SerializeField] private MMOInventoryContainer inventory;
 
         private Text nameText;
         private Text levelText;
@@ -115,6 +116,11 @@ namespace RPGClone.UI
             if (equipment == null)
             {
                 equipment = player.GetComponent<MMOCharacterEquipment>();
+            }
+
+            if (inventory == null)
+            {
+                inventory = player.GetComponent<MMOInventoryContainer>();
             }
         }
 
@@ -333,7 +339,16 @@ namespace RPGClone.UI
             {
                 slot.color = MMOItemIconView.GetSlotBackgroundColor(equippedItem);
                 MMOItemIconView.AddToSlot(rectTransform, equippedItem);
+                MMOItemTooltipTrigger.Bind(slot.gameObject, equippedItem);
             }
+
+            MMOEquipmentSlotInteraction interaction = slot.gameObject.GetComponent<MMOEquipmentSlotInteraction>();
+            if (interaction == null)
+            {
+                interaction = slot.gameObject.AddComponent<MMOEquipmentSlotInteraction>();
+            }
+
+            interaction.Configure(equipment, inventory, slotType);
         }
 
         private static bool HasSlot(IReadOnlyList<MMOEquipmentSlotType> slots, MMOEquipmentSlotType slotType)

@@ -123,6 +123,31 @@ namespace RPGClone.Inventory
             return false;
         }
 
+        public bool CanAddItems(IEnumerable<MMOItemDefinition> items, int emptiedSlotIndex = -1)
+        {
+            EnsureSlotList();
+            if (items == null)
+            {
+                return true;
+            }
+
+            List<MMOItemStack> simulatedSlots = new(slots.Count);
+            for (int i = 0; i < slots.Count; i++)
+            {
+                simulatedSlots.Add(i == emptiedSlotIndex ? new MMOItemStack() : slots[i].Clone());
+            }
+
+            foreach (MMOItemDefinition item in items)
+            {
+                if (item == null || !CanAddItemToSimulatedSlots(simulatedSlots, item, 1))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public bool TryAddStack(MMOItemStack stack, out int remainingQuantity)
         {
             return stack != null
@@ -297,6 +322,47 @@ namespace RPGClone.Inventory
             {
                 slots[i] ??= new MMOItemStack();
             }
+        }
+
+        private static bool CanAddItemToSimulatedSlots(List<MMOItemStack> simulatedSlots, MMOItemDefinition item, int quantity)
+        {
+            int remainingQuantity = Mathf.Max(0, quantity);
+            if (item == null || remainingQuantity <= 0)
+            {
+                return false;
+            }
+
+            foreach (MMOItemStack slot in simulatedSlots)
+            {
+                if (slot == null || slot.IsEmpty || slot.Item != item)
+                {
+                    continue;
+                }
+
+                remainingQuantity = slot.Add(remainingQuantity);
+                if (remainingQuantity <= 0)
+                {
+                    return true;
+                }
+            }
+
+            foreach (MMOItemStack slot in simulatedSlots)
+            {
+                if (slot == null || !slot.IsEmpty)
+                {
+                    continue;
+                }
+
+                int accepted = Mathf.Min(remainingQuantity, item.MaxStackSize);
+                slot.Configure(item, accepted);
+                remainingQuantity -= accepted;
+                if (remainingQuantity <= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

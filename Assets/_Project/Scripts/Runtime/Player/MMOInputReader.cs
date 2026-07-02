@@ -1,4 +1,6 @@
+using RPGClone.UI;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace RPGClone.Player
@@ -16,6 +18,13 @@ namespace RPGClone.Player
 
             bool leftMouseHeld = mouse != null && mouse.leftButton.isPressed;
             bool rightMouseHeld = mouse != null && mouse.rightButton.isPressed;
+            bool gameplayMouseBlocked = IsGameplayMouseInputBlocked();
+            if (gameplayMouseBlocked)
+            {
+                leftMouseHeld = false;
+                rightMouseHeld = false;
+            }
+
             bool bothMouseButtonsHeld = leftMouseHeld && rightMouseHeld;
 
             float forward = PositiveNegative(keyboard, Key.W, Key.S);
@@ -33,7 +42,7 @@ namespace RPGClone.Player
                 keyboardTurn = 0f;
             }
 
-            Vector2 mouseDelta = mouse != null ? mouse.delta.ReadValue() : Vector2.zero;
+            Vector2 mouseDelta = mouse != null && !gameplayMouseBlocked ? mouse.delta.ReadValue() : Vector2.zero;
             float zoomDelta = mouse != null ? mouse.scroll.ReadValue().y : 0f;
             bool jumpPressed = keyboard != null && keyboard.spaceKey.wasPressedThisFrame;
 
@@ -92,6 +101,16 @@ namespace RPGClone.Player
 
             Cursor.lockState = isMouseLooking ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = !isMouseLooking;
+        }
+
+        private static bool IsGameplayMouseInputBlocked()
+        {
+            if (MMOActionBarDragState.BlocksGameplayMouseInput)
+            {
+                return true;
+            }
+
+            return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
         }
 
         private void OnDisable()

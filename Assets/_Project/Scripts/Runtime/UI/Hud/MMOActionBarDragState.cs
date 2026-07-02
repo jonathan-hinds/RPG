@@ -12,11 +12,14 @@ namespace RPGClone.UI
         public readonly MMOItemDefinition Item;
         public readonly MMOActionBarPresenter SourceActionBar;
         public readonly MMOInventoryContainer SourceInventory;
+        public readonly MMOCharacterEquipment SourceEquipment;
+        public readonly MMOEquipmentSlotType SourceEquipmentSlot;
         public readonly int SourceSlotIndex;
 
         public bool IsValid => Ability != null || Item != null;
         public bool FromActionBar => SourceActionBar != null && SourceSlotIndex >= 0;
         public bool FromInventory => SourceInventory != null && SourceSlotIndex >= 0;
+        public bool FromEquipment => SourceEquipment != null && Item != null;
         public MMOActionBarSlotBindingType BindingType => Ability != null
             ? MMOActionBarSlotBindingType.Ability
             : Item != null
@@ -29,6 +32,8 @@ namespace RPGClone.UI
             Item = null;
             SourceActionBar = sourceActionBar;
             SourceInventory = null;
+            SourceEquipment = null;
+            SourceEquipmentSlot = default;
             SourceSlotIndex = sourceSlotIndex;
         }
 
@@ -38,6 +43,8 @@ namespace RPGClone.UI
             Item = item;
             SourceActionBar = null;
             SourceInventory = sourceInventory;
+            SourceEquipment = null;
+            SourceEquipmentSlot = default;
             SourceSlotIndex = sourceSlotIndex;
         }
 
@@ -47,7 +54,20 @@ namespace RPGClone.UI
             Item = item;
             SourceActionBar = sourceActionBar;
             SourceInventory = null;
+            SourceEquipment = null;
+            SourceEquipmentSlot = default;
             SourceSlotIndex = sourceSlotIndex;
+        }
+
+        public MMOActionBarDragPayload(MMOItemDefinition item, MMOCharacterEquipment sourceEquipment, MMOEquipmentSlotType sourceEquipmentSlot)
+        {
+            Ability = null;
+            Item = item;
+            SourceActionBar = null;
+            SourceInventory = null;
+            SourceEquipment = sourceEquipment;
+            SourceEquipmentSlot = sourceEquipmentSlot;
+            SourceSlotIndex = -1;
         }
     }
 
@@ -57,6 +77,7 @@ namespace RPGClone.UI
 
         public static MMOActionBarDragPayload Current { get; private set; }
         public static bool HasPayload => Current.IsValid;
+        public static bool BlocksGameplayMouseInput => HasPayload;
 
         public static bool BeginDrag(MMOActionBarDragPayload payload, PointerEventData eventData, Transform owner, string label, Sprite icon)
         {

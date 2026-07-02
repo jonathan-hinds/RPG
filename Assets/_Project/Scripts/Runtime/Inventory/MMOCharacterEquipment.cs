@@ -102,13 +102,30 @@ namespace RPGClone.Inventory
             }
 
             MMOItemStack stack = inventory.GetSlot(slotIndex);
-            if (stack == null || stack.IsEmpty || !TryEquip(stack.Item))
+            if (stack == null || stack.IsEmpty)
             {
                 return false;
             }
 
-            stack.Clear();
-            inventory.SetSlot(slotIndex, null, 0);
+            MMOItemDefinition item = stack.Item;
+            if (!CanEquip(item))
+            {
+                return false;
+            }
+
+            List<MMOEquipmentSlotType> displacedSlots = GetSlotsDisplacedBy(item);
+            List<MMOItemDefinition> displacedItems = GetEquippedItems(displacedSlots);
+            int emptiedSlotIndex = stack.Quantity <= 1 ? slotIndex : -1;
+            if (!inventory.CanAddItems(displacedItems, emptiedSlotIndex))
+            {
+                return false;
+            }
+
+            EquipItem(item, displacedSlots);
+            int remainingSourceQuantity = stack.Quantity - 1;
+            inventory.SetSlot(slotIndex, remainingSourceQuantity > 0 ? item : null, remainingSourceQuantity);
+            AddItemsToInventory(inventory, displacedItems);
+            Changed?.Invoke(this);
             return true;
         }
 
@@ -119,24 +136,30 @@ namespace RPGClone.Inventory
                 return false;
             }
 
-            MMOEquippedItemSlot existing = GetOrCreateSlot(item.EquipmentSlot);
-            MMOCharacterIdentity identity = GetComponent<MMOCharacterIdentity>();
-            if (identity != null && existing.Item != null)
+            EquipItem(item, GetSlotsDisplacedBy(item));
+            Changed?.Invoke(this);
+            return true;
+        }
+
+        public bool TryUnequipToInventory(MMOInventoryContainer inventory, MMOEquipmentSlotType slotType, int preferredSlotIndex = -1)
+        {
+            if (inventory == null)
             {
-                identity.RemoveStatGains(existing.Item.StatBonuses, true);
+                return false;
             }
 
-            existing.Configure(item.EquipmentSlot, item);
-            if (identity != null)
+            MMOItemDefinition item = GetEquippedItem(slotType);
+            if (item == null || !inventory.CanAddItem(item, 1))
             {
-                identity.ApplyStatGains(item.StatBonuses, true);
+                return false;
             }
 
-            if (item.IsTwoHandedWeapon)
+            if (!TryAddUnequippedItem(inventory, item, preferredSlotIndex))
             {
-                ClearSlot(MMOEquipmentSlotType.OffHand, true);
+                return false;
             }
 
+            ClearSlot(slotType, true);
             Changed?.Invoke(this);
             return true;
         }
@@ -206,6 +229,96 @@ namespace RPGClone.Inventory
             }
 
             slot.Configure(slotType, null);
+        }
+
+        private void EquipItem(MMOItemDefinition item, IReadOnlyList<MMOEquipmentSlotType> displacedSlots)
+        {
+            MMOCharacterIdentity identity = GetComponent<MMOCharacterIdentity>();
+            if (displacedSlots != null)
+            {
+                for (int i = 0; i < displacedSlots.Count; i++)
+                {
+                    MMOEquippedItemSlot displacedSlot = GetOrCreateSlot(displacedSlots[i]);
+                    if (identity != null && displacedSlot.Item != null)
+                    {
+                        identity.RemoveStatGains(displacedSlot.Item.StatBonuses, true);
+                    }
+
+                    displacedSlot.Configure(displacedSlots[i], null);
+                }
+            }
+
+            MMOEquippedItemSlot targetSlot = GetOrCreateSlot(item.EquipmentSlot);
+            targetSlot.Configure(item.EquipmentSlot, item);
+            if (identity != null)
+            {
+                identity.ApplyStatGains(item.StatBonuses, true);
+            }
+        }
+
+        private List<MMOEquipmentSlotType> GetSlotsDisplacedBy(MMOItemDefinition item)
+        {
+            List<MMOEquipmentSlotType> slots = new();
+            if (item == null)
+            {
+                return slots;
+            }
+
+            slots.Add(item.EquipmentSlot);
+            if (item.IsTwoHandedWeapon && item.EquipmentSlot == MMOEquipmentSlotType.MainHand)
+            {
+                slots.Add(MMOEquipmentSlotType.OffHand);
+            }
+
+            return slots;
+        }
+
+        private List<MMOItemDefinition> GetEquippedItems(IReadOnlyList<MMOEquipmentSlotType> slotTypes)
+        {
+            List<MMOItemDefinition> items = new();
+            if (slotTypes == null)
+            {
+                return items;
+            }
+
+            for (int i = 0; i < slotTypes.Count; i++)
+            {
+                MMOItemDefinition equippedItem = GetEquippedItem(slotTypes[i]);
+                if (equippedItem != null)
+                {
+                    items.Add(equippedItem);
+                }
+            }
+
+            return items;
+        }
+
+        private static void AddItemsToInventory(MMOInventoryContainer inventory, IReadOnlyList<MMOItemDefinition> items)
+        {
+            if (inventory == null || items == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                inventory.TryAddItem(items[i], 1, out _);
+            }
+        }
+
+        private static bool TryAddUnequippedItem(MMOInventoryContainer inventory, MMOItemDefinition item, int preferredSlotIndex)
+        {
+            if (preferredSlotIndex >= 0)
+            {
+                MMOItemStack preferredSlot = inventory.GetSlot(preferredSlotIndex);
+                if (preferredSlot != null && preferredSlot.IsEmpty)
+                {
+                    inventory.SetSlot(preferredSlotIndex, item, 1);
+                    return true;
+                }
+            }
+
+            return inventory.TryAddItem(item, 1, out int remainingQuantity) && remainingQuantity <= 0;
         }
 
         private static MMOArmorWeight GetMaximumArmorWeight(MMOPlayableClass characterClass)
