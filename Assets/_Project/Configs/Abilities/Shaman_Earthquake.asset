@@ -27,6 +27,8 @@ MonoBehaviour:
   interruptOnMovement: 0
   castOnSelfWhenFriendlyTargetInvalid: 0
   resetCooldownOnCriticalHit: 0
+  animationStyle: 0
+  visualEffects: {fileID: 11400000, guid: b3233d279187a304aa7ce2004ad699d4, type: 2}
   areaRadius: 6
   areaTargetFilter: 0
   effects:
@@ -48,3 +50,4 @@ MonoBehaviour:
     stackLimit: 1
     chargeSpeed: 18
     chargeStopDistance: 2.5
+    chargeImpactDelaySeconds: 0.18

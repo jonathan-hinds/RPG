@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RPGClone.Vfx;
 using UnityEngine;
 
 namespace RPGClone.Abilities
@@ -22,6 +23,7 @@ namespace RPGClone.Abilities
         [SerializeField] private bool castOnSelfWhenFriendlyTargetInvalid;
         [SerializeField] private bool resetCooldownOnCriticalHit;
         [SerializeField] private MMOAbilityAnimationStyle animationStyle = MMOAbilityAnimationStyle.Automatic;
+        [SerializeField] private MMOAbilityVfxDefinition visualEffects;
         [Header("Area")]
         [SerializeField, Min(0f)] private float areaRadius;
         [SerializeField] private MMOAbilityAreaTargetFilter areaTargetFilter = MMOAbilityAreaTargetFilter.Hostile;
@@ -43,6 +45,7 @@ namespace RPGClone.Abilities
         public bool CastOnSelfWhenFriendlyTargetInvalid => castOnSelfWhenFriendlyTargetInvalid;
         public bool ResetCooldownOnCriticalHit => resetCooldownOnCriticalHit;
         public MMOAbilityAnimationStyle AnimationStyle => animationStyle;
+        public MMOAbilityVfxDefinition VisualEffects => visualEffects;
         public float AreaRadius => areaRadius;
         public MMOAbilityAreaTargetFilter AreaTargetFilter => areaTargetFilter;
         public bool HasArea => areaRadius > 0f;
@@ -194,6 +197,11 @@ namespace RPGClone.Abilities
         public void SetAnimationStyle(MMOAbilityAnimationStyle newAnimationStyle)
         {
             animationStyle = newAnimationStyle;
+        }
+
+        public void SetVisualEffects(MMOAbilityVfxDefinition newVisualEffects)
+        {
+            visualEffects = newVisualEffects;
         }
     }
 }

@@ -606,10 +606,6 @@ namespace RPGClone.CharacterSelection
                 targetTransform.localScale = GetRaceVisualScale(race);
             }
 
-            if (renderer != null && archetype != null)
-            {
-                renderer.material.color = archetype.ModelTint;
-            }
         }
 
         private static Vector3 GetRaceVisualScale(MMOPlayableRace race)

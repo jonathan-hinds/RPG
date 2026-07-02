@@ -40,3 +40,10 @@ MonoBehaviour:
     meleeMaxDamage: 0
     meleeAttackSpeed: 2
     meleeRange: 3
+  equipmentVisual: {fileID: 11400000, guid: af22db45ac7a1de46a574b3379331f66, type: 2}
+  weaponType: 0
+  weaponMinDamage: 0
+  weaponMaxDamage: 0
+  weaponSpeedSeconds: 2
+  shieldBlockValue: 0
+  allowedClasses: 

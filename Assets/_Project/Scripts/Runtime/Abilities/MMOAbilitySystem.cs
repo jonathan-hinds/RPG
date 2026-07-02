@@ -5,6 +5,7 @@ using RPGClone.Buffs;
 using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Player;
+using RPGClone.Vfx;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -30,6 +31,7 @@ namespace RPGClone.Abilities
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity, float> CastProgressed;
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity, string> CastInterrupted;
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity> CastCompleted;
+        public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity, Vector3, bool> AbilityReleased;
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity> ChargeStarted;
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity, float> ChargeImpactStarted;
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity> ChargeCompleted;
@@ -59,6 +61,7 @@ namespace RPGClone.Abilities
         private void Awake()
         {
             EnsureInitialized();
+            EnsureVfxController();
         }
 
         private void OnEnable()
@@ -191,6 +194,12 @@ namespace RPGClone.Abilities
                     SpendResourceCost(ability);
                     StartCooldown(ability);
                     AbilityUsed?.Invoke(this, ability, resolvedTarget);
+                    AbilityReleased?.Invoke(
+                        this,
+                        ability,
+                        resolvedTarget,
+                        resolvedTarget != null ? resolvedTarget.transform.position : transform.position,
+                        false);
                 }
 
                 CastStarted?.Invoke(this, ability, resolvedTarget, ability.CastTimeSeconds);
@@ -217,6 +226,7 @@ namespace RPGClone.Abilities
                     SpendResourceCost(ability);
                     StartCooldown(ability);
                     AbilityUsed?.Invoke(this, ability, null);
+                    AbilityReleased?.Invoke(this, ability, null, targetPosition, true);
                 }
 
                 CastStarted?.Invoke(this, ability, null, ability.CastTimeSeconds);
@@ -321,10 +331,17 @@ namespace RPGClone.Abilities
             if (ability.HasArea)
             {
                 Vector3 center = resolvedTarget != null ? resolvedTarget.transform.position : transform.position;
+                AbilityReleased?.Invoke(this, ability, resolvedTarget, center, true);
                 ApplyAreaEffects(ability, center);
             }
             else
             {
+                AbilityReleased?.Invoke(
+                    this,
+                    ability,
+                    resolvedTarget,
+                    resolvedTarget != null ? resolvedTarget.transform.position : transform.position,
+                    false);
                 ApplyEffects(ability, targetCombatant);
             }
 
@@ -336,6 +353,7 @@ namespace RPGClone.Abilities
             SpendResourceCost(ability);
             StartCooldown(ability);
 
+            AbilityReleased?.Invoke(this, ability, null, targetPosition, true);
             ApplyAreaEffects(ability, targetPosition);
             AbilityUsed?.Invoke(this, ability, null);
         }
@@ -906,6 +924,14 @@ namespace RPGClone.Abilities
             if (combatant == null)
             {
                 combatant = GetComponent<MMOCombatant>();
+            }
+        }
+
+        private void EnsureVfxController()
+        {
+            if (GetComponent<MMOAbilityVfxController>() == null)
+            {
+                gameObject.AddComponent<MMOAbilityVfxController>();
             }
         }
 

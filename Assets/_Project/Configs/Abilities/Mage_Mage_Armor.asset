@@ -23,8 +23,14 @@ MonoBehaviour:
   cooldownSeconds: 0
   manaCost: 0
   castTimeSeconds: 0
+  channeled: 0
   interruptOnMovement: 0
   castOnSelfWhenFriendlyTargetInvalid: 0
+  resetCooldownOnCriticalHit: 0
+  animationStyle: 0
+  visualEffects: {fileID: 11400000, guid: b6a2728a4170f7541b48f50e82866e55, type: 2}
+  areaRadius: 0
+  areaTargetFilter: 0
   effects:
   - effectType: 2
     amountSource: 0
@@ -37,6 +43,11 @@ MonoBehaviour:
     attackSpeedMultiplier: 1
     healthRegenMultiplier: 1
     manaRegenMultiplier: 1.5
+    movementSpeedMultiplier: 1
     damageTakenAsManaPercent: 0
+    harmfulEffect: 0
+    tickSeconds: 1
+    stackLimit: 1
     chargeSpeed: 18
     chargeStopDistance: 2.5
+    chargeImpactDelaySeconds: 0.18

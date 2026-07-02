@@ -14,6 +14,8 @@ namespace RPGClone.Characters
         [Header("Replacement")]
         [SerializeField] private GameObject modelPrefab;
         [SerializeField] private Material materialOverride;
+        [SerializeField] private bool useColorOverride;
+        [SerializeField] private Color colorOverride = Color.white;
         [SerializeField] private Texture2D diffuseTexture;
         [SerializeField] private Texture2D normalTexture;
 
@@ -27,6 +29,8 @@ namespace RPGClone.Characters
         public bool HideBaseBodyPart => hideBaseBodyPart;
         public GameObject ModelPrefab => modelPrefab;
         public Material MaterialOverride => materialOverride;
+        public bool UseColorOverride => useColorOverride;
+        public Color ColorOverride => colorOverride;
         public Texture2D DiffuseTexture => diffuseTexture;
         public Texture2D NormalTexture => normalTexture;
         public Vector3 LocalPosition => localPosition;
@@ -39,6 +43,8 @@ namespace RPGClone.Characters
             bool newHideBaseBodyPart,
             GameObject newModelPrefab,
             Material newMaterialOverride,
+            bool newUseColorOverride,
+            Color newColorOverride,
             Texture2D newDiffuseTexture,
             Texture2D newNormalTexture,
             Vector3 newLocalPosition,
@@ -50,6 +56,8 @@ namespace RPGClone.Characters
             hideBaseBodyPart = newHideBaseBodyPart;
             modelPrefab = newModelPrefab;
             materialOverride = newMaterialOverride;
+            useColorOverride = newUseColorOverride;
+            colorOverride = newColorOverride;
             diffuseTexture = newDiffuseTexture;
             normalTexture = newNormalTexture;
             localPosition = newLocalPosition;

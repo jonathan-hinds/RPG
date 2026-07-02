@@ -19,12 +19,15 @@ namespace RPGClone.Player
         private void Awake()
         {
             EnsureReferences();
+            EnsureBodyPartSlots();
             CacheOriginalMaterials();
         }
 
         private void OnEnable()
         {
             EnsureReferences();
+            EnsureBodyPartSlots();
+            CacheOriginalMaterials();
             if (equipment != null)
             {
                 equipment.Changed -= OnEquipmentChanged;
@@ -51,6 +54,7 @@ namespace RPGClone.Player
             bodyPartSlots = newBodyPartSlots != null
                 ? new List<MMOBodyPartRendererSlot>(newBodyPartSlots)
                 : new List<MMOBodyPartRendererSlot>();
+            EnsureBodyPartSlots();
             CacheOriginalMaterials();
             RebuildEquipmentVisuals();
         }
@@ -78,7 +82,7 @@ namespace RPGClone.Player
                 MMOEquipmentVisualDefinition visualDefinition = equippedItem?.Item != null
                     ? equippedItem.Item.EquipmentVisual
                     : null;
-                if (visualDefinition != null)
+                if (visualDefinition != null && IsVisualCompatibleWithSlot(visualDefinition, equippedItem.SlotType))
                 {
                     ApplyVisualDefinition(visualDefinition);
                 }
@@ -175,8 +179,9 @@ namespace RPGClone.Player
         private Material CreateReplacementMaterial(Material sourceMaterial, MMOEquipmentVisualDefinition visualDefinition)
         {
             bool hasTextureOverride = visualDefinition.DiffuseTexture != null || visualDefinition.NormalTexture != null;
+            bool hasColorOverride = visualDefinition.UseColorOverride;
             Material baseMaterial = visualDefinition.MaterialOverride != null ? visualDefinition.MaterialOverride : sourceMaterial;
-            if (!hasTextureOverride)
+            if (!hasTextureOverride && !hasColorOverride)
             {
                 return baseMaterial;
             }
@@ -184,6 +189,17 @@ namespace RPGClone.Player
             Material materialInstance = baseMaterial != null
                 ? new Material(baseMaterial)
                 : new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
+            if (hasColorOverride)
+            {
+                SetColorIfPresent(materialInstance, "_BaseColor", visualDefinition.ColorOverride);
+                SetColorIfPresent(materialInstance, "_Color", visualDefinition.ColorOverride);
+                if (visualDefinition.DiffuseTexture == null)
+                {
+                    SetTextureIfPresent(materialInstance, "_BaseMap", null);
+                    SetTextureIfPresent(materialInstance, "_MainTex", null);
+                }
+            }
+
             SetTextureIfPresent(materialInstance, "_BaseMap", visualDefinition.DiffuseTexture);
             SetTextureIfPresent(materialInstance, "_MainTex", visualDefinition.DiffuseTexture);
             SetTextureIfPresent(materialInstance, "_BumpMap", visualDefinition.NormalTexture);
@@ -196,9 +212,22 @@ namespace RPGClone.Player
             return materialInstance;
         }
 
+        private static bool IsVisualCompatibleWithSlot(MMOEquipmentVisualDefinition visualDefinition, MMOEquipmentSlotType equippedSlot)
+        {
+            return visualDefinition == null || visualDefinition.EquipmentSlot == equippedSlot;
+        }
+
+        private static void SetColorIfPresent(Material material, string propertyName, Color color)
+        {
+            if (material != null && material.HasProperty(propertyName))
+            {
+                material.SetColor(propertyName, color);
+            }
+        }
+
         private static void SetTextureIfPresent(Material material, string propertyName, Texture texture)
         {
-            if (texture != null && material.HasProperty(propertyName))
+            if (material != null && material.HasProperty(propertyName))
             {
                 material.SetTexture(propertyName, texture);
             }
@@ -229,6 +258,58 @@ namespace RPGClone.Player
             activeMaterialInstances.Clear();
         }
 
+        private void EnsureBodyPartSlots()
+        {
+            if (HasUsableBodyPartSlots())
+            {
+                return;
+            }
+
+            Dictionary<MMOCharacterBodyPart, List<Renderer>> renderersByPart = new();
+            foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                MMOCharacterBodyPart bodyPart = ResolveBodyPart(renderer);
+                if (!renderersByPart.TryGetValue(bodyPart, out List<Renderer> renderers))
+                {
+                    renderers = new List<Renderer>();
+                    renderersByPart[bodyPart] = renderers;
+                }
+
+                renderers.Add(renderer);
+            }
+
+            bodyPartSlots = new List<MMOBodyPartRendererSlot>();
+            foreach (KeyValuePair<MMOCharacterBodyPart, List<Renderer>> pair in renderersByPart)
+            {
+                Renderer firstRenderer = pair.Value.Count > 0 ? pair.Value[0] : null;
+                Transform anchor = firstRenderer != null ? firstRenderer.transform : transform;
+                bodyPartSlots.Add(new MMOBodyPartRendererSlot(pair.Key, anchor, pair.Value.ToArray()));
+            }
+        }
+
+        private bool HasUsableBodyPartSlots()
+        {
+            if (bodyPartSlots == null || bodyPartSlots.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (MMOBodyPartRendererSlot slot in bodyPartSlots)
+            {
+                if (slot == null || !slot.HasRendererBinding)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private void CacheOriginalMaterials()
         {
             originalMaterials.Clear();
@@ -247,6 +328,81 @@ namespace RPGClone.Player
                     }
                 }
             }
+        }
+
+        private static MMOCharacterBodyPart ResolveBodyPart(Renderer renderer)
+        {
+            if (TryResolveBodyPartName(renderer != null ? renderer.name : null, out MMOCharacterBodyPart rendererPart))
+            {
+                return rendererPart;
+            }
+
+            if (renderer != null)
+            {
+                foreach (Material material in renderer.sharedMaterials)
+                {
+                    Texture texture = material != null ? material.mainTexture : null;
+                    if (TryResolveBodyPartName(texture != null ? texture.name : null, out MMOCharacterBodyPart texturePart))
+                    {
+                        return texturePart;
+                    }
+
+                    if (TryResolveBodyPartName(material != null ? material.name : null, out MMOCharacterBodyPart materialPart))
+                    {
+                        return materialPart;
+                    }
+                }
+            }
+
+            return MMOCharacterBodyPart.Torso;
+        }
+
+        private static bool TryResolveBodyPartName(string candidate, out MMOCharacterBodyPart bodyPart)
+        {
+            string normalizedName = NormalizeName(candidate);
+            if (normalizedName.Contains("head"))
+            {
+                bodyPart = MMOCharacterBodyPart.Head;
+                return true;
+            }
+
+            if (normalizedName.Contains("hand"))
+            {
+                bodyPart = MMOCharacterBodyPart.Hands;
+                return true;
+            }
+
+            if (normalizedName.Contains("torso") || normalizedName.Contains("chest"))
+            {
+                bodyPart = MMOCharacterBodyPart.Torso;
+                return true;
+            }
+
+            if (normalizedName.Contains("leg"))
+            {
+                bodyPart = MMOCharacterBodyPart.Legs;
+                return true;
+            }
+
+            if (normalizedName.Contains("feet") || normalizedName.Contains("foot") || normalizedName.Contains("boot"))
+            {
+                bodyPart = MMOCharacterBodyPart.Feet;
+                return true;
+            }
+
+            bodyPart = MMOCharacterBodyPart.Torso;
+            return false;
+        }
+
+        private static string NormalizeName(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? string.Empty
+                : value.Replace(" ", string.Empty)
+                    .Replace("-", string.Empty)
+                    .Replace("_", string.Empty)
+                    .Replace(".", string.Empty)
+                    .ToLowerInvariant();
         }
 
         private void EnsureReferences()
@@ -289,6 +445,21 @@ namespace RPGClone.Player
         public MMOCharacterBodyPart BodyPart => bodyPart;
         public Transform Anchor => anchor;
         public Renderer[] Renderers => renderers ?? Array.Empty<Renderer>();
+        public bool HasRendererBinding
+        {
+            get
+            {
+                foreach (Renderer renderer in Renderers)
+                {
+                    if (renderer != null)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
 
         public MMOBodyPartRendererSlot(MMOCharacterBodyPart bodyPart, Transform anchor, Renderer[] renderers)
         {

@@ -3,6 +3,7 @@ using RPGClone.Inventory;
 using RPGClone.Loot;
 using RPGClone.Services;
 using RPGClone.UI;
+using RPGClone.Vfx;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -320,6 +321,8 @@ namespace RPGClone.Quests
             ParticleSystem.ShapeModule shape = sparkle.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
             shape.radius = 0.45f;
+
+            MMOParticleMaterialUtility.ApplyParticleMaterial(sparkle, new Color(1f, 0.86f, 0.32f, 0.95f));
         }
 
         private void RefreshSparkle()
