@@ -9,12 +9,16 @@ namespace RPGClone.Player
     [DisallowMultipleComponent]
     public sealed class MMOPlayerEquipmentVisuals : MonoBehaviour
     {
+        private const string EditorOnlyTag = "EditorOnly";
+
         [SerializeField] private MMOCharacterEquipment equipment;
         [SerializeField] private List<MMOBodyPartRendererSlot> bodyPartSlots = new();
 
         private readonly List<GameObject> activeVisualInstances = new();
         private readonly List<Material> activeMaterialInstances = new();
         private readonly Dictionary<Renderer, Material[]> originalMaterials = new();
+        private MMOCharacterEquipment subscribedEquipment;
+        private int lastEquipmentSignature;
 
         private void Awake()
         {
@@ -28,34 +32,49 @@ namespace RPGClone.Player
             EnsureReferences();
             EnsureBodyPartSlots();
             CacheOriginalMaterials();
-            if (equipment != null)
-            {
-                equipment.Changed -= OnEquipmentChanged;
-                equipment.Changed += OnEquipmentChanged;
-            }
 
+            SubscribeToEquipment();
             RebuildEquipmentVisuals();
         }
 
         private void OnDisable()
         {
-            if (equipment != null)
+            if (subscribedEquipment != null)
             {
-                equipment.Changed -= OnEquipmentChanged;
+                subscribedEquipment.Changed -= OnEquipmentChanged;
+                subscribedEquipment = null;
             }
 
             ClearRuntimeVisuals();
             RestoreBaseBody();
         }
 
+        private void LateUpdate()
+        {
+            EnsureReferences();
+            SubscribeToEquipment();
+            int equipmentSignature = CalculateEquipmentSignature();
+            if (equipmentSignature != lastEquipmentSignature)
+            {
+                RebuildEquipmentVisuals();
+            }
+        }
+
         public void Configure(MMOCharacterEquipment newEquipment, IEnumerable<MMOBodyPartRendererSlot> newBodyPartSlots)
         {
+            if (subscribedEquipment != null)
+            {
+                subscribedEquipment.Changed -= OnEquipmentChanged;
+                subscribedEquipment = null;
+            }
+
             equipment = newEquipment;
             bodyPartSlots = newBodyPartSlots != null
                 ? new List<MMOBodyPartRendererSlot>(newBodyPartSlots)
                 : new List<MMOBodyPartRendererSlot>();
             EnsureBodyPartSlots();
             CacheOriginalMaterials();
+            SubscribeToEquipment();
             RebuildEquipmentVisuals();
         }
 
@@ -69,8 +88,12 @@ namespace RPGClone.Player
 
         private void RebuildEquipmentVisuals()
         {
+            EnsureReferences();
+            EnsureBodyPartSlots();
+            CacheOriginalMaterials();
             ClearRuntimeVisuals();
             RestoreBaseBody();
+            lastEquipmentSignature = CalculateEquipmentSignature();
 
             if (equipment == null)
             {
@@ -91,6 +114,12 @@ namespace RPGClone.Player
 
         private void ApplyVisualDefinition(MMOEquipmentVisualDefinition visualDefinition)
         {
+            if (visualDefinition.BindingMode == MMOEquipmentVisualBindingMode.AttachmentSocket)
+            {
+                ApplyAttachmentVisualDefinition(visualDefinition);
+                return;
+            }
+
             MMOBodyPartRendererSlot slot = FindSlot(visualDefinition.BodyPart);
             if (slot == null)
             {
@@ -115,7 +144,51 @@ namespace RPGClone.Player
             instance.transform.localPosition = visualDefinition.LocalPosition;
             instance.transform.localRotation = Quaternion.Euler(visualDefinition.LocalEulerAngles);
             instance.transform.localScale = visualDefinition.LocalScale;
+            StripEditorOnlyChildren(instance);
             activeVisualInstances.Add(instance);
+        }
+
+        private void ApplyAttachmentVisualDefinition(MMOEquipmentVisualDefinition visualDefinition)
+        {
+            if (visualDefinition.ModelPrefab == null)
+            {
+                return;
+            }
+
+            Transform socket = FindDeepChildByName(transform, visualDefinition.SocketName);
+            if (socket == null)
+            {
+                Debug.LogWarning(
+                    $"Equipment visual '{visualDefinition.name}' could not find attachment socket '{visualDefinition.SocketName}' under '{name}'.",
+                    this);
+                return;
+            }
+
+            GameObject instance = Instantiate(visualDefinition.ModelPrefab, socket);
+            instance.name = visualDefinition.ModelPrefab.name;
+            instance.transform.localPosition = visualDefinition.LocalPosition;
+            instance.transform.localRotation = Quaternion.Euler(visualDefinition.LocalEulerAngles);
+            instance.transform.localScale = visualDefinition.LocalScale;
+            StripEditorOnlyChildren(instance);
+            activeVisualInstances.Add(instance);
+        }
+
+        private static void StripEditorOnlyChildren(GameObject instance)
+        {
+            if (instance == null)
+            {
+                return;
+            }
+
+            Transform[] children = instance.GetComponentsInChildren<Transform>(true);
+            for (int i = children.Length - 1; i >= 0; i--)
+            {
+                Transform child = children[i];
+                if (child != null && child != instance.transform && child.CompareTag(EditorOnlyTag))
+                {
+                    Destroy(child.gameObject);
+                }
+            }
         }
 
         private MMOBodyPartRendererSlot FindSlot(MMOCharacterBodyPart bodyPart)
@@ -405,11 +478,81 @@ namespace RPGClone.Player
                     .ToLowerInvariant();
         }
 
+        private static Transform FindDeepChildByName(Transform root, string childName)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(childName))
+            {
+                return null;
+            }
+
+            string normalizedChildName = NormalizeName(childName);
+            if (NormalizeName(root.name) == normalizedChildName)
+            {
+                return root;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform found = FindDeepChildByName(root.GetChild(i), childName);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
         private void EnsureReferences()
         {
             if (equipment == null)
             {
                 equipment = GetComponent<MMOCharacterEquipment>();
+            }
+        }
+
+        private void SubscribeToEquipment()
+        {
+            if (subscribedEquipment == equipment)
+            {
+                return;
+            }
+
+            if (subscribedEquipment != null)
+            {
+                subscribedEquipment.Changed -= OnEquipmentChanged;
+            }
+
+            subscribedEquipment = equipment;
+            if (subscribedEquipment != null)
+            {
+                subscribedEquipment.Changed -= OnEquipmentChanged;
+                subscribedEquipment.Changed += OnEquipmentChanged;
+            }
+        }
+
+        private int CalculateEquipmentSignature()
+        {
+            if (equipment == null)
+            {
+                return 0;
+            }
+
+            unchecked
+            {
+                int hash = 17;
+                foreach (MMOEquippedItemSlot equippedItem in equipment.EquippedItems)
+                {
+                    if (equippedItem == null)
+                    {
+                        continue;
+                    }
+
+                    hash = hash * 31 + (int)equippedItem.SlotType;
+                    hash = hash * 31 + (equippedItem.Item != null ? equippedItem.Item.GetInstanceID() : 0);
+                }
+
+                return hash;
             }
         }
 
