@@ -148,6 +148,7 @@ namespace RPGClone.Player
         private AnimationClip idleOverride;
         private AnimationClip combatIdleOverride;
         private MMOPlayerCombatAnimationSet combatAnimationOverrideSet;
+        private IMMOPlayerLocomotionSource locomotionSource;
         private float currentVisualYaw;
         private float movingLandingReturnTime = float.PositiveInfinity;
 
@@ -165,17 +166,17 @@ namespace RPGClone.Player
 
         private void Update()
         {
-            if (animator == null || animationSet == null || motor == null)
+            if (animator == null || animationSet == null || locomotionSource == null)
             {
                 return;
             }
 
-            float planarSpeed = motor.IsGrounded ? motor.CurrentPlanarSpeed : 0f;
-            Vector2 localVelocity = motor.CurrentLocalPlanarVelocity;
-            bool movingBackward = motor.IsGrounded && localVelocity.y < -movingSpeedThreshold;
+            float planarSpeed = locomotionSource.IsGrounded ? locomotionSource.CurrentPlanarSpeed : 0f;
+            Vector2 localVelocity = locomotionSource.CurrentLocalPlanarVelocity;
+            bool movingBackward = locomotionSource.IsGrounded && localVelocity.y < -movingSpeedThreshold;
 
             float normalizedMoveSpeed = animationSet.NormalizeMoveSpeed(planarSpeed, movingBackward);
-            if (motor.IsGrounded)
+            if (locomotionSource.IsGrounded)
             {
                 animator.SetFloat(
                     MoveSpeedHash,
@@ -214,6 +215,7 @@ namespace RPGClone.Player
             animator = newAnimator;
             visualRoot = newVisualRoot;
             motor = newMotor;
+            locomotionSource = newMotor;
             currentVisualYaw = 0f;
             movingLandingReturnTime = float.PositiveInfinity;
             SubscribeToMotor();
@@ -284,7 +286,7 @@ namespace RPGClone.Player
             float targetVisualYaw = 0f;
             if (enableDirectionalVisualYaw && planarSpeed > movingSpeedThreshold)
             {
-                Vector2 localVelocity = motor.CurrentLocalPlanarVelocity;
+                Vector2 localVelocity = locomotionSource.CurrentLocalPlanarVelocity;
                 targetVisualYaw = ResolveLowerBodyYaw(localVelocity);
             }
 
@@ -329,29 +331,29 @@ namespace RPGClone.Player
 
         private void SubscribeToMotor()
         {
-            if (motor == null)
+            if (locomotionSource == null)
             {
                 return;
             }
 
-            motor.Jumped -= OnJumped;
-            motor.BecameAirborne -= OnBecameAirborne;
-            motor.Landed -= OnLanded;
-            motor.Jumped += OnJumped;
-            motor.BecameAirborne += OnBecameAirborne;
-            motor.Landed += OnLanded;
+            locomotionSource.Jumped -= OnJumped;
+            locomotionSource.BecameAirborne -= OnBecameAirborne;
+            locomotionSource.Landed -= OnLanded;
+            locomotionSource.Jumped += OnJumped;
+            locomotionSource.BecameAirborne += OnBecameAirborne;
+            locomotionSource.Landed += OnLanded;
         }
 
         private void UnsubscribeFromMotor()
         {
-            if (motor == null)
+            if (locomotionSource == null)
             {
                 return;
             }
 
-            motor.Jumped -= OnJumped;
-            motor.BecameAirborne -= OnBecameAirborne;
-            motor.Landed -= OnLanded;
+            locomotionSource.Jumped -= OnJumped;
+            locomotionSource.BecameAirborne -= OnBecameAirborne;
+            locomotionSource.Landed -= OnLanded;
         }
 
         private void OnJumped()
@@ -428,19 +430,19 @@ namespace RPGClone.Player
         private bool ShouldPrioritizeLocomotionOnLanding()
         {
             return motor != null
-                && motor.CurrentPlanarSpeed >= animationSet.MovingLandingPlanarSpeedThreshold;
+                && locomotionSource.CurrentPlanarSpeed >= animationSet.MovingLandingPlanarSpeedThreshold;
         }
 
         private void SetImmediateMoveSpeed()
         {
-            if (motor == null)
+            if (locomotionSource == null)
             {
                 return;
             }
 
-            Vector2 localVelocity = motor.CurrentLocalPlanarVelocity;
+            Vector2 localVelocity = locomotionSource.CurrentLocalPlanarVelocity;
             bool movingBackward = localVelocity.y < -movingSpeedThreshold;
-            animator.SetFloat(MoveSpeedHash, animationSet.NormalizeMoveSpeed(motor.CurrentPlanarSpeed, movingBackward));
+            animator.SetFloat(MoveSpeedHash, animationSet.NormalizeMoveSpeed(locomotionSource.CurrentPlanarSpeed, movingBackward));
         }
 
         private void ResetJumpTriggers()
@@ -485,6 +487,20 @@ namespace RPGClone.Player
             overrideController.GetOverrides(clipOverrides);
             ApplyClipOverrides();
             animator.runtimeAnimatorController = overrideController;
+        }
+
+        public void SetLocomotionSource(IMMOPlayerLocomotionSource newLocomotionSource)
+        {
+            if (ReferenceEquals(locomotionSource, newLocomotionSource))
+            {
+                return;
+            }
+
+            UnsubscribeFromMotor();
+            locomotionSource = newLocomotionSource;
+            currentVisualYaw = 0f;
+            movingLandingReturnTime = float.PositiveInfinity;
+            SubscribeToMotor();
         }
 
         private void ApplyClipOverrides()
@@ -549,7 +565,26 @@ namespace RPGClone.Player
                 motor = GetComponent<MMOPlayerMotor>();
             }
 
+            if (locomotionSource == null)
+            {
+                locomotionSource = motor != null ? motor : ResolveLocomotionSource();
+            }
+
             ResolveUpperBodyCounterYawBones();
+        }
+
+        private IMMOPlayerLocomotionSource ResolveLocomotionSource()
+        {
+            MonoBehaviour[] behaviours = GetComponents<MonoBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is IMMOPlayerLocomotionSource source)
+                {
+                    return source;
+                }
+            }
+
+            return null;
         }
 
         private void ResolveUpperBodyCounterYawBones()

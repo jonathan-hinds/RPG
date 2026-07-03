@@ -15,16 +15,20 @@ namespace RPGClone.Multiplayer
     [RequireComponent(typeof(MMOCharacterPersistenceAgent))]
     public sealed class MMOLocalSharedSessionBridge : MonoBehaviour
     {
-        [SerializeField, Min(0.05f)] private float publishSeconds = 0.2f;
-        [SerializeField, Min(0.1f)] private float pollSeconds = 0.25f;
+        [SerializeField, Min(0.25f)] private float publishSeconds = 1f;
+        [SerializeField, Min(0.05f)] private float runtimePublishSeconds = 0.05f;
+        [SerializeField, Min(0.05f)] private float pollSeconds = 0.05f;
 
         private readonly Dictionary<string, MMORemotePlayerAvatar> remoteAvatarsByCharacterId = new();
         private readonly HashSet<string> appliedEventIds = new();
         private MMOCharacterIdentity identity;
         private MMOCharacterPersistenceAgent persistenceAgent;
+        private string participantId;
         private float nextPublishTime;
+        private float nextRuntimePublishTime;
         private float nextPollTime;
         private string localCharacterId;
+        private string observedSessionId;
         private bool suppressStoreRemoval;
 
         public void SuppressStoreRemoval()
@@ -34,6 +38,7 @@ namespace RPGClone.Multiplayer
 
         private void Awake()
         {
+            Application.runInBackground = true;
             identity = GetComponent<MMOCharacterIdentity>();
             persistenceAgent = GetComponent<MMOCharacterPersistenceAgent>();
         }
@@ -42,15 +47,20 @@ namespace RPGClone.Multiplayer
         {
             MMOCombatEventStream.HealResolved -= OnHealResolved;
             MMOCombatEventStream.HealResolved += OnHealResolved;
+            MMOGameplaySessionService.SessionChanged -= OnSessionChanged;
+            MMOGameplaySessionService.SessionChanged += OnSessionChanged;
         }
 
         private void OnDisable()
         {
             MMOCombatEventStream.HealResolved -= OnHealResolved;
+            MMOGameplaySessionService.SessionChanged -= OnSessionChanged;
             if (!suppressStoreRemoval && !string.IsNullOrWhiteSpace(localCharacterId))
             {
                 MMOLocalSharedSessionStore.RemoveParticipant(MMOGameplaySessionService.SessionId, localCharacterId);
             }
+
+            ClearRemoteAvatars();
         }
 
         private void Update()
@@ -60,11 +70,23 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
+            if (observedSessionId != MMOGameplaySessionService.SessionId)
+            {
+                observedSessionId = MMOGameplaySessionService.SessionId;
+                ClearRemoteAvatars();
+            }
+
             localCharacterId = MMOCharacterSession.SelectedCharacter.characterId;
             if (Time.unscaledTime >= nextPublishTime)
             {
                 nextPublishTime = Time.unscaledTime + publishSeconds;
-                PublishLocalSnapshot();
+                PublishLocalCharacterSnapshot();
+            }
+
+            if (Time.unscaledTime >= nextRuntimePublishTime)
+            {
+                nextRuntimePublishTime = Time.unscaledTime + runtimePublishSeconds;
+                PublishLocalRuntimeSnapshot();
             }
 
             if (Time.unscaledTime >= nextPollTime)
@@ -74,15 +96,13 @@ namespace RPGClone.Multiplayer
             }
         }
 
-        private void PublishLocalSnapshot()
+        private void PublishLocalCharacterSnapshot()
         {
             MMOCharacterSaveData saveData = persistenceAgent.CaptureCurrentCharacterData();
             saveData.sceneName = SceneManager.GetActiveScene().name;
             saveData.position = new Vector3SaveData(transform.position);
             saveData.rotationEuler = new Vector3SaveData(transform.eulerAngles);
-            string participantId = string.IsNullOrWhiteSpace(MMOSocialIdentityService.SessionId)
-                ? "local-player"
-                : MMOSocialIdentityService.SessionId;
+            participantId = ResolveParticipantId();
             MMOGameplaySessionService.RegisterLocalPlayer(gameObject, saveData.characterId, participantId);
 
             MMOLocalSharedSessionStore.UpsertParticipant(new MMOSessionParticipantSnapshot
@@ -95,6 +115,31 @@ namespace RPGClone.Multiplayer
                 isHost = MMOGameplaySessionService.IsHostAuthority,
                 characterData = saveData
             });
+        }
+
+        private void PublishLocalRuntimeSnapshot()
+        {
+            if (string.IsNullOrWhiteSpace(localCharacterId))
+            {
+                return;
+            }
+
+            participantId = ResolveParticipantId();
+            MMOGameplaySessionService.RegisterLocalPlayer(gameObject, localCharacterId, participantId);
+            MMOLocalSharedSessionStore.UpsertParticipantRuntime(
+                MMOGameplaySessionService.SessionId,
+                localCharacterId,
+                transform.position,
+                transform.eulerAngles,
+                identity.Health.CurrentValue,
+                identity.Mana.CurrentValue);
+        }
+
+        private static string ResolveParticipantId()
+        {
+            return string.IsNullOrWhiteSpace(MMOSocialIdentityService.SessionId)
+                ? "local-player"
+                : MMOSocialIdentityService.SessionId;
         }
 
         private void PollSession()
@@ -126,12 +171,38 @@ namespace RPGClone.Multiplayer
 
         private MMORemotePlayerAvatar SpawnRemoteAvatar(MMOSessionParticipantSnapshot participant)
         {
+            MMORemotePlayerAvatar existingAvatar = FindExistingRemoteAvatar(participant.characterId);
+            if (existingAvatar != null)
+            {
+                existingAvatar.Configure(participant);
+                return existingAvatar;
+            }
+
             GameObject remoteObject = Instantiate(gameObject, participant.characterData.position.ToVector3(), Quaternion.Euler(participant.characterData.rotationEuler.ToVector3()));
             remoteObject.name = $"Remote Player - {participant.characterData.DisplayName}";
 
             MMORemotePlayerAvatar avatar = remoteObject.GetComponent<MMORemotePlayerAvatar>() ?? remoteObject.AddComponent<MMORemotePlayerAvatar>();
             avatar.Configure(participant);
             return avatar;
+        }
+
+        private MMORemotePlayerAvatar FindExistingRemoteAvatar(string characterId)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return null;
+            }
+
+            MMORemotePlayerAvatar[] avatars = FindObjectsByType<MMORemotePlayerAvatar>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            foreach (MMORemotePlayerAvatar avatar in avatars)
+            {
+                if (avatar != null && avatar.CharacterId == characterId)
+                {
+                    return avatar;
+                }
+            }
+
+            return null;
         }
 
         private void RemoveMissingRemoteAvatars(HashSet<string> seenRemoteCharacters)
@@ -174,6 +245,25 @@ namespace RPGClone.Multiplayer
                 appliedEventIds.Add(sharedEvent.eventId);
                 MMOLocalSharedSessionStore.MarkEventApplied(sharedEvent.eventId, localCharacterId);
             }
+        }
+
+        private void OnSessionChanged()
+        {
+            observedSessionId = MMOGameplaySessionService.SessionId;
+            ClearRemoteAvatars();
+        }
+
+        private void ClearRemoteAvatars()
+        {
+            foreach (KeyValuePair<string, MMORemotePlayerAvatar> pair in remoteAvatarsByCharacterId)
+            {
+                if (pair.Value != null)
+                {
+                    Destroy(pair.Value.gameObject);
+                }
+            }
+
+            remoteAvatarsByCharacterId.Clear();
         }
 
         private void OnHealResolved(MMOCombatant source, MMOCombatant target, MMOAbilityDefinition ability, int amount)

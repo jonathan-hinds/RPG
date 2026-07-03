@@ -7,7 +7,7 @@ namespace RPGClone.Player
 {
     [RequireComponent(typeof(CharacterController))]
     [RequireComponent(typeof(MMOInputReader))]
-    public sealed class MMOPlayerMotor : MonoBehaviour
+    public sealed class MMOPlayerMotor : MonoBehaviour, IMMOPlayerLocomotionSource
     {
         [SerializeField] private MMOPlayerMovementConfig movementConfig;
         [SerializeField] private MMOThirdPersonCamera cameraController;

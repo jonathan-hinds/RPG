@@ -165,6 +165,7 @@ namespace RPGClone.Player
             instance.transform.localPosition = visualDefinition.LocalPosition;
             instance.transform.localRotation = Quaternion.Euler(visualDefinition.LocalEulerAngles);
             instance.transform.localScale = visualDefinition.LocalScale;
+            MarkRuntimeVisual(instance);
             StripEditorOnlyChildren(instance);
             activeVisualInstances.Add(instance);
         }
@@ -193,8 +194,17 @@ namespace RPGClone.Player
             instance.transform.localPosition = visualDefinition.LocalPosition;
             instance.transform.localRotation = Quaternion.Euler(visualDefinition.LocalEulerAngles);
             instance.transform.localScale = visualDefinition.LocalScale;
+            MarkRuntimeVisual(instance);
             StripEditorOnlyChildren(instance);
             activeVisualInstances.Add(instance);
+        }
+
+        private static void MarkRuntimeVisual(GameObject instance)
+        {
+            if (instance != null && instance.GetComponent<MMOEquipmentVisualInstanceMarker>() == null)
+            {
+                instance.AddComponent<MMOEquipmentVisualInstanceMarker>();
+            }
         }
 
         private string ResolveAttachmentSocketName(MMOEquipmentVisualDefinition visualDefinition, bool isInCombat)
@@ -354,6 +364,7 @@ namespace RPGClone.Player
             }
 
             activeVisualInstances.Clear();
+            ClearOrphanRuntimeVisuals();
 
             for (int i = activeMaterialInstances.Count - 1; i >= 0; i--)
             {
@@ -365,6 +376,18 @@ namespace RPGClone.Player
             }
 
             activeMaterialInstances.Clear();
+        }
+
+        private void ClearOrphanRuntimeVisuals()
+        {
+            MMOEquipmentVisualInstanceMarker[] markers = GetComponentsInChildren<MMOEquipmentVisualInstanceMarker>(true);
+            for (int i = markers.Length - 1; i >= 0; i--)
+            {
+                if (markers[i] != null)
+                {
+                    Destroy(markers[i].gameObject);
+                }
+            }
         }
 
         private void EnsureBodyPartSlots()

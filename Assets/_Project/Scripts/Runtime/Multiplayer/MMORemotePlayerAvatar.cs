@@ -1,5 +1,6 @@
 using RPGClone.CharacterSelection;
 using RPGClone.Characters;
+using RPGClone.Inventory;
 using RPGClone.Player;
 using RPGClone.Services;
 using UnityEngine;
@@ -13,8 +14,10 @@ namespace RPGClone.Multiplayer
 
         private MMOCharacterIdentity identity;
         private MMOCharacterPersistenceAgent persistenceAgent;
+        private MMORemotePlayerLocomotionSource locomotionSource;
         private TextMesh nameplate;
         private Camera cachedCamera;
+        private int appliedPresentationSignature;
 
         public string ParticipantId { get; private set; }
         public string CharacterId { get; private set; }
@@ -42,10 +45,15 @@ namespace RPGClone.Multiplayer
             }
 
             PrepareAsRemoteReplica();
-            persistenceAgent.ApplySessionReplica(snapshot.characterData, true);
-            Vector3 position = snapshot.characterData.position.ToVector3();
-            Vector3 rotationEuler = snapshot.characterData.rotationEuler.ToVector3();
-            transform.SetPositionAndRotation(position, Quaternion.Euler(rotationEuler));
+            int presentationSignature = CalculatePresentationSignature(snapshot.characterData);
+            if (appliedPresentationSignature != presentationSignature)
+            {
+                ClearInheritedEquipmentVisuals();
+                persistenceAgent.ApplySessionReplica(snapshot.characterData, true);
+                appliedPresentationSignature = presentationSignature;
+            }
+
+            ApplyDynamicState(snapshot);
             RefreshNameplate();
         }
 
@@ -79,6 +87,7 @@ namespace RPGClone.Multiplayer
         {
             identity ??= GetComponent<MMOCharacterIdentity>();
             persistenceAgent ??= GetComponent<MMOCharacterPersistenceAgent>();
+            locomotionSource ??= GetComponent<MMORemotePlayerLocomotionSource>() ?? gameObject.AddComponent<MMORemotePlayerLocomotionSource>();
             if (persistenceAgent != null)
             {
                 persistenceAgent.MarkAsRemoteSessionReplica();
@@ -96,9 +105,127 @@ namespace RPGClone.Multiplayer
             DisableLocalOnlyComponent<MMOPlayerMotor>();
             DisableLocalOnlyComponent<MMOThirdPersonCamera>();
 
+            MMOPlayerLocomotionAnimator locomotionAnimator = GetComponent<MMOPlayerLocomotionAnimator>();
+            if (locomotionAnimator != null)
+            {
+                locomotionAnimator.SetLocomotionSource(locomotionSource);
+            }
+
             if (TryGetComponent(out CharacterController characterController))
             {
                 characterController.enabled = true;
+            }
+        }
+
+        private void ApplyDynamicState(MMOSessionParticipantSnapshot snapshot)
+        {
+            if (identity == null || snapshot?.characterData == null)
+            {
+                return;
+            }
+
+            identity.Health.SetCurrent(snapshot.characterData.currentHealth);
+            identity.Mana.SetCurrent(snapshot.characterData.currentMana);
+
+            Vector3 position = snapshot.characterData.position.ToVector3();
+            Quaternion rotation = Quaternion.Euler(snapshot.characterData.rotationEuler.ToVector3());
+            locomotionSource.ApplySnapshot(position, rotation, snapshot.runtimeUtcTicks > 0 ? snapshot.runtimeUtcTicks : snapshot.updatedUtcTicks);
+        }
+
+        private static int CalculatePresentationSignature(MMOCharacterSaveData characterData)
+        {
+            if (characterData == null)
+            {
+                return 0;
+            }
+
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + StableHash(characterData.characterId);
+                hash = hash * 31 + StableHash(characterData.characterName);
+                hash = hash * 31 + (int)characterData.race;
+                hash = hash * 31 + (int)characterData.characterClass;
+                hash = hash * 31 + characterData.level;
+                if (characterData.equipment != null)
+                {
+                    for (int i = 0; i < characterData.equipment.Count; i++)
+                    {
+                        MMOEquipmentSlotSaveData slot = characterData.equipment[i];
+                        if (slot == null)
+                        {
+                            continue;
+                        }
+
+                        hash = hash * 31 + (int)slot.slotType;
+                        hash = hash * 31 + StableHash(slot.itemId);
+                    }
+                }
+
+                return hash;
+            }
+        }
+
+        private void ClearInheritedEquipmentVisuals()
+        {
+            MMOCharacterEquipment equipment = GetComponent<MMOCharacterEquipment>();
+            if (equipment == null)
+            {
+                return;
+            }
+
+            foreach (MMOEquippedItemSlot equippedItem in equipment.EquippedItems)
+            {
+                MMOEquipmentVisualDefinition visual = equippedItem?.Item != null
+                    ? equippedItem.Item.EquipmentVisual
+                    : null;
+                if (visual == null)
+                {
+                    continue;
+                }
+
+                DestroyVisualPrefabChildren(visual.ModelPrefab);
+                DestroyVisualPrefabChildren(visual.GetAttachmentModelPrefab(false));
+                DestroyVisualPrefabChildren(visual.GetAttachmentModelPrefab(true));
+            }
+        }
+
+        private void DestroyVisualPrefabChildren(GameObject prefab)
+        {
+            if (prefab == null)
+            {
+                return;
+            }
+
+            Transform[] children = GetComponentsInChildren<Transform>(true);
+            for (int i = children.Length - 1; i >= 0; i--)
+            {
+                Transform child = children[i];
+                if (child == null || child == transform || child.name != prefab.name)
+                {
+                    continue;
+                }
+
+                Destroy(child.gameObject);
+            }
+        }
+
+        private static int StableHash(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return 0;
+            }
+
+            unchecked
+            {
+                int hash = 23;
+                for (int i = 0; i < value.Length; i++)
+                {
+                    hash = hash * 31 + value[i];
+                }
+
+                return hash;
             }
         }
 
