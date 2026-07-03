@@ -148,7 +148,16 @@ namespace RPGClone.Multiplayer
             Snapshot previous = snapshots[snapshotCount - 2];
             float latestDuration = Mathf.Max(0.001f, (float)(newest.Time - previous.Time));
             Vector3 latestVelocity = (newest.Position - previous.Position) / latestDuration;
-            float extrapolation = Mathf.Clamp((float)(renderTime - newest.Time), 0f, maxExtrapolationSeconds);
+            float timePastNewestSnapshot = (float)(renderTime - newest.Time);
+            if (timePastNewestSnapshot > maxExtrapolationSeconds)
+            {
+                position = newest.Position;
+                rotation = newest.Rotation;
+                velocity = Vector3.zero;
+                return;
+            }
+
+            float extrapolation = Mathf.Clamp(timePastNewestSnapshot, 0f, maxExtrapolationSeconds);
             position = newest.Position + latestVelocity * extrapolation;
             rotation = newest.Rotation;
             velocity = extrapolation > 0f ? latestVelocity : Vector3.zero;

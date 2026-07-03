@@ -12,6 +12,7 @@ namespace RPGClone.World.Foliage
         [SerializeField] private string collisionRootName = "Generated Tree Trunk Blockers";
         [SerializeField] private string collisionLayerName = "TreeTrunk";
         [SerializeField] private bool syncAutomatically = true;
+        [SerializeField] private bool syncAutomaticallyInPlayMode;
         [SerializeField] private bool createNavMeshObstacles = true;
         [SerializeField, Min(0.05f)] private float automaticSyncCheckInterval = 1f;
 
@@ -33,7 +34,7 @@ namespace RPGClone.World.Foliage
 
         private void Update()
         {
-            if (!syncAutomatically)
+            if (!syncAutomatically || (Application.isPlaying && !syncAutomaticallyInPlayMode))
             {
                 return;
             }

@@ -21,6 +21,8 @@ namespace RPGClone.Multiplayer
         [SerializeField, Min(0.25f)] private float publishSeconds = 1f;
         [SerializeField, Min(0.05f)] private float runtimePublishSeconds = 0.05f;
         [SerializeField, Min(0.05f)] private float pollSeconds = 0.05f;
+        [SerializeField, Min(0.1f)] private float idlePollSeconds = 0.25f;
+        [SerializeField, Min(0.25f)] private float participantRosterPollSeconds = 1f;
         [SerializeField, Min(0.05f)] private float enemySnapshotPublishSeconds = 0.1f;
         [SerializeField, Min(0.05f)] private float enemySnapshotPollSeconds = 0.1f;
         [SerializeField, Min(0.5f)] private float fullEnemySnapshotPublishSeconds = 2f;
@@ -28,10 +30,13 @@ namespace RPGClone.Multiplayer
 
         private readonly Dictionary<string, MMORemotePlayerAvatar> remoteAvatarsByCharacterId = new();
         private readonly HashSet<string> appliedEventIds = new();
+        private readonly HashSet<string> seenRemoteCharacters = new();
         private readonly Dictionary<string, long> appliedEnemySnapshotTicks = new();
         private readonly Dictionary<string, long> appliedCorpseLootSnapshotTicks = new();
         private readonly Dictionary<string, int> publishedEnemySnapshotSignatures = new();
         private readonly List<EnemySnapshot> enemySnapshotBuffer = new();
+        private readonly List<MMOSharedWorldObjectSnapshot> worldObjectSnapshotBuffer = new();
+        private readonly List<string> missingRemoteCharacters = new();
         private MMOCharacterIdentity identity;
         private MMOCharacterPersistenceAgent persistenceAgent;
         private MMOAbilitySystem abilitySystem;
@@ -40,6 +45,7 @@ namespace RPGClone.Multiplayer
         private float nextPublishTime;
         private float nextRuntimePublishTime;
         private float nextPollTime;
+        private float nextParticipantRosterPollTime;
         private float nextEnemySnapshotPublishTime;
         private float nextEnemySnapshotPollTime;
         private float nextFullEnemySnapshotPublishTime;
@@ -47,6 +53,7 @@ namespace RPGClone.Multiplayer
         private string localCharacterId;
         private string observedSessionId;
         private bool suppressStoreRemoval;
+        private bool hasSessionPeers;
 
         public void SuppressStoreRemoval()
         {
@@ -103,6 +110,7 @@ namespace RPGClone.Multiplayer
                 appliedEnemySnapshotTicks.Clear();
                 appliedCorpseLootSnapshotTicks.Clear();
                 publishedEnemySnapshotSignatures.Clear();
+                hasSessionPeers = false;
             }
 
             localCharacterId = MMOCharacterSession.SelectedCharacter.characterId;
@@ -112,7 +120,7 @@ namespace RPGClone.Multiplayer
                 PublishLocalCharacterSnapshot();
             }
 
-            if (Time.unscaledTime >= nextRuntimePublishTime)
+            if (HasKnownSessionPeers() && Time.unscaledTime >= nextRuntimePublishTime)
             {
                 nextRuntimePublishTime = Time.unscaledTime + runtimePublishSeconds;
                 PublishLocalRuntimeSnapshot();
@@ -126,6 +134,7 @@ namespace RPGClone.Multiplayer
             }
 
             if (MMOGameplaySessionService.IsHostAuthority
+                && HasKnownSessionPeers()
                 && Time.unscaledTime >= nextWorldObjectSnapshotPublishTime)
             {
                 nextWorldObjectSnapshotPublishTime = Time.unscaledTime + worldObjectSnapshotPublishSeconds;
@@ -134,7 +143,7 @@ namespace RPGClone.Multiplayer
 
             if (Time.unscaledTime >= nextPollTime)
             {
-                nextPollTime = Time.unscaledTime + pollSeconds;
+                nextPollTime = Time.unscaledTime + (HasKnownSessionPeers() ? pollSeconds : idlePollSeconds);
                 PollSession();
             }
         }
@@ -187,8 +196,45 @@ namespace RPGClone.Multiplayer
 
         private void PollSession()
         {
+            if (Time.unscaledTime >= nextParticipantRosterPollTime || !hasSessionPeers || remoteAvatarsByCharacterId.Count == 0)
+            {
+                nextParticipantRosterPollTime = Time.unscaledTime + participantRosterPollSeconds;
+                PollParticipantRoster();
+            }
+            else
+            {
+                ApplyParticipantRuntimeSnapshots();
+            }
+
+            if (!hasSessionPeers)
+            {
+                return;
+            }
+
+            if (MMOGameplaySessionService.IsHostAuthority)
+            {
+                ProcessPendingCombatRequests();
+                ProcessPendingWorldObjectRequests();
+            }
+
+            if (!MMOGameplaySessionService.IsHostAuthority
+                && Time.unscaledTime >= nextEnemySnapshotPollTime)
+            {
+                nextEnemySnapshotPollTime = Time.unscaledTime + enemySnapshotPollSeconds;
+                ApplyEnemySnapshots();
+            }
+
+            ApplyPendingAbilityEvents();
+            ApplyPendingCombatEvents();
+            ApplyPendingRewardEvents();
+            ApplyCorpseLootSnapshots();
+            ApplyWorldObjectSnapshots();
+        }
+
+        private void PollParticipantRoster()
+        {
             IReadOnlyList<MMOSessionParticipantSnapshot> participants = MMOLocalSharedSessionStore.GetParticipants(MMOGameplaySessionService.SessionId);
-            HashSet<string> seenRemoteCharacters = new();
+            seenRemoteCharacters.Clear();
             foreach (MMOSessionParticipantSnapshot participant in participants)
             {
                 if (participant == null || participant.characterData == null || participant.characterId == localCharacterId)
@@ -209,29 +255,28 @@ namespace RPGClone.Multiplayer
             }
 
             RemoveMissingRemoteAvatars(seenRemoteCharacters);
-            bool hasSessionPeers = participants.Count > 1 || HasRemoteParticipants();
-            if (MMOGameplaySessionService.IsHostAuthority && hasSessionPeers)
+            hasSessionPeers = participants.Count > 1 || HasRemoteParticipants();
+        }
+
+        private void ApplyParticipantRuntimeSnapshots()
+        {
+            IReadOnlyList<MMOSessionParticipantRuntimeSnapshot> snapshots = MMOLocalSharedSessionStore.GetParticipantRuntimeSnapshots(MMOGameplaySessionService.SessionId);
+            bool sawRemote = false;
+            foreach (MMOSessionParticipantRuntimeSnapshot snapshot in snapshots)
             {
-                ProcessPendingCombatRequests();
-                ProcessPendingWorldObjectRequests();
+                if (snapshot == null || snapshot.characterId == localCharacterId)
+                {
+                    continue;
+                }
+
+                sawRemote = true;
+                if (remoteAvatarsByCharacterId.TryGetValue(snapshot.characterId, out MMORemotePlayerAvatar avatar) && avatar != null)
+                {
+                    avatar.ApplyRuntimeSnapshot(snapshot);
+                }
             }
 
-            if (!MMOGameplaySessionService.IsHostAuthority
-                && Time.unscaledTime >= nextEnemySnapshotPollTime)
-            {
-                nextEnemySnapshotPollTime = Time.unscaledTime + enemySnapshotPollSeconds;
-                ApplyEnemySnapshots();
-            }
-
-            if (hasSessionPeers)
-            {
-                ApplyPendingAbilityEvents();
-                ApplyPendingCombatEvents();
-                ApplyPendingRewardEvents();
-                ApplyCorpseLootSnapshots();
-            }
-
-            ApplyWorldObjectSnapshots();
+            hasSessionPeers = sawRemote || HasRemoteParticipants();
         }
 
         private MMORemotePlayerAvatar SpawnRemoteAvatar(MMOSessionParticipantSnapshot participant)
@@ -397,12 +442,18 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
+            worldObjectSnapshotBuffer.Clear();
             foreach (MMOQuestWorldInteractable interactable in MMOSharedWorldObjectStateService.ActiveInteractables)
             {
                 if (interactable != null)
                 {
-                    MMOLocalSharedSessionStore.UpsertWorldObjectSnapshot(interactable.CreateSharedSnapshot());
+                    worldObjectSnapshotBuffer.Add(interactable.CreateSharedSnapshot());
                 }
+            }
+
+            if (worldObjectSnapshotBuffer.Count > 0)
+            {
+                MMOLocalSharedSessionStore.UpsertWorldObjectSnapshots(worldObjectSnapshotBuffer);
             }
         }
 
@@ -506,16 +557,16 @@ namespace RPGClone.Multiplayer
 
         private void RemoveMissingRemoteAvatars(HashSet<string> seenRemoteCharacters)
         {
-            List<string> missing = new();
+            missingRemoteCharacters.Clear();
             foreach (KeyValuePair<string, MMORemotePlayerAvatar> pair in remoteAvatarsByCharacterId)
             {
                 if (!seenRemoteCharacters.Contains(pair.Key))
                 {
-                    missing.Add(pair.Key);
+                    missingRemoteCharacters.Add(pair.Key);
                 }
             }
 
-            foreach (string characterId in missing)
+            foreach (string characterId in missingRemoteCharacters)
             {
                 if (remoteAvatarsByCharacterId.TryGetValue(characterId, out MMORemotePlayerAvatar avatar) && avatar != null)
                 {
@@ -524,6 +575,11 @@ namespace RPGClone.Multiplayer
 
                 remoteAvatarsByCharacterId.Remove(characterId);
             }
+        }
+
+        private bool HasKnownSessionPeers()
+        {
+            return hasSessionPeers || remoteAvatarsByCharacterId.Count > 0;
         }
 
         private void ApplyPendingAbilityEvents()

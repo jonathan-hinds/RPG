@@ -59,6 +59,27 @@ namespace RPGClone.Multiplayer
             RefreshNameplate();
         }
 
+        public void ApplyRuntimeSnapshot(MMOSessionParticipantRuntimeSnapshot snapshot)
+        {
+            if (snapshot == null || snapshot.characterId != CharacterId)
+            {
+                return;
+            }
+
+            PrepareAsRemoteReplica();
+            if (identity == null || locomotionSource == null)
+            {
+                return;
+            }
+
+            identity.Health.SetCurrent(snapshot.currentHealth);
+            identity.Mana.SetCurrent(snapshot.currentMana);
+            locomotionSource.ApplySnapshot(
+                snapshot.position.ToVector3(),
+                Quaternion.Euler(snapshot.rotationEuler.ToVector3()),
+                snapshot.updatedUtcTicks);
+        }
+
         private void LateUpdate()
         {
             if (!nameplateReady)

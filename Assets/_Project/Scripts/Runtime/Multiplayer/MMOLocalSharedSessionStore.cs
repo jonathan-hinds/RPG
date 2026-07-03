@@ -94,9 +94,13 @@ namespace RPGClone.Multiplayer
         private static readonly TimeSpan EventTimeout = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan CombatRequestTimeout = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan WorldObjectRequestTimeout = TimeSpan.FromSeconds(20);
+        private static readonly TimeSpan WorldObjectSnapshotTimeout = TimeSpan.FromSeconds(60);
         private static readonly TimeSpan EnemySnapshotTimeout = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan CorpseLootSnapshotTimeout = TimeSpan.FromMinutes(5);
         private static readonly object Gate = new();
+        private static readonly StoreFileCache<MMOSharedSessionStore> SharedStoreCache = new(() => new MMOSharedSessionStore());
+        private static readonly StoreFileCache<MMOSharedSessionRuntimeStore> RuntimeStoreCache = new(() => new MMOSharedSessionRuntimeStore());
+        private static readonly StoreFileCache<MMOSharedEnemyRuntimeStore> EnemyRuntimeStoreCache = new(() => new MMOSharedEnemyRuntimeStore());
 
         public static void UpsertParticipant(MMOSessionParticipantSnapshot snapshot)
         {
@@ -206,6 +210,34 @@ namespace RPGClone.Multiplayer
                         MMOSessionParticipantSnapshot clone = Clone(participant);
                         ApplyRuntimeSnapshot(clone, runtimeStore);
                         result.Add(clone);
+                    }
+                }
+
+                return result;
+            }
+        }
+
+        public static IReadOnlyList<MMOSessionParticipantRuntimeSnapshot> GetParticipantRuntimeSnapshots(string sessionId)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId))
+            {
+                return Array.Empty<MMOSessionParticipantRuntimeSnapshot>();
+            }
+
+            using (AcquireStoreLease())
+            {
+                MMOSharedSessionRuntimeStore runtimeStore = LoadRuntimeStore();
+                if (Prune(runtimeStore))
+                {
+                    SaveRuntimeStore(runtimeStore);
+                }
+
+                List<MMOSessionParticipantRuntimeSnapshot> result = new();
+                foreach (MMOSessionParticipantRuntimeSnapshot snapshot in runtimeStore.participants)
+                {
+                    if (snapshot != null && snapshot.sessionId == sessionId)
+                    {
+                        result.Add(Clone(snapshot));
                     }
                 }
 
@@ -719,6 +751,50 @@ namespace RPGClone.Multiplayer
             }
         }
 
+        public static void UpsertWorldObjectSnapshots(IEnumerable<MMOSharedWorldObjectSnapshot> snapshots)
+        {
+            if (snapshots == null)
+            {
+                return;
+            }
+
+            using (AcquireStoreLease())
+            {
+                MMOSharedSessionStore store = LoadStore();
+                if (Prune(store))
+                {
+                    SaveStore(store);
+                }
+
+                bool changed = false;
+                foreach (MMOSharedWorldObjectSnapshot snapshot in snapshots)
+                {
+                    if (snapshot == null || string.IsNullOrWhiteSpace(snapshot.sessionId) || string.IsNullOrWhiteSpace(snapshot.worldObjectId))
+                    {
+                        continue;
+                    }
+
+                    MMOSharedWorldObjectSnapshot existing = store.worldObjectSnapshots.Find(candidate =>
+                        candidate != null && candidate.sessionId == snapshot.sessionId && candidate.worldObjectId == snapshot.worldObjectId);
+                    if (existing == null)
+                    {
+                        store.worldObjectSnapshots.Add(Clone(snapshot));
+                    }
+                    else
+                    {
+                        Copy(snapshot, existing);
+                    }
+
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    SaveStore(store);
+                }
+            }
+        }
+
         public static IReadOnlyList<MMOSharedWorldObjectSnapshot> GetWorldObjectSnapshots(string sessionId)
         {
             if (string.IsNullOrWhiteSpace(sessionId))
@@ -1020,104 +1096,78 @@ namespace RPGClone.Multiplayer
 
         private static MMOSharedSessionStore LoadStore()
         {
-            string path = StorePath;
-            if (!File.Exists(path))
-            {
-                return new MMOSharedSessionStore();
-            }
-
-            try
-            {
-                string json = File.ReadAllText(path);
-                return string.IsNullOrWhiteSpace(json)
-                    ? new MMOSharedSessionStore()
-                    : JsonUtility.FromJson<MMOSharedSessionStore>(json) ?? new MMOSharedSessionStore();
-            }
-            catch (Exception exception)
-            {
-                Debug.LogWarning($"Shared session store load failed; using empty local store. {exception.Message}");
-                return new MMOSharedSessionStore();
-            }
+            return LoadCached(StorePath, SharedStoreCache, "Shared session store");
         }
 
         private static MMOSharedSessionRuntimeStore LoadRuntimeStore()
         {
-            string path = RuntimeStorePath;
-            if (!File.Exists(path))
-            {
-                return new MMOSharedSessionRuntimeStore();
-            }
-
-            try
-            {
-                string json = File.ReadAllText(path);
-                return string.IsNullOrWhiteSpace(json)
-                    ? new MMOSharedSessionRuntimeStore()
-                    : JsonUtility.FromJson<MMOSharedSessionRuntimeStore>(json) ?? new MMOSharedSessionRuntimeStore();
-            }
-            catch (Exception exception)
-            {
-                Debug.LogWarning($"Shared session runtime store load failed; using empty local store. {exception.Message}");
-                return new MMOSharedSessionRuntimeStore();
-            }
+            return LoadCached(RuntimeStorePath, RuntimeStoreCache, "Shared session runtime store");
         }
 
         private static MMOSharedEnemyRuntimeStore LoadEnemyRuntimeStore()
         {
-            string path = EnemyRuntimeStorePath;
-            if (!File.Exists(path))
+            return LoadCached(EnemyRuntimeStorePath, EnemyRuntimeStoreCache, "Shared enemy runtime store");
+        }
+
+        private static void SaveStore(MMOSharedSessionStore store)
+        {
+            SaveCached(StorePath, store ?? new MMOSharedSessionStore(), SharedStoreCache);
+        }
+
+        private static void SaveRuntimeStore(MMOSharedSessionRuntimeStore store)
+        {
+            SaveCached(RuntimeStorePath, store ?? new MMOSharedSessionRuntimeStore(), RuntimeStoreCache);
+        }
+
+        private static void SaveEnemyRuntimeStore(MMOSharedEnemyRuntimeStore store)
+        {
+            SaveCached(EnemyRuntimeStorePath, store ?? new MMOSharedEnemyRuntimeStore(), EnemyRuntimeStoreCache);
+        }
+
+        private static TStore LoadCached<TStore>(string path, StoreFileCache<TStore> cache, string label)
+            where TStore : class
+        {
+            FileInfo file = new(path);
+            if (!file.Exists)
             {
-                return new MMOSharedEnemyRuntimeStore();
+                return cache.UseMissingFile();
+            }
+
+            long writeTicks = file.LastWriteTimeUtc.Ticks;
+            long length = file.Length;
+            if (cache.TryGet(writeTicks, length, out TStore cachedStore))
+            {
+                return cachedStore;
             }
 
             try
             {
                 string json = File.ReadAllText(path);
-                return string.IsNullOrWhiteSpace(json)
-                    ? new MMOSharedEnemyRuntimeStore()
-                    : JsonUtility.FromJson<MMOSharedEnemyRuntimeStore>(json) ?? new MMOSharedEnemyRuntimeStore();
+                TStore store = string.IsNullOrWhiteSpace(json)
+                    ? cache.CreateEmpty()
+                    : JsonUtility.FromJson<TStore>(json) ?? cache.CreateEmpty();
+                cache.Set(store, writeTicks, length);
+                return store;
             }
             catch (Exception exception)
             {
-                Debug.LogWarning($"Shared enemy runtime store load failed; using empty local store. {exception.Message}");
-                return new MMOSharedEnemyRuntimeStore();
+                Debug.LogWarning($"{label} load failed; using empty local store. {exception.Message}");
+                return cache.UseMissingFile();
             }
         }
 
-        private static void SaveStore(MMOSharedSessionStore store)
+        private static void SaveCached<TStore>(string path, TStore store, StoreFileCache<TStore> cache)
+            where TStore : class
         {
-            string path = StorePath;
             string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
 
-            File.WriteAllText(path, JsonUtility.ToJson(store ?? new MMOSharedSessionStore(), false));
-        }
-
-        private static void SaveRuntimeStore(MMOSharedSessionRuntimeStore store)
-        {
-            string path = RuntimeStorePath;
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            File.WriteAllText(path, JsonUtility.ToJson(store ?? new MMOSharedSessionRuntimeStore(), false));
-        }
-
-        private static void SaveEnemyRuntimeStore(MMOSharedEnemyRuntimeStore store)
-        {
-            string path = EnemyRuntimeStorePath;
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            File.WriteAllText(path, JsonUtility.ToJson(store ?? new MMOSharedEnemyRuntimeStore(), false));
+            File.WriteAllText(path, JsonUtility.ToJson(store, false));
+            FileInfo file = new(path);
+            cache.Set(store, file.LastWriteTimeUtc.Ticks, file.Length);
         }
 
         private static string StorePath => Path.Combine(Application.persistentDataPath, FileName);
@@ -1148,12 +1198,22 @@ namespace RPGClone.Multiplayer
                 rewardEvent == null
                 || rewardEvent.createdUtcTicks <= 0
                 || new TimeSpan(now - rewardEvent.createdUtcTicks) > EventTimeout);
+            int removedWorldObjectSnapshots = store.worldObjectSnapshots.RemoveAll(snapshot =>
+                snapshot == null
+                || snapshot.updatedUtcTicks <= 0
+                || new TimeSpan(now - snapshot.updatedUtcTicks) > WorldObjectSnapshotTimeout);
             int removedWorldObjectRequests = store.worldObjectInteractionRequests.RemoveAll(request =>
                 request == null
                 || request.requestedUtcTicks <= 0
                 || (request.processed && new TimeSpan(now - request.requestedUtcTicks) > WorldObjectRequestTimeout)
                 || new TimeSpan(now - request.requestedUtcTicks) > ParticipantTimeout);
-            return removedParticipants > 0 || removedEvents > 0 || removedCombatRequests > 0 || removedCombatEvents > 0 || removedRewardEvents > 0 || removedWorldObjectRequests > 0;
+            return removedParticipants > 0
+                || removedEvents > 0
+                || removedCombatRequests > 0
+                || removedCombatEvents > 0
+                || removedRewardEvents > 0
+                || removedWorldObjectSnapshots > 0
+                || removedWorldObjectRequests > 0;
         }
 
         private static bool Prune(MMOSharedSessionRuntimeStore store)
@@ -1204,6 +1264,10 @@ namespace RPGClone.Multiplayer
                 };
                 store.participants.Add(existing);
             }
+            else if (IsSameRuntimeSnapshot(existing, position, rotationEuler, currentHealth, currentMana))
+            {
+                return;
+            }
 
             existing.position = new Vector3SaveData(position);
             existing.rotationEuler = new Vector3SaveData(rotationEuler);
@@ -1211,6 +1275,26 @@ namespace RPGClone.Multiplayer
             existing.currentMana = currentMana;
             existing.updatedUtcTicks = DateTime.UtcNow.Ticks;
             SaveRuntimeStore(store);
+        }
+
+        private static bool IsSameRuntimeSnapshot(
+            MMOSessionParticipantRuntimeSnapshot snapshot,
+            Vector3 position,
+            Vector3 rotationEuler,
+            int currentHealth,
+            int currentMana)
+        {
+            if (snapshot == null || currentHealth != snapshot.currentHealth || currentMana != snapshot.currentMana)
+            {
+                return false;
+            }
+
+            Vector3 previousPosition = snapshot.position.ToVector3();
+            Vector3 previousRotation = snapshot.rotationEuler.ToVector3();
+            return (previousPosition - position).sqrMagnitude < 0.0004f
+                && Mathf.Abs(Mathf.DeltaAngle(previousRotation.x, rotationEuler.x)) < 0.25f
+                && Mathf.Abs(Mathf.DeltaAngle(previousRotation.y, rotationEuler.y)) < 0.25f
+                && Mathf.Abs(Mathf.DeltaAngle(previousRotation.z, rotationEuler.z)) < 0.25f;
         }
 
         private static void ApplyRuntimeSnapshot(MMOSessionParticipantSnapshot participant, MMOSharedSessionRuntimeStore runtimeStore)
@@ -1232,6 +1316,22 @@ namespace RPGClone.Multiplayer
             participant.characterData.currentHealth = runtime.currentHealth;
             participant.characterData.currentMana = runtime.currentMana;
             participant.runtimeUtcTicks = runtime.updatedUtcTicks;
+        }
+
+        private static MMOSessionParticipantRuntimeSnapshot Clone(MMOSessionParticipantRuntimeSnapshot source)
+        {
+            return source == null
+                ? null
+                : new MMOSessionParticipantRuntimeSnapshot
+                {
+                    sessionId = source.sessionId,
+                    characterId = source.characterId,
+                    position = source.position,
+                    rotationEuler = source.rotationEuler,
+                    currentHealth = source.currentHealth,
+                    currentMana = source.currentMana,
+                    updatedUtcTicks = source.updatedUtcTicks
+                };
         }
 
         private static MMOSessionParticipantSnapshot Clone(MMOSessionParticipantSnapshot source)
@@ -1488,8 +1588,147 @@ namespace RPGClone.Multiplayer
                 return new MMOCharacterSaveData();
             }
 
-            string json = JsonUtility.ToJson(source);
-            return JsonUtility.FromJson<MMOCharacterSaveData>(json) ?? new MMOCharacterSaveData();
+            return new MMOCharacterSaveData
+            {
+                characterId = source.characterId,
+                accountId = source.accountId,
+                characterName = source.characterName,
+                normalizedCharacterName = source.normalizedCharacterName,
+                race = source.race,
+                characterClass = source.characterClass,
+                level = source.level,
+                currentExperience = source.currentExperience,
+                totalExperienceEarned = source.totalExperienceEarned,
+                currentHealth = source.currentHealth,
+                currentMana = source.currentMana,
+                sceneName = source.sceneName,
+                position = source.position,
+                rotationEuler = source.rotationEuler,
+                copper = source.copper,
+                inventory = CloneInventorySlots(source.inventory),
+                equipment = CloneEquipmentSlots(source.equipment),
+                weaponSkills = CloneWeaponSkills(source.weaponSkills),
+                learnedAbilityIds = source.learnedAbilityIds != null ? new List<string>(source.learnedAbilityIds) : new List<string>(),
+                actionBarSlots = CloneActionBarSlots(source.actionBarSlots),
+                activeQuests = CloneQuestStates(source.activeQuests),
+                completedQuestIds = source.completedQuestIds != null ? new List<string>(source.completedQuestIds) : new List<string>(),
+                pendingUsableItemId = source.pendingUsableItemId
+            };
+        }
+
+        private static List<MMOInventorySlotSaveData> CloneInventorySlots(List<MMOInventorySlotSaveData> source)
+        {
+            List<MMOInventorySlotSaveData> result = new(source != null ? source.Count : 0);
+            if (source == null)
+            {
+                return result;
+            }
+
+            foreach (MMOInventorySlotSaveData slot in source)
+            {
+                result.Add(slot == null
+                    ? null
+                    : new MMOInventorySlotSaveData
+                    {
+                        slotIndex = slot.slotIndex,
+                        itemId = slot.itemId,
+                        quantity = slot.quantity
+                    });
+            }
+
+            return result;
+        }
+
+        private static List<MMOEquipmentSlotSaveData> CloneEquipmentSlots(List<MMOEquipmentSlotSaveData> source)
+        {
+            List<MMOEquipmentSlotSaveData> result = new(source != null ? source.Count : 0);
+            if (source == null)
+            {
+                return result;
+            }
+
+            foreach (MMOEquipmentSlotSaveData slot in source)
+            {
+                result.Add(slot == null
+                    ? null
+                    : new MMOEquipmentSlotSaveData
+                    {
+                        slotType = slot.slotType,
+                        itemId = slot.itemId
+                    });
+            }
+
+            return result;
+        }
+
+        private static List<MMOWeaponSkillSaveEntry> CloneWeaponSkills(List<MMOWeaponSkillSaveEntry> source)
+        {
+            List<MMOWeaponSkillSaveEntry> result = new(source != null ? source.Count : 0);
+            if (source == null)
+            {
+                return result;
+            }
+
+            foreach (MMOWeaponSkillSaveEntry skill in source)
+            {
+                result.Add(skill == null
+                    ? null
+                    : new MMOWeaponSkillSaveEntry
+                    {
+                        weaponType = skill.weaponType,
+                        skillValue = skill.skillValue
+                    });
+            }
+
+            return result;
+        }
+
+        private static List<MMOActionBarSlotSaveData> CloneActionBarSlots(List<MMOActionBarSlotSaveData> source)
+        {
+            List<MMOActionBarSlotSaveData> result = new(source != null ? source.Count : 0);
+            if (source == null)
+            {
+                return result;
+            }
+
+            foreach (MMOActionBarSlotSaveData slot in source)
+            {
+                result.Add(slot == null
+                    ? null
+                    : new MMOActionBarSlotSaveData
+                    {
+                        slotIndex = slot.slotIndex,
+                        bindingType = slot.bindingType,
+                        abilityId = slot.abilityId,
+                        itemId = slot.itemId,
+                        key = slot.key
+                    });
+            }
+
+            return result;
+        }
+
+        private static List<MMOQuestStateSaveData> CloneQuestStates(List<MMOQuestStateSaveData> source)
+        {
+            List<MMOQuestStateSaveData> result = new(source != null ? source.Count : 0);
+            if (source == null)
+            {
+                return result;
+            }
+
+            foreach (MMOQuestStateSaveData quest in source)
+            {
+                result.Add(quest == null
+                    ? null
+                    : new MMOQuestStateSaveData
+                    {
+                        questId = quest.questId,
+                        tracked = quest.tracked,
+                        objectiveProgress = quest.objectiveProgress != null ? new List<int>(quest.objectiveProgress) : new List<int>()
+                    });
+            }
+
+            return result;
         }
 
         private sealed class StoreLease : IDisposable
@@ -1524,6 +1763,54 @@ namespace RPGClone.Multiplayer
                 }
 
                 Monitor.Exit(Gate);
+            }
+        }
+
+        private sealed class StoreFileCache<TStore> where TStore : class
+        {
+            private readonly Func<TStore> createEmpty;
+            private TStore store;
+            private long writeTicks;
+            private long length;
+            private bool hasFileMetadata;
+
+            public StoreFileCache(Func<TStore> createEmpty)
+            {
+                this.createEmpty = createEmpty;
+            }
+
+            public TStore CreateEmpty()
+            {
+                return createEmpty.Invoke();
+            }
+
+            public bool TryGet(long fileWriteTicks, long fileLength, out TStore cachedStore)
+            {
+                if (store != null && hasFileMetadata && writeTicks == fileWriteTicks && length == fileLength)
+                {
+                    cachedStore = store;
+                    return true;
+                }
+
+                cachedStore = null;
+                return false;
+            }
+
+            public void Set(TStore newStore, long fileWriteTicks, long fileLength)
+            {
+                store = newStore ?? createEmpty.Invoke();
+                writeTicks = fileWriteTicks;
+                length = fileLength;
+                hasFileMetadata = true;
+            }
+
+            public TStore UseMissingFile()
+            {
+                store = createEmpty.Invoke();
+                writeTicks = 0;
+                length = 0;
+                hasFileMetadata = false;
+                return store;
             }
         }
 
