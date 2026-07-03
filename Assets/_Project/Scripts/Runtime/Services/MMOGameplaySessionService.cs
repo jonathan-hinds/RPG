@@ -9,6 +9,7 @@ namespace RPGClone.Services
     {
         private static MMOPlayerRegistry playerRegistry;
         private static MMOLocalPlayerContext localPlayer;
+        private static MMOPartyService partyService;
 
         public static event Action SessionChanged;
 
@@ -19,6 +20,7 @@ namespace RPGClone.Services
         public static bool IsHostAuthority => IsLocalHostedSession;
         public static MMOPlayerRegistry Players => playerRegistry ??= new MMOPlayerRegistry();
         public static MMOLocalPlayerContext LocalPlayer => localPlayer ??= new MMOLocalPlayerContext(Players);
+        public static MMOPartyService Party => partyService ??= new MMOPartyService();
 
         public static void StartLocalHostedSession(string sessionId = null)
         {
@@ -101,6 +103,7 @@ namespace RPGClone.Services
         {
             playerRegistry = new MMOPlayerRegistry();
             localPlayer = new MMOLocalPlayerContext(playerRegistry);
+            partyService = new MMOPartyService();
             SessionId = string.Empty;
             HostCharacterId = string.Empty;
             SessionSceneName = string.Empty;

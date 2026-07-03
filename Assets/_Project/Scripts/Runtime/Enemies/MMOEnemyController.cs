@@ -34,6 +34,7 @@ namespace RPGClone.Enemies
         [SerializeField, Min(0.01f)] private float chaseRepathDistance = 0.35f;
         [SerializeField, Min(0.02f)] private float proxyInterpolationSeconds = 0.18f;
         [SerializeField, Min(0.5f)] private float proxySnapDistance = 8f;
+        [SerializeField] private MMORewardEligibilitySettings rewardEligibility = new();
 
         private readonly Collider[] detectionBuffer = new Collider[DetectionBufferSize];
         private MMOCharacterIdentity identity;
@@ -448,19 +449,30 @@ namespace RPGClone.Enemies
 
             ClearCombat(false);
             StopMoving();
-            AwardExperience();
+            AwardDeathRewards();
             BecomeCorpse();
         }
 
-        private void AwardExperience()
+        private void AwardDeathRewards()
         {
-            if (definition == null || lastDamageSource == null || lastDamageSource.Identity == null)
+            if (definition == null || !TryResolveLastDamageParticipant(out MMOPlayerParticipant sourceParticipant))
             {
                 return;
             }
 
-            MMOExperienceComponent experience = lastDamageSource.Identity.GetComponent<MMOExperienceComponent>();
-            experience?.AddExperience(MMOExperienceScaling.CalculateMobExperience(definition, lastDamageSource.Identity));
+            Vector3 eventPosition = transform.position;
+            MMOPartyExperienceRewardService.AwardEnemyExperience(
+                definition,
+                sourceParticipant,
+                eventPosition,
+                rewardEligibility.PartyExperienceRadius);
+            MMOPartyQuestCreditService.AwardKillCredit(
+                definition,
+                definition != null ? definition.name : gameObject.name,
+                SpawnId,
+                sourceParticipant,
+                eventPosition,
+                rewardEligibility.PartyCreditRadius);
         }
 
         private void BecomeCorpse()
@@ -472,22 +484,29 @@ namespace RPGClone.Enemies
                 agent.enabled = false;
             }
 
-            GameObject looter = lastDamageSource != null && lastDamageSource.Identity != null ? lastDamageSource.Identity.gameObject : null;
-            List<MMOItemStack> droppedLoot = definition != null && definition.LootTable != null
-                ? definition.LootTable.GenerateLoot(looter)
-                : new List<MMOItemStack>();
+            lootableCorpse.LootEmptied -= OnCorpseLooted;
+            lootableCorpse.AllPersonalLootEmptied -= OnAllPersonalLooted;
 
-            if (looter != null)
+            MMOCorpseLootState corpseLoot = null;
+            if (TryResolveLastDamageParticipant(out MMOPlayerParticipant sourceParticipant))
             {
-                MMOQuestLog questLog = looter.GetComponent<MMOQuestLog>();
-                questLog?.RecordCreatureKilled(definition, definition != null ? definition.name : gameObject.name);
+                corpseLoot = MMOPersonalLootService.GenerateCorpseLoot(
+                    SpawnId,
+                    definition,
+                    sourceParticipant,
+                    transform.position,
+                    rewardEligibility.PartyLootRadius);
+                lootableCorpse.SetPersonalLoot(corpseLoot);
+                MMOPersonalLootService.PublishCorpseLoot(corpseLoot);
+            }
+            else
+            {
+                lootableCorpse.ClearLoot();
             }
 
-            lootableCorpse.LootEmptied -= OnCorpseLooted;
-            lootableCorpse.SetLoot(droppedLoot);
-            if (droppedLoot.Count > 0)
+            if (corpseLoot != null && corpseLoot.HasAnyUnlootedItems())
             {
-                lootableCorpse.LootEmptied += OnCorpseLooted;
+                lootableCorpse.AllPersonalLootEmptied += OnAllPersonalLooted;
                 BeginDespawn(definition.UnlootedCorpseDespawnSeconds);
             }
             else
@@ -499,6 +518,13 @@ namespace RPGClone.Enemies
         private void OnCorpseLooted(MMOLootableCorpse corpse)
         {
             lootableCorpse.LootEmptied -= OnCorpseLooted;
+            BeginDespawn(definition != null ? definition.LootedCorpseDespawnSeconds : 2.5f);
+        }
+
+        private void OnAllPersonalLooted(MMOLootableCorpse corpse)
+        {
+            lootableCorpse.LootEmptied -= OnCorpseLooted;
+            lootableCorpse.AllPersonalLootEmptied -= OnAllPersonalLooted;
             BeginDespawn(definition != null ? definition.LootedCorpseDespawnSeconds : 2.5f);
         }
 
@@ -564,6 +590,28 @@ namespace RPGClone.Enemies
 
             identity.SetSelectable(true);
             identity.RestoreResources();
+        }
+
+        private bool TryResolveLastDamageParticipant(out MMOPlayerParticipant participant)
+        {
+            participant = default;
+            if (lastDamageSource == null || lastDamageSource.Identity == null)
+            {
+                return false;
+            }
+
+            if (MMOGameplaySessionService.Players.TryGetParticipant(lastDamageSource.Identity, out participant))
+            {
+                return true;
+            }
+
+            participant = new MMOPlayerParticipant(
+                "local-player",
+                MMOGameplaySessionService.LocalPlayer.CharacterId,
+                lastDamageSource.Identity == MMOGameplaySessionService.LocalPlayer.Identity,
+                MMOGameplaySessionService.IsHostAuthority,
+                lastDamageSource.Identity);
+            return participant.IsValid;
         }
 
         private bool IsValidTarget(MMOCharacterIdentity target)

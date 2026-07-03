@@ -19,6 +19,7 @@ namespace RPGClone.Quests
         [SerializeField] private string requiredCreatureId;
         [SerializeField] private string requiredWorldObjectId;
         [SerializeField] private string requiredNpcId;
+        [SerializeField] private MMOQuestPartyCreditBehavior partyCreditBehavior = MMOQuestPartyCreditBehavior.ActorOnly;
         [SerializeField] private bool consumeRequiredItemsOnTurnIn = true;
         [SerializeField] private List<MMOQuestObjectiveMapHint> mapHints = new();
 
@@ -32,6 +33,7 @@ namespace RPGClone.Quests
         public string RequiredCreatureId => requiredCreatureId;
         public string RequiredWorldObjectId => requiredWorldObjectId;
         public string RequiredNpcId => requiredNpcId;
+        public MMOQuestPartyCreditBehavior PartyCreditBehavior => partyCreditBehavior;
         public bool ConsumeRequiredItemsOnTurnIn => consumeRequiredItemsOnTurnIn;
         public IReadOnlyList<MMOQuestObjectiveMapHint> MapHints => mapHints;
 

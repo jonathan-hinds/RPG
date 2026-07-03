@@ -297,7 +297,35 @@ namespace RPGClone.Quests
             return true;
         }
 
-        public void RecordCreatureKilled(MMOEnemyDefinition creatureDefinition, string creatureId)
+        public bool HasIncompleteKillObjective(MMOEnemyDefinition creatureDefinition, string creatureId)
+        {
+            foreach (MMOQuestRuntimeState state in activeQuests)
+            {
+                MMOQuestDefinition quest = state.Quest;
+                if (quest == null)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < quest.Objectives.Count; i++)
+                {
+                    MMOQuestObjectiveDefinition objective = quest.Objectives[i];
+                    if (objective.ObjectiveType != MMOQuestObjectiveType.KillCreature || state.GetProgress(i) >= objective.RequiredCount)
+                    {
+                        continue;
+                    }
+
+                    if (MatchesCreatureObjective(objective, creatureDefinition, creatureId))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public bool RecordCreatureKilled(MMOEnemyDefinition creatureDefinition, string creatureId)
         {
             bool changed = false;
             foreach (MMOQuestRuntimeState state in activeQuests)
@@ -316,9 +344,7 @@ namespace RPGClone.Quests
                         continue;
                     }
 
-                    bool matchesDefinition = objective.RequiredCreature != null && objective.RequiredCreature == creatureDefinition;
-                    bool matchesId = !string.IsNullOrWhiteSpace(objective.RequiredCreatureId) && objective.RequiredCreatureId == creatureId;
-                    if (matchesDefinition || matchesId)
+                    if (MatchesCreatureObjective(objective, creatureDefinition, creatureId))
                     {
                         SetObjectiveProgress(state, i, state.GetProgress(i) + 1, true);
                         changed = true;
@@ -330,6 +356,8 @@ namespace RPGClone.Quests
             {
                 Changed?.Invoke(this);
             }
+
+            return changed;
         }
 
         public void RecordSpeakToNpc(string npcId)
@@ -571,6 +599,21 @@ namespace RPGClone.Quests
             return objective != null
                 && (objective.ObjectiveType == MMOQuestObjectiveType.CollectItem
                     || objective.ObjectiveType == MMOQuestObjectiveType.CollectQuestItem);
+        }
+
+        private static bool MatchesCreatureObjective(MMOQuestObjectiveDefinition objective, MMOEnemyDefinition creatureDefinition, string creatureId)
+        {
+            if (objective == null)
+            {
+                return false;
+            }
+
+            bool matchesDefinition = objective.RequiredCreature != null && objective.RequiredCreature == creatureDefinition;
+            bool matchesId = !string.IsNullOrWhiteSpace(objective.RequiredCreatureId) && objective.RequiredCreatureId == creatureId;
+            bool matchesDefinitionName = creatureDefinition != null
+                && !string.IsNullOrWhiteSpace(objective.RequiredCreatureId)
+                && objective.RequiredCreatureId == creatureDefinition.name;
+            return matchesDefinition || matchesId || matchesDefinitionName;
         }
 
         private bool ConsumeTurnInItems(MMOQuestDefinition quest)

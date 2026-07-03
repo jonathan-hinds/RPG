@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 using RPGClone.Inventory;
 using RPGClone.Loot;
 using RPGClone.Services;
@@ -22,6 +23,7 @@ namespace RPGClone.Quests
         [SerializeField, Min(0f)] private float interactionCastSeconds = 1.5f;
         [SerializeField] private bool consumeOnSuccessfulInteraction = true;
         [SerializeField] private bool hideWhenConsumed = true;
+        [SerializeField, Min(0f)] private float respawnSeconds = 30f;
         [SerializeField, Min(1f)] private float interactionDistance = 5f;
         [SerializeField] private LayerMask interactionMask = ~0;
 
@@ -29,30 +31,39 @@ namespace RPGClone.Quests
         private ParticleSystem sparkle;
         private MMOQuestLog observedQuestLog;
         private bool consumed;
+        private bool sharedAvailable = true;
         private bool sparkleVisible;
         private float nextSparkleRefreshTime;
         private Vector2 pendingScreenPosition;
+        private Coroutine respawnRoutine;
+        private float respawnEndTime;
+        private Renderer[] cachedRenderers;
+        private Collider[] cachedColliders;
 
         public string WorldObjectId => string.IsNullOrWhiteSpace(worldObjectId) ? name : worldObjectId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? name : displayName;
         public MMOItemDefinition LootItem => lootItem;
         public IReadOnlyList<MMOItemStack> Loot => availableLoot;
         public bool HasLoot => availableLoot.Exists(stack => stack != null && !stack.IsEmpty);
+        public bool IsSharedAvailable => sharedAvailable && !consumed;
 
         private void Awake()
         {
+            CachePresentationComponents();
             EnsureSparkle();
             RefreshSparkle();
         }
 
         private void OnEnable()
         {
+            MMOSharedWorldObjectStateService.Register(this);
             SubscribeToPlayerQuestLog();
             RefreshSparkle();
         }
 
         private void OnDisable()
         {
+            MMOSharedWorldObjectStateService.Unregister(this);
             if (observedQuestLog != null)
             {
                 observedQuestLog.Changed -= OnQuestLogChanged;
@@ -115,7 +126,8 @@ namespace RPGClone.Quests
             hideWhenConsumed = newHideWhenConsumed;
             availableLoot.Clear();
             consumed = false;
-            gameObject.SetActive(true);
+            sharedAvailable = true;
+            SetAvailabilityPresentation(true);
             RefreshSparkle();
         }
 
@@ -162,7 +174,7 @@ namespace RPGClone.Quests
 
             if (!HasLoot)
             {
-                MarkConsumed();
+                CompleteSharedConsumption();
             }
 
             return remainingQuantity != originalQuantity;
@@ -188,7 +200,7 @@ namespace RPGClone.Quests
 
         private void CompleteInteraction()
         {
-            if (consumed)
+            if (!IsSharedAvailable)
             {
                 return;
             }
@@ -203,7 +215,7 @@ namespace RPGClone.Quests
             {
                 if (questLog.TryUsePendingItemOnWorldObject(WorldObjectId))
                 {
-                    MarkConsumed();
+                    CompleteSharedConsumption();
                 }
 
                 return;
@@ -222,7 +234,7 @@ namespace RPGClone.Quests
 
         private bool CanInteract()
         {
-            if (consumed)
+            if (!IsSharedAvailable)
             {
                 return false;
             }
@@ -231,6 +243,47 @@ namespace RPGClone.Quests
             return questLog != null
                 && ((lootItem != null && questLog.NeedsWorldItem(WorldObjectId, lootItem))
                     || questLog.CanUsePendingItemOnWorldObject(WorldObjectId));
+        }
+
+        public bool TryAuthorityConsumeFromRequest(string actorCharacterId)
+        {
+            if (string.IsNullOrWhiteSpace(actorCharacterId) || !IsSharedAvailable)
+            {
+                return false;
+            }
+
+            return CompleteSharedConsumption();
+        }
+
+        public void ApplySharedSnapshot(MMOSharedWorldObjectSnapshot snapshot)
+        {
+            if (snapshot == null || snapshot.worldObjectId != WorldObjectId)
+            {
+                return;
+            }
+
+            sharedAvailable = snapshot.available;
+            consumed = !snapshot.available;
+            availableLoot.Clear();
+            SetAvailabilityPresentation(snapshot.available);
+            RefreshSparkle();
+        }
+
+        public MMOSharedWorldObjectSnapshot CreateSharedSnapshot(float remainingRespawnSeconds = -1f)
+        {
+            float remainingSeconds = remainingRespawnSeconds >= 0f
+                ? remainingRespawnSeconds
+                : !IsSharedAvailable && respawnEndTime > 0f
+                    ? Mathf.Max(0f, respawnEndTime - Time.time)
+                    : 0f;
+            return new MMOSharedWorldObjectSnapshot
+            {
+                sessionId = MMOGameplaySessionService.SessionId,
+                worldObjectId = WorldObjectId,
+                available = IsSharedAvailable,
+                respawnRemainingSeconds = remainingSeconds,
+                updatedUtcTicks = DateTime.UtcNow.Ticks
+            };
         }
 
         private bool IsPointerOverThisObject(Vector2 pointerPosition)
@@ -309,20 +362,24 @@ namespace RPGClone.Quests
 
             ParticleSystem.MainModule main = sparkle.main;
             main.loop = true;
-            main.startLifetime = 0.8f;
-            main.startSpeed = 0.45f;
-            main.startSize = 0.08f;
+            main.startLifetime = 1.05f;
+            main.startSpeed = 0.65f;
+            main.startSize = 0.16f;
             main.startColor = new Color(1f, 0.86f, 0.32f, 0.95f);
-            main.maxParticles = 24;
+            main.maxParticles = 48;
 
             ParticleSystem.EmissionModule emission = sparkle.emission;
-            emission.rateOverTime = 18f;
+            emission.rateOverTime = 34f;
 
             ParticleSystem.ShapeModule shape = sparkle.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 0.45f;
+            shape.radius = 0.62f;
 
-            MMOParticleMaterialUtility.ApplyParticleMaterial(sparkle, new Color(1f, 0.86f, 0.32f, 0.95f));
+            Color sparkleColor = new(1f, 0.86f, 0.32f, 0.95f);
+            MMOParticleMaterialUtility.ApplyParticleMaterial(sparkle, sparkleColor);
+            MMOWorldSparkleEffect sparkleEffect = sparkle.gameObject.GetComponent<MMOWorldSparkleEffect>()
+                ?? sparkle.gameObject.AddComponent<MMOWorldSparkleEffect>();
+            sparkleEffect.Configure(sparkleColor, 0.52f);
         }
 
         private void RefreshSparkle()
@@ -350,17 +407,111 @@ namespace RPGClone.Quests
             }
         }
 
-        private void MarkConsumed()
+        private bool CompleteSharedConsumption()
         {
+            if (!IsSharedAvailable)
+            {
+                return false;
+            }
+
+            if (!MMOGameplaySessionService.IsHostAuthority)
+            {
+                PublishInteractionRequest();
+                availableLoot.Clear();
+                RefreshSparkle();
+                return true;
+            }
+
             if (consumeOnSuccessfulInteraction)
             {
                 consumed = true;
+                sharedAvailable = false;
             }
 
             RefreshSparkle();
             if (hideWhenConsumed)
             {
-                gameObject.SetActive(false);
+                SetAvailabilityPresentation(false);
+            }
+
+            PublishSharedSnapshot(respawnSeconds);
+            if (MMOGameplaySessionService.IsHostAuthority && respawnSeconds > 0f)
+            {
+                if (respawnRoutine != null)
+                {
+                    StopCoroutine(respawnRoutine);
+                }
+
+                respawnEndTime = Time.time + respawnSeconds;
+                respawnRoutine = StartCoroutine(RespawnAfterDelay(respawnSeconds));
+            }
+
+            return true;
+        }
+
+        private void PublishInteractionRequest()
+        {
+            string characterId = MMOGameplaySessionService.LocalPlayer.CharacterId;
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return;
+            }
+
+            RPGClone.Multiplayer.MMOLocalSharedSessionStore.PublishWorldObjectInteractionRequest(
+                MMOSharedWorldObjectInteractionRequest.Create(
+                    MMOGameplaySessionService.SessionId,
+                    WorldObjectId,
+                    characterId));
+        }
+
+        private void PublishSharedSnapshot(float remainingRespawnSeconds)
+        {
+            RPGClone.Multiplayer.MMOLocalSharedSessionStore.UpsertWorldObjectSnapshot(CreateSharedSnapshot(remainingRespawnSeconds));
+        }
+
+        private System.Collections.IEnumerator RespawnAfterDelay(float delaySeconds)
+        {
+            yield return new WaitForSeconds(delaySeconds);
+            consumed = false;
+            sharedAvailable = true;
+            respawnEndTime = 0f;
+            availableLoot.Clear();
+            SetAvailabilityPresentation(true);
+            RefreshSparkle();
+            PublishSharedSnapshot(0f);
+            respawnRoutine = null;
+        }
+
+        private void CachePresentationComponents()
+        {
+            cachedRenderers = GetComponentsInChildren<Renderer>(true);
+            cachedColliders = GetComponentsInChildren<Collider>(true);
+        }
+
+        private void SetAvailabilityPresentation(bool available)
+        {
+            cachedRenderers ??= GetComponentsInChildren<Renderer>(true);
+            cachedColliders ??= GetComponentsInChildren<Collider>(true);
+
+            if (!hideWhenConsumed)
+            {
+                return;
+            }
+
+            foreach (Renderer renderer in cachedRenderers)
+            {
+                if (renderer != null && renderer.GetComponentInParent<ParticleSystem>() == null)
+                {
+                    renderer.enabled = available;
+                }
+            }
+
+            foreach (Collider objectCollider in cachedColliders)
+            {
+                if (objectCollider != null)
+                {
+                    objectCollider.enabled = available;
+                }
             }
         }
     }

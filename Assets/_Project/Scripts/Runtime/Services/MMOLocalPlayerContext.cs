@@ -14,6 +14,8 @@ namespace RPGClone.Services
         private GameObject explicitPlayerObject;
         private GameObject cachedPlayerObject;
         private Camera cachedCamera;
+        private string localParticipantId = "local-player";
+        private string localCharacterId = string.Empty;
         private float nextPlayerResolveTime;
         private float nextCameraResolveTime;
 
@@ -46,6 +48,8 @@ namespace RPGClone.Services
         }
 
         public Transform PlayerTransform => PlayerObject != null ? PlayerObject.transform : null;
+        public string ParticipantId => localParticipantId;
+        public string CharacterId => localCharacterId;
 
         public MMOCharacterIdentity Identity
         {
@@ -99,6 +103,8 @@ namespace RPGClone.Services
 
             explicitPlayerObject = null;
             cachedPlayerObject = null;
+            localParticipantId = "local-player";
+            localCharacterId = string.Empty;
             componentCache.Clear();
             nextPlayerResolveTime = 0f;
             Changed?.Invoke();
@@ -154,6 +160,8 @@ namespace RPGClone.Services
                 return;
             }
 
+            localParticipantId = string.IsNullOrWhiteSpace(participantId) ? "local-player" : participantId;
+            localCharacterId = characterId ?? string.Empty;
             registry.Register(new MMOPlayerParticipant(participantId, characterId, true, true, identity));
         }
     }

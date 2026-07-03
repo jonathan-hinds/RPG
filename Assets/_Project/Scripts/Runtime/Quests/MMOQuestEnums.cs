@@ -17,4 +17,10 @@ namespace RPGClone.Quests
         UseItemOnWorldObject,
         SpeakToNpc
     }
+
+    public enum MMOQuestPartyCreditBehavior
+    {
+        ActorOnly,
+        EligibleParty
+    }
 }

@@ -31,6 +31,11 @@ namespace RPGClone.Vfx
             if (renderer != null)
             {
                 renderer.sharedMaterial = GetParticleMaterial(color);
+                renderer.renderMode = ParticleSystemRenderMode.Billboard;
+                renderer.alignment = ParticleSystemRenderSpace.View;
+                renderer.minParticleSize = 0.015f;
+                renderer.maxParticleSize = 0.18f;
+                renderer.sortingFudge = 8f;
             }
         }
 

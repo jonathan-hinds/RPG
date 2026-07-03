@@ -165,9 +165,13 @@ namespace RPGClone.UI
             }
 
             int index = 0;
-            foreach (MMOPlayerParticipant participant in MMOGameplaySessionService.Players.Participants)
+            MMOPartySnapshot party = MMOGameplaySessionService.Party.GetCurrentParty();
+            foreach (MMOPartyMember member in party.members)
             {
-                if (!participant.IsValid || participant.IsLocal)
+                if (member == null
+                    || member.isLocal
+                    || !MMOGameplaySessionService.Players.TryGetParticipantByCharacterId(member.characterId, out MMOPlayerParticipant participant)
+                    || !participant.IsValid)
                 {
                     continue;
                 }

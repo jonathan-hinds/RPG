@@ -4,6 +4,8 @@ using RPGClone.CharacterSelection;
 using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Enemies;
+using RPGClone.Loot;
+using RPGClone.Quests;
 using RPGClone.Services;
 using RPGClone.Social;
 using UnityEngine;
@@ -22,10 +24,12 @@ namespace RPGClone.Multiplayer
         [SerializeField, Min(0.05f)] private float enemySnapshotPublishSeconds = 0.1f;
         [SerializeField, Min(0.05f)] private float enemySnapshotPollSeconds = 0.1f;
         [SerializeField, Min(0.5f)] private float fullEnemySnapshotPublishSeconds = 2f;
+        [SerializeField, Min(0.1f)] private float worldObjectSnapshotPublishSeconds = 0.25f;
 
         private readonly Dictionary<string, MMORemotePlayerAvatar> remoteAvatarsByCharacterId = new();
         private readonly HashSet<string> appliedEventIds = new();
         private readonly Dictionary<string, long> appliedEnemySnapshotTicks = new();
+        private readonly Dictionary<string, long> appliedCorpseLootSnapshotTicks = new();
         private readonly Dictionary<string, int> publishedEnemySnapshotSignatures = new();
         private readonly List<EnemySnapshot> enemySnapshotBuffer = new();
         private MMOCharacterIdentity identity;
@@ -39,6 +43,7 @@ namespace RPGClone.Multiplayer
         private float nextEnemySnapshotPublishTime;
         private float nextEnemySnapshotPollTime;
         private float nextFullEnemySnapshotPublishTime;
+        private float nextWorldObjectSnapshotPublishTime;
         private string localCharacterId;
         private string observedSessionId;
         private bool suppressStoreRemoval;
@@ -96,6 +101,7 @@ namespace RPGClone.Multiplayer
                 observedSessionId = MMOGameplaySessionService.SessionId;
                 ClearRemoteAvatars();
                 appliedEnemySnapshotTicks.Clear();
+                appliedCorpseLootSnapshotTicks.Clear();
                 publishedEnemySnapshotSignatures.Clear();
             }
 
@@ -117,6 +123,13 @@ namespace RPGClone.Multiplayer
             {
                 nextEnemySnapshotPublishTime = Time.unscaledTime + enemySnapshotPublishSeconds;
                 PublishEnemySnapshots();
+            }
+
+            if (MMOGameplaySessionService.IsHostAuthority
+                && Time.unscaledTime >= nextWorldObjectSnapshotPublishTime)
+            {
+                nextWorldObjectSnapshotPublishTime = Time.unscaledTime + worldObjectSnapshotPublishSeconds;
+                PublishWorldObjectSnapshots();
             }
 
             if (Time.unscaledTime >= nextPollTime)
@@ -200,6 +213,7 @@ namespace RPGClone.Multiplayer
             if (MMOGameplaySessionService.IsHostAuthority && hasSessionPeers)
             {
                 ProcessPendingCombatRequests();
+                ProcessPendingWorldObjectRequests();
             }
 
             if (!MMOGameplaySessionService.IsHostAuthority
@@ -213,7 +227,11 @@ namespace RPGClone.Multiplayer
             {
                 ApplyPendingAbilityEvents();
                 ApplyPendingCombatEvents();
+                ApplyPendingRewardEvents();
+                ApplyCorpseLootSnapshots();
             }
+
+            ApplyWorldObjectSnapshots();
         }
 
         private MMORemotePlayerAvatar SpawnRemoteAvatar(MMOSessionParticipantSnapshot participant)
@@ -267,6 +285,25 @@ namespace RPGClone.Multiplayer
 
             MMOCharacterIdentity targetIdentity = ResolveCombatRequestTarget(request);
             return casterAbilitySystem.TryResolveAuthorityRequest(request, targetIdentity, out failureReason);
+        }
+
+        private void ProcessPendingWorldObjectRequests()
+        {
+            IReadOnlyList<MMOSharedWorldObjectInteractionRequest> requests = MMOLocalSharedSessionStore.GetPendingWorldObjectInteractionRequests(MMOGameplaySessionService.SessionId);
+            foreach (MMOSharedWorldObjectInteractionRequest request in requests)
+            {
+                if (request == null)
+                {
+                    continue;
+                }
+
+                if (MMOSharedWorldObjectStateService.TryGetInteractable(request.worldObjectId, out MMOQuestWorldInteractable interactable))
+                {
+                    interactable.TryAuthorityConsumeFromRequest(request.actorCharacterId);
+                }
+
+                MMOLocalSharedSessionStore.MarkWorldObjectInteractionRequestProcessed(request.requestId);
+            }
         }
 
         private MMOCharacterIdentity ResolveCombatRequestTarget(CombatActionRequest request)
@@ -350,6 +387,22 @@ namespace RPGClone.Multiplayer
             if (enemySnapshotBuffer.Count > 0)
             {
                 MMOLocalSharedSessionStore.UpsertEnemySnapshots(enemySnapshotBuffer);
+            }
+        }
+
+        private void PublishWorldObjectSnapshots()
+        {
+            if (string.IsNullOrWhiteSpace(MMOGameplaySessionService.SessionId))
+            {
+                return;
+            }
+
+            foreach (MMOQuestWorldInteractable interactable in MMOSharedWorldObjectStateService.ActiveInteractables)
+            {
+                if (interactable != null)
+                {
+                    MMOLocalSharedSessionStore.UpsertWorldObjectSnapshot(interactable.CreateSharedSnapshot());
+                }
             }
         }
 
@@ -505,6 +558,107 @@ namespace RPGClone.Multiplayer
                     appliedEventIds.Add(combatEvent.eventId);
                     MMOLocalSharedSessionStore.MarkCombatEventApplied(combatEvent.eventId, localCharacterId);
                 }
+            }
+        }
+
+        private void ApplyPendingRewardEvents()
+        {
+            IReadOnlyList<MMOSharedRewardEvent> events = MMOLocalSharedSessionStore.GetPendingRewardEvents(MMOGameplaySessionService.SessionId, localCharacterId);
+            foreach (MMOSharedRewardEvent rewardEvent in events)
+            {
+                if (rewardEvent == null || appliedEventIds.Contains(rewardEvent.eventId))
+                {
+                    continue;
+                }
+
+                if (ApplyRewardEvent(rewardEvent))
+                {
+                    appliedEventIds.Add(rewardEvent.eventId);
+                    MMOLocalSharedSessionStore.MarkRewardEventApplied(rewardEvent.eventId, localCharacterId);
+                }
+            }
+        }
+
+        private bool ApplyRewardEvent(MMOSharedRewardEvent rewardEvent)
+        {
+            if (rewardEvent == null || rewardEvent.targetCharacterId != localCharacterId)
+            {
+                return false;
+            }
+
+            switch (rewardEvent.eventType)
+            {
+                case MMOSharedRewardEventTypes.Experience:
+                    if (rewardEvent.experienceAmount <= 0)
+                    {
+                        return true;
+                    }
+
+                    MMOExperienceComponent experience = GetComponent<MMOExperienceComponent>();
+                    if (experience == null)
+                    {
+                        return false;
+                    }
+
+                    experience.AddExperience(rewardEvent.experienceAmount);
+                    return true;
+
+                case MMOSharedRewardEventTypes.QuestKillCredit:
+                    MMOQuestLog questLog = GetComponent<MMOQuestLog>();
+                    if (questLog == null)
+                    {
+                        return false;
+                    }
+
+                    MMOEnemyDefinition enemyDefinition = null;
+                    if (!string.IsNullOrWhiteSpace(rewardEvent.enemySpawnId)
+                        && MMOEnemyController.TryGetEnemy(rewardEvent.enemySpawnId, out MMOEnemyController enemy)
+                        && enemy != null)
+                    {
+                        enemyDefinition = enemy.Definition;
+                    }
+
+                    questLog.RecordCreatureKilled(enemyDefinition, rewardEvent.creatureId);
+                    return true;
+
+                default:
+                    return true;
+            }
+        }
+
+        private void ApplyCorpseLootSnapshots()
+        {
+            IReadOnlyList<MMOCorpseLootState> snapshots = MMOLocalSharedSessionStore.GetCorpseLootSnapshots(MMOGameplaySessionService.SessionId);
+            foreach (MMOCorpseLootState snapshot in snapshots)
+            {
+                if (snapshot == null
+                    || string.IsNullOrWhiteSpace(snapshot.enemySpawnId)
+                    || (appliedCorpseLootSnapshotTicks.TryGetValue(snapshot.enemySpawnId, out long appliedTicks)
+                        && snapshot.updatedUtcTicks <= appliedTicks)
+                    || !MMOEnemyController.TryGetEnemy(snapshot.enemySpawnId, out MMOEnemyController enemy)
+                    || enemy == null
+                    || !enemy.TryGetComponent(out MMOLootableCorpse corpse))
+                {
+                    continue;
+                }
+
+                corpse.ApplyPersonalLootSnapshot(snapshot);
+                appliedCorpseLootSnapshotTicks[snapshot.enemySpawnId] = snapshot.updatedUtcTicks;
+            }
+        }
+
+        private void ApplyWorldObjectSnapshots()
+        {
+            IReadOnlyList<MMOSharedWorldObjectSnapshot> snapshots = MMOLocalSharedSessionStore.GetWorldObjectSnapshots(MMOGameplaySessionService.SessionId);
+            foreach (MMOSharedWorldObjectSnapshot snapshot in snapshots)
+            {
+                if (snapshot == null
+                    || !MMOSharedWorldObjectStateService.TryGetInteractable(snapshot.worldObjectId, out MMOQuestWorldInteractable interactable))
+                {
+                    continue;
+                }
+
+                interactable.ApplySharedSnapshot(snapshot);
             }
         }
 
