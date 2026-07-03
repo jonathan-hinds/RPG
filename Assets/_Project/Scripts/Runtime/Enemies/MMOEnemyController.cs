@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using RPGClone.Abilities;
+using RPGClone.Animation;
 using RPGClone.CharacterSelection;
 using RPGClone.Characters;
 using RPGClone.Combat;
@@ -19,7 +20,7 @@ namespace RPGClone.Enemies
     [RequireComponent(typeof(MMOAbilitySystem))]
     [RequireComponent(typeof(MMOAutoAttackController))]
     [RequireComponent(typeof(NavMeshAgent))]
-    public sealed class MMOEnemyController : MonoBehaviour, IEnemySessionAuthority, IEnemyStateReplicator
+    public sealed class MMOEnemyController : MonoBehaviour, IEnemySessionAuthority, IEnemyStateReplicator, IMMOCreatureLocomotionSource
     {
         private const int DetectionBufferSize = 16;
         private static readonly Dictionary<string, MMOEnemyController> ActiveEnemiesBySpawnId = new();
@@ -62,6 +63,7 @@ namespace RPGClone.Enemies
         private float respawnEndTime;
         private Vector3 proxyTargetPosition;
         private Quaternion proxyTargetRotation;
+        private float proxyWorldSpeed;
         private bool proxyHasSnapshot;
 
         public MMOEnemyDefinition Definition => definition;
@@ -77,6 +79,7 @@ namespace RPGClone.Enemies
         public MMOCharacterIdentity CurrentTarget => currentTarget;
         public bool IsInCombat => currentTarget != null && !corpseActive;
         public bool IsAuthorityOwner => MMOGameplaySessionService.IsHostAuthority;
+        public float CurrentWorldSpeed => IsAuthorityOwner ? GetAuthoritativeWorldSpeed() : proxyWorldSpeed;
 
         public static IReadOnlyCollection<MMOEnemyController> ActiveEnemies => ActiveEnemiesBySpawnId.Values;
 
@@ -193,6 +196,7 @@ namespace RPGClone.Enemies
                 maxMana = identity != null ? identity.Mana.MaxValue : 0,
                 position = new Vector3SaveData(transform.position),
                 rotationEuler = new Vector3SaveData(transform.eulerAngles),
+                worldSpeed = runtimeState == EnemyRuntimeState.Alive ? GetAuthoritativeWorldSpeed() : 0f,
                 currentTargetCharacterId = currentTargetCharacterId,
                 inCombat = IsInCombat,
                 leashing = currentTarget == null && CanMoveOnNavMesh() && agent.hasPath,
@@ -224,6 +228,7 @@ namespace RPGClone.Enemies
                 || (transform.position - snapshotPosition).sqrMagnitude >= proxySnapDistance * proxySnapDistance;
             proxyTargetPosition = snapshotPosition;
             proxyTargetRotation = snapshotRotation;
+            proxyWorldSpeed = snapshot.runtimeState == EnemyRuntimeState.Alive ? Mathf.Max(0f, snapshot.worldSpeed) : 0f;
             proxyHasSnapshot = true;
             if (shouldSnap)
             {
@@ -242,6 +247,7 @@ namespace RPGClone.Enemies
         {
             if (!proxyHasSnapshot || respawning)
             {
+                proxyWorldSpeed = 0f;
                 return;
             }
 
@@ -638,6 +644,23 @@ namespace RPGClone.Enemies
         private float GetMovementSpeedMultiplier()
         {
             return identity != null && identity.Stats != null ? identity.Stats.MovementSpeedMultiplier : 1f;
+        }
+
+        private float GetAuthoritativeWorldSpeed()
+        {
+            if (corpseActive || respawning || combatant == null || !combatant.IsAlive || !CanMoveOnNavMesh())
+            {
+                return 0f;
+            }
+
+            if (agent.isStopped)
+            {
+                return 0f;
+            }
+
+            Vector3 velocity = agent.velocity.sqrMagnitude > 0.0001f ? agent.velocity : agent.desiredVelocity;
+            velocity.y = 0f;
+            return velocity.magnitude;
         }
 
         private bool TryGetRandomNavMeshPoint(Vector3 origin, float radius, out Vector3 point)

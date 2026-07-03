@@ -10,15 +10,20 @@ namespace RPGClone.Multiplayer
         [SerializeField, Min(0f)] private float teleportDistance = 8f;
         [SerializeField, Min(0f)] private float interpolationDelaySeconds = 0.12f;
         [SerializeField, Min(0f)] private float maxExtrapolationSeconds = 0.12f;
-        [SerializeField, Min(0f)] private float groundedYVelocityThreshold = 0.35f;
+        [SerializeField, Min(0f)] private float unsupportedAirborneDelaySeconds = 0.12f;
+        [SerializeField, Min(0f)] private float jumpStartYVelocityThreshold = 1.25f;
 
         private readonly Snapshot[] snapshots = new Snapshot[8];
+        private readonly RaycastHit[] groundProbeHits = new RaycastHit[8];
         private int snapshotCount;
+        private CharacterController characterController;
+        private MMOPlayerMovementConfig movementConfig;
         private Vector3 planarVelocity;
         private float verticalVelocity;
         private bool hasSnapshot;
         private bool isGrounded = true;
         private bool hadGroundContact = true;
+        private float unsupportedSince = float.PositiveInfinity;
 
         public event Action Jumped;
         public event Action BecameAirborne;
@@ -41,6 +46,7 @@ namespace RPGClone.Multiplayer
 
         public void ApplySnapshot(Vector3 position, Quaternion rotation, long utcTicks)
         {
+            EnsureReferences();
             double sampleTime = utcTicks > 0
                 ? utcTicks / (double)TimeSpan.TicksPerSecond
                 : DateTime.UtcNow.Ticks / (double)TimeSpan.TicksPerSecond;
@@ -64,6 +70,7 @@ namespace RPGClone.Multiplayer
 
         private void Update()
         {
+            EnsureReferences();
             if (!hasSnapshot || snapshotCount == 0)
             {
                 return;
@@ -155,23 +162,63 @@ namespace RPGClone.Multiplayer
         private void UpdateGroundedState()
         {
             bool wasGrounded = isGrounded;
-            bool movedUp = verticalVelocity > groundedYVelocityThreshold;
-            bool movedDownOrFlat = verticalVelocity <= groundedYVelocityThreshold;
-            hadGroundContact = movedDownOrFlat;
-            isGrounded = movedDownOrFlat;
+            bool hasSupportedGround = characterController != null
+                && movementConfig != null
+                && MMOPlayerGroundingProbe.TryFindSupportedGround(
+                    characterController,
+                    transform,
+                    movementConfig,
+                    groundProbeHits,
+                    out _);
 
-            if (wasGrounded && movedUp)
+            hadGroundContact = hasSupportedGround;
+            if (hasSupportedGround)
             {
-                isGrounded = false;
-                hadGroundContact = false;
-                Jumped?.Invoke();
-                BecameAirborne?.Invoke();
+                unsupportedSince = float.PositiveInfinity;
+                isGrounded = true;
+                if (!wasGrounded)
+                {
+                    Landed?.Invoke();
+                }
+
                 return;
             }
 
-            if (!wasGrounded && isGrounded)
+            if (float.IsPositiveInfinity(unsupportedSince))
             {
-                Landed?.Invoke();
+                unsupportedSince = Time.time;
+            }
+
+            if (wasGrounded && Time.time < unsupportedSince + unsupportedAirborneDelaySeconds)
+            {
+                isGrounded = true;
+                return;
+            }
+
+            isGrounded = false;
+            if (!wasGrounded)
+            {
+                return;
+            }
+
+            if (verticalVelocity > jumpStartYVelocityThreshold)
+            {
+                Jumped?.Invoke();
+            }
+
+            BecameAirborne?.Invoke();
+        }
+
+        private void EnsureReferences()
+        {
+            if (characterController == null)
+            {
+                characterController = GetComponent<CharacterController>();
+            }
+
+            if (movementConfig == null && TryGetComponent(out MMOPlayerMotor motor))
+            {
+                movementConfig = motor.MovementConfig;
             }
         }
 

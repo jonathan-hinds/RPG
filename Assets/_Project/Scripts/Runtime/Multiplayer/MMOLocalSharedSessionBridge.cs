@@ -451,6 +451,7 @@ namespace RPGClone.Multiplayer
                 hash = hash * 31 + Quantize(position.y, 0.05f);
                 hash = hash * 31 + Quantize(position.z, 0.05f);
                 hash = hash * 31 + Quantize(rotation.y, 1f);
+                hash = hash * 31 + Quantize(snapshot.worldSpeed, 0.05f);
                 hash = hash * 31 + StableHash(snapshot.currentTargetCharacterId);
                 hash = hash * 31 + (snapshot.inCombat ? 1 : 0);
                 hash = hash * 31 + (snapshot.leashing ? 1 : 0);

@@ -21,6 +21,7 @@ namespace RPGClone.Player
         [Min(0f)] public float gravity = 28f;
         [Min(0f)] public float maxFallSpeed = 45f;
         public float groundedStickVelocity = -2f;
+        [Min(0f)] public float groundSnapSpeed = 18f;
 
         [Header("Grounding")]
         [Min(0f)] public float groundedGraceSeconds = 0.08f;

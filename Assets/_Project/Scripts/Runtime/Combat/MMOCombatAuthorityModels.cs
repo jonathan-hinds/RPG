@@ -176,6 +176,7 @@ namespace RPGClone.Combat
         public int maxMana;
         public Vector3SaveData position;
         public Vector3SaveData rotationEuler;
+        public float worldSpeed;
         public string currentTargetCharacterId;
         public bool inCombat;
         public bool leashing;

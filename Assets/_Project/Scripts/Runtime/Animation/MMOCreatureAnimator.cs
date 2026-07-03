@@ -22,12 +22,14 @@ namespace RPGClone.Animation
         [SerializeField] private Animator animator;
         [SerializeField] private Transform visualRoot;
         [SerializeField] private NavMeshAgent agent;
+        [SerializeField] private MonoBehaviour locomotionSourceBehaviour;
         [SerializeField] private MMOAbilitySystem abilitySystem;
         [SerializeField] private MMOCombatant combatant;
         [SerializeField] private float visualYawOffsetDegrees;
 
         private readonly List<KeyValuePair<AnimationClip, AnimationClip>> clipOverrides = new();
         private AnimatorOverrideController overrideController;
+        private IMMOCreatureLocomotionSource locomotionSource;
         private Vector3 lastPosition;
         private float attackPriorityUntil;
         private float nextDamageReactionTime;
@@ -171,6 +173,11 @@ namespace RPGClone.Animation
 
         private float GetWorldSpeed()
         {
+            if (locomotionSource != null)
+            {
+                return Mathf.Max(0f, locomotionSource.CurrentWorldSpeed);
+            }
+
             if (agent != null && agent.enabled)
             {
                 Vector3 velocity = agent.velocity.sqrMagnitude > 0.0001f ? agent.velocity : agent.desiredVelocity;
@@ -309,6 +316,11 @@ namespace RPGClone.Animation
                 agent = GetComponent<NavMeshAgent>();
             }
 
+            if (locomotionSource == null)
+            {
+                locomotionSource = ResolveLocomotionSource();
+            }
+
             if (abilitySystem == null)
             {
                 abilitySystem = GetComponent<MMOAbilitySystem>();
@@ -320,8 +332,29 @@ namespace RPGClone.Animation
             }
         }
 
+        private IMMOCreatureLocomotionSource ResolveLocomotionSource()
+        {
+            if (locomotionSourceBehaviour is IMMOCreatureLocomotionSource configuredSource)
+            {
+                return configuredSource;
+            }
+
+            MonoBehaviour[] behaviours = GetComponents<MonoBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] != this && behaviours[i] is IMMOCreatureLocomotionSource source)
+                {
+                    locomotionSourceBehaviour = behaviours[i];
+                    return source;
+                }
+            }
+
+            return null;
+        }
+
         private void OnValidate()
         {
+            locomotionSource = null;
             EnsureReferences();
             if (!Application.isPlaying)
             {

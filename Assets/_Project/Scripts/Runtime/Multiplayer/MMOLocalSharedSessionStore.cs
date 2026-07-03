@@ -1398,6 +1398,7 @@ namespace RPGClone.Multiplayer
             destination.maxMana = source.maxMana;
             destination.position = source.position;
             destination.rotationEuler = source.rotationEuler;
+            destination.worldSpeed = source.worldSpeed;
             destination.currentTargetCharacterId = source.currentTargetCharacterId;
             destination.inCombat = source.inCombat;
             destination.leashing = source.leashing;

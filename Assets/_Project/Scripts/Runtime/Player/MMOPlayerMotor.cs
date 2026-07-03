@@ -24,7 +24,9 @@ namespace RPGClone.Player
         private float lastGroundedTime = float.NegativeInfinity;
         private float jumpBufferedUntil = float.NegativeInfinity;
         private float ignoreGroundingUntil = float.NegativeInfinity;
+        private float groundContactGap = float.PositiveInfinity;
 
+        public MMOPlayerMovementConfig MovementConfig => movementConfig;
         public float CurrentPlanarSpeed => new Vector2(horizontalVelocity.x, horizontalVelocity.z).magnitude;
         public Vector3 CurrentPlanarVelocity => horizontalVelocity;
         public float VerticalVelocity => verticalVelocity;
@@ -142,7 +144,11 @@ namespace RPGClone.Player
         {
             if (groundedForMovement && verticalVelocity < 0f)
             {
-                verticalVelocity = config.groundedStickVelocity;
+                bool hasImmediateSupport = characterController.isGrounded
+                    || (hasGroundContact && groundContactGap <= characterController.skinWidth + 0.01f);
+                verticalVelocity = hasImmediateSupport
+                    ? config.groundedStickVelocity
+                    : -Mathf.Max(Mathf.Abs(config.groundedStickVelocity), config.groundSnapSpeed);
             }
 
             bool jumpedThisFrame = false;
@@ -211,53 +217,28 @@ namespace RPGClone.Player
         {
             if ((collisionFlags & CollisionFlags.Below) != 0 || characterController.isGrounded)
             {
+                groundContactGap = 0f;
                 return true;
             }
 
-            return ProbeGround(config);
+            if (ProbeGround(config, out MMOPlayerGroundingHit hit))
+            {
+                groundContactGap = Mathf.Max(0f, hit.BottomGap);
+                return true;
+            }
+
+            groundContactGap = float.PositiveInfinity;
+            return false;
         }
 
-        private bool ProbeGround(MMOPlayerMovementConfig config)
+        private bool ProbeGround(MMOPlayerMovementConfig config, out MMOPlayerGroundingHit hit)
         {
-            if (config.groundProbeDistance <= 0f || characterController == null)
-            {
-                return false;
-            }
-
-            float radius = Mathf.Max(0.01f, characterController.radius * config.groundProbeRadiusScale);
-            float halfHeight = Mathf.Max(characterController.height * 0.5f, radius);
-            Vector3 center = transform.TransformPoint(characterController.center);
-            Vector3 origin = center + Vector3.up * config.groundProbeDistance;
-            float castDistance = Mathf.Max(0f, halfHeight - radius)
-                + config.groundProbeDistance
-                + characterController.skinWidth;
-            float maxSlopeAngle = Mathf.Min(config.groundProbeMaxSlopeAngle, characterController.slopeLimit + 0.1f);
-            int hitCount = Physics.SphereCastNonAlloc(
-                origin,
-                radius,
-                Vector3.down,
+            return MMOPlayerGroundingProbe.TryFindSupportedGround(
+                characterController,
+                transform,
+                config,
                 groundProbeHits,
-                castDistance,
-                Physics.DefaultRaycastLayers,
-                QueryTriggerInteraction.Ignore);
-
-            for (int i = 0; i < hitCount; i++)
-            {
-                Collider hitCollider = groundProbeHits[i].collider;
-                if (hitCollider == null
-                    || hitCollider == characterController
-                    || hitCollider.transform.IsChildOf(transform))
-                {
-                    continue;
-                }
-
-                if (Vector3.Angle(groundProbeHits[i].normal, Vector3.up) <= maxSlopeAngle)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+                out hit);
         }
 
         private bool CanKeepGroundedDuringGrace(MMOPlayerMovementConfig config)
