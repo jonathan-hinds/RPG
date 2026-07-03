@@ -27,6 +27,7 @@ namespace RPGClone.UI
 
         private void OnEnable()
         {
+            ResolveReferences();
             if (targetSelectionController != null)
             {
                 targetSelectionController.TargetChanged += OnTargetChanged;
@@ -34,6 +35,10 @@ namespace RPGClone.UI
 
             MMOGameplaySessionService.Players.Changed -= OnPlayersChanged;
             MMOGameplaySessionService.Players.Changed += OnPlayersChanged;
+            MMOGameplaySessionService.LocalPlayer.Changed -= OnLocalPlayerChanged;
+            MMOGameplaySessionService.LocalPlayer.Changed += OnLocalPlayerChanged;
+            BindFrames();
+            RebuildPartyFrames();
         }
 
         private void OnDisable()
@@ -44,6 +49,7 @@ namespace RPGClone.UI
             }
 
             MMOGameplaySessionService.Players.Changed -= OnPlayersChanged;
+            MMOGameplaySessionService.LocalPlayer.Changed -= OnLocalPlayerChanged;
         }
 
         public void Configure(
@@ -87,6 +93,18 @@ namespace RPGClone.UI
             {
                 targetSelectionController = FindAnyObjectByType<MMOTargetSelectionController>();
             }
+
+            if (playerFrame == null)
+            {
+                Transform playerFrameTransform = transform.Find("Player Unit Frame");
+                playerFrame = playerFrameTransform != null ? playerFrameTransform.GetComponent<MMOUnitFrameView>() : null;
+            }
+
+            if (targetFrame == null)
+            {
+                Transform targetFrameTransform = transform.Find("Target Unit Frame");
+                targetFrame = targetFrameTransform != null ? targetFrameTransform.GetComponent<MMOUnitFrameView>() : null;
+            }
         }
 
         private void BindFrames()
@@ -104,6 +122,15 @@ namespace RPGClone.UI
 
         private void OnPlayersChanged()
         {
+            ResolveReferences();
+            BindFrames();
+            RebuildPartyFrames();
+        }
+
+        private void OnLocalPlayerChanged()
+        {
+            ResolveReferences();
+            BindFrames();
             RebuildPartyFrames();
         }
 
@@ -132,6 +159,11 @@ namespace RPGClone.UI
             }
 
             partyFrames.Clear();
+            for (int i = partyFrameRoot.childCount - 1; i >= 0; i--)
+            {
+                Destroy(partyFrameRoot.GetChild(i).gameObject);
+            }
+
             int index = 0;
             foreach (MMOPlayerParticipant participant in MMOGameplaySessionService.Players.Participants)
             {
@@ -156,7 +188,8 @@ namespace RPGClone.UI
 
             RectTransform playerRect = playerFrame.transform as RectTransform;
             Transform parent = playerFrame.transform.parent;
-            GameObject rootObject = new("Party Frames", typeof(RectTransform));
+            Transform existing = parent != null ? parent.Find("Party Frames") : null;
+            GameObject rootObject = existing != null ? existing.gameObject : new GameObject("Party Frames", typeof(RectTransform));
             partyFrameRoot = (RectTransform)rootObject.transform;
             partyFrameRoot.SetParent(parent, false);
             partyFrameRoot.anchorMin = playerRect != null ? playerRect.anchorMin : new Vector2(0f, 1f);
@@ -165,7 +198,7 @@ namespace RPGClone.UI
             partyFrameRoot.anchoredPosition = playerRect != null
                 ? playerRect.anchoredPosition + new Vector2(0f, -88f)
                 : new Vector2(18f, -108f);
-            partyFrameRoot.sizeDelta = new Vector2(190f, 260f);
+            partyFrameRoot.sizeDelta = new Vector2(230f, 280f);
         }
 
         private MMOUnitFrameView CreatePartyFrame(int index)
@@ -176,8 +209,8 @@ namespace RPGClone.UI
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 1f);
-            rect.anchoredPosition = new Vector2(0f, -index * 54f);
-            rect.sizeDelta = new Vector2(190f, 48f);
+            rect.anchoredPosition = new Vector2(0f, -index * 68f);
+            rect.sizeDelta = new Vector2(230f, 64f);
             return frameObject.AddComponent<MMOUnitFrameView>();
         }
     }

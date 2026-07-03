@@ -24,6 +24,27 @@ namespace RPGClone.Services
             return participantsByIdentity.TryGetValue(identity, out participant);
         }
 
+        public bool TryGetParticipantByCharacterId(string characterId, out MMOPlayerParticipant participant)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                participant = default;
+                return false;
+            }
+
+            foreach (MMOPlayerParticipant candidate in participants)
+            {
+                if (candidate.IsValid && candidate.CharacterId == characterId)
+                {
+                    participant = candidate;
+                    return true;
+                }
+            }
+
+            participant = default;
+            return false;
+        }
+
         public bool Contains(MMOCharacterIdentity identity)
         {
             return identity != null && participantsByIdentity.ContainsKey(identity);

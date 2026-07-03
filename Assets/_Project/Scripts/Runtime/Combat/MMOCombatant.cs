@@ -144,7 +144,7 @@ namespace RPGClone.Combat
             Blocked?.Invoke(source, this, ability, blockedAmount);
         }
 
-        public void ApplyHeal(MMOCombatant source, MMOAbilityDefinition ability, int amount)
+        public void ApplyHeal(MMOCombatant source, MMOAbilityDefinition ability, int amount, bool publishToCombatEventStream = true)
         {
             if (!IsAlive || amount <= 0)
             {
@@ -160,7 +160,10 @@ namespace RPGClone.Combat
 
             identity.Health.SetCurrent(identity.Health.CurrentValue + appliedAmount);
             Healed?.Invoke(source, this, ability, appliedAmount);
-            MMOCombatEventStream.PublishHealResolved(source, this, ability, appliedAmount);
+            if (publishToCombatEventStream)
+            {
+                MMOCombatEventStream.PublishHealResolved(source, this, ability, appliedAmount);
+            }
         }
 
         public void RegisterCombatActivity(MMOCombatant opponent = null)

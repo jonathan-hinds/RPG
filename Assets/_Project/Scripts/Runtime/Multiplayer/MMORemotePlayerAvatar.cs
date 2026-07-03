@@ -16,6 +16,8 @@ namespace RPGClone.Multiplayer
         private MMOCharacterPersistenceAgent persistenceAgent;
         private MMORemotePlayerLocomotionSource locomotionSource;
         private TextMesh nameplate;
+        private Transform nameplateTransform;
+        private bool nameplateReady;
         private Camera cachedCamera;
         private int appliedPresentationSignature;
 
@@ -59,9 +61,13 @@ namespace RPGClone.Multiplayer
 
         private void LateUpdate()
         {
-            if (nameplate == null)
+            if (!nameplateReady)
             {
-                return;
+                EnsureNameplate();
+                if (!nameplateReady)
+                {
+                    return;
+                }
             }
 
             if (cachedCamera == null)
@@ -71,7 +77,7 @@ namespace RPGClone.Multiplayer
 
             if (cachedCamera != null)
             {
-                nameplate.transform.rotation = Quaternion.LookRotation(nameplate.transform.position - cachedCamera.transform.position, Vector3.up);
+                nameplateTransform.rotation = Quaternion.LookRotation(nameplateTransform.position - cachedCamera.transform.position, Vector3.up);
             }
         }
 
@@ -147,6 +153,14 @@ namespace RPGClone.Multiplayer
                 hash = hash * 31 + (int)characterData.race;
                 hash = hash * 31 + (int)characterData.characterClass;
                 hash = hash * 31 + characterData.level;
+                if (characterData.learnedAbilityIds != null)
+                {
+                    for (int i = 0; i < characterData.learnedAbilityIds.Count; i++)
+                    {
+                        hash = hash * 31 + StableHash(characterData.learnedAbilityIds[i]);
+                    }
+                }
+
                 if (characterData.equipment != null)
                 {
                     for (int i = 0; i < characterData.equipment.Count; i++)
@@ -240,29 +254,34 @@ namespace RPGClone.Multiplayer
 
         private void EnsureNameplate()
         {
-            if (nameplate != null)
+            Transform existing = transform.Find(NameplateObjectName);
+            if (existing != null)
             {
-                return;
+                Destroy(existing.gameObject);
             }
 
-            Transform existing = transform.Find(NameplateObjectName);
-            GameObject nameplateObject = existing != null
-                ? existing.gameObject
-                : new GameObject(NameplateObjectName);
+            GameObject nameplateObject = new(NameplateObjectName);
             nameplateObject.transform.SetParent(transform, false);
             nameplateObject.transform.localPosition = new Vector3(0f, 2.45f, 0f);
-            nameplate = nameplateObject.GetComponent<TextMesh>() ?? nameplateObject.AddComponent<TextMesh>();
+            nameplateTransform = nameplateObject.transform;
+            nameplate = nameplateObject.AddComponent<TextMesh>();
             nameplate.anchor = TextAnchor.MiddleCenter;
             nameplate.alignment = TextAlignment.Center;
             nameplate.characterSize = 0.08f;
             nameplate.fontSize = 42;
             nameplate.color = new Color(0.45f, 0.95f, 0.45f, 1f);
+            nameplateReady = true;
             RefreshNameplate();
         }
 
         private void RefreshNameplate()
         {
-            if (nameplate != null && identity != null)
+            if (!nameplateReady)
+            {
+                EnsureNameplate();
+            }
+
+            if (nameplateReady && identity != null)
             {
                 nameplate.text = identity.DisplayName;
             }

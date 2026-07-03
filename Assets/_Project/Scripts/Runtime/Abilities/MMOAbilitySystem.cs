@@ -104,6 +104,27 @@ namespace RPGClone.Abilities
             }
         }
 
+        public void ReplaceKnownAbilities(IEnumerable<MMOAbilityDefinition> abilities)
+        {
+            startingAbilities.Clear();
+            cooldownReadyTimes.Clear();
+            activeCast = null;
+            activeCharge = null;
+
+            if (abilities == null)
+            {
+                return;
+            }
+
+            foreach (MMOAbilityDefinition ability in abilities)
+            {
+                if (ability != null && !startingAbilities.Contains(ability))
+                {
+                    startingAbilities.Add(ability);
+                }
+            }
+        }
+
         public bool TryUseAbility(MMOAbilityDefinition ability, MMOCharacterIdentity target, out string failureReason)
         {
             EnsureInitialized();
@@ -408,6 +429,36 @@ namespace RPGClone.Abilities
             {
                 cooldownReadyTimes.Remove(ability);
             }
+        }
+
+        public void PlayReplicatedCastStarted(MMOAbilityDefinition ability, MMOCharacterIdentity target, float durationSeconds)
+        {
+            if (ability == null)
+            {
+                return;
+            }
+
+            CastStarted?.Invoke(this, ability, target, Mathf.Max(0.01f, durationSeconds));
+        }
+
+        public void PlayReplicatedAbilityReleased(
+            MMOAbilityDefinition ability,
+            MMOCharacterIdentity target,
+            Vector3 targetPosition,
+            bool hasGroundTarget)
+        {
+            if (ability == null)
+            {
+                return;
+            }
+
+            if (ability.CastTimeSeconds > 0f)
+            {
+                CastCompleted?.Invoke(this, ability, target);
+            }
+
+            AbilityReleased?.Invoke(this, ability, target, targetPosition, hasGroundTarget);
+            AbilityUsed?.Invoke(this, ability, target);
         }
 
         private void SpendResourceCost(MMOAbilityDefinition ability)

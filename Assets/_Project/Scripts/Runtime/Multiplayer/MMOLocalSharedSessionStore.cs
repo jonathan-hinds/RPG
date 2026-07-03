@@ -26,12 +26,23 @@ namespace RPGClone.Multiplayer
     {
         public string eventId;
         public string sessionId;
+        public string eventType;
         public string casterCharacterId;
         public string targetCharacterId;
         public string abilityId;
         public int healAmount;
+        public Vector3SaveData targetPosition;
+        public bool hasGroundTarget;
+        public float castDurationSeconds;
         public long createdUtcTicks;
         public List<string> appliedCharacterIds = new();
+    }
+
+    public static class MMOSharedAbilityEventTypes
+    {
+        public const string CastStarted = "cast_started";
+        public const string AbilityReleased = "ability_released";
+        public const string HealResolved = "heal_resolved";
     }
 
     [Serializable]
@@ -171,12 +182,85 @@ namespace RPGClone.Multiplayer
             }
         }
 
-        public static void PublishHealEvent(string sessionId, string casterCharacterId, string targetCharacterId, string abilityId, int healAmount)
+        public static void PublishCastStartedEvent(
+            string sessionId,
+            string casterCharacterId,
+            string targetCharacterId,
+            string abilityId,
+            float castDurationSeconds,
+            string initiallyAppliedCharacterId)
+        {
+            PublishAbilityEvent(
+                sessionId,
+                MMOSharedAbilityEventTypes.CastStarted,
+                casterCharacterId,
+                targetCharacterId,
+                abilityId,
+                0,
+                Vector3.zero,
+                false,
+                castDurationSeconds,
+                initiallyAppliedCharacterId);
+        }
+
+        public static void PublishAbilityReleasedEvent(
+            string sessionId,
+            string casterCharacterId,
+            string targetCharacterId,
+            string abilityId,
+            Vector3 targetPosition,
+            bool hasGroundTarget,
+            string initiallyAppliedCharacterId)
+        {
+            PublishAbilityEvent(
+                sessionId,
+                MMOSharedAbilityEventTypes.AbilityReleased,
+                casterCharacterId,
+                targetCharacterId,
+                abilityId,
+                0,
+                targetPosition,
+                hasGroundTarget,
+                0f,
+                initiallyAppliedCharacterId);
+        }
+
+        public static void PublishHealEvent(
+            string sessionId,
+            string casterCharacterId,
+            string targetCharacterId,
+            string abilityId,
+            int healAmount,
+            string initiallyAppliedCharacterId)
+        {
+            PublishAbilityEvent(
+                sessionId,
+                MMOSharedAbilityEventTypes.HealResolved,
+                casterCharacterId,
+                targetCharacterId,
+                abilityId,
+                healAmount,
+                Vector3.zero,
+                false,
+                0f,
+                initiallyAppliedCharacterId);
+        }
+
+        private static void PublishAbilityEvent(
+            string sessionId,
+            string eventType,
+            string casterCharacterId,
+            string targetCharacterId,
+            string abilityId,
+            int healAmount,
+            Vector3 targetPosition,
+            bool hasGroundTarget,
+            float castDurationSeconds,
+            string initiallyAppliedCharacterId)
         {
             if (string.IsNullOrWhiteSpace(sessionId)
                 || string.IsNullOrWhiteSpace(casterCharacterId)
-                || string.IsNullOrWhiteSpace(targetCharacterId)
-                || healAmount <= 0)
+                || string.IsNullOrWhiteSpace(eventType))
             {
                 return;
             }
@@ -189,23 +273,33 @@ namespace RPGClone.Multiplayer
                     SaveStore(store);
                 }
 
-                store.abilityEvents.Add(new MMOSharedAbilityEvent
+                MMOSharedAbilityEvent sharedEvent = new()
                 {
                     eventId = Guid.NewGuid().ToString("N"),
                     sessionId = sessionId,
+                    eventType = eventType,
                     casterCharacterId = casterCharacterId,
-                    targetCharacterId = targetCharacterId,
+                    targetCharacterId = targetCharacterId ?? string.Empty,
                     abilityId = abilityId ?? string.Empty,
                     healAmount = healAmount,
+                    targetPosition = new Vector3SaveData(targetPosition),
+                    hasGroundTarget = hasGroundTarget,
+                    castDurationSeconds = Mathf.Max(0f, castDurationSeconds),
                     createdUtcTicks = DateTime.UtcNow.Ticks
-                });
+                };
+                if (!string.IsNullOrWhiteSpace(initiallyAppliedCharacterId))
+                {
+                    sharedEvent.appliedCharacterIds.Add(initiallyAppliedCharacterId);
+                }
+
+                store.abilityEvents.Add(sharedEvent);
                 SaveStore(store);
             }
         }
 
-        public static IReadOnlyList<MMOSharedAbilityEvent> GetPendingEvents(string sessionId, string targetCharacterId)
+        public static IReadOnlyList<MMOSharedAbilityEvent> GetPendingEvents(string sessionId, string observerCharacterId)
         {
-            if (string.IsNullOrWhiteSpace(sessionId) || string.IsNullOrWhiteSpace(targetCharacterId))
+            if (string.IsNullOrWhiteSpace(sessionId) || string.IsNullOrWhiteSpace(observerCharacterId))
             {
                 return Array.Empty<MMOSharedAbilityEvent>();
             }
@@ -223,8 +317,7 @@ namespace RPGClone.Multiplayer
                 {
                     if (sharedEvent != null
                         && sharedEvent.sessionId == sessionId
-                        && sharedEvent.targetCharacterId == targetCharacterId
-                        && !sharedEvent.appliedCharacterIds.Contains(targetCharacterId))
+                        && !sharedEvent.appliedCharacterIds.Contains(observerCharacterId))
                     {
                         result.Add(Clone(sharedEvent));
                     }
@@ -463,10 +556,16 @@ namespace RPGClone.Multiplayer
                 {
                     eventId = source.eventId,
                     sessionId = source.sessionId,
+                    eventType = string.IsNullOrWhiteSpace(source.eventType)
+                        ? MMOSharedAbilityEventTypes.HealResolved
+                        : source.eventType,
                     casterCharacterId = source.casterCharacterId,
                     targetCharacterId = source.targetCharacterId,
                     abilityId = source.abilityId,
                     healAmount = source.healAmount,
+                    targetPosition = source.targetPosition,
+                    hasGroundTarget = source.hasGroundTarget,
+                    castDurationSeconds = source.castDurationSeconds,
                     createdUtcTicks = source.createdUtcTicks,
                     appliedCharacterIds = new List<string>(source.appliedCharacterIds ?? new List<string>())
                 };

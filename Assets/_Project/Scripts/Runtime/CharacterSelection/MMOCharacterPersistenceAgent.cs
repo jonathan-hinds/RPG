@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using RPGClone.Abilities;
 using RPGClone.Characters;
@@ -8,6 +9,7 @@ using RPGClone.Multiplayer;
 using RPGClone.Quests;
 using RPGClone.Services;
 using RPGClone.Social;
+using RPGClone.Trainers;
 using RPGClone.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -157,8 +159,7 @@ namespace RPGClone.CharacterSelection
             {
                 identity.Configure(archetype.StartingProfile, saveData.DisplayName, true);
                 ApplyProgression(archetype, saveData.level);
-                LearnArchetypeAbilities(archetype);
-                FillActionBar();
+                ApplyOwnedAbilities(saveData, archetype);
                 if (experience != null)
                 {
                     experience.SetProgression(archetype.Progression);
@@ -169,6 +170,7 @@ namespace RPGClone.CharacterSelection
             {
                 identity.SetDisplayName(saveData.DisplayName);
                 identity.SetLevel(saveData.level);
+                ApplyOwnedAbilities(saveData, null);
             }
 
             ApplyCharacterVisuals(saveData.race, archetype);
@@ -176,7 +178,6 @@ namespace RPGClone.CharacterSelection
             ApplyEquipment(saveData);
             ApplyWeaponSkills(saveData, archetype);
             ApplyWallet(saveData);
-            ApplyLearnedAbilities(saveData);
             ApplyActionBar(saveData);
             ApplyQuests(saveData);
 
@@ -256,12 +257,13 @@ namespace RPGClone.CharacterSelection
             {
                 identity.Configure(archetype.StartingProfile, saveData.DisplayName, true);
                 ApplyProgression(archetype, saveData.level);
-                LearnArchetypeAbilities(archetype);
+                ApplyOwnedAbilities(saveData, archetype);
             }
             else
             {
                 identity.SetDisplayName(saveData.DisplayName);
                 identity.SetLevel(saveData.level);
+                ApplyOwnedAbilities(saveData, null);
             }
 
             ApplyCharacterVisuals(saveData.race, archetype);
@@ -272,7 +274,6 @@ namespace RPGClone.CharacterSelection
 
             ApplyEquipment(saveData);
             ApplyWeaponSkills(saveData, archetype);
-            ApplyLearnedAbilities(saveData);
 
             if (saveData.currentHealth > 0)
             {
@@ -613,23 +614,92 @@ namespace RPGClone.CharacterSelection
             wallet?.SetCopper(saveData.copper);
         }
 
-        private void ApplyLearnedAbilities(MMOCharacterSaveData saveData)
+        public MMOAbilityDefinition FindAbilityById(string abilityId)
+        {
+            return ResolveAbility(abilityId);
+        }
+
+        private void ApplyOwnedAbilities(MMOCharacterSaveData saveData, MMOCharacterArchetypeDefinition archetype)
         {
             if (abilitySystem == null)
             {
                 return;
             }
 
+            List<MMOAbilityDefinition> ownedAbilities = new();
+            AddOwnedAbility(ownedAbilities, ResolveAbility("auto_attack"));
+            if (archetype != null)
+            {
+                foreach (MMOAbilityDefinition ability in archetype.StartingAbilities)
+                {
+                    AddOwnedAbility(ownedAbilities, ability);
+                }
+
+                AddOwnedAbility(ownedAbilities, archetype.RacialAbility);
+                AddOwnedAbility(ownedAbilities, archetype.ClassAbility);
+            }
+
             foreach (string abilityId in saveData.learnedAbilityIds ?? new System.Collections.Generic.List<string>())
             {
                 MMOAbilityDefinition ability = ResolveAbility(abilityId);
-                if (ability != null)
+                if (IsAbilityAllowedForCharacter(ability, archetype))
                 {
-                    abilitySystem.LearnAbility(ability);
+                    AddOwnedAbility(ownedAbilities, ability);
                 }
             }
 
-            FillActionBar();
+            abilitySystem.ReplaceKnownAbilities(ownedAbilities);
+        }
+
+        private static void AddOwnedAbility(List<MMOAbilityDefinition> ownedAbilities, MMOAbilityDefinition ability)
+        {
+            if (ability != null && !ownedAbilities.Contains(ability))
+            {
+                ownedAbilities.Add(ability);
+            }
+        }
+
+        private static bool IsAbilityAllowedForCharacter(MMOAbilityDefinition ability, MMOCharacterArchetypeDefinition archetype)
+        {
+            if (ability == null)
+            {
+                return false;
+            }
+
+            if (ability.IsAutoAttack || ability.AbilityId == "auto_attack")
+            {
+                return true;
+            }
+
+            if (archetype == null)
+            {
+                return true;
+            }
+
+            if (ability == archetype.RacialAbility || ability == archetype.ClassAbility)
+            {
+                return true;
+            }
+
+            foreach (MMOAbilityDefinition startingAbility in archetype.StartingAbilities)
+            {
+                if (startingAbility == ability)
+                {
+                    return true;
+                }
+            }
+
+            List<MMOTrainerOfferEntry> offers = new();
+            MMOTrainerOfferCatalog.AppendOffersForClass(archetype.CharacterClass, offers);
+            foreach (MMOTrainerOfferEntry offer in offers)
+            {
+                if (offer != null && offer.Ability == ability)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void ApplyActionBar(MMOCharacterSaveData saveData)
@@ -678,12 +748,7 @@ namespace RPGClone.CharacterSelection
                 if (savedSlot.bindingType == MMOActionBarSlotBindingType.Ability)
                 {
                     MMOAbilityDefinition ability = ResolveAbility(savedSlot.abilityId);
-                    if (ability != null && abilitySystem != null && !abilitySystem.KnowsAbility(ability))
-                    {
-                        abilitySystem.LearnAbility(ability);
-                    }
-
-                    slot.SetAbility(ability);
+                    slot.SetAbility(ability != null && abilitySystem != null && abilitySystem.KnowsAbility(ability) ? ability : null);
                 }
                 else if (savedSlot.bindingType == MMOActionBarSlotBindingType.Item)
                 {
