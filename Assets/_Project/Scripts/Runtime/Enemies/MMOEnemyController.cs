@@ -1,11 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
 using RPGClone.Abilities;
+using RPGClone.CharacterSelection;
 using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Inventory;
 using RPGClone.Loot;
 using RPGClone.Quests;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -16,17 +19,21 @@ namespace RPGClone.Enemies
     [RequireComponent(typeof(MMOAbilitySystem))]
     [RequireComponent(typeof(MMOAutoAttackController))]
     [RequireComponent(typeof(NavMeshAgent))]
-    public sealed class MMOEnemyController : MonoBehaviour
+    public sealed class MMOEnemyController : MonoBehaviour, IEnemySessionAuthority, IEnemyStateReplicator
     {
         private const int DetectionBufferSize = 16;
+        private static readonly Dictionary<string, MMOEnemyController> ActiveEnemiesBySpawnId = new();
 
         [SerializeField] private MMOEnemyDefinition definition;
+        [SerializeField] private string stableSpawnId;
         [SerializeField] private string displayNameOverride = string.Empty;
         [SerializeField] private LayerMask aggroMask = ~0;
         [SerializeField] private bool resetResourcesOnLeash = true;
         [SerializeField] private bool drawDebugGizmos = true;
         [SerializeField, Min(0.02f)] private float chaseRepathInterval = 0.2f;
         [SerializeField, Min(0.01f)] private float chaseRepathDistance = 0.35f;
+        [SerializeField, Min(0.02f)] private float proxyInterpolationSeconds = 0.18f;
+        [SerializeField, Min(0.5f)] private float proxySnapDistance = 8f;
 
         private readonly Collider[] detectionBuffer = new Collider[DetectionBufferSize];
         private MMOCharacterIdentity identity;
@@ -49,14 +56,44 @@ namespace RPGClone.Enemies
         private MMOCombatant lastDamageSource;
         private Renderer[] renderers;
         private Collider[] colliders;
+        private bool respawning;
+        private float corpseDespawnEndTime;
+        private float respawnEndTime;
+        private Vector3 proxyTargetPosition;
+        private Quaternion proxyTargetRotation;
+        private bool proxyHasSnapshot;
 
         public MMOEnemyDefinition Definition => definition;
+        public string SpawnId
+        {
+            get
+            {
+                EnsureSpawnId();
+                return stableSpawnId;
+            }
+        }
+
         public MMOCharacterIdentity CurrentTarget => currentTarget;
         public bool IsInCombat => currentTarget != null && !corpseActive;
+        public bool IsAuthorityOwner => MMOGameplaySessionService.IsHostAuthority;
+
+        public static IReadOnlyCollection<MMOEnemyController> ActiveEnemies => ActiveEnemiesBySpawnId.Values;
+
+        public static bool TryGetEnemy(string spawnId, out MMOEnemyController enemy)
+        {
+            if (string.IsNullOrWhiteSpace(spawnId))
+            {
+                enemy = null;
+                return false;
+            }
+
+            return ActiveEnemiesBySpawnId.TryGetValue(spawnId, out enemy) && enemy != null;
+        }
 
         private void Awake()
         {
             EnsureReferences();
+            EnsureSpawnId();
             homePosition = transform.position;
             homeRotation = transform.rotation;
             CachePresentationComponents();
@@ -66,12 +103,17 @@ namespace RPGClone.Enemies
         private void OnEnable()
         {
             EnsureReferences();
-            combatant.Damaged += OnDamaged;
-            combatant.Died += OnDied;
+            RegisterSpawn();
+            if (IsAuthorityOwner)
+            {
+                combatant.Damaged += OnDamaged;
+                combatant.Died += OnDied;
+            }
         }
 
         private void OnDisable()
         {
+            UnregisterSpawn();
             if (combatant != null)
             {
                 combatant.Damaged -= OnDamaged;
@@ -81,6 +123,13 @@ namespace RPGClone.Enemies
 
         private void Update()
         {
+            if (!IsAuthorityOwner)
+            {
+                UpdateProxyPresentation();
+                StopMoving();
+                return;
+            }
+
             if (definition == null || corpseActive || !combatant.IsAlive)
             {
                 StopMoving();
@@ -112,6 +161,92 @@ namespace RPGClone.Enemies
             definition = newDefinition;
             configured = false;
             ConfigureFromDefinition(resetResources);
+        }
+
+        public EnemySnapshot CreateSnapshot()
+        {
+            EnsureReferences();
+            EnsureSpawnId();
+            EnemyRuntimeState runtimeState = respawning
+                ? EnemyRuntimeState.Respawning
+                : corpseActive || !combatant.IsAlive
+                    ? EnemyRuntimeState.Corpse
+                    : EnemyRuntimeState.Alive;
+
+            string currentTargetCharacterId = string.Empty;
+            if (currentTarget != null && MMOGameplaySessionService.Players.TryGetParticipant(currentTarget, out MMOPlayerParticipant targetParticipant))
+            {
+                currentTargetCharacterId = targetParticipant.CharacterId;
+            }
+
+            return new EnemySnapshot
+            {
+                sessionId = MMOGameplaySessionService.SessionId,
+                spawnId = SpawnId,
+                definitionId = definition != null ? definition.name : string.Empty,
+                displayName = identity != null ? identity.DisplayName : gameObject.name,
+                runtimeState = runtimeState,
+                currentHealth = identity != null ? identity.Health.CurrentValue : 0,
+                maxHealth = identity != null ? identity.Health.MaxValue : 0,
+                currentMana = identity != null ? identity.Mana.CurrentValue : 0,
+                maxMana = identity != null ? identity.Mana.MaxValue : 0,
+                position = new Vector3SaveData(transform.position),
+                rotationEuler = new Vector3SaveData(transform.eulerAngles),
+                currentTargetCharacterId = currentTargetCharacterId,
+                inCombat = IsInCombat,
+                leashing = currentTarget == null && CanMoveOnNavMesh() && agent.hasPath,
+                corpseRemainingSeconds = Mathf.Max(0f, corpseDespawnEndTime - Time.time),
+                respawnRemainingSeconds = Mathf.Max(0f, respawnEndTime - Time.time),
+                updatedUtcTicks = DateTime.UtcNow.Ticks
+            };
+        }
+
+        public void ApplySnapshot(EnemySnapshot snapshot)
+        {
+            if (snapshot == null || snapshot.spawnId != SpawnId || IsAuthorityOwner)
+            {
+                return;
+            }
+
+            EnsureReferences();
+            Vector3 snapshotPosition = snapshot.position.ToVector3();
+            Quaternion snapshotRotation = Quaternion.Euler(snapshot.rotationEuler.ToVector3());
+            bool wasRespawning = respawning;
+            bool wasCorpse = corpseActive;
+            identity.Health.Configure(Mathf.Max(1, snapshot.maxHealth), snapshot.currentHealth, false);
+            identity.Mana.Configure(Mathf.Max(0, snapshot.maxMana), snapshot.currentMana, false);
+            corpseActive = snapshot.runtimeState == EnemyRuntimeState.Corpse;
+            respawning = snapshot.runtimeState == EnemyRuntimeState.Respawning;
+            bool shouldSnap = !proxyHasSnapshot
+                || wasRespawning != respawning
+                || wasCorpse != corpseActive
+                || (transform.position - snapshotPosition).sqrMagnitude >= proxySnapDistance * proxySnapDistance;
+            proxyTargetPosition = snapshotPosition;
+            proxyTargetRotation = snapshotRotation;
+            proxyHasSnapshot = true;
+            if (shouldSnap)
+            {
+                transform.SetPositionAndRotation(proxyTargetPosition, proxyTargetRotation);
+            }
+
+            SetPresentationActive(snapshot.runtimeState != EnemyRuntimeState.Respawning);
+            identity.SetSelectable(snapshot.runtimeState != EnemyRuntimeState.Respawning);
+            if (agent != null)
+            {
+                agent.enabled = false;
+            }
+        }
+
+        private void UpdateProxyPresentation()
+        {
+            if (!proxyHasSnapshot || respawning)
+            {
+                return;
+            }
+
+            float interpolation = Mathf.Clamp01(Time.deltaTime / Mathf.Max(0.02f, proxyInterpolationSeconds));
+            transform.position = Vector3.Lerp(transform.position, proxyTargetPosition, interpolation);
+            transform.rotation = Quaternion.Slerp(transform.rotation, proxyTargetRotation, interpolation);
         }
 
         private void ConfigureFromDefinition(bool resetResources)
@@ -200,7 +335,7 @@ namespace RPGClone.Enemies
             {
                 agent.isStopped = true;
                 waitingAtRoamPoint = true;
-                nextRoamDecisionTime = Time.time + Random.Range(definition.MinRoamIdleSeconds, definition.MaxRoamIdleSeconds);
+                nextRoamDecisionTime = Time.time + UnityEngine.Random.Range(definition.MinRoamIdleSeconds, definition.MaxRoamIdleSeconds);
                 return;
             }
 
@@ -374,6 +509,7 @@ namespace RPGClone.Enemies
                 StopCoroutine(despawnRoutine);
             }
 
+            corpseDespawnEndTime = Time.time + Mathf.Max(0f, delaySeconds);
             despawnRoutine = StartCoroutine(DespawnAndRespawn(delaySeconds));
         }
 
@@ -386,8 +522,10 @@ namespace RPGClone.Enemies
 
             SetPresentationActive(false);
             lootableCorpse.ClearLoot();
+            respawning = true;
 
             float respawnDelay = definition != null ? definition.RespawnSeconds : 30f;
+            respawnEndTime = Time.time + Mathf.Max(0f, respawnDelay);
             if (respawnDelay > 0f)
             {
                 yield return new WaitForSeconds(respawnDelay);
@@ -400,6 +538,9 @@ namespace RPGClone.Enemies
         private void Respawn()
         {
             corpseActive = false;
+            respawning = false;
+            corpseDespawnEndTime = 0f;
+            respawnEndTime = 0f;
             lastDamageSource = null;
             currentTarget = null;
             waitingAtRoamPoint = false;
@@ -455,7 +596,7 @@ namespace RPGClone.Enemies
         {
             for (int attempt = 0; attempt < 8; attempt++)
             {
-                Vector2 offset = Random.insideUnitCircle * radius;
+                Vector2 offset = UnityEngine.Random.insideUnitCircle * radius;
                 Vector3 candidate = origin + new Vector3(offset.x, 0f, offset.y);
                 if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, 3f, agent.areaMask))
                 {
@@ -535,6 +676,57 @@ namespace RPGClone.Enemies
                 {
                     lootableCorpse = gameObject.AddComponent<MMOLootableCorpse>();
                 }
+            }
+        }
+
+        private void EnsureSpawnId()
+        {
+            if (!string.IsNullOrWhiteSpace(stableSpawnId))
+            {
+                return;
+            }
+
+            string sceneKey = gameObject.scene.IsValid()
+                ? string.IsNullOrWhiteSpace(gameObject.scene.path) ? gameObject.scene.name : gameObject.scene.path
+                : "runtime";
+            stableSpawnId = $"{sceneKey}:{BuildHierarchyPath(transform)}";
+        }
+
+        private static string BuildHierarchyPath(Transform current)
+        {
+            if (current == null)
+            {
+                return string.Empty;
+            }
+
+            Stack<string> segments = new();
+            Transform walker = current;
+            while (walker != null)
+            {
+                int siblingIndex = walker.GetSiblingIndex();
+                segments.Push($"{walker.name}[{siblingIndex}]");
+                walker = walker.parent;
+            }
+
+            return string.Join("/", segments);
+        }
+
+        private void RegisterSpawn()
+        {
+            EnsureSpawnId();
+            if (!string.IsNullOrWhiteSpace(stableSpawnId))
+            {
+                ActiveEnemiesBySpawnId[stableSpawnId] = this;
+            }
+        }
+
+        private void UnregisterSpawn()
+        {
+            if (!string.IsNullOrWhiteSpace(stableSpawnId)
+                && ActiveEnemiesBySpawnId.TryGetValue(stableSpawnId, out MMOEnemyController registered)
+                && registered == this)
+            {
+                ActiveEnemiesBySpawnId.Remove(stableSpawnId);
             }
         }
 

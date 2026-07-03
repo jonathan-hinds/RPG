@@ -353,16 +353,29 @@ namespace RPGClone.Abilities
             {
                 Vector3 center = resolvedTarget != null ? resolvedTarget.transform.position : transform.position;
                 AbilityReleased?.Invoke(this, ability, resolvedTarget, center, true);
+                if (TrySubmitHostAuthorityRequest(ability, resolvedTarget, center, true, out _))
+                {
+                    AbilityUsed?.Invoke(this, ability, resolvedTarget);
+                    return;
+                }
+
                 ApplyAreaEffects(ability, center);
             }
             else
             {
+                Vector3 targetPosition = resolvedTarget != null ? resolvedTarget.transform.position : transform.position;
                 AbilityReleased?.Invoke(
                     this,
                     ability,
                     resolvedTarget,
-                    resolvedTarget != null ? resolvedTarget.transform.position : transform.position,
+                    targetPosition,
                     false);
+                if (TrySubmitHostAuthorityRequest(ability, resolvedTarget, targetPosition, false, out _))
+                {
+                    AbilityUsed?.Invoke(this, ability, resolvedTarget);
+                    return;
+                }
+
                 ApplyEffects(ability, targetCombatant);
             }
 
@@ -375,6 +388,12 @@ namespace RPGClone.Abilities
             StartCooldown(ability);
 
             AbilityReleased?.Invoke(this, ability, null, targetPosition, true);
+            if (TrySubmitHostAuthorityRequest(ability, null, targetPosition, true, out _))
+            {
+                AbilityUsed?.Invoke(this, ability, null);
+                return;
+            }
+
             ApplyAreaEffects(ability, targetPosition);
             AbilityUsed?.Invoke(this, ability, null);
         }
@@ -459,6 +478,50 @@ namespace RPGClone.Abilities
 
             AbilityReleased?.Invoke(this, ability, target, targetPosition, hasGroundTarget);
             AbilityUsed?.Invoke(this, ability, target);
+        }
+
+        public bool TryResolveAuthorityRequest(CombatActionRequest request, MMOCharacterIdentity target, out string failureReason)
+        {
+            EnsureInitialized();
+            failureReason = string.Empty;
+            if (request == null || string.IsNullOrWhiteSpace(request.abilityId))
+            {
+                failureReason = "Invalid combat request.";
+                return false;
+            }
+
+            MMOAbilityDefinition ability = FindKnownAbility(request.abilityId);
+            if (ability == null)
+            {
+                failureReason = $"{identity.DisplayName} does not know the requested ability.";
+                return false;
+            }
+
+            if (request.hasGroundTarget)
+            {
+                Vector3 groundTarget = request.requestedTargetPosition.ToVector3();
+                if (!TryPrepareGroundAbility(ability, groundTarget, out failureReason))
+                {
+                    return false;
+                }
+
+                ExecutePreparedGroundAbility(ability, groundTarget);
+                return true;
+            }
+
+            MMOCharacterIdentity resolvedTarget = ResolveTarget(ability, target);
+            if (ability.TargetType == MMOAbilityTargetType.Hostile && resolvedTarget == null)
+            {
+                resolvedTarget = target;
+            }
+
+            if (!TryPrepareAbility(ability, resolvedTarget, out failureReason, out MMOCombatant targetCombatant))
+            {
+                return false;
+            }
+
+            ExecutePreparedAbility(ability, resolvedTarget, targetCombatant);
+            return true;
         }
 
         private void SpendResourceCost(MMOAbilityDefinition ability)
@@ -718,7 +781,11 @@ namespace RPGClone.Abilities
                 if (activeCharge == charge && charge.TargetCombatant != null && charge.TargetCombatant.IsAlive)
                 {
                     int amount = charge.Effect.CalculateAmount(identity);
-                    charge.TargetCombatant.ApplyDamage(combatant, charge.Ability, amount);
+                    if (!TrySubmitHostAuthorityRequest(charge.Ability, charge.Target, charge.Target.transform.position, false, out _))
+                    {
+                        charge.TargetCombatant.ApplyDamage(combatant, charge.Ability, amount);
+                    }
+
                     ChargeCompleted?.Invoke(this, charge.Ability, charge.Target);
                 }
             }
@@ -908,7 +975,62 @@ namespace RPGClone.Abilities
                 return;
             }
 
+            if (TrySubmitHostAuthorityRequest(channel.Ability, channel.Target, channel.Target.transform.position, false, out _))
+            {
+                return;
+            }
+
             channel.TargetCombatant.ApplyDamage(combatant, channel.Ability, amount);
+        }
+
+        private MMOAbilityDefinition FindKnownAbility(string abilityId)
+        {
+            if (string.IsNullOrWhiteSpace(abilityId))
+            {
+                return null;
+            }
+
+            foreach (MMOAbilityDefinition ability in startingAbilities)
+            {
+                if (ability != null && ability.AbilityId == abilityId)
+                {
+                    return ability;
+                }
+            }
+
+            return null;
+        }
+
+        private bool TrySubmitHostAuthorityRequest(
+            MMOAbilityDefinition ability,
+            MMOCharacterIdentity target,
+            Vector3 targetPosition,
+            bool hasGroundTarget,
+            out string failureReason)
+        {
+            CombatActionRequestKind requestKind = ability != null && ability.IsAutoAttack
+                ? CombatActionRequestKind.AutoAttack
+                : CombatActionRequestKind.Ability;
+            if (!MMOSessionCombatAuthority.ShouldRouteThroughHost(combatant, ability, target))
+            {
+                failureReason = string.Empty;
+                return false;
+            }
+
+            bool submitted = MMOSessionCombatAuthority.TrySubmitRequest(
+                combatant,
+                ability,
+                target,
+                targetPosition,
+                hasGroundTarget,
+                requestKind,
+                out failureReason);
+            if (!submitted && !string.IsNullOrWhiteSpace(failureReason))
+            {
+                AbilityFailed?.Invoke(this, ability, target, failureReason);
+            }
+
+            return true;
         }
 
         private void OnCriticalDamageDealt(MMOCombatant source, MMOCombatant target, MMOAbilityDefinition ability, int amount)

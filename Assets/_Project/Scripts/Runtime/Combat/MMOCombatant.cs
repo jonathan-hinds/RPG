@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using RPGClone.Abilities;
 using RPGClone.Buffs;
+using RPGClone.CharacterSelection;
 using RPGClone.Characters;
+using RPGClone.Enemies;
+using RPGClone.Services;
 using UnityEngine;
 
 namespace RPGClone.Combat
@@ -94,7 +97,7 @@ namespace RPGClone.Combat
             }
         }
 
-        public void ApplyDamage(MMOCombatant source, MMOAbilityDefinition ability, int amount, bool isCritical = false)
+        public void ApplyDamage(MMOCombatant source, MMOAbilityDefinition ability, int amount, bool isCritical = false, bool publishToCombatEventStream = true)
         {
             if (!IsAlive || amount <= 0)
             {
@@ -120,21 +123,68 @@ namespace RPGClone.Combat
                 source?.CriticalDamageDealt?.Invoke(source, this, ability, appliedAmount);
             }
 
+            if (publishToCombatEventStream)
+            {
+                PublishDamageEvent(source, ability, appliedAmount, isCritical, identity.Health.CurrentValue <= 0);
+            }
+
             if (identity.Health.CurrentValue <= 0)
             {
                 ForceLeaveCombat();
                 Died?.Invoke(this);
+                if (publishToCombatEventStream)
+                {
+                    PublishDeathEvent(source, ability);
+                }
             }
         }
 
-        public void NotifyMiss(MMOCombatant source, MMOAbilityDefinition ability)
+        public void ApplyResolvedDamage(MMOCombatant source, MMOAbilityDefinition ability, int appliedAmount, bool isCritical = false, bool publishToCombatEventStream = true)
+        {
+            if (!IsAlive || appliedAmount <= 0)
+            {
+                return;
+            }
+
+            identity.Health.SetCurrent(identity.Health.CurrentValue - appliedAmount);
+            source?.RegisterCombatActivity(this);
+            RegisterCombatActivity(source);
+            Damaged?.Invoke(source, this, ability, appliedAmount);
+            if (isCritical)
+            {
+                CriticallyDamaged?.Invoke(source, this, ability, appliedAmount);
+                source?.CriticalDamageDealt?.Invoke(source, this, ability, appliedAmount);
+            }
+
+            if (publishToCombatEventStream)
+            {
+                PublishDamageEvent(source, ability, appliedAmount, isCritical, identity.Health.CurrentValue <= 0);
+            }
+
+            if (identity.Health.CurrentValue <= 0)
+            {
+                ForceLeaveCombat();
+                Died?.Invoke(this);
+                if (publishToCombatEventStream)
+                {
+                    PublishDeathEvent(source, ability);
+                }
+            }
+        }
+
+        public void NotifyMiss(MMOCombatant source, MMOAbilityDefinition ability, bool publishToCombatEventStream = true)
         {
             source?.RegisterCombatActivity(this);
             RegisterCombatActivity(source);
             Missed?.Invoke(source, this, ability);
+            if (publishToCombatEventStream)
+            {
+                CombatEventRecord record = CreateCombatEvent(CombatEventType.Missed, source, ability);
+                MMOCombatEventStream.PublishCombatEvent(record, source, this, ability);
+            }
         }
 
-        public void NotifyBlock(MMOCombatant source, MMOAbilityDefinition ability, int blockedAmount)
+        public void NotifyBlock(MMOCombatant source, MMOAbilityDefinition ability, int blockedAmount, bool publishToCombatEventStream = true)
         {
             if (blockedAmount <= 0)
             {
@@ -142,6 +192,12 @@ namespace RPGClone.Combat
             }
 
             Blocked?.Invoke(source, this, ability, blockedAmount);
+            if (publishToCombatEventStream)
+            {
+                CombatEventRecord record = CreateCombatEvent(CombatEventType.Blocked, source, ability);
+                record.blockedAmount = blockedAmount;
+                MMOCombatEventStream.PublishCombatEvent(record, source, this, ability);
+            }
         }
 
         public void ApplyHeal(MMOCombatant source, MMOAbilityDefinition ability, int amount, bool publishToCombatEventStream = true)
@@ -163,6 +219,9 @@ namespace RPGClone.Combat
             if (publishToCombatEventStream)
             {
                 MMOCombatEventStream.PublishHealResolved(source, this, ability, appliedAmount);
+                CombatEventRecord record = CreateCombatEvent(CombatEventType.HealResolved, source, ability);
+                record.healAmount = appliedAmount;
+                MMOCombatEventStream.PublishCombatEvent(record, source, this, ability);
             }
         }
 
@@ -254,6 +313,83 @@ namespace RPGClone.Combat
 
             float reduction = armor / (armor + 400f + 85f * Mathf.Max(1, identity.Level));
             return Mathf.Max(1, Mathf.RoundToInt(amount * (1f - Mathf.Clamp01(reduction))));
+        }
+
+        private void PublishDamageEvent(MMOCombatant source, MMOAbilityDefinition ability, int appliedAmount, bool isCritical, bool killedTarget)
+        {
+            if (appliedAmount <= 0)
+            {
+                return;
+            }
+
+            CombatEventRecord record = CreateCombatEvent(CombatEventType.DamageResolved, source, ability);
+            record.damageAmount = appliedAmount;
+            record.isCritical = isCritical;
+            record.killedTarget = killedTarget;
+            MMOCombatEventStream.PublishCombatEvent(record, source, this, ability);
+        }
+
+        private void PublishDeathEvent(MMOCombatant source, MMOAbilityDefinition ability)
+        {
+            CombatEventRecord record = CreateCombatEvent(CombatEventType.Death, source, ability);
+            record.killedTarget = true;
+            MMOCombatEventStream.PublishCombatEvent(record, source, this, ability);
+        }
+
+        private CombatEventRecord CreateCombatEvent(CombatEventType eventType, MMOCombatant source, MMOAbilityDefinition ability)
+        {
+            CombatEventRecord record = CombatEventRecord.Create(eventType);
+            record.sessionId = MMOGameplaySessionService.SessionId ?? string.Empty;
+            record.abilityId = ability != null ? ability.AbilityId : string.Empty;
+            record.targetPosition = new Vector3SaveData(transform.position);
+            PopulateParticipantIds(record, source, this);
+            return record;
+        }
+
+        private static void PopulateParticipantIds(CombatEventRecord record, MMOCombatant source, MMOCombatant target)
+        {
+            if (record == null)
+            {
+                return;
+            }
+
+            PopulateEndpoint(source, true, record);
+            PopulateEndpoint(target, false, record);
+        }
+
+        private static void PopulateEndpoint(MMOCombatant combatant, bool sourceEndpoint, CombatEventRecord record)
+        {
+            if (combatant == null || combatant.Identity == null)
+            {
+                return;
+            }
+
+            if (MMOGameplaySessionService.Players.TryGetParticipant(combatant.Identity, out MMOPlayerParticipant participant))
+            {
+                if (sourceEndpoint)
+                {
+                    record.sourceCharacterId = participant.CharacterId;
+                }
+                else
+                {
+                    record.targetCharacterId = participant.CharacterId;
+                }
+            }
+
+            MMOEnemyController enemy = combatant.GetComponent<MMOEnemyController>();
+            if (enemy == null)
+            {
+                return;
+            }
+
+            if (sourceEndpoint)
+            {
+                record.sourceEnemySpawnId = enemy.SpawnId;
+            }
+            else
+            {
+                record.targetEnemySpawnId = enemy.SpawnId;
+            }
         }
 
         private void EnsureInitialized()

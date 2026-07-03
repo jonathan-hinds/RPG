@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using RPGClone.CharacterSelection;
+using RPGClone.Combat;
 using UnityEngine;
 
 namespace RPGClone.Multiplayer
@@ -29,6 +30,7 @@ namespace RPGClone.Multiplayer
         public string eventType;
         public string casterCharacterId;
         public string targetCharacterId;
+        public string targetEnemySpawnId;
         public string abilityId;
         public int healAmount;
         public Vector3SaveData targetPosition;
@@ -42,6 +44,7 @@ namespace RPGClone.Multiplayer
     {
         public const string CastStarted = "cast_started";
         public const string AbilityReleased = "ability_released";
+        public const string AutoAttackWindup = "auto_attack_windup";
         public const string HealResolved = "heal_resolved";
     }
 
@@ -61,10 +64,13 @@ namespace RPGClone.Multiplayer
     {
         private const string FileName = "rpg_clone_shared_sessions.json";
         private const string RuntimeFileName = "rpg_clone_shared_session_runtime.json";
+        private const string EnemyRuntimeFileName = "rpg_clone_shared_session_enemies.json";
         private const string StoreMutexName = "RPGClone_LocalSharedSessions";
         private static readonly TimeSpan StoreMutexTimeout = TimeSpan.FromSeconds(5);
         private static readonly TimeSpan ParticipantTimeout = TimeSpan.FromSeconds(60);
         private static readonly TimeSpan EventTimeout = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan CombatRequestTimeout = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan EnemySnapshotTimeout = TimeSpan.FromSeconds(10);
         private static readonly object Gate = new();
 
         public static void UpsertParticipant(MMOSessionParticipantSnapshot snapshot)
@@ -188,13 +194,15 @@ namespace RPGClone.Multiplayer
             string targetCharacterId,
             string abilityId,
             float castDurationSeconds,
-            string initiallyAppliedCharacterId)
+            string initiallyAppliedCharacterId,
+            string targetEnemySpawnId = "")
         {
             PublishAbilityEvent(
                 sessionId,
                 MMOSharedAbilityEventTypes.CastStarted,
                 casterCharacterId,
                 targetCharacterId,
+                targetEnemySpawnId,
                 abilityId,
                 0,
                 Vector3.zero,
@@ -210,18 +218,43 @@ namespace RPGClone.Multiplayer
             string abilityId,
             Vector3 targetPosition,
             bool hasGroundTarget,
-            string initiallyAppliedCharacterId)
+            string initiallyAppliedCharacterId,
+            string targetEnemySpawnId = "")
         {
             PublishAbilityEvent(
                 sessionId,
                 MMOSharedAbilityEventTypes.AbilityReleased,
                 casterCharacterId,
                 targetCharacterId,
+                targetEnemySpawnId,
                 abilityId,
                 0,
                 targetPosition,
                 hasGroundTarget,
                 0f,
+                initiallyAppliedCharacterId);
+        }
+
+        public static void PublishAutoAttackWindupEvent(
+            string sessionId,
+            string casterCharacterId,
+            string targetCharacterId,
+            string targetEnemySpawnId,
+            string abilityId,
+            float swingDurationSeconds,
+            string initiallyAppliedCharacterId)
+        {
+            PublishAbilityEvent(
+                sessionId,
+                MMOSharedAbilityEventTypes.AutoAttackWindup,
+                casterCharacterId,
+                targetCharacterId,
+                targetEnemySpawnId,
+                abilityId,
+                0,
+                Vector3.zero,
+                false,
+                swingDurationSeconds,
                 initiallyAppliedCharacterId);
         }
 
@@ -238,6 +271,7 @@ namespace RPGClone.Multiplayer
                 MMOSharedAbilityEventTypes.HealResolved,
                 casterCharacterId,
                 targetCharacterId,
+                string.Empty,
                 abilityId,
                 healAmount,
                 Vector3.zero,
@@ -251,6 +285,7 @@ namespace RPGClone.Multiplayer
             string eventType,
             string casterCharacterId,
             string targetCharacterId,
+            string targetEnemySpawnId,
             string abilityId,
             int healAmount,
             Vector3 targetPosition,
@@ -280,6 +315,7 @@ namespace RPGClone.Multiplayer
                     eventType = eventType,
                     casterCharacterId = casterCharacterId,
                     targetCharacterId = targetCharacterId ?? string.Empty,
+                    targetEnemySpawnId = targetEnemySpawnId ?? string.Empty,
                     abilityId = abilityId ?? string.Empty,
                     healAmount = healAmount,
                     targetPosition = new Vector3SaveData(targetPosition),
@@ -343,6 +379,256 @@ namespace RPGClone.Multiplayer
                     sharedEvent.appliedCharacterIds.Add(characterId);
                     SaveStore(store);
                 }
+            }
+        }
+
+        public static void PublishCombatRequest(CombatActionRequest request)
+        {
+            if (request == null
+                || string.IsNullOrWhiteSpace(request.sessionId)
+                || string.IsNullOrWhiteSpace(request.casterCharacterId)
+                || string.IsNullOrWhiteSpace(request.abilityId))
+            {
+                return;
+            }
+
+            using (AcquireStoreLease())
+            {
+                MMOSharedSessionStore store = LoadStore();
+                if (Prune(store))
+                {
+                    SaveStore(store);
+                }
+
+                store.combatRequests.Add(Clone(request));
+                SaveStore(store);
+            }
+        }
+
+        public static IReadOnlyList<CombatActionRequest> GetPendingCombatRequests(string sessionId)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId))
+            {
+                return Array.Empty<CombatActionRequest>();
+            }
+
+            using (AcquireStoreLease())
+            {
+                MMOSharedSessionStore store = LoadStore();
+                if (Prune(store))
+                {
+                    SaveStore(store);
+                }
+
+                List<CombatActionRequest> result = new();
+                foreach (CombatActionRequest request in store.combatRequests)
+                {
+                    if (request != null && request.sessionId == sessionId && !request.processed)
+                    {
+                        result.Add(Clone(request));
+                    }
+                }
+
+                return result;
+            }
+        }
+
+        public static void MarkCombatRequestProcessed(string requestId)
+        {
+            if (string.IsNullOrWhiteSpace(requestId))
+            {
+                return;
+            }
+
+            using (AcquireStoreLease())
+            {
+                MMOSharedSessionStore store = LoadStore();
+                CombatActionRequest request = store.combatRequests.Find(candidate => candidate.requestId == requestId);
+                if (request != null)
+                {
+                    request.processed = true;
+                    SaveStore(store);
+                }
+            }
+        }
+
+        public static void PublishCombatEvent(CombatEventRecord record, string initiallyAppliedCharacterId)
+        {
+            if (record == null || string.IsNullOrWhiteSpace(record.sessionId) || string.IsNullOrWhiteSpace(record.eventId))
+            {
+                return;
+            }
+
+            using (AcquireStoreLease())
+            {
+                MMOSharedSessionStore store = LoadStore();
+                if (Prune(store))
+                {
+                    SaveStore(store);
+                }
+
+                MMOSharedCombatEvent sharedEvent = new()
+                {
+                    record = Clone(record)
+                };
+                if (!string.IsNullOrWhiteSpace(initiallyAppliedCharacterId))
+                {
+                    sharedEvent.appliedCharacterIds.Add(initiallyAppliedCharacterId);
+                }
+
+                store.combatEvents.Add(sharedEvent);
+                SaveStore(store);
+            }
+        }
+
+        public static IReadOnlyList<CombatEventRecord> GetPendingCombatEvents(string sessionId, string observerCharacterId)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId) || string.IsNullOrWhiteSpace(observerCharacterId))
+            {
+                return Array.Empty<CombatEventRecord>();
+            }
+
+            using (AcquireStoreLease())
+            {
+                MMOSharedSessionStore store = LoadStore();
+                if (Prune(store))
+                {
+                    SaveStore(store);
+                }
+
+                List<CombatEventRecord> result = new();
+                foreach (MMOSharedCombatEvent sharedEvent in store.combatEvents)
+                {
+                    if (sharedEvent?.record != null
+                        && sharedEvent.record.sessionId == sessionId
+                        && !sharedEvent.appliedCharacterIds.Contains(observerCharacterId))
+                    {
+                        result.Add(Clone(sharedEvent.record));
+                    }
+                }
+
+                return result;
+            }
+        }
+
+        public static void MarkCombatEventApplied(string eventId, string characterId)
+        {
+            if (string.IsNullOrWhiteSpace(eventId) || string.IsNullOrWhiteSpace(characterId))
+            {
+                return;
+            }
+
+            using (AcquireStoreLease())
+            {
+                MMOSharedSessionStore store = LoadStore();
+                MMOSharedCombatEvent sharedEvent = store.combatEvents.Find(candidate => candidate?.record != null && candidate.record.eventId == eventId);
+                if (sharedEvent != null && !sharedEvent.appliedCharacterIds.Contains(characterId))
+                {
+                    sharedEvent.appliedCharacterIds.Add(characterId);
+                    SaveStore(store);
+                }
+            }
+        }
+
+        public static void UpsertEnemySnapshot(EnemySnapshot snapshot)
+        {
+            if (snapshot == null || string.IsNullOrWhiteSpace(snapshot.sessionId) || string.IsNullOrWhiteSpace(snapshot.spawnId))
+            {
+                return;
+            }
+
+            using (AcquireStoreLease())
+            {
+                MMOSharedEnemyRuntimeStore store = LoadEnemyRuntimeStore();
+                if (Prune(store))
+                {
+                    SaveEnemyRuntimeStore(store);
+                }
+
+                EnemySnapshot existing = store.enemySnapshots.Find(candidate =>
+                    candidate.sessionId == snapshot.sessionId && candidate.spawnId == snapshot.spawnId);
+                if (existing == null)
+                {
+                    store.enemySnapshots.Add(Clone(snapshot));
+                }
+                else
+                {
+                    Copy(snapshot, existing);
+                }
+
+                SaveEnemyRuntimeStore(store);
+            }
+        }
+
+        public static void UpsertEnemySnapshots(IEnumerable<EnemySnapshot> snapshots)
+        {
+            if (snapshots == null)
+            {
+                return;
+            }
+
+            using (AcquireStoreLease())
+            {
+                MMOSharedEnemyRuntimeStore store = LoadEnemyRuntimeStore();
+                if (Prune(store))
+                {
+                    SaveEnemyRuntimeStore(store);
+                }
+
+                bool changed = false;
+                foreach (EnemySnapshot snapshot in snapshots)
+                {
+                    if (snapshot == null || string.IsNullOrWhiteSpace(snapshot.sessionId) || string.IsNullOrWhiteSpace(snapshot.spawnId))
+                    {
+                        continue;
+                    }
+
+                    EnemySnapshot existing = store.enemySnapshots.Find(candidate =>
+                        candidate.sessionId == snapshot.sessionId && candidate.spawnId == snapshot.spawnId);
+                    if (existing == null)
+                    {
+                        store.enemySnapshots.Add(Clone(snapshot));
+                    }
+                    else
+                    {
+                        Copy(snapshot, existing);
+                    }
+
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    SaveEnemyRuntimeStore(store);
+                }
+            }
+        }
+
+        public static IReadOnlyList<EnemySnapshot> GetEnemySnapshots(string sessionId)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId))
+            {
+                return Array.Empty<EnemySnapshot>();
+            }
+
+            using (AcquireStoreLease())
+            {
+                MMOSharedEnemyRuntimeStore store = LoadEnemyRuntimeStore();
+                if (Prune(store))
+                {
+                    SaveEnemyRuntimeStore(store);
+                }
+
+                List<EnemySnapshot> result = new();
+                foreach (EnemySnapshot snapshot in store.enemySnapshots)
+                {
+                    if (snapshot != null && snapshot.sessionId == sessionId)
+                    {
+                        result.Add(Clone(snapshot));
+                    }
+                }
+
+                return result;
             }
         }
 
@@ -431,6 +717,28 @@ namespace RPGClone.Multiplayer
             }
         }
 
+        private static MMOSharedEnemyRuntimeStore LoadEnemyRuntimeStore()
+        {
+            string path = EnemyRuntimeStorePath;
+            if (!File.Exists(path))
+            {
+                return new MMOSharedEnemyRuntimeStore();
+            }
+
+            try
+            {
+                string json = File.ReadAllText(path);
+                return string.IsNullOrWhiteSpace(json)
+                    ? new MMOSharedEnemyRuntimeStore()
+                    : JsonUtility.FromJson<MMOSharedEnemyRuntimeStore>(json) ?? new MMOSharedEnemyRuntimeStore();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Shared enemy runtime store load failed; using empty local store. {exception.Message}");
+                return new MMOSharedEnemyRuntimeStore();
+            }
+        }
+
         private static void SaveStore(MMOSharedSessionStore store)
         {
             string path = StorePath;
@@ -455,8 +763,21 @@ namespace RPGClone.Multiplayer
             File.WriteAllText(path, JsonUtility.ToJson(store ?? new MMOSharedSessionRuntimeStore(), false));
         }
 
+        private static void SaveEnemyRuntimeStore(MMOSharedEnemyRuntimeStore store)
+        {
+            string path = EnemyRuntimeStorePath;
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            File.WriteAllText(path, JsonUtility.ToJson(store ?? new MMOSharedEnemyRuntimeStore(), false));
+        }
+
         private static string StorePath => Path.Combine(Application.persistentDataPath, FileName);
         private static string RuntimeStorePath => Path.Combine(Application.persistentDataPath, RuntimeFileName);
+        private static string EnemyRuntimeStorePath => Path.Combine(Application.persistentDataPath, EnemyRuntimeFileName);
 
         private static bool Prune(MMOSharedSessionStore store)
         {
@@ -469,7 +790,16 @@ namespace RPGClone.Multiplayer
                 sharedEvent == null
                 || sharedEvent.createdUtcTicks <= 0
                 || new TimeSpan(now - sharedEvent.createdUtcTicks) > EventTimeout);
-            return removedParticipants > 0 || removedEvents > 0;
+            int removedCombatRequests = store.combatRequests.RemoveAll(request =>
+                request == null
+                || request.requestedUtcTicks <= 0
+                || (request.processed && new TimeSpan(now - request.requestedUtcTicks) > CombatRequestTimeout)
+                || new TimeSpan(now - request.requestedUtcTicks) > ParticipantTimeout);
+            int removedCombatEvents = store.combatEvents.RemoveAll(sharedEvent =>
+                sharedEvent?.record == null
+                || sharedEvent.record.createdUtcTicks <= 0
+                || new TimeSpan(now - sharedEvent.record.createdUtcTicks) > EventTimeout);
+            return removedParticipants > 0 || removedEvents > 0 || removedCombatRequests > 0 || removedCombatEvents > 0;
         }
 
         private static bool Prune(MMOSharedSessionRuntimeStore store)
@@ -479,6 +809,15 @@ namespace RPGClone.Multiplayer
                 participant == null
                 || participant.updatedUtcTicks <= 0
                 || new TimeSpan(now - participant.updatedUtcTicks) > ParticipantTimeout) > 0;
+        }
+
+        private static bool Prune(MMOSharedEnemyRuntimeStore store)
+        {
+            long now = DateTime.UtcNow.Ticks;
+            return store.enemySnapshots.RemoveAll(snapshot =>
+                snapshot == null
+                || snapshot.updatedUtcTicks <= 0
+                || new TimeSpan(now - snapshot.updatedUtcTicks) > EnemySnapshotTimeout) > 0;
         }
 
         private static void UpsertParticipantRuntimeInLease(
@@ -561,6 +900,7 @@ namespace RPGClone.Multiplayer
                         : source.eventType,
                     casterCharacterId = source.casterCharacterId,
                     targetCharacterId = source.targetCharacterId,
+                    targetEnemySpawnId = source.targetEnemySpawnId,
                     abilityId = source.abilityId,
                     healAmount = source.healAmount,
                     targetPosition = source.targetPosition,
@@ -569,6 +909,85 @@ namespace RPGClone.Multiplayer
                     createdUtcTicks = source.createdUtcTicks,
                     appliedCharacterIds = new List<string>(source.appliedCharacterIds ?? new List<string>())
                 };
+        }
+
+        private static CombatActionRequest Clone(CombatActionRequest source)
+        {
+            return source == null
+                ? null
+                : new CombatActionRequest
+                {
+                    requestId = source.requestId,
+                    sessionId = source.sessionId,
+                    requesterCharacterId = source.requesterCharacterId,
+                    casterCharacterId = source.casterCharacterId,
+                    targetCharacterId = source.targetCharacterId,
+                    targetEnemySpawnId = source.targetEnemySpawnId,
+                    abilityId = source.abilityId,
+                    requestedTargetPosition = source.requestedTargetPosition,
+                    hasGroundTarget = source.hasGroundTarget,
+                    requestKind = source.requestKind,
+                    requestedUtcTicks = source.requestedUtcTicks,
+                    processed = source.processed
+                };
+        }
+
+        private static CombatEventRecord Clone(CombatEventRecord source)
+        {
+            return source == null
+                ? null
+                : new CombatEventRecord
+                {
+                    eventId = source.eventId,
+                    sessionId = source.sessionId,
+                    eventType = source.eventType,
+                    sourceCharacterId = source.sourceCharacterId,
+                    targetCharacterId = source.targetCharacterId,
+                    sourceEnemySpawnId = source.sourceEnemySpawnId,
+                    targetEnemySpawnId = source.targetEnemySpawnId,
+                    abilityId = source.abilityId,
+                    targetPosition = source.targetPosition,
+                    hasGroundTarget = source.hasGroundTarget,
+                    damageAmount = source.damageAmount,
+                    healAmount = source.healAmount,
+                    blockedAmount = source.blockedAmount,
+                    isCritical = source.isCritical,
+                    killedTarget = source.killedTarget,
+                    createdUtcTicks = source.createdUtcTicks
+                };
+        }
+
+        private static EnemySnapshot Clone(EnemySnapshot source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            EnemySnapshot clone = new();
+            Copy(source, clone);
+            return clone;
+        }
+
+        private static void Copy(EnemySnapshot source, EnemySnapshot destination)
+        {
+            destination.sessionId = source.sessionId;
+            destination.spawnId = source.spawnId;
+            destination.definitionId = source.definitionId;
+            destination.displayName = source.displayName;
+            destination.runtimeState = source.runtimeState;
+            destination.currentHealth = source.currentHealth;
+            destination.maxHealth = source.maxHealth;
+            destination.currentMana = source.currentMana;
+            destination.maxMana = source.maxMana;
+            destination.position = source.position;
+            destination.rotationEuler = source.rotationEuler;
+            destination.currentTargetCharacterId = source.currentTargetCharacterId;
+            destination.inCombat = source.inCombat;
+            destination.leashing = source.leashing;
+            destination.corpseRemainingSeconds = source.corpseRemainingSeconds;
+            destination.respawnRemainingSeconds = source.respawnRemainingSeconds;
+            destination.updatedUtcTicks = source.updatedUtcTicks;
         }
 
         private static void CopyParticipant(MMOSessionParticipantSnapshot source, MMOSessionParticipantSnapshot destination)
@@ -635,12 +1054,27 @@ namespace RPGClone.Multiplayer
         {
             public List<MMOSessionParticipantSnapshot> participants = new();
             public List<MMOSharedAbilityEvent> abilityEvents = new();
+            public List<CombatActionRequest> combatRequests = new();
+            public List<MMOSharedCombatEvent> combatEvents = new();
+        }
+
+        [Serializable]
+        private sealed class MMOSharedCombatEvent
+        {
+            public CombatEventRecord record;
+            public List<string> appliedCharacterIds = new();
         }
 
         [Serializable]
         private sealed class MMOSharedSessionRuntimeStore
         {
             public List<MMOSessionParticipantRuntimeSnapshot> participants = new();
+        }
+
+        [Serializable]
+        private sealed class MMOSharedEnemyRuntimeStore
+        {
+            public List<EnemySnapshot> enemySnapshots = new();
         }
     }
 }

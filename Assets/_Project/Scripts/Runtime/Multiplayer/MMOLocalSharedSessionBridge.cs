@@ -3,6 +3,7 @@ using RPGClone.Abilities;
 using RPGClone.CharacterSelection;
 using RPGClone.Characters;
 using RPGClone.Combat;
+using RPGClone.Enemies;
 using RPGClone.Services;
 using RPGClone.Social;
 using UnityEngine;
@@ -18,16 +19,26 @@ namespace RPGClone.Multiplayer
         [SerializeField, Min(0.25f)] private float publishSeconds = 1f;
         [SerializeField, Min(0.05f)] private float runtimePublishSeconds = 0.05f;
         [SerializeField, Min(0.05f)] private float pollSeconds = 0.05f;
+        [SerializeField, Min(0.05f)] private float enemySnapshotPublishSeconds = 0.1f;
+        [SerializeField, Min(0.05f)] private float enemySnapshotPollSeconds = 0.1f;
+        [SerializeField, Min(0.5f)] private float fullEnemySnapshotPublishSeconds = 2f;
 
         private readonly Dictionary<string, MMORemotePlayerAvatar> remoteAvatarsByCharacterId = new();
         private readonly HashSet<string> appliedEventIds = new();
+        private readonly Dictionary<string, long> appliedEnemySnapshotTicks = new();
+        private readonly Dictionary<string, int> publishedEnemySnapshotSignatures = new();
+        private readonly List<EnemySnapshot> enemySnapshotBuffer = new();
         private MMOCharacterIdentity identity;
         private MMOCharacterPersistenceAgent persistenceAgent;
         private MMOAbilitySystem abilitySystem;
+        private MMOAutoAttackController autoAttackController;
         private string participantId;
         private float nextPublishTime;
         private float nextRuntimePublishTime;
         private float nextPollTime;
+        private float nextEnemySnapshotPublishTime;
+        private float nextEnemySnapshotPollTime;
+        private float nextFullEnemySnapshotPublishTime;
         private string localCharacterId;
         private string observedSessionId;
         private bool suppressStoreRemoval;
@@ -43,13 +54,17 @@ namespace RPGClone.Multiplayer
             identity = GetComponent<MMOCharacterIdentity>();
             persistenceAgent = GetComponent<MMOCharacterPersistenceAgent>();
             abilitySystem = GetComponent<MMOAbilitySystem>();
+            autoAttackController = GetComponent<MMOAutoAttackController>();
         }
 
         private void OnEnable()
         {
             SubscribeAbilitySystem();
+            SubscribeAutoAttackController();
             MMOCombatEventStream.HealResolved -= OnHealResolved;
             MMOCombatEventStream.HealResolved += OnHealResolved;
+            MMOCombatEventStream.CombatEventResolved -= OnCombatEventResolved;
+            MMOCombatEventStream.CombatEventResolved += OnCombatEventResolved;
             MMOGameplaySessionService.SessionChanged -= OnSessionChanged;
             MMOGameplaySessionService.SessionChanged += OnSessionChanged;
         }
@@ -57,7 +72,9 @@ namespace RPGClone.Multiplayer
         private void OnDisable()
         {
             UnsubscribeAbilitySystem();
+            UnsubscribeAutoAttackController();
             MMOCombatEventStream.HealResolved -= OnHealResolved;
+            MMOCombatEventStream.CombatEventResolved -= OnCombatEventResolved;
             MMOGameplaySessionService.SessionChanged -= OnSessionChanged;
             if (!suppressStoreRemoval && !string.IsNullOrWhiteSpace(localCharacterId))
             {
@@ -78,6 +95,8 @@ namespace RPGClone.Multiplayer
             {
                 observedSessionId = MMOGameplaySessionService.SessionId;
                 ClearRemoteAvatars();
+                appliedEnemySnapshotTicks.Clear();
+                publishedEnemySnapshotSignatures.Clear();
             }
 
             localCharacterId = MMOCharacterSession.SelectedCharacter.characterId;
@@ -91,6 +110,13 @@ namespace RPGClone.Multiplayer
             {
                 nextRuntimePublishTime = Time.unscaledTime + runtimePublishSeconds;
                 PublishLocalRuntimeSnapshot();
+            }
+
+            if (MMOGameplaySessionService.IsHostAuthority
+                && Time.unscaledTime >= nextEnemySnapshotPublishTime)
+            {
+                nextEnemySnapshotPublishTime = Time.unscaledTime + enemySnapshotPublishSeconds;
+                PublishEnemySnapshots();
             }
 
             if (Time.unscaledTime >= nextPollTime)
@@ -170,7 +196,24 @@ namespace RPGClone.Multiplayer
             }
 
             RemoveMissingRemoteAvatars(seenRemoteCharacters);
-            ApplyPendingAbilityEvents();
+            bool hasSessionPeers = participants.Count > 1 || HasRemoteParticipants();
+            if (MMOGameplaySessionService.IsHostAuthority && hasSessionPeers)
+            {
+                ProcessPendingCombatRequests();
+            }
+
+            if (!MMOGameplaySessionService.IsHostAuthority
+                && Time.unscaledTime >= nextEnemySnapshotPollTime)
+            {
+                nextEnemySnapshotPollTime = Time.unscaledTime + enemySnapshotPollSeconds;
+                ApplyEnemySnapshots();
+            }
+
+            if (hasSessionPeers)
+            {
+                ApplyPendingAbilityEvents();
+                ApplyPendingCombatEvents();
+            }
         }
 
         private MMORemotePlayerAvatar SpawnRemoteAvatar(MMOSessionParticipantSnapshot participant)
@@ -188,6 +231,204 @@ namespace RPGClone.Multiplayer
             MMORemotePlayerAvatar avatar = remoteObject.GetComponent<MMORemotePlayerAvatar>() ?? remoteObject.AddComponent<MMORemotePlayerAvatar>();
             avatar.Configure(participant);
             return avatar;
+        }
+
+        private void ProcessPendingCombatRequests()
+        {
+            IReadOnlyList<CombatActionRequest> requests = MMOLocalSharedSessionStore.GetPendingCombatRequests(MMOGameplaySessionService.SessionId);
+            foreach (CombatActionRequest request in requests)
+            {
+                if (request == null)
+                {
+                    continue;
+                }
+
+                TryResolveCombatRequest(request, out _);
+                MMOLocalSharedSessionStore.MarkCombatRequestProcessed(request.requestId);
+            }
+        }
+
+        private bool TryResolveCombatRequest(CombatActionRequest request, out string failureReason)
+        {
+            failureReason = string.Empty;
+            if (!TryResolveParticipantByCharacterId(request.casterCharacterId, out MMOPlayerParticipant casterParticipant)
+                || casterParticipant.GameObject == null)
+            {
+                failureReason = "Caster was not available on the host.";
+                return false;
+            }
+
+            MMOAbilitySystem casterAbilitySystem = casterParticipant.GameObject.GetComponent<MMOAbilitySystem>();
+            if (casterAbilitySystem == null)
+            {
+                failureReason = "Caster has no ability system.";
+                return false;
+            }
+
+            MMOCharacterIdentity targetIdentity = ResolveCombatRequestTarget(request);
+            return casterAbilitySystem.TryResolveAuthorityRequest(request, targetIdentity, out failureReason);
+        }
+
+        private MMOCharacterIdentity ResolveCombatRequestTarget(CombatActionRequest request)
+        {
+            if (request == null)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.targetEnemySpawnId)
+                && MMOEnemyController.TryGetEnemy(request.targetEnemySpawnId, out MMOEnemyController enemy)
+                && enemy != null)
+            {
+                return enemy.GetComponent<MMOCharacterIdentity>();
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.targetCharacterId)
+                && TryResolveParticipantByCharacterId(request.targetCharacterId, out MMOPlayerParticipant participant))
+            {
+                return participant.Identity;
+            }
+
+            return null;
+        }
+
+        private void PublishAuthorityAbilityRelease(CombatActionRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.abilityId))
+            {
+                return;
+            }
+
+            MMOCharacterIdentity targetIdentity = ResolveCombatRequestTarget(request);
+            Vector3 targetPosition = request.hasGroundTarget
+                ? request.requestedTargetPosition.ToVector3()
+                : targetIdentity != null
+                    ? targetIdentity.transform.position
+                    : request.requestedTargetPosition.ToVector3();
+
+            CombatEventRecord record = CombatEventRecord.Create(CombatEventType.AbilityReleased);
+            record.sessionId = MMOGameplaySessionService.SessionId;
+            record.sourceCharacterId = request.casterCharacterId;
+            record.targetCharacterId = request.targetCharacterId;
+            record.targetEnemySpawnId = request.targetEnemySpawnId;
+            record.abilityId = request.abilityId;
+            record.targetPosition = new Vector3SaveData(targetPosition);
+            record.hasGroundTarget = request.hasGroundTarget;
+            MMOLocalSharedSessionStore.PublishCombatEvent(record, localCharacterId);
+        }
+
+        private void PublishEnemySnapshots()
+        {
+            if (!HasRemoteParticipants())
+            {
+                return;
+            }
+
+            bool forceFullSnapshot = Time.unscaledTime >= nextFullEnemySnapshotPublishTime;
+            if (forceFullSnapshot)
+            {
+                nextFullEnemySnapshotPublishTime = Time.unscaledTime + fullEnemySnapshotPublishSeconds;
+            }
+
+            enemySnapshotBuffer.Clear();
+            foreach (MMOEnemyController enemy in MMOEnemyController.ActiveEnemies)
+            {
+                if (enemy != null)
+                {
+                    EnemySnapshot snapshot = enemy.CreateSnapshot();
+                    int signature = CalculateEnemySnapshotSignature(snapshot);
+                    if (forceFullSnapshot
+                        || !publishedEnemySnapshotSignatures.TryGetValue(snapshot.spawnId, out int previousSignature)
+                        || previousSignature != signature)
+                    {
+                        enemySnapshotBuffer.Add(snapshot);
+                        publishedEnemySnapshotSignatures[snapshot.spawnId] = signature;
+                    }
+                }
+            }
+
+            if (enemySnapshotBuffer.Count > 0)
+            {
+                MMOLocalSharedSessionStore.UpsertEnemySnapshots(enemySnapshotBuffer);
+            }
+        }
+
+        private void ApplyEnemySnapshots()
+        {
+            if (MMOGameplaySessionService.IsHostAuthority)
+            {
+                return;
+            }
+
+            IReadOnlyList<EnemySnapshot> snapshots = MMOLocalSharedSessionStore.GetEnemySnapshots(MMOGameplaySessionService.SessionId);
+            foreach (EnemySnapshot snapshot in snapshots)
+            {
+                if (snapshot != null
+                    && MMOEnemyController.TryGetEnemy(snapshot.spawnId, out MMOEnemyController enemy)
+                    && enemy != null
+                    && (!appliedEnemySnapshotTicks.TryGetValue(snapshot.spawnId, out long appliedTicks)
+                        || snapshot.updatedUtcTicks > appliedTicks))
+                {
+                    enemy.ApplySnapshot(snapshot);
+                    appliedEnemySnapshotTicks[snapshot.spawnId] = snapshot.updatedUtcTicks;
+                }
+            }
+        }
+
+        private static int CalculateEnemySnapshotSignature(EnemySnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return 0;
+            }
+
+            Vector3 position = snapshot.position.ToVector3();
+            Vector3 rotation = snapshot.rotationEuler.ToVector3();
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + StableHash(snapshot.spawnId);
+                hash = hash * 31 + StableHash(snapshot.definitionId);
+                hash = hash * 31 + (int)snapshot.runtimeState;
+                hash = hash * 31 + snapshot.currentHealth;
+                hash = hash * 31 + snapshot.maxHealth;
+                hash = hash * 31 + snapshot.currentMana;
+                hash = hash * 31 + snapshot.maxMana;
+                hash = hash * 31 + Quantize(position.x, 0.05f);
+                hash = hash * 31 + Quantize(position.y, 0.05f);
+                hash = hash * 31 + Quantize(position.z, 0.05f);
+                hash = hash * 31 + Quantize(rotation.y, 1f);
+                hash = hash * 31 + StableHash(snapshot.currentTargetCharacterId);
+                hash = hash * 31 + (snapshot.inCombat ? 1 : 0);
+                hash = hash * 31 + (snapshot.leashing ? 1 : 0);
+                hash = hash * 31 + Quantize(snapshot.corpseRemainingSeconds, 0.25f);
+                hash = hash * 31 + Quantize(snapshot.respawnRemainingSeconds, 0.25f);
+                return hash;
+            }
+        }
+
+        private static int Quantize(float value, float step)
+        {
+            return Mathf.RoundToInt(value / Mathf.Max(0.0001f, step));
+        }
+
+        private static int StableHash(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return 0;
+            }
+
+            unchecked
+            {
+                int hash = 23;
+                for (int i = 0; i < value.Length; i++)
+                {
+                    hash = hash * 31 + value[i];
+                }
+
+                return hash;
+            }
         }
 
         private MMORemotePlayerAvatar FindExistingRemoteAvatar(string characterId)
@@ -249,6 +490,117 @@ namespace RPGClone.Multiplayer
             }
         }
 
+        private void ApplyPendingCombatEvents()
+        {
+            IReadOnlyList<CombatEventRecord> events = MMOLocalSharedSessionStore.GetPendingCombatEvents(MMOGameplaySessionService.SessionId, localCharacterId);
+            foreach (CombatEventRecord combatEvent in events)
+            {
+                if (combatEvent == null || appliedEventIds.Contains(combatEvent.eventId))
+                {
+                    continue;
+                }
+
+                if (ApplyCombatEvent(combatEvent))
+                {
+                    appliedEventIds.Add(combatEvent.eventId);
+                    MMOLocalSharedSessionStore.MarkCombatEventApplied(combatEvent.eventId, localCharacterId);
+                }
+            }
+        }
+
+        private bool ApplyCombatEvent(CombatEventRecord combatEvent)
+        {
+            MMOCombatant sourceCombatant = ResolveCombatant(combatEvent.sourceCharacterId, combatEvent.sourceEnemySpawnId);
+            MMOCombatant targetCombatant = ResolveCombatant(combatEvent.targetCharacterId, combatEvent.targetEnemySpawnId);
+            MMOAbilityDefinition ability = ResolveAbility(
+                combatEvent.abilityId,
+                sourceCombatant != null ? sourceCombatant.GetComponent<MMOAbilitySystem>() : null,
+                targetCombatant != null ? targetCombatant.GetComponent<MMOAbilitySystem>() : null);
+
+            switch (combatEvent.eventType)
+            {
+                case CombatEventType.AbilityReleased:
+                    if (sourceCombatant == null)
+                    {
+                        return false;
+                    }
+
+                    MMOAbilitySystem sourceAbilitySystem = sourceCombatant.GetComponent<MMOAbilitySystem>();
+                    if (sourceAbilitySystem == null || ability == null)
+                    {
+                        return false;
+                    }
+
+                    sourceAbilitySystem.PlayReplicatedAbilityReleased(
+                        ability,
+                        targetCombatant != null ? targetCombatant.Identity : null,
+                        combatEvent.targetPosition.ToVector3(),
+                        combatEvent.hasGroundTarget);
+                    return true;
+
+                case CombatEventType.DamageResolved:
+                    if (targetCombatant == null || combatEvent.damageAmount <= 0)
+                    {
+                        return false;
+                    }
+
+                    targetCombatant.ApplyResolvedDamage(sourceCombatant, ability, combatEvent.damageAmount, combatEvent.isCritical, false);
+                    return true;
+
+                case CombatEventType.HealResolved:
+                    if (targetCombatant == null || combatEvent.healAmount <= 0)
+                    {
+                        return false;
+                    }
+
+                    targetCombatant.ApplyHeal(sourceCombatant, ability, combatEvent.healAmount, false);
+                    return true;
+
+                case CombatEventType.Missed:
+                    if (targetCombatant == null)
+                    {
+                        return false;
+                    }
+
+                    targetCombatant.NotifyMiss(sourceCombatant, ability, false);
+                    return true;
+
+                case CombatEventType.Blocked:
+                    if (targetCombatant == null || combatEvent.blockedAmount <= 0)
+                    {
+                        return false;
+                    }
+
+                    targetCombatant.NotifyBlock(sourceCombatant, ability, combatEvent.blockedAmount, false);
+                    return true;
+
+                case CombatEventType.Death:
+                    return targetCombatant != null;
+
+                default:
+                    return true;
+            }
+        }
+
+        private MMOCombatant ResolveCombatant(string characterId, string enemySpawnId)
+        {
+            if (!string.IsNullOrWhiteSpace(enemySpawnId)
+                && MMOEnemyController.TryGetEnemy(enemySpawnId, out MMOEnemyController enemy)
+                && enemy != null)
+            {
+                return enemy.GetComponent<MMOCombatant>();
+            }
+
+            if (!string.IsNullOrWhiteSpace(characterId)
+                && TryResolveParticipantByCharacterId(characterId, out MMOPlayerParticipant participant)
+                && participant.GameObject != null)
+            {
+                return participant.GameObject.GetComponent<MMOCombatant>();
+            }
+
+            return null;
+        }
+
         private bool ApplySharedAbilityEvent(MMOSharedAbilityEvent sharedEvent)
         {
             if (!TryResolveParticipantByCharacterId(sharedEvent.casterCharacterId, out MMOPlayerParticipant casterParticipant))
@@ -262,6 +614,12 @@ namespace RPGClone.Multiplayer
                 && TryResolveParticipantByCharacterId(sharedEvent.targetCharacterId, out targetParticipant))
             {
                 targetIdentity = targetParticipant.Identity;
+            }
+            else if (!string.IsNullOrWhiteSpace(sharedEvent.targetEnemySpawnId)
+                && MMOEnemyController.TryGetEnemy(sharedEvent.targetEnemySpawnId, out MMOEnemyController targetEnemy)
+                && targetEnemy != null)
+            {
+                targetIdentity = targetEnemy.GetComponent<MMOCharacterIdentity>();
             }
 
             MMOAbilitySystem casterAbilitySystem = casterParticipant.GameObject != null
@@ -298,6 +656,28 @@ namespace RPGClone.Multiplayer
                             ? targetIdentity.transform.position
                             : sharedEvent.targetPosition.ToVector3();
                     casterAbilitySystem.PlayReplicatedAbilityReleased(ability, targetIdentity, targetPosition, sharedEvent.hasGroundTarget);
+                    return true;
+
+                case MMOSharedAbilityEventTypes.AutoAttackWindup:
+                    if (ability == null || casterParticipant.GameObject == null)
+                    {
+                        return false;
+                    }
+
+                    MMOAutoAttackController replicatedAutoAttack = casterParticipant.GameObject.GetComponent<MMOAutoAttackController>();
+                    IMMOAutoAttackPresentation presentation = casterParticipant.GameObject.GetComponent<IMMOAutoAttackPresentation>();
+                    if (replicatedAutoAttack == null || presentation == null)
+                    {
+                        return false;
+                    }
+
+                    float swingDurationSeconds = Mathf.Max(0.1f, sharedEvent.castDurationSeconds);
+                    presentation.NotifyAutoAttackWindup(
+                        replicatedAutoAttack,
+                        ability,
+                        targetIdentity,
+                        swingDurationSeconds,
+                        Time.time + swingDurationSeconds);
                     return true;
 
                 case MMOSharedAbilityEventTypes.HealResolved:
@@ -399,6 +779,22 @@ namespace RPGClone.Multiplayer
             abilitySystem.AbilityReleased += OnLocalAbilityReleased;
         }
 
+        private void SubscribeAutoAttackController()
+        {
+            if (autoAttackController == null)
+            {
+                autoAttackController = GetComponent<MMOAutoAttackController>();
+            }
+
+            if (autoAttackController == null)
+            {
+                return;
+            }
+
+            autoAttackController.AutoAttackWindupStarted -= OnLocalAutoAttackWindupStarted;
+            autoAttackController.AutoAttackWindupStarted += OnLocalAutoAttackWindupStarted;
+        }
+
         private void UnsubscribeAbilitySystem()
         {
             if (abilitySystem == null)
@@ -410,9 +806,23 @@ namespace RPGClone.Multiplayer
             abilitySystem.AbilityReleased -= OnLocalAbilityReleased;
         }
 
+        private void UnsubscribeAutoAttackController()
+        {
+            if (autoAttackController != null)
+            {
+                autoAttackController.AutoAttackWindupStarted -= OnLocalAutoAttackWindupStarted;
+            }
+        }
+
         private void OnLocalCastStarted(MMOAbilitySystem source, MMOAbilityDefinition ability, MMOCharacterIdentity target, float duration)
         {
-            if (!TryResolveSharedPlayerAbility(source, ability, target, out MMOPlayerParticipant sourceParticipant, out string targetCharacterId))
+            if (!TryResolveSharedPlayerAbility(
+                    source,
+                    ability,
+                    target,
+                    out MMOPlayerParticipant sourceParticipant,
+                    out string targetCharacterId,
+                    out string targetEnemySpawnId))
             {
                 return;
             }
@@ -423,7 +833,8 @@ namespace RPGClone.Multiplayer
                 targetCharacterId,
                 ability.AbilityId,
                 duration,
-                sourceParticipant.CharacterId);
+                sourceParticipant.CharacterId,
+                targetEnemySpawnId);
         }
 
         private void OnLocalAbilityReleased(
@@ -433,7 +844,13 @@ namespace RPGClone.Multiplayer
             Vector3 targetPosition,
             bool hasGroundTarget)
         {
-            if (!TryResolveSharedPlayerAbility(source, ability, target, out MMOPlayerParticipant sourceParticipant, out string targetCharacterId))
+            if (!TryResolveSharedPlayerAbility(
+                    source,
+                    ability,
+                    target,
+                    out MMOPlayerParticipant sourceParticipant,
+                    out string targetCharacterId,
+                    out string targetEnemySpawnId))
             {
                 return;
             }
@@ -445,6 +862,47 @@ namespace RPGClone.Multiplayer
                 ability.AbilityId,
                 targetPosition,
                 hasGroundTarget,
+                sourceParticipant.CharacterId,
+                targetEnemySpawnId);
+        }
+
+        private void OnLocalAutoAttackWindupStarted(
+            MMOAutoAttackController source,
+            MMOAbilityDefinition ability,
+            MMOCharacterIdentity target,
+            float swingDurationSeconds,
+            float impactTime)
+        {
+            if (source != autoAttackController
+                || ability == null
+                || !ability.IsAutoAttack
+                || string.IsNullOrWhiteSpace(MMOGameplaySessionService.SessionId)
+                || !TryResolveParticipant(identity, out MMOPlayerParticipant sourceParticipant)
+                || !sourceParticipant.IsLocal)
+            {
+                return;
+            }
+
+            string targetCharacterId = string.Empty;
+            string targetEnemySpawnId = string.Empty;
+            if (target != null && TryResolveParticipant(target, out MMOPlayerParticipant targetParticipant))
+            {
+                targetCharacterId = targetParticipant.CharacterId;
+            }
+
+            MMOEnemyController targetEnemy = target != null ? target.GetComponent<MMOEnemyController>() : null;
+            if (targetEnemy != null)
+            {
+                targetEnemySpawnId = targetEnemy.SpawnId;
+            }
+
+            MMOLocalSharedSessionStore.PublishAutoAttackWindupEvent(
+                MMOGameplaySessionService.SessionId,
+                sourceParticipant.CharacterId,
+                targetCharacterId,
+                targetEnemySpawnId,
+                ability.AbilityId,
+                swingDurationSeconds,
                 sourceParticipant.CharacterId);
         }
 
@@ -453,22 +911,28 @@ namespace RPGClone.Multiplayer
             MMOAbilityDefinition ability,
             MMOCharacterIdentity target,
             out MMOPlayerParticipant sourceParticipant,
-            out string targetCharacterId)
+            out string targetCharacterId,
+            out string targetEnemySpawnId)
         {
             sourceParticipant = default;
             targetCharacterId = string.Empty;
+            targetEnemySpawnId = string.Empty;
             if (target != null && TryResolveParticipant(target, out MMOPlayerParticipant targetParticipant))
             {
                 targetCharacterId = targetParticipant.CharacterId;
             }
 
+            MMOEnemyController targetEnemy = target != null ? target.GetComponent<MMOEnemyController>() : null;
+            if (targetEnemy != null)
+            {
+                targetEnemySpawnId = targetEnemy.SpawnId;
+            }
+
             if (source != abilitySystem
                 || ability == null
-                || ability.IsAutoAttack
                 || string.IsNullOrWhiteSpace(MMOGameplaySessionService.SessionId)
                 || !TryResolveParticipant(identity, out sourceParticipant)
-                || !sourceParticipant.IsLocal
-                || !HasRemoteParticipants())
+                || !sourceParticipant.IsLocal)
             {
                 return false;
             }
@@ -622,6 +1086,27 @@ namespace RPGClone.Multiplayer
                 ability != null ? ability.AbilityId : string.Empty,
                 amount,
                 sourceParticipant.CharacterId);
+        }
+
+        private void OnCombatEventResolved(
+            CombatEventRecord record,
+            MMOCombatant source,
+            MMOCombatant target,
+            MMOAbilityDefinition ability)
+        {
+            if (!MMOGameplaySessionService.IsHostAuthority
+                || record == null
+                || string.IsNullOrWhiteSpace(MMOGameplaySessionService.SessionId))
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(record.sessionId))
+            {
+                record.sessionId = MMOGameplaySessionService.SessionId;
+            }
+
+            MMOLocalSharedSessionStore.PublishCombatEvent(record, localCharacterId);
         }
     }
 }

@@ -33,6 +33,7 @@ namespace RPGClone.Combat
         private bool hasSwingTimer;
         private bool swingWindupStarted;
 
+        public event System.Action<MMOAutoAttackController, MMOAbilityDefinition, MMOCharacterIdentity, float, float> AutoAttackWindupStarted;
         public MMOAbilityDefinition AutoAttackAbility => autoAttackAbility;
         public MMOCharacterIdentity CurrentTarget => currentTarget;
         public bool IsAutoAttacking => currentTarget != null;
@@ -269,6 +270,7 @@ namespace RPGClone.Combat
                 currentTarget,
                 currentSwingDuration,
                 nextSwingTime);
+            AutoAttackWindupStarted?.Invoke(this, autoAttackAbility, currentTarget, currentSwingDuration, nextSwingTime);
         }
 
         private float GetEffectiveAttackRange()
