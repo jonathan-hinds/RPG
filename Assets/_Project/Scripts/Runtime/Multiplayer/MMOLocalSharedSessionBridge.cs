@@ -289,10 +289,23 @@ namespace RPGClone.Multiplayer
             }
 
             GameObject remoteObject = Instantiate(gameObject, participant.characterData.position.ToVector3(), Quaternion.Euler(participant.characterData.rotationEuler.ToVector3()));
+            if (remoteObject.TryGetComponent(out MMOCharacterPersistenceAgent remotePersistenceAgent))
+            {
+                remotePersistenceAgent.MarkAsRemoteSessionReplica();
+            }
+
+            if (remoteObject.TryGetComponent(out MMOLocalSharedSessionBridge remoteBridge))
+            {
+                remoteBridge.SuppressStoreRemoval();
+            }
+
+            remoteObject.tag = "Untagged";
+            remoteObject.SetActive(false);
             remoteObject.name = $"Remote Player - {participant.characterData.DisplayName}";
 
             MMORemotePlayerAvatar avatar = remoteObject.GetComponent<MMORemotePlayerAvatar>() ?? remoteObject.AddComponent<MMORemotePlayerAvatar>();
             avatar.Configure(participant);
+            remoteObject.SetActive(true);
             return avatar;
         }
 
@@ -632,6 +645,7 @@ namespace RPGClone.Multiplayer
                 {
                     appliedEventIds.Add(rewardEvent.eventId);
                     MMOLocalSharedSessionStore.MarkRewardEventApplied(rewardEvent.eventId, localCharacterId);
+                    _ = persistenceAgent.SaveCurrentCharacterAsync();
                 }
             }
         }

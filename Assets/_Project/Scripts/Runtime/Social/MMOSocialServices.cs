@@ -2,7 +2,7 @@ namespace RPGClone.Social
 {
     public static class MMOSocialServices
     {
-        private static MMOLocalSocialService localService;
+        private static MMORuntimeSocialService runtimeService;
 
         public static ICharacterNameDirectory CharacterNames => Local;
         public static IFriendListService Friends => Local;
@@ -10,6 +10,6 @@ namespace RPGClone.Social
         public static ISessionPresenceService Sessions => Local;
         public static IInviteService Invites => Local;
 
-        private static MMOLocalSocialService Local => localService ??= new MMOLocalSocialService();
+        private static MMORuntimeSocialService Local => runtimeService ??= new MMORuntimeSocialService();
     }
 }

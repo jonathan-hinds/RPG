@@ -16,7 +16,6 @@ namespace RPGClone.CharacterSelection
     {
         [SerializeField] private MMOCharacterArchetypeCatalog archetypeCatalog;
         [SerializeField] private string gameplaySceneName = "OrcishStarterValley";
-        [SerializeField] private bool useCloudSave = true;
         [SerializeField] private Transform previewRoot;
         [SerializeField] private Camera previewCamera;
 
@@ -95,7 +94,7 @@ namespace RPGClone.CharacterSelection
 
         private MMOCharacterRosterRepository CreateRepository()
         {
-            return useCloudSave ? new MMOCloudCharacterRosterRepository() : new MMOLocalCharacterRosterRepository();
+            return new MMOCloudCharacterRosterRepository();
         }
 
         private async Task LoadRosterAsync()
@@ -826,7 +825,7 @@ namespace RPGClone.CharacterSelection
 
         private async void LoginAccount()
         {
-            MMOAccountServiceResult result = MMOSocialIdentityService.Login(accountNameInput != null ? accountNameInput.text : string.Empty, accountPasswordInput != null ? accountPasswordInput.text : string.Empty);
+            MMOAccountServiceResult result = await MMOSocialIdentityService.LoginAsync(accountNameInput != null ? accountNameInput.text : string.Empty, accountPasswordInput != null ? accountPasswordInput.text : string.Empty);
             if (!result.Succeeded)
             {
                 SetAccountStatus(result.Message);
@@ -839,7 +838,7 @@ namespace RPGClone.CharacterSelection
 
         private async void RegisterAccount()
         {
-            MMOAccountServiceResult result = MMOSocialIdentityService.Register(accountNameInput != null ? accountNameInput.text : string.Empty, accountPasswordInput != null ? accountPasswordInput.text : string.Empty);
+            MMOAccountServiceResult result = await MMOSocialIdentityService.RegisterAsync(accountNameInput != null ? accountNameInput.text : string.Empty, accountPasswordInput != null ? accountPasswordInput.text : string.Empty);
             if (!result.Succeeded)
             {
                 SetAccountStatus(result.Message);

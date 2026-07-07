@@ -47,9 +47,7 @@ namespace RPGClone.Multiplayer
         public void ApplySnapshot(Vector3 position, Quaternion rotation, long utcTicks)
         {
             EnsureReferences();
-            double sampleTime = utcTicks > 0
-                ? utcTicks / (double)TimeSpan.TicksPerSecond
-                : DateTime.UtcNow.Ticks / (double)TimeSpan.TicksPerSecond;
+            double sampleTime = Time.realtimeSinceStartupAsDouble;
 
             if (!hasSnapshot)
             {
@@ -62,7 +60,7 @@ namespace RPGClone.Multiplayer
             Snapshot latest = snapshots[snapshotCount - 1];
             if (sampleTime <= latest.Time)
             {
-                return;
+                sampleTime = latest.Time + 0.0001d;
             }
 
             PushSnapshot(new Snapshot(position, rotation, sampleTime));
@@ -76,7 +74,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            double renderTime = DateTime.UtcNow.Ticks / (double)TimeSpan.TicksPerSecond - interpolationDelaySeconds;
+            double renderTime = Time.realtimeSinceStartupAsDouble - interpolationDelaySeconds;
             Sample(renderTime, out Vector3 position, out Quaternion rotation, out Vector3 velocity);
             if ((position - transform.position).sqrMagnitude >= teleportDistance * teleportDistance)
             {

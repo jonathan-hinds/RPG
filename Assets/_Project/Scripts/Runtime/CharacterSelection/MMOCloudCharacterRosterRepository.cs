@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading.Tasks;
 using RPGClone.Services;
 using RPGClone.Social;
+using Unity.Services.Authentication;
+using Unity.Services.CloudSave;
 using UnityEngine;
 
 namespace RPGClone.CharacterSelection
@@ -12,7 +13,7 @@ namespace RPGClone.CharacterSelection
     {
         private const string BaseRosterKey = "character_roster_json";
 
-        private readonly MMOCharacterRosterRepository fallback = new MMOLocalCharacterRosterRepository();
+        private readonly MMOLocalCharacterRosterRepository localMirror = new();
 
         private static string RosterKey => MMOSocialIdentityService.IsAuthenticated
             ? $"{BaseRosterKey}_{MMOSocialIdentityService.AccountId}"
@@ -20,101 +21,112 @@ namespace RPGClone.CharacterSelection
 
         public async Task<MMOCharacterRosterSaveData> LoadAsync()
         {
-            try
+            MMOCharacterRosterSaveData localRoster = await localMirror.LoadAsync();
+            (bool cloudLoaded, MMOCharacterRosterSaveData cloudRoster) = await TryLoadCloudRosterAsync();
+            if (!cloudLoaded)
             {
-                await MMOUnityServicesBootstrap.InitializeAsync();
-                if (!MMOUnityServicesBootstrap.IsInitialized)
-                {
-                    return await fallback.LoadAsync();
-                }
-
-                object playerData = GetCloudSavePlayerData();
-                MethodInfo loadAsync = playerData?.GetType().GetMethod("LoadAsync", new[] { typeof(HashSet<string>) });
-                if (loadAsync == null)
-                {
-                    return await fallback.LoadAsync();
-                }
-
-                Task loadTask = (Task)loadAsync.Invoke(playerData, new object[] { new HashSet<string> { RosterKey } });
-                await loadTask;
-
-                object result = loadTask.GetType().GetProperty("Result")?.GetValue(loadTask);
-                object item = TryGetCloudSaveItem(result, RosterKey);
-                if (item == null)
-                {
-                    return new MMOCharacterRosterSaveData();
-                }
-
-                object value = item?.GetType().GetProperty("Value")?.GetValue(item);
-                MethodInfo getAs = value?.GetType().GetMethod("GetAs")?.MakeGenericMethod(typeof(string));
-                string json = getAs?.Invoke(value, null) as string;
-                return string.IsNullOrWhiteSpace(json)
-                    ? new MMOCharacterRosterSaveData()
-                    : JsonUtility.FromJson<MMOCharacterRosterSaveData>(json) ?? new MMOCharacterRosterSaveData();
+                return localRoster;
             }
-            catch (Exception exception)
+
+            if (HasCharacters(cloudRoster))
             {
-                Debug.LogWarning($"Cloud character roster load failed; using local roster. {exception.Message}");
-                return await fallback.LoadAsync();
+                await localMirror.SaveAsync(cloudRoster);
+                return cloudRoster;
             }
+
+            if (HasCharacters(localRoster))
+            {
+                await TrySaveCloudRosterAsync(localRoster);
+                return localRoster;
+            }
+
+            return cloudRoster ?? new MMOCharacterRosterSaveData();
         }
 
         public async Task SaveAsync(MMOCharacterRosterSaveData roster)
         {
-            await fallback.SaveAsync(roster);
+            roster ??= new MMOCharacterRosterSaveData();
+            roster.characters ??= new List<MMOCharacterSaveData>();
+            await localMirror.SaveAsync(roster);
+            await TrySaveCloudRosterAsync(roster);
+        }
+
+        private static async Task<(bool succeeded, MMOCharacterRosterSaveData roster)> TryLoadCloudRosterAsync()
+        {
+            MMOCharacterRosterSaveData roster = new();
+            if (!await TryPrepareCloudSaveAsync("load"))
+            {
+                return (false, roster);
+            }
 
             try
             {
-                await MMOUnityServicesBootstrap.InitializeAsync();
-                if (!MMOUnityServicesBootstrap.IsInitialized)
+                Dictionary<string, Unity.Services.CloudSave.Models.Item> data =
+                    await CloudSaveService.Instance.Data.Player.LoadAsync(new HashSet<string> { RosterKey });
+                if (!data.TryGetValue(RosterKey, out Unity.Services.CloudSave.Models.Item item))
                 {
-                    return;
+                    return (true, roster);
                 }
 
-                object playerData = GetCloudSavePlayerData();
-                MethodInfo saveAsync = playerData?.GetType().GetMethod("SaveAsync", new[] { typeof(Dictionary<string, object>) });
-                if (saveAsync == null)
-                {
-                    return;
-                }
-
-                string json = JsonUtility.ToJson(roster ?? new MMOCharacterRosterSaveData(), true);
-                Task saveTask = (Task)saveAsync.Invoke(playerData, new object[]
-                {
-                    new Dictionary<string, object> { { RosterKey, json } }
-                });
-                await saveTask;
+                string json = item.Value.GetAs<string>();
+                roster = string.IsNullOrWhiteSpace(json)
+                    ? new MMOCharacterRosterSaveData()
+                    : JsonUtility.FromJson<MMOCharacterRosterSaveData>(json) ?? new MMOCharacterRosterSaveData();
+                roster.characters ??= new List<MMOCharacterSaveData>();
+                return (true, roster);
             }
             catch (Exception exception)
             {
-                Debug.LogWarning($"Cloud character roster save failed; local roster was saved. {exception.Message}");
+                Debug.LogWarning($"Cloud character roster load failed. Using local mirror. {exception.Message}");
+                return (false, roster);
             }
         }
 
-        private static object GetCloudSavePlayerData()
+        private static async Task<bool> TrySaveCloudRosterAsync(MMOCharacterRosterSaveData roster)
         {
-            Type cloudSaveType = Type.GetType("Unity.Services.CloudSave.CloudSaveService, Unity.Services.CloudSave");
-            object cloudSave = cloudSaveType?.GetProperty("Instance")?.GetValue(null);
-            object data = cloudSave?.GetType().GetProperty("Data")?.GetValue(cloudSave);
-            return data?.GetType().GetProperty("Player")?.GetValue(data);
+            if (!await TryPrepareCloudSaveAsync("save"))
+            {
+                return false;
+            }
+
+            try
+            {
+                string json = JsonUtility.ToJson(roster ?? new MMOCharacterRosterSaveData(), true);
+                await CloudSaveService.Instance.Data.Player.SaveAsync(new Dictionary<string, object>
+                {
+                    { RosterKey, json }
+                });
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Cloud character roster save failed. Local mirror remains saved. {exception.Message}");
+                return false;
+            }
         }
 
-        private static object TryGetCloudSaveItem(object result, string key)
+        private static async Task<bool> TryPrepareCloudSaveAsync(string operation)
         {
-            if (result == null)
+            if (!MMOSocialIdentityService.IsAuthenticated)
             {
-                return null;
+                Debug.LogWarning($"Cloud character roster {operation} skipped because no account is authenticated.");
+                return false;
             }
 
-            MethodInfo tryGetValue = result.GetType().GetMethod("TryGetValue");
-            if (tryGetValue == null)
+            await MMOUnityServicesBootstrap.InitializeAsync();
+            MMOUnityServicesBootstrap.RefreshAuthenticationState();
+            if (!MMOUnityServicesBootstrap.IsInitialized || !AuthenticationService.Instance.IsSignedIn)
             {
-                return null;
+                Debug.LogWarning($"Cloud character roster {operation} skipped because Unity Authentication is not signed in.");
+                return false;
             }
 
-            object[] arguments = { key, null };
-            bool found = (bool)tryGetValue.Invoke(result, arguments);
-            return found ? arguments[1] : null;
+            return true;
+        }
+
+        private static bool HasCharacters(MMOCharacterRosterSaveData roster)
+        {
+            return roster?.characters != null && roster.characters.Count > 0;
         }
     }
 }

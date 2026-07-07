@@ -1,5 +1,7 @@
 using System;
+using System.Threading.Tasks;
 using RPGClone.Characters;
+using RPGClone.Multiplayer;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -16,24 +18,81 @@ namespace RPGClone.Services
         public static string SessionId { get; private set; }
         public static string HostCharacterId { get; private set; }
         public static string SessionSceneName { get; private set; }
+        public static string JoinCode { get; private set; }
         public static bool IsLocalHostedSession { get; private set; }
-        public static bool IsHostAuthority => IsLocalHostedSession;
+        public static bool IsHostAuthority => IsLocalHostedSession && (!MMONetcodeSessionService.IsConnected || MMONetcodeSessionService.IsHost);
         public static MMOPlayerRegistry Players => playerRegistry ??= new MMOPlayerRegistry();
         public static MMOLocalPlayerContext LocalPlayer => localPlayer ??= new MMOLocalPlayerContext(Players);
         public static MMOPartyService Party => partyService ??= new MMOPartyService();
 
         public static void StartLocalHostedSession(string sessionId = null)
         {
+            if (IsLocalHostedSession && !string.IsNullOrWhiteSpace(SessionId))
+            {
+                SessionSceneName = SceneManager.GetActiveScene().name;
+                if (string.IsNullOrWhiteSpace(JoinCode) && !string.IsNullOrWhiteSpace(MMONetcodeSessionService.JoinCode))
+                {
+                    JoinCode = MMONetcodeSessionService.JoinCode;
+                }
+
+                SessionChanged?.Invoke();
+                MMONetcodeSessionService.StartHost(SessionId);
+                return;
+            }
+
             SessionId = string.IsNullOrWhiteSpace(sessionId) ? Guid.NewGuid().ToString("N") : sessionId;
             HostCharacterId = string.Empty;
+            JoinCode = string.Empty;
             SessionSceneName = SceneManager.GetActiveScene().name;
             IsLocalHostedSession = true;
             Players.Clear();
             LocalPlayer.ClearLocalPlayer();
             SessionChanged?.Invoke();
+            MMONetcodeSessionService.StartHost(SessionId);
         }
 
         public static void JoinHostedSession(string sessionId, string sceneName, string hostCharacterId)
+        {
+            _ = JoinHostedSessionAsync(sessionId, sceneName, hostCharacterId);
+        }
+
+        public static async Task<bool> JoinHostedSessionAsync(string sessionId, string sceneName, string hostCharacterId)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId))
+            {
+                return false;
+            }
+
+            string previousSessionId = SessionId;
+            string previousHostCharacterId = HostCharacterId;
+            string previousSessionSceneName = SessionSceneName;
+            string previousJoinCode = JoinCode;
+            bool previousIsLocalHostedSession = IsLocalHostedSession;
+
+            SessionId = sessionId;
+            HostCharacterId = hostCharacterId ?? string.Empty;
+            JoinCode = sessionId ?? string.Empty;
+            SessionSceneName = string.IsNullOrWhiteSpace(sceneName) ? SceneManager.GetActiveScene().name : sceneName;
+            IsLocalHostedSession = false;
+            Players.Clear();
+            LocalPlayer.ClearLocalPlayer();
+            SessionChanged?.Invoke();
+            MMONetcodeSessionService.JoinByCode(sessionId);
+            bool connected = await MMONetcodeSessionService.WaitForConnectionAsync();
+            if (!connected)
+            {
+                SessionId = previousSessionId;
+                HostCharacterId = previousHostCharacterId;
+                SessionSceneName = previousSessionSceneName;
+                JoinCode = previousJoinCode;
+                IsLocalHostedSession = previousIsLocalHostedSession;
+                SessionChanged?.Invoke();
+            }
+
+            return connected;
+        }
+
+        public static void CompleteUnityHostedSession(string sessionId, string joinCode)
         {
             if (string.IsNullOrWhiteSpace(sessionId))
             {
@@ -41,11 +100,22 @@ namespace RPGClone.Services
             }
 
             SessionId = sessionId;
-            HostCharacterId = hostCharacterId ?? string.Empty;
-            SessionSceneName = string.IsNullOrWhiteSpace(sceneName) ? SceneManager.GetActiveScene().name : sceneName;
+            JoinCode = joinCode ?? string.Empty;
+            IsLocalHostedSession = true;
+            SessionSceneName = SceneManager.GetActiveScene().name;
+            SessionChanged?.Invoke();
+        }
+
+        public static void CompleteUnityJoinedSession(string sessionId)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId))
+            {
+                return;
+            }
+
+            SessionId = sessionId;
             IsLocalHostedSession = false;
-            Players.Clear();
-            LocalPlayer.ClearLocalPlayer();
+            SessionSceneName = SceneManager.GetActiveScene().name;
             SessionChanged?.Invoke();
         }
 
@@ -107,6 +177,7 @@ namespace RPGClone.Services
             SessionId = string.Empty;
             HostCharacterId = string.Empty;
             SessionSceneName = string.Empty;
+            JoinCode = string.Empty;
             IsLocalHostedSession = true;
             SceneManager.activeSceneChanged -= OnActiveSceneChanged;
             SceneManager.activeSceneChanged += OnActiveSceneChanged;

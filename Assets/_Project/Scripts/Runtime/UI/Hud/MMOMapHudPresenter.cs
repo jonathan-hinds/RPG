@@ -89,6 +89,11 @@ namespace RPGClone.UI
                 zoneService.ZoneChanged -= OnZoneChanged;
                 zoneService.ZoneChanged += OnZoneChanged;
             }
+
+            MMOGameplaySessionService.Players.Changed -= OnPlayersChanged;
+            MMOGameplaySessionService.Players.Changed += OnPlayersChanged;
+            MMOGameplaySessionService.SessionChanged -= OnSessionChanged;
+            MMOGameplaySessionService.SessionChanged += OnSessionChanged;
         }
 
         private void OnDisable()
@@ -103,6 +108,9 @@ namespace RPGClone.UI
             {
                 zoneService.ZoneChanged -= OnZoneChanged;
             }
+
+            MMOGameplaySessionService.Players.Changed -= OnPlayersChanged;
+            MMOGameplaySessionService.SessionChanged -= OnSessionChanged;
         }
 
         private void OnDestroy()
@@ -739,6 +747,7 @@ namespace RPGClone.UI
             nextMarkerRefreshTime = Time.unscaledTime + MarkerRefreshSeconds;
             markerScratch.Clear();
             markerScratch.AddRange(MMOQuestMapMarkerProvider.BuildTrackedQuestMarkers(questLog));
+            MMOPlayerMapMarkerProvider.AddRemotePlayerMarkers(markerScratch);
             bool rebuildViews = force || HasMarkerLayoutChanged(markerScratch);
             markers.Clear();
             markers.AddRange(markerScratch);
@@ -845,8 +854,9 @@ namespace RPGClone.UI
                 area.anchoredPosition = local;
             }
 
-            RectTransform icon = CreateIcon($"Marker {marker.MarkerId}", minimapMarkerLayer, diamondSprite, clamped ? WithAlpha(marker.Color, 0.72f) : marker.Color, new Vector2(15f, 15f));
+            RectTransform icon = CreateMarkerIcon($"Marker {marker.MarkerId}", minimapMarkerLayer, marker, clamped ? WithAlpha(marker.Color, 0.72f) : marker.Color, true);
             icon.anchoredPosition = local;
+            icon.localRotation = ResolveMarkerRotation(marker);
             MapMarkerView markerView = new(marker, icon, area);
             AttachMarkerTooltip(icon, markerView);
             minimapMarkerViews.Add(markerView);
@@ -870,8 +880,9 @@ namespace RPGClone.UI
                 area.anchoredPosition = local;
             }
 
-            RectTransform icon = CreateIcon($"Marker {marker.MarkerId}", largeMapMarkerLayer, diamondSprite, marker.Color, new Vector2(18f, 18f));
+            RectTransform icon = CreateMarkerIcon($"Marker {marker.MarkerId}", largeMapMarkerLayer, marker, marker.Color, false);
             icon.anchoredPosition = local;
+            icon.localRotation = ResolveMarkerRotation(marker);
             MapMarkerView markerView = new(marker, icon, area);
             AttachMarkerTooltip(icon, markerView);
             largeMapMarkerViews.Add(markerView);
@@ -952,6 +963,7 @@ namespace RPGClone.UI
 
             Vector2 local = WorldToMinimapPosition(markerView.Marker.WorldPosition, halfSize, out bool clamped);
             markerView.Icon.anchoredPosition = local;
+            markerView.Icon.localRotation = ResolveMarkerRotation(markerView.Marker);
             Image iconImage = markerView.Icon.GetComponent<Image>();
             if (iconImage != null)
             {
@@ -984,6 +996,7 @@ namespace RPGClone.UI
 
             Vector2 local = WorldToLargeMapPosition(mapBounds, markerView.Marker.WorldPosition);
             markerView.Icon.anchoredPosition = local;
+            markerView.Icon.localRotation = ResolveMarkerRotation(markerView.Marker);
 
             if (markerView.Area != null)
             {
@@ -1037,6 +1050,23 @@ namespace RPGClone.UI
             image.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             image.rectTransform.sizeDelta = size;
             return image.rectTransform;
+        }
+
+        private RectTransform CreateMarkerIcon(string objectName, Transform parent, MMOMapMarkerData marker, Color color, bool minimap)
+        {
+            if (marker.MarkerType == MMOMapMarkerType.PlayerCharacter)
+            {
+                return CreateIcon(objectName, parent, triangleSprite, color, minimap ? new Vector2(16f, 20f) : new Vector2(20f, 25f));
+            }
+
+            return CreateIcon(objectName, parent, diamondSprite, color, minimap ? new Vector2(15f, 15f) : new Vector2(18f, 18f));
+        }
+
+        private static Quaternion ResolveMarkerRotation(MMOMapMarkerData marker)
+        {
+            return marker.MarkerType == MMOMapMarkerType.PlayerCharacter
+                ? Quaternion.Euler(0f, 0f, -marker.HeadingDegrees)
+                : Quaternion.identity;
         }
 
         private void ConfigurePlayerIndicator(RectTransform indicator, bool useLargeMapPosition)
@@ -1118,6 +1148,16 @@ namespace RPGClone.UI
         }
 
         private void OnZoneChanged(MMOZoneDefinition zone)
+        {
+            RefreshMarkers(true);
+        }
+
+        private void OnPlayersChanged()
+        {
+            RefreshMarkers(true);
+        }
+
+        private void OnSessionChanged()
         {
             RefreshMarkers(true);
         }
@@ -1276,21 +1316,28 @@ namespace RPGClone.UI
 
         private static MMOTooltipContent BuildTooltip(MMOMapMarkerData marker)
         {
-            string objective = string.IsNullOrWhiteSpace(marker.Label) ? "Quest Objective" : marker.Label;
-            MMOTooltipContent content = new(objective, marker.Color);
+            string title = string.IsNullOrWhiteSpace(marker.Label) ? FormatMarkerTitle(marker.MarkerType) : marker.Label;
+            MMOTooltipContent content = new(title, marker.Color);
             if (!string.IsNullOrWhiteSpace(marker.Detail))
             {
-                content.Add($"Quest: {marker.Detail}", 11, FontStyle.Bold, new Color(1f, 0.86f, 0.35f, 1f));
+                string detailPrefix = marker.MarkerType == MMOMapMarkerType.PlayerCharacter ? string.Empty : "Quest: ";
+                content.Add($"{detailPrefix}{marker.Detail}", 11, FontStyle.Bold, new Color(1f, 0.86f, 0.35f, 1f));
             }
 
             content.Add(FormatMarkerType(marker.MarkerType), 11, FontStyle.Normal, new Color(0.86f, 0.82f, 0.72f, 1f));
             return content;
         }
 
+        private static string FormatMarkerTitle(MMOMapMarkerType markerType)
+        {
+            return markerType == MMOMapMarkerType.PlayerCharacter ? "Player" : "Quest Objective";
+        }
+
         private static string FormatMarkerType(MMOMapMarkerType markerType)
         {
             return markerType switch
             {
+                MMOMapMarkerType.PlayerCharacter => "Player",
                 MMOMapMarkerType.QuestTurnIn => "Turn in objective",
                 MMOMapMarkerType.QuestNpc => "Speak objective",
                 MMOMapMarkerType.QuestCreatureArea => "Creature objective",

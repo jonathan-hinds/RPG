@@ -36,7 +36,7 @@ namespace RPGClone.Social
                 joinsAllowed = JoinsAllowed,
                 createdUtcTicks = now,
                 updatedUtcTicks = now,
-                privateConnectionData = "local-editor-placeholder"
+                privateConnectionData = MMOGameplaySessionService.JoinCode
             };
         }
 

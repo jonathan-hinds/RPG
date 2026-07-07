@@ -13,9 +13,6 @@ using RPGClone.Trainers;
 using RPGClone.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace RPGClone.CharacterSelection
 {
@@ -25,8 +22,6 @@ namespace RPGClone.CharacterSelection
         [SerializeField] private MMOCharacterArchetypeCatalog archetypeCatalog;
         [SerializeField] private MMOItemCatalog itemCatalog;
         [SerializeField] private MMOAbilityCatalog abilityCatalog;
-        [SerializeField] private bool useCloudSave = true;
-
         private MMOCharacterIdentity identity;
         private MMOExperienceComponent experience;
         private MMOInventoryContainer inventory;
@@ -43,6 +38,8 @@ namespace RPGClone.CharacterSelection
         private bool refreshingSocialSession;
         private bool isRemoteSessionReplica;
 
+        public bool IsRemoteSessionReplica => isRemoteSessionReplica;
+
         private void Awake()
         {
             identity = GetComponent<MMOCharacterIdentity>();
@@ -53,7 +50,7 @@ namespace RPGClone.CharacterSelection
             wallet = GetComponent<MMOCurrencyWallet>();
             questLog = GetComponent<MMOQuestLog>();
             abilitySystem = GetComponent<MMOAbilitySystem>();
-            repository = useCloudSave ? new MMOCloudCharacterRosterRepository() : new MMOLocalCharacterRosterRepository();
+            repository = new MMOCloudCharacterRosterRepository();
         }
 
         private void Start()
@@ -142,7 +139,7 @@ namespace RPGClone.CharacterSelection
 
         public void ApplySelectedCharacter()
         {
-            if (appliedSession || !MMOCharacterSession.HasSelectedCharacter)
+            if (isRemoteSessionReplica || appliedSession || !MMOCharacterSession.HasSelectedCharacter)
             {
                 return;
             }
@@ -202,7 +199,13 @@ namespace RPGClone.CharacterSelection
 
         public async Task SaveCurrentCharacterAsync()
         {
-            if (!MMOCharacterSession.HasSelectedCharacter || repository == null || identity == null)
+            if (isRemoteSessionReplica || !MMOCharacterSession.HasSelectedCharacter || repository == null || identity == null)
+            {
+                return;
+            }
+
+            GameObject localPlayerObject = MMOGameplaySessionService.LocalPlayer.PlayerObject;
+            if (localPlayerObject != null && localPlayerObject != gameObject)
             {
                 return;
             }
@@ -234,6 +237,11 @@ namespace RPGClone.CharacterSelection
 
         public MMOCharacterSaveData CaptureCurrentCharacterData()
         {
+            if (isRemoteSessionReplica)
+            {
+                return new MMOCharacterSaveData();
+            }
+
             MMOCharacterSaveData saveData = new();
             Capture(saveData);
             return saveData;
@@ -827,42 +835,12 @@ namespace RPGClone.CharacterSelection
 
         private MMOItemDefinition ResolveItem(string itemId)
         {
-            MMOItemDefinition item = itemCatalog != null ? itemCatalog.FindById(itemId) : null;
-#if UNITY_EDITOR
-            if (item == null && !string.IsNullOrWhiteSpace(itemId))
-            {
-                string[] guids = AssetDatabase.FindAssets("t:MMOItemDefinition");
-                foreach (string guid in guids)
-                {
-                    MMOItemDefinition candidate = AssetDatabase.LoadAssetAtPath<MMOItemDefinition>(AssetDatabase.GUIDToAssetPath(guid));
-                    if (candidate != null && candidate.ItemId == itemId)
-                    {
-                        return candidate;
-                    }
-                }
-            }
-#endif
-            return item;
+            return itemCatalog != null ? itemCatalog.FindById(itemId) : null;
         }
 
         private MMOAbilityDefinition ResolveAbility(string abilityId)
         {
-            MMOAbilityDefinition ability = abilityCatalog != null ? abilityCatalog.FindById(abilityId) : null;
-#if UNITY_EDITOR
-            if (ability == null && !string.IsNullOrWhiteSpace(abilityId))
-            {
-                string[] guids = AssetDatabase.FindAssets("t:MMOAbilityDefinition");
-                foreach (string guid in guids)
-                {
-                    MMOAbilityDefinition candidate = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(AssetDatabase.GUIDToAssetPath(guid));
-                    if (candidate != null && candidate.AbilityId == abilityId)
-                    {
-                        return candidate;
-                    }
-                }
-            }
-#endif
-            return ability;
+            return abilityCatalog != null ? abilityCatalog.FindById(abilityId) : null;
         }
 
         private void ApplyProgression(MMOCharacterArchetypeDefinition archetype, int savedLevel)

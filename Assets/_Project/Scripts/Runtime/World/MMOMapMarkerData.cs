@@ -9,7 +9,8 @@ namespace RPGClone.World
         QuestNpc,
         QuestCreatureArea,
         QuestWorldObject,
-        QuestArea
+        QuestArea,
+        PlayerCharacter
     }
 
     public readonly struct MMOMapMarkerData
@@ -22,6 +23,7 @@ namespace RPGClone.World
         public readonly MMOMapMarkerType MarkerType;
         public readonly Color Color;
         public readonly bool IsArea;
+        public readonly float HeadingDegrees;
 
         public MMOMapMarkerData(
             string markerId,
@@ -31,7 +33,8 @@ namespace RPGClone.World
             float radius,
             MMOMapMarkerType markerType,
             Color color,
-            bool isArea)
+            bool isArea,
+            float headingDegrees = 0f)
         {
             MarkerId = markerId;
             Label = label;
@@ -41,6 +44,7 @@ namespace RPGClone.World
             MarkerType = markerType;
             Color = color;
             IsArea = isArea;
+            HeadingDegrees = headingDegrees;
         }
     }
 }

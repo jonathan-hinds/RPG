@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace RPGClone.Social
@@ -23,7 +24,17 @@ namespace RPGClone.Social
             path = Path.Combine(Application.persistentDataPath, FileName);
         }
 
-        public MMOAccountServiceResult Register(string accountName, string password, string sessionLabel)
+        public Task<MMOAccountServiceResult> RegisterAsync(string accountName, string password, string sessionLabel)
+        {
+            return Task.FromResult(Register(accountName, password, sessionLabel));
+        }
+
+        public Task<MMOAccountServiceResult> LoginAsync(string accountName, string password, string sessionLabel)
+        {
+            return Task.FromResult(Login(accountName, password, sessionLabel));
+        }
+
+        private MMOAccountServiceResult Register(string accountName, string password, string sessionLabel)
         {
             if (!TryValidateAccountName(accountName, out string displayName, out string normalizedName, out string error))
             {
@@ -58,7 +69,7 @@ namespace RPGClone.Social
             });
         }
 
-        public MMOAccountServiceResult Login(string accountName, string password, string sessionLabel)
+        private MMOAccountServiceResult Login(string accountName, string password, string sessionLabel)
         {
             string normalizedName = NormalizeAccountName(accountName);
             if (string.IsNullOrWhiteSpace(normalizedName))

@@ -48,6 +48,7 @@ namespace RPGClone.UI
                 targetSelectionController.TargetChanged -= OnTargetChanged;
             }
 
+            UnsubscribePartyFrames();
             MMOGameplaySessionService.Players.Changed -= OnPlayersChanged;
             MMOGameplaySessionService.LocalPlayer.Changed -= OnLocalPlayerChanged;
         }
@@ -150,6 +151,7 @@ namespace RPGClone.UI
             }
 
             EnsurePartyFrameRoot();
+            UnsubscribePartyFrames();
             foreach (MMOUnitFrameView frame in partyFrames)
             {
                 if (frame != null)
@@ -178,8 +180,30 @@ namespace RPGClone.UI
 
                 MMOUnitFrameView frame = CreatePartyFrame(index);
                 frame.Bind(participant.Identity);
+                frame.Clicked += OnPartyFrameClicked;
                 partyFrames.Add(frame);
                 index++;
+            }
+        }
+
+        private void OnPartyFrameClicked(MMOUnitFrameView frame, MMOCharacterIdentity character)
+        {
+            if (targetSelectionController == null || character == null || !character.Selectable)
+            {
+                return;
+            }
+
+            targetSelectionController.SelectTarget(character);
+        }
+
+        private void UnsubscribePartyFrames()
+        {
+            foreach (MMOUnitFrameView frame in partyFrames)
+            {
+                if (frame != null)
+                {
+                    frame.Clicked -= OnPartyFrameClicked;
+                }
             }
         }
 

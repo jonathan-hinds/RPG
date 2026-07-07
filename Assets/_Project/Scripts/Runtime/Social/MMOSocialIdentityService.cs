@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace RPGClone.Social
@@ -6,7 +7,7 @@ namespace RPGClone.Social
     public static class MMOSocialIdentityService
     {
         private const string LastAccountNamePrefsKey = "rpg_clone_last_account_name";
-        private static readonly IAccountService AccountService = new MMOLocalAccountService();
+        private static readonly IAccountService AccountService = new MMOUnityAccountService();
         private static MMOAccountSession currentSession;
 
         public static event Action Changed;
@@ -21,9 +22,9 @@ namespace RPGClone.Social
         public static string PlayerId => AccountId;
         public static bool IsLocalTestIdentity => IsAuthenticated;
 
-        public static MMOAccountServiceResult Register(string accountName, string password)
+        public static async Task<MMOAccountServiceResult> RegisterAsync(string accountName, string password)
         {
-            MMOAccountServiceResult result = AccountService.Register(accountName, password, CreateSessionLabel());
+            MMOAccountServiceResult result = await AccountService.RegisterAsync(accountName, password, CreateSessionLabel());
             if (result.Succeeded)
             {
                 Activate(result.Session);
@@ -33,9 +34,9 @@ namespace RPGClone.Social
             return result;
         }
 
-        public static MMOAccountServiceResult Login(string accountName, string password)
+        public static async Task<MMOAccountServiceResult> LoginAsync(string accountName, string password)
         {
-            MMOAccountServiceResult result = AccountService.Login(accountName, password, CreateSessionLabel());
+            MMOAccountServiceResult result = await AccountService.LoginAsync(accountName, password, CreateSessionLabel());
             if (result.Succeeded)
             {
                 Activate(result.Session);

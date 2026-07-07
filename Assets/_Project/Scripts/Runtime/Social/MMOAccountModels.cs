@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace RPGClone.Social
 {
@@ -48,8 +49,8 @@ namespace RPGClone.Social
 
     public interface IAccountService
     {
-        MMOAccountServiceResult Register(string accountName, string password, string sessionLabel);
-        MMOAccountServiceResult Login(string accountName, string password, string sessionLabel);
+        Task<MMOAccountServiceResult> RegisterAsync(string accountName, string password, string sessionLabel);
+        Task<MMOAccountServiceResult> LoginAsync(string accountName, string password, string sessionLabel);
         MMOServiceResult Heartbeat(MMOAccountSession session);
         void Logout(MMOAccountSession session);
     }

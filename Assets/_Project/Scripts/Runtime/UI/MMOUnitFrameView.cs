@@ -1,13 +1,15 @@
+using System;
 using System.Collections.Generic;
 using RPGClone.Buffs;
 using RPGClone.Characters;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace RPGClone.UI
 {
     [RequireComponent(typeof(RectTransform))]
-    public sealed class MMOUnitFrameView : MonoBehaviour
+    public sealed class MMOUnitFrameView : MonoBehaviour, IPointerClickHandler
     {
         [Header("Binding")]
         [SerializeField] private bool autoBuild = true;
@@ -42,6 +44,9 @@ namespace RPGClone.UI
         private bool subscribedToBoundCharacter;
 
         private static Font cachedFont;
+
+        public event Action<MMOUnitFrameView, MMOCharacterIdentity> Clicked;
+        public MMOCharacterIdentity BoundCharacter => boundCharacter;
 
         private void Awake()
         {
@@ -91,6 +96,16 @@ namespace RPGClone.UI
         public void Clear()
         {
             Bind(null);
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData == null || eventData.button != PointerEventData.InputButton.Left || boundCharacter == null)
+            {
+                return;
+            }
+
+            Clicked?.Invoke(this, boundCharacter);
         }
 
         private void OnCharacterChanged(MMOCharacterIdentity character)
@@ -156,11 +171,13 @@ namespace RPGClone.UI
         {
             if (background != null)
             {
+                ConfigureRaycastSurface();
                 return;
             }
 
             if (TryBindExistingHierarchy())
             {
+                ConfigureRaycastSurface();
                 return;
             }
 
@@ -239,6 +256,7 @@ namespace RPGClone.UI
             buffRoot.pivot = new Vector2(0f, 1f);
             buffRoot.anchoredPosition = new Vector2(Padding, -4f);
             buffRoot.sizeDelta = new Vector2(270f, BuffSize);
+            ConfigureRaycastSurface();
         }
 
         private bool TryBindExistingHierarchy()
@@ -277,6 +295,14 @@ namespace RPGClone.UI
                 && healthText != null
                 && manaFill != null
                 && manaText != null;
+        }
+
+        private void ConfigureRaycastSurface()
+        {
+            if (background != null)
+            {
+                background.raycastTarget = true;
+            }
         }
 
         private static Image GetImage(Transform target)

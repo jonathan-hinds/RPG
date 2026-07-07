@@ -162,7 +162,7 @@ namespace RPGClone.Services
 
             localParticipantId = string.IsNullOrWhiteSpace(participantId) ? "local-player" : participantId;
             localCharacterId = characterId ?? string.Empty;
-            registry.Register(new MMOPlayerParticipant(participantId, characterId, true, true, identity));
+            registry.Register(new MMOPlayerParticipant(localParticipantId, localCharacterId, true, MMOGameplaySessionService.IsHostAuthority, identity));
         }
     }
 }

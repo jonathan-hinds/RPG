@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using RPGClone.CharacterSelection;
+using RPGClone.Multiplayer;
 using RPGClone.Services;
 using RPGClone.Social;
 using UnityEngine;
@@ -19,8 +20,10 @@ namespace RPGClone.UI
         private Text statusText;
         private Text sessionText;
         private InputField addFriendInput;
+        private InputField joinCodeInput;
         private float nextRefreshTime;
         private bool refreshing;
+        private string displayedJoinCode;
 
         private void Awake()
         {
@@ -90,29 +93,46 @@ namespace RPGClone.UI
             sessionText.rectTransform.anchoredPosition = new Vector2(14f, -34f);
             sessionText.rectTransform.sizeDelta = new Vector2(-28f, 20f);
 
-            addFriendInput = CreateInput(content, "Add Friend Input", new Vector2(14f, -68f), new Vector2(244f, 32f));
+            joinCodeInput = CreateInput(content, "Join Code Input", "Join code", new Vector2(14f, -68f), new Vector2(150f, 32f));
+            Button hostButton = MMOUiFactory.CreateTextButton("Host Session", content, "Host", new Vector2(70f, 32f), MMONpcWindowFrame.ButtonColor);
+            hostButton.onClick.AddListener(HostSession);
+            RectTransform hostRect = hostButton.GetComponent<RectTransform>();
+            hostRect.anchorMin = new Vector2(1f, 1f);
+            hostRect.anchorMax = new Vector2(1f, 1f);
+            hostRect.pivot = new Vector2(1f, 1f);
+            hostRect.anchoredPosition = new Vector2(-92f, -68f);
+
+            Button joinButton = MMOUiFactory.CreateTextButton("Join Session", content, "Join", new Vector2(70f, 32f), MMONpcWindowFrame.ButtonColor);
+            joinButton.onClick.AddListener(JoinSession);
+            RectTransform joinRect = joinButton.GetComponent<RectTransform>();
+            joinRect.anchorMin = new Vector2(1f, 1f);
+            joinRect.anchorMax = new Vector2(1f, 1f);
+            joinRect.pivot = new Vector2(1f, 1f);
+            joinRect.anchoredPosition = new Vector2(-14f, -68f);
+
+            addFriendInput = CreateInput(content, "Add Friend Input", "Character name", new Vector2(14f, -108f), new Vector2(244f, 32f));
             Button addButton = MMOUiFactory.CreateTextButton("Add Friend", content, "Add", new Vector2(84f, 32f), MMONpcWindowFrame.ButtonColor);
             addButton.onClick.AddListener(AddFriend);
             RectTransform addRect = addButton.GetComponent<RectTransform>();
             addRect.anchorMin = new Vector2(1f, 1f);
             addRect.anchorMax = new Vector2(1f, 1f);
             addRect.pivot = new Vector2(1f, 1f);
-            addRect.anchoredPosition = new Vector2(-14f, -68f);
+            addRect.anchoredPosition = new Vector2(-14f, -108f);
 
-            Text friendsHeader = CreateHeader(content, "Friends", -116f);
+            Text friendsHeader = CreateHeader(content, "Friends", -156f);
             friendsRoot = MMOUiFactory.CreateRect("Friends Rows", content);
             friendsRoot.anchorMin = new Vector2(0f, 1f);
             friendsRoot.anchorMax = new Vector2(1f, 1f);
             friendsRoot.pivot = new Vector2(0f, 1f);
-            friendsRoot.anchoredPosition = new Vector2(14f, -144f);
+            friendsRoot.anchoredPosition = new Vector2(14f, -184f);
             friendsRoot.sizeDelta = new Vector2(-28f, 210f);
 
-            Text invitesHeader = CreateHeader(content, "Incoming Invites", -370f);
+            Text invitesHeader = CreateHeader(content, "Incoming Invites", -410f);
             invitesRoot = MMOUiFactory.CreateRect("Invite Rows", content);
             invitesRoot.anchorMin = new Vector2(0f, 1f);
             invitesRoot.anchorMax = new Vector2(1f, 1f);
             invitesRoot.pivot = new Vector2(0f, 1f);
-            invitesRoot.anchoredPosition = new Vector2(14f, -398f);
+            invitesRoot.anchoredPosition = new Vector2(14f, -438f);
             invitesRoot.sizeDelta = new Vector2(-28f, 104f);
 
             statusText = MMOUiFactory.CreateText("Status", content, 12, FontStyle.Bold, TextAnchor.LowerLeft);
@@ -140,7 +160,7 @@ namespace RPGClone.UI
             return header;
         }
 
-        private static InputField CreateInput(Transform parent, string objectName, Vector2 position, Vector2 size)
+        private static InputField CreateInput(Transform parent, string objectName, string placeholderText, Vector2 position, Vector2 size)
         {
             Image image = MMOUiFactory.CreateImage(objectName, parent, new Color(0.018f, 0.016f, 0.014f, 0.98f));
             RectTransform rect = image.rectTransform;
@@ -158,7 +178,7 @@ namespace RPGClone.UI
             text.rectTransform.offsetMax = new Vector2(-10f, -3f);
 
             Text placeholder = MMOUiFactory.CreateText("Placeholder", rect, 13, FontStyle.Italic, TextAnchor.MiddleLeft);
-            placeholder.text = "Character name";
+            placeholder.text = placeholderText;
             placeholder.color = new Color(0.55f, 0.49f, 0.41f, 1f);
             placeholder.rectTransform.anchorMin = Vector2.zero;
             placeholder.rectTransform.anchorMax = Vector2.one;
@@ -196,9 +216,16 @@ namespace RPGClone.UI
                 MMOCharacterSaveData current = MMOCharacterSession.SelectedCharacter;
                 await EnsureLocalSessionAdvertisedAsync();
                 MMOSessionPresenceRecord hostedSession = await MMOSocialServices.Sessions.GetHostedSessionForCharacterAsync(current.characterId);
-                sessionText.text = hostedSession != null
-                    ? $"Hosting {hostedSession.currentSceneName}"
+                string joinCode = MMOGameplaySessionService.JoinCode;
+                bool isHosting = MMOGameplaySessionService.IsLocalHostedSession
+                    && (hostedSession != null || !string.IsNullOrWhiteSpace(joinCode));
+                sessionText.text = isHosting
+                    ? FormatHostedSessionText(joinCode)
                     : "No joinable session advertised.";
+                if (isHosting)
+                {
+                    DisplayHostedJoinCode(joinCode, false);
+                }
 
                 IReadOnlyList<MMOFriendEntry> friends = await MMOSocialServices.Friends.GetFriendsAsync(current.characterId);
                 if (friends.Count == 0)
@@ -338,6 +365,38 @@ namespace RPGClone.UI
             RefreshNow();
         }
 
+        private async void HostSession()
+        {
+            MMOGameplaySessionService.StartLocalHostedSession();
+            SetStatus("Hosting Unity multiplayer session...");
+            bool hosted = await MMONetcodeSessionService.WaitForConnectionAsync();
+            string joinCode = MMOGameplaySessionService.JoinCode;
+            DisplayHostedJoinCode(joinCode, true);
+            SetStatus(!hosted
+                ? $"Host failed: {MMONetcodeSessionService.LastError}"
+                : string.IsNullOrWhiteSpace(joinCode)
+                ? "Host started, but Unity did not return a join code. Check the Console."
+                : $"Hosted session code copied: {joinCode}");
+            RefreshNow();
+        }
+
+        private async void JoinSession()
+        {
+            if (joinCodeInput == null || string.IsNullOrWhiteSpace(joinCodeInput.text))
+            {
+                SetStatus("Enter a join code.");
+                return;
+            }
+
+            string joinCode = joinCodeInput.text.Trim();
+            SetStatus("Joining Unity multiplayer session...");
+            bool joined = await MMOGameplaySessionService.JoinHostedSessionAsync(joinCode, SceneManager.GetActiveScene().name, string.Empty);
+            SetStatus(joined
+                ? $"Joined Unity multiplayer session {MMOGameplaySessionService.SessionId}."
+                : $"Join failed: {MMONetcodeSessionService.LastError}");
+            RefreshNow();
+        }
+
         private async void RemoveFriend(MMOFriendEntry friend)
         {
             MMOServiceResult result = await MMOSocialServices.Friends.RemoveFriendAsync(MMOCharacterSession.SelectedCharacter.characterId, friend.characterId);
@@ -377,8 +436,11 @@ namespace RPGClone.UI
             MMOInviteResolution result = await MMOSocialServices.Invites.AcceptInviteAsync(invite.inviteId, MMOCharacterSession.SelectedCharacter.characterId);
             if (result.Succeeded && result.Session != null)
             {
+                string joinCode = !string.IsNullOrWhiteSpace(result.Session.privateConnectionData)
+                    ? result.Session.privateConnectionData
+                    : result.Session.sessionId;
                 MMOGameplaySessionService.JoinHostedSession(
-                    result.Session.sessionId,
+                    joinCode,
                     result.Session.currentSceneName,
                     result.Session.hostCharacterId);
                 SetStatus($"Joining {result.Session.hostCharacterName}'s world.");
@@ -409,6 +471,38 @@ namespace RPGClone.UI
             if (statusText != null)
             {
                 statusText.text = message ?? string.Empty;
+            }
+        }
+
+        private static string FormatHostedSessionText(string joinCode)
+        {
+            string sceneName = SceneManager.GetActiveScene().name;
+            return string.IsNullOrWhiteSpace(joinCode)
+                ? $"Hosting {sceneName} - Waiting for Unity join code"
+                : $"Hosting {sceneName} - Join Code: {joinCode}";
+        }
+
+        private void DisplayHostedJoinCode(string joinCode, bool copyToClipboard)
+        {
+            if (string.IsNullOrWhiteSpace(joinCode))
+            {
+                return;
+            }
+
+            if (sessionText != null)
+            {
+                sessionText.text = FormatHostedSessionText(joinCode);
+            }
+
+            if (joinCodeInput != null && displayedJoinCode != joinCode)
+            {
+                joinCodeInput.SetTextWithoutNotify(joinCode);
+                displayedJoinCode = joinCode;
+            }
+
+            if (copyToClipboard)
+            {
+                GUIUtility.systemCopyBuffer = joinCode;
             }
         }
 

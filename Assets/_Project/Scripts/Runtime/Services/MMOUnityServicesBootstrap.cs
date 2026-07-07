@@ -1,6 +1,7 @@
 using System;
-using System.Reflection;
 using System.Threading.Tasks;
+using Unity.Services.Authentication;
+using Unity.Services.Core;
 using UnityEngine;
 
 namespace RPGClone.Services
@@ -10,6 +11,7 @@ namespace RPGClone.Services
         private static Task initializationTask;
 
         public static bool IsInitialized { get; private set; }
+        public static bool IsSignedIn => IsInitialized && AuthenticationService.Instance != null && AuthenticationService.Instance.IsSignedIn;
         public static string PlayerId { get; private set; } = string.Empty;
 
         public static async Task InitializeAsync()
@@ -27,35 +29,63 @@ namespace RPGClone.Services
         {
             try
             {
-                Type unityServicesType = Type.GetType("Unity.Services.Core.UnityServices, Unity.Services.Core");
-                Type authenticationType = Type.GetType("Unity.Services.Authentication.AuthenticationService, Unity.Services.Authentication");
-                if (unityServicesType == null || authenticationType == null)
-                {
-                    IsInitialized = false;
-                    return;
-                }
-
-                MethodInfo initializeMethod = unityServicesType.GetMethod("InitializeAsync", Type.EmptyTypes);
-                if (initializeMethod?.Invoke(null, null) is Task initializeTask)
-                {
-                    await initializeTask;
-                }
-
-                object authenticationService = authenticationType.GetProperty("Instance")?.GetValue(null);
-                bool isSignedIn = authenticationService != null && (bool)(authenticationService.GetType().GetProperty("IsSignedIn")?.GetValue(authenticationService) ?? false);
-                if (!isSignedIn && authenticationService?.GetType().GetMethod("SignInAnonymouslyAsync", Type.EmptyTypes)?.Invoke(authenticationService, null) is Task signInTask)
-                {
-                    await signInTask;
-                }
-
-                PlayerId = authenticationService?.GetType().GetProperty("PlayerId")?.GetValue(authenticationService) as string ?? string.Empty;
-                IsInitialized = !string.IsNullOrWhiteSpace(PlayerId);
+                InitializationOptions options = new InitializationOptions().SetProfile(ResolveServicesProfile());
+                await UnityServices.InitializeAsync(options);
+                IsInitialized = true;
+                RefreshAuthenticationState();
             }
             catch (Exception exception)
             {
                 Debug.LogWarning($"Unity Gaming Services initialization failed. Local persistence remains available. {exception.Message}");
                 IsInitialized = false;
                 initializationTask = null;
+            }
+        }
+
+        public static async Task EnsureSignedInAnonymouslyAsync()
+        {
+            await InitializeAsync();
+            if (!IsInitialized)
+            {
+                return;
+            }
+
+            try
+            {
+                if (!AuthenticationService.Instance.IsSignedIn)
+                {
+                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                }
+
+                RefreshAuthenticationState();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Unity anonymous sign-in failed. {exception.Message}");
+                RefreshAuthenticationState();
+            }
+        }
+
+        public static void RefreshAuthenticationState()
+        {
+            PlayerId = AuthenticationService.Instance != null && AuthenticationService.Instance.IsSignedIn
+                ? AuthenticationService.Instance.PlayerId
+                : string.Empty;
+        }
+
+        private static string ResolveServicesProfile()
+        {
+            string source = Application.isEditor ? Application.dataPath : Application.persistentDataPath;
+            unchecked
+            {
+                uint hash = 2166136261;
+                for (int i = 0; i < source.Length; i++)
+                {
+                    hash ^= source[i];
+                    hash *= 16777619;
+                }
+
+                return $"rpg_{hash:x8}";
             }
         }
     }

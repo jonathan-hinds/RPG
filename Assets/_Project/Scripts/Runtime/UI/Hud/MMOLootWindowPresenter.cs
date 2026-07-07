@@ -1,4 +1,5 @@
 using System.Collections;
+using RPGClone.CharacterSelection;
 using RPGClone.Inventory;
 using RPGClone.Loot;
 using RPGClone.Services;
@@ -103,9 +104,9 @@ namespace RPGClone.UI
             }
 
             MMOInventoryContainer inventory = ResolvePlayerInventory();
-            if (inventory != null)
+            if (inventory != null && lootSource.TryLootToInventory(inventory))
             {
-                lootSource.TryLootToInventory(inventory);
+                SavePlayerProgress();
             }
 
             Close();
@@ -125,7 +126,10 @@ namespace RPGClone.UI
                 return;
             }
 
-            lootSource.TryLootStackToInventory(index, inventory);
+            if (lootSource.TryLootStackToInventory(index, inventory))
+            {
+                SavePlayerProgress();
+            }
             if (lootSource.HasLoot)
             {
                 Refresh();
@@ -141,6 +145,14 @@ namespace RPGClone.UI
             return MMOGameplaySessionService.LocalPlayer.TryGetComponent(out MMOInventoryContainer inventory)
                 ? inventory
                 : null;
+        }
+
+        private static void SavePlayerProgress()
+        {
+            if (MMOGameplaySessionService.LocalPlayer.TryGetComponent(out MMOCharacterPersistenceAgent persistenceAgent))
+            {
+                _ = persistenceAgent.SaveCurrentCharacterAsync();
+            }
         }
 
         private void BuildIfNeeded()

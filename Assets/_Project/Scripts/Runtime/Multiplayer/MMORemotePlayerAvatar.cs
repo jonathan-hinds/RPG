@@ -2,7 +2,9 @@ using RPGClone.CharacterSelection;
 using RPGClone.Characters;
 using RPGClone.Inventory;
 using RPGClone.Player;
+using RPGClone.Quests;
 using RPGClone.Services;
+using RPGClone.Targeting;
 using UnityEngine;
 
 namespace RPGClone.Multiplayer
@@ -51,7 +53,7 @@ namespace RPGClone.Multiplayer
             if (appliedPresentationSignature != presentationSignature)
             {
                 ClearInheritedEquipmentVisuals();
-                persistenceAgent.ApplySessionReplica(snapshot.characterData, true);
+                persistenceAgent.ApplySessionReplica(snapshot.characterData, false);
                 appliedPresentationSignature = presentationSignature;
             }
 
@@ -118,6 +120,7 @@ namespace RPGClone.Multiplayer
             if (persistenceAgent != null)
             {
                 persistenceAgent.MarkAsRemoteSessionReplica();
+                persistenceAgent.enabled = false;
             }
 
             gameObject.tag = "Untagged";
@@ -131,6 +134,9 @@ namespace RPGClone.Multiplayer
             DisableLocalOnlyComponent<MMOInputReader>();
             DisableLocalOnlyComponent<MMOPlayerMotor>();
             DisableLocalOnlyComponent<MMOThirdPersonCamera>();
+            DisableLocalOnlyComponent<MMOTargetSelectionController>();
+            DisableLocalOnlyComponent<MMOGroundTargetingController>();
+            DisableLocalOnlyComponent<MMOInteractionCastController>();
 
             MMOPlayerLocomotionAnimator locomotionAnimator = GetComponent<MMOPlayerLocomotionAnimator>();
             if (locomotionAnimator != null)
