@@ -24,13 +24,39 @@ namespace RPGClone.Social
                 return Task.FromResult(MMOServiceResult.Failure("Character record is invalid."));
             }
 
-            charactersById[record.characterId] = Clone(record);
-            if (!string.IsNullOrWhiteSpace(record.normalizedCharacterName))
+            if (!MMOCharacterNameUtility.TryValidate(
+                    record.characterName,
+                    out string displayName,
+                    out string normalizedName,
+                    out string error))
             {
-                charactersByName[record.normalizedCharacterName] = Clone(record);
+                return Task.FromResult(MMOServiceResult.Failure(error));
             }
 
-            return Task.FromResult(MMOServiceResult.Success("Character registered."));
+            if (charactersByName.TryGetValue(normalizedName, out MMOCharacterNameRecord duplicate)
+                && duplicate.characterId != record.characterId)
+            {
+                return Task.FromResult(MMOServiceResult.Failure($"{displayName} is already taken."));
+            }
+
+            if (charactersById.TryGetValue(record.characterId, out MMOCharacterNameRecord existing)
+                && !string.IsNullOrWhiteSpace(existing.playerId)
+                && !string.IsNullOrWhiteSpace(record.playerId)
+                && !string.Equals(existing.playerId, record.playerId, StringComparison.Ordinal))
+            {
+                return Task.FromResult(MMOServiceResult.Failure("Character ownership does not match the current account."));
+            }
+
+            MMOCharacterNameRecord canonicalRecord = Clone(record);
+            canonicalRecord.characterName = displayName;
+            canonicalRecord.normalizedCharacterName = normalizedName;
+            charactersById[record.characterId] = canonicalRecord;
+            if (!string.IsNullOrWhiteSpace(normalizedName))
+            {
+                charactersByName[normalizedName] = Clone(canonicalRecord);
+            }
+
+            return Task.FromResult(MMOServiceResult.Success($"{displayName} registered."));
         }
 
         public Task<MMOCharacterNameRecord> FindByNameAsync(string characterName)

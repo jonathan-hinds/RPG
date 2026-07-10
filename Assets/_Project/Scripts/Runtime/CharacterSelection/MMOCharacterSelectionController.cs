@@ -102,16 +102,23 @@ namespace RPGClone.CharacterSelection
             SetStatus("Loading characters...");
             roster = await repository.LoadAsync();
             roster.characters ??= new List<MMOCharacterSaveData>();
+            bool migrated = NormalizeRosterCharacters();
             if (roster.characters.Count == 0)
             {
                 roster.characters.Add(CreateDefaultCharacter());
-                await repository.SaveAsync(roster);
+                migrated = true;
+                NormalizeRosterCharacters();
             }
 
-            bool migrated = NormalizeRosterCharacters();
             foreach (MMOCharacterSaveData character in roster.characters)
             {
+                string previousAccountId = character.accountId;
+                string previousName = character.characterName;
+                string previousNormalizedName = character.normalizedCharacterName;
                 await MMOSocialPresenceController.RegisterCharacterNameAsync(character);
+                migrated |= previousAccountId != character.accountId
+                    || previousName != character.characterName
+                    || previousNormalizedName != character.normalizedCharacterName;
             }
 
             if (migrated)
@@ -802,10 +809,12 @@ namespace RPGClone.CharacterSelection
         private bool NormalizeRosterCharacters()
         {
             bool changed = false;
+            changed |= roster.characters.RemoveAll(character => character == null || IsForeignAccountCharacter(character)) > 0;
             HashSet<string> usedNames = new();
             foreach (MMOCharacterSaveData character in roster.characters)
             {
                 string previousId = character.characterId;
+                string previousAccountId = character.accountId;
                 string previousName = character.characterName;
                 string previousNormalized = character.normalizedCharacterName;
                 MMOSocialPresenceController.EnsureCharacterNameData(character);
@@ -816,11 +825,21 @@ namespace RPGClone.CharacterSelection
                 }
 
                 changed |= previousId != character.characterId
+                    || previousAccountId != character.accountId
                     || previousName != character.characterName
                     || previousNormalized != character.normalizedCharacterName;
             }
 
             return changed;
+        }
+
+        private static bool IsForeignAccountCharacter(MMOCharacterSaveData character)
+        {
+            string accountId = MMOSocialIdentityService.AccountId;
+            return character != null
+                && !string.IsNullOrWhiteSpace(accountId)
+                && !string.IsNullOrWhiteSpace(character.accountId)
+                && !string.Equals(character.accountId, accountId, StringComparison.Ordinal);
         }
 
         private async void LoginAccount()

@@ -212,10 +212,22 @@ namespace RPGClone.CharacterSelection
 
             try
             {
-                MMOCharacterSaveData capturedData = CaptureCurrentCharacterData();
                 MMOCharacterSaveData selected = MMOCharacterSession.SelectedCharacter;
+                if (!IsOwnedByCurrentAccount(selected))
+                {
+                    Debug.LogWarning($"Skipped saving character {selected.characterId}; selected character belongs to a different account.");
+                    return;
+                }
+
+                await MMOSocialPresenceController.RegisterSelectedCharacterNameAsync();
+                MMOCharacterSaveData capturedData = CaptureCurrentCharacterData();
                 MMOCharacterRosterSaveData roster = await repository.LoadAsync();
-                MMOCharacterSaveData saveData = roster.characters.Find(character => character.characterId == selected.characterId);
+                roster.characters ??= new List<MMOCharacterSaveData>();
+                roster.characters.RemoveAll(character => character == null || !IsOwnedByCurrentAccount(character));
+                MMOCharacterSaveData saveData = roster.characters.Find(character =>
+                    character != null
+                    && character.characterId == selected.characterId
+                    && IsOwnedByCurrentAccount(character));
                 if (saveData == null)
                 {
                     saveData = selected;
@@ -296,10 +308,16 @@ namespace RPGClone.CharacterSelection
 
         private void Capture(MMOCharacterSaveData saveData)
         {
-            saveData.characterId = MMOCharacterSession.HasSelectedCharacter ? MMOCharacterSession.SelectedCharacter.characterId : saveData.characterId;
-            saveData.accountId = MMOCharacterSession.HasSelectedCharacter ? MMOCharacterSession.SelectedCharacter.accountId : string.Empty;
-            saveData.characterName = identity.DisplayName;
-            saveData.normalizedCharacterName = MMOCharacterNameUtility.NormalizeLookupName(identity.DisplayName);
+            if (MMOCharacterSession.HasSelectedCharacter)
+            {
+                CopyCanonicalIdentity(MMOCharacterSession.SelectedCharacter, saveData);
+            }
+            else
+            {
+                saveData.characterName = identity.DisplayName;
+                saveData.normalizedCharacterName = MMOCharacterNameUtility.NormalizeLookupName(identity.DisplayName);
+            }
+
             MMOCharacterCustomization customization = GetComponent<MMOCharacterCustomization>();
             if (customization != null)
             {
@@ -369,9 +387,6 @@ namespace RPGClone.CharacterSelection
 
         private static void CopyCapturedData(MMOCharacterSaveData source, MMOCharacterSaveData destination)
         {
-            destination.accountId = source.accountId;
-            destination.characterName = source.characterName;
-            destination.normalizedCharacterName = source.normalizedCharacterName;
             destination.race = source.race;
             destination.characterClass = source.characterClass;
             destination.level = source.level;
@@ -391,6 +406,50 @@ namespace RPGClone.CharacterSelection
             destination.activeQuests = new System.Collections.Generic.List<MMOQuestStateSaveData>(source.activeQuests ?? new System.Collections.Generic.List<MMOQuestStateSaveData>());
             destination.completedQuestIds = new System.Collections.Generic.List<string>(source.completedQuestIds ?? new System.Collections.Generic.List<string>());
             destination.pendingUsableItemId = source.pendingUsableItemId;
+        }
+
+        private static void CopyCanonicalIdentity(MMOCharacterSaveData source, MMOCharacterSaveData destination)
+        {
+            if (source == null || destination == null)
+            {
+                return;
+            }
+
+            destination.characterId = source.characterId;
+            destination.accountId = ResolveAccountId(source.accountId);
+            if (MMOCharacterNameUtility.TryValidate(
+                    source.characterName,
+                    out string displayName,
+                    out string normalizedName,
+                    out _))
+            {
+                destination.characterName = displayName;
+                destination.normalizedCharacterName = normalizedName;
+                return;
+            }
+
+            destination.characterName = MMOCharacterNameUtility.CreateFallbackName($"{source.race}{source.characterClass}", source.characterId);
+            destination.normalizedCharacterName = MMOCharacterNameUtility.NormalizeLookupName(destination.characterName);
+        }
+
+        private static string ResolveAccountId(string fallbackAccountId)
+        {
+            return MMOSocialIdentityService.IsAuthenticated
+                ? MMOSocialIdentityService.AccountId
+                : fallbackAccountId ?? string.Empty;
+        }
+
+        private static bool IsOwnedByCurrentAccount(MMOCharacterSaveData character)
+        {
+            if (character == null)
+            {
+                return false;
+            }
+
+            string accountId = MMOSocialIdentityService.AccountId;
+            return string.IsNullOrWhiteSpace(accountId)
+                || string.IsNullOrWhiteSpace(character.accountId)
+                || string.Equals(character.accountId, accountId, StringComparison.Ordinal);
         }
 
         private void CaptureInventory(MMOCharacterSaveData saveData)

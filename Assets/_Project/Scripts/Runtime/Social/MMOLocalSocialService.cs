@@ -50,6 +50,14 @@ namespace RPGClone.Social
                 }
 
                 MMOCharacterNameRecord existing = store.characterDirectory.Find(candidate => candidate.characterId == record.characterId);
+                if (existing != null
+                    && !string.IsNullOrWhiteSpace(existing.playerId)
+                    && !string.IsNullOrWhiteSpace(record.playerId)
+                    && !string.Equals(existing.playerId, record.playerId, StringComparison.Ordinal))
+                {
+                    return Task.FromResult(MMOServiceResult.Failure("Character ownership does not match the current account."));
+                }
+
                 if (existing == null)
                 {
                     existing = new MMOCharacterNameRecord();

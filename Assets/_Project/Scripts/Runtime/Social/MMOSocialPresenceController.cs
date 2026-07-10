@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using RPGClone.CharacterSelection;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace RPGClone.Social
@@ -16,15 +17,20 @@ namespace RPGClone.Social
             return RegisterCharacterNameAsync(MMOCharacterSession.SelectedCharacter);
         }
 
-        public static Task RegisterCharacterNameAsync(MMOCharacterSaveData character)
+        public static async Task RegisterCharacterNameAsync(MMOCharacterSaveData character)
         {
             if (character == null || string.IsNullOrWhiteSpace(character.characterId))
             {
-                return Task.CompletedTask;
+                return;
             }
 
             EnsureCharacterNameData(character);
-            return MMOSocialServices.CharacterNames.RegisterOrUpdateAsync(new MMOCharacterNameRecord
+            if (!await ReconcileExistingCharacterNameAsync(character))
+            {
+                return;
+            }
+
+            await MMOSocialServices.CharacterNames.RegisterOrUpdateAsync(new MMOCharacterNameRecord
             {
                 playerId = MMOSocialIdentityService.AccountId,
                 characterId = character.characterId,
@@ -42,6 +48,11 @@ namespace RPGClone.Social
 
             MMOCharacterSaveData character = MMOCharacterSession.SelectedCharacter;
             EnsureCharacterNameData(character);
+            if (!await ReconcileExistingCharacterNameAsync(character))
+            {
+                return;
+            }
+
             await MMOSocialServices.Presence.UpdatePresenceAsync(new MMOCharacterPresenceRecord
             {
                 playerId = MMOSocialIdentityService.AccountId,
@@ -64,6 +75,11 @@ namespace RPGClone.Social
 
             MMOCharacterSaveData character = MMOCharacterSession.SelectedCharacter;
             EnsureCharacterNameData(character);
+            if (!await ReconcileExistingCharacterNameAsync(character))
+            {
+                return;
+            }
+
             if (!RPGClone.Services.MMOGameplaySessionService.IsLocalHostedSession)
             {
                 await SetSelectedCharacterPresenceAsync(MMOCharacterPresenceStatus.OnlineInWorld, false);
@@ -121,6 +137,36 @@ namespace RPGClone.Social
 
             character.characterName = displayName;
             character.normalizedCharacterName = normalizedName;
+        }
+
+        private static async Task<bool> ReconcileExistingCharacterNameAsync(MMOCharacterSaveData character)
+        {
+            MMOCharacterNameRecord existing = await MMOSocialServices.CharacterNames.FindByCharacterIdAsync(character.characterId);
+            if (existing == null)
+            {
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(existing.playerId)
+                && !string.IsNullOrWhiteSpace(MMOSocialIdentityService.AccountId)
+                && !string.Equals(existing.playerId, MMOSocialIdentityService.AccountId, System.StringComparison.Ordinal))
+            {
+                Debug.LogWarning($"Character {character.characterId} is registered to another account; keeping the existing owner.");
+                return false;
+            }
+
+            if (!MMOCharacterNameUtility.TryValidate(
+                    existing.characterName,
+                    out string displayName,
+                    out string normalizedName,
+                    out _))
+            {
+                return true;
+            }
+
+            character.characterName = displayName;
+            character.normalizedCharacterName = normalizedName;
+            return true;
         }
     }
 }
