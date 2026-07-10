@@ -1902,6 +1902,11 @@ namespace RPGClone.Multiplayer
                     damageAmount = source.damageAmount,
                     healAmount = source.healAmount,
                     blockedAmount = source.blockedAmount,
+                    hasTargetResourceSnapshot = source.hasTargetResourceSnapshot,
+                    targetCurrentHealth = source.targetCurrentHealth,
+                    targetMaxHealth = source.targetMaxHealth,
+                    targetCurrentMana = source.targetCurrentMana,
+                    targetMaxMana = source.targetMaxMana,
                     isCritical = source.isCritical,
                     killedTarget = source.killedTarget,
                     createdUtcTicks = source.createdUtcTicks

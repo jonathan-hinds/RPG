@@ -137,6 +137,11 @@ namespace RPGClone.Combat
         public int damageAmount;
         public int healAmount;
         public int blockedAmount;
+        public bool hasTargetResourceSnapshot;
+        public int targetCurrentHealth;
+        public int targetMaxHealth;
+        public int targetCurrentMana;
+        public int targetMaxMana;
         public bool isCritical;
         public bool killedTarget;
         public long createdUtcTicks;

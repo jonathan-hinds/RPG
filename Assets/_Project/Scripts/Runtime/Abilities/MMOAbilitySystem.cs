@@ -2,9 +2,12 @@ using System.Collections.Generic;
 using System;
 using System.Collections;
 using RPGClone.Buffs;
+using RPGClone.CharacterSelection;
 using RPGClone.Characters;
 using RPGClone.Combat;
+using RPGClone.Enemies;
 using RPGClone.Player;
+using RPGClone.Services;
 using RPGClone.Vfx;
 using UnityEngine;
 using UnityEngine.AI;
@@ -353,6 +356,7 @@ namespace RPGClone.Abilities
             {
                 Vector3 center = resolvedTarget != null ? resolvedTarget.transform.position : transform.position;
                 AbilityReleased?.Invoke(this, ability, resolvedTarget, center, true);
+                PublishAuthorityEnemyAbilityReleased(ability, resolvedTarget, center, true);
                 if (TrySubmitHostAuthorityRequest(ability, resolvedTarget, center, true, out _))
                 {
                     AbilityUsed?.Invoke(this, ability, resolvedTarget);
@@ -370,6 +374,7 @@ namespace RPGClone.Abilities
                     resolvedTarget,
                     targetPosition,
                     false);
+                PublishAuthorityEnemyAbilityReleased(ability, resolvedTarget, targetPosition, false);
                 if (TrySubmitHostAuthorityRequest(ability, resolvedTarget, targetPosition, false, out _))
                 {
                     AbilityUsed?.Invoke(this, ability, resolvedTarget);
@@ -388,6 +393,7 @@ namespace RPGClone.Abilities
             StartCooldown(ability);
 
             AbilityReleased?.Invoke(this, ability, null, targetPosition, true);
+            PublishAuthorityEnemyAbilityReleased(ability, null, targetPosition, true);
             if (TrySubmitHostAuthorityRequest(ability, null, targetPosition, true, out _))
             {
                 AbilityUsed?.Invoke(this, ability, null);
@@ -1031,6 +1037,66 @@ namespace RPGClone.Abilities
             }
 
             return true;
+        }
+
+        private void PublishAuthorityEnemyAbilityReleased(
+            MMOAbilityDefinition ability,
+            MMOCharacterIdentity target,
+            Vector3 targetPosition,
+            bool hasGroundTarget)
+        {
+            if (!MMOGameplaySessionService.IsHostAuthority
+                || ability == null
+                || combatant == null
+                || combatant.GetComponent<MMOEnemyController>() == null)
+            {
+                return;
+            }
+
+            MMOCombatant targetCombatant = target != null ? target.GetComponent<MMOCombatant>() : null;
+            CombatEventRecord record = CombatEventRecord.Create(CombatEventType.AbilityReleased);
+            record.sessionId = MMOGameplaySessionService.SessionId ?? string.Empty;
+            record.abilityId = ability.AbilityId;
+            record.targetPosition = new Vector3SaveData(targetPosition);
+            record.hasGroundTarget = hasGroundTarget;
+            PopulateCombatEndpoint(record, combatant, true);
+            PopulateCombatEndpoint(record, targetCombatant, false);
+            MMOCombatEventStream.PublishCombatEvent(record, combatant, targetCombatant, ability);
+        }
+
+        private static void PopulateCombatEndpoint(CombatEventRecord record, MMOCombatant endpoint, bool sourceEndpoint)
+        {
+            if (record == null || endpoint == null || endpoint.Identity == null)
+            {
+                return;
+            }
+
+            if (MMOGameplaySessionService.Players.TryGetParticipant(endpoint.Identity, out MMOPlayerParticipant participant))
+            {
+                if (sourceEndpoint)
+                {
+                    record.sourceCharacterId = participant.CharacterId;
+                }
+                else
+                {
+                    record.targetCharacterId = participant.CharacterId;
+                }
+            }
+
+            MMOEnemyController enemy = endpoint.GetComponent<MMOEnemyController>();
+            if (enemy == null)
+            {
+                return;
+            }
+
+            if (sourceEndpoint)
+            {
+                record.sourceEnemySpawnId = enemy.SpawnId;
+            }
+            else
+            {
+                record.targetEnemySpawnId = enemy.SpawnId;
+            }
         }
 
         private void OnCriticalDamageDealt(MMOCombatant source, MMOCombatant target, MMOAbilityDefinition ability, int amount)

@@ -769,7 +769,9 @@ namespace RPGClone.Multiplayer
                         return false;
                     }
 
+                    PrimeTargetHealthForDamageEvent(targetCombatant, combatEvent);
                     targetCombatant.ApplyResolvedDamage(sourceCombatant, ability, combatEvent.damageAmount, combatEvent.isCritical, false);
+                    ApplyTargetResourceSnapshot(targetCombatant, combatEvent);
                     return true;
 
                 case CombatEventType.HealResolved:
@@ -778,7 +780,9 @@ namespace RPGClone.Multiplayer
                         return false;
                     }
 
+                    PrimeTargetHealthForHealEvent(targetCombatant, combatEvent);
                     targetCombatant.ApplyHeal(sourceCombatant, ability, combatEvent.healAmount, false);
+                    ApplyTargetResourceSnapshot(targetCombatant, combatEvent);
                     return true;
 
                 case CombatEventType.Missed:
@@ -824,6 +828,55 @@ namespace RPGClone.Multiplayer
             }
 
             return null;
+        }
+
+        private static void PrimeTargetHealthForDamageEvent(MMOCombatant targetCombatant, CombatEventRecord combatEvent)
+        {
+            if (!HasUsableTargetResourceSnapshot(targetCombatant, combatEvent))
+            {
+                return;
+            }
+
+            int preEventHealth = Mathf.Clamp(
+                combatEvent.targetCurrentHealth + combatEvent.damageAmount,
+                0,
+                targetCombatant.Identity.Health.MaxValue);
+            targetCombatant.Identity.Health.SetCurrent(preEventHealth);
+        }
+
+        private static void PrimeTargetHealthForHealEvent(MMOCombatant targetCombatant, CombatEventRecord combatEvent)
+        {
+            if (!HasUsableTargetResourceSnapshot(targetCombatant, combatEvent))
+            {
+                return;
+            }
+
+            int preEventHealth = Mathf.Clamp(
+                combatEvent.targetCurrentHealth - combatEvent.healAmount,
+                0,
+                targetCombatant.Identity.Health.MaxValue);
+            targetCombatant.Identity.Health.SetCurrent(preEventHealth);
+        }
+
+        private static void ApplyTargetResourceSnapshot(MMOCombatant targetCombatant, CombatEventRecord combatEvent)
+        {
+            if (!HasUsableTargetResourceSnapshot(targetCombatant, combatEvent))
+            {
+                return;
+            }
+
+            int maxHealth = Mathf.Max(1, combatEvent.targetMaxHealth);
+            int maxMana = Mathf.Max(0, combatEvent.targetMaxMana);
+            targetCombatant.Identity.Health.Configure(maxHealth, combatEvent.targetCurrentHealth);
+            targetCombatant.Identity.Mana.Configure(maxMana, combatEvent.targetCurrentMana);
+        }
+
+        private static bool HasUsableTargetResourceSnapshot(MMOCombatant targetCombatant, CombatEventRecord combatEvent)
+        {
+            return targetCombatant != null
+                && targetCombatant.Identity != null
+                && combatEvent != null
+                && combatEvent.hasTargetResourceSnapshot;
         }
 
         private bool ApplySharedAbilityEvent(MMOSharedAbilityEvent sharedEvent)

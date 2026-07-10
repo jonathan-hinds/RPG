@@ -342,8 +342,23 @@ namespace RPGClone.Combat
             record.sessionId = MMOGameplaySessionService.SessionId ?? string.Empty;
             record.abilityId = ability != null ? ability.AbilityId : string.Empty;
             record.targetPosition = new Vector3SaveData(transform.position);
+            PopulateTargetResourceSnapshot(record, this);
             PopulateParticipantIds(record, source, this);
             return record;
+        }
+
+        private static void PopulateTargetResourceSnapshot(CombatEventRecord record, MMOCombatant target)
+        {
+            if (record == null || target == null || target.Identity == null)
+            {
+                return;
+            }
+
+            record.hasTargetResourceSnapshot = true;
+            record.targetCurrentHealth = target.Identity.Health.CurrentValue;
+            record.targetMaxHealth = target.Identity.Health.MaxValue;
+            record.targetCurrentMana = target.Identity.Mana.CurrentValue;
+            record.targetMaxMana = target.Identity.Mana.MaxValue;
         }
 
         private static void PopulateParticipantIds(CombatEventRecord record, MMOCombatant source, MMOCombatant target)
