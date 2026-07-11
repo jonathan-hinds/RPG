@@ -18,7 +18,6 @@ namespace RPGClone.Multiplayer
         public string requestId;
         public string initiallyAppliedCharacterId;
         public MMOSessionParticipantSnapshot participant;
-        public MMOSessionParticipantRuntimeSnapshot participantRuntime;
         public CombatActionRequest combatRequest;
         public CombatEventRecord combatEvent;
         public MMOSharedRewardEvent rewardEvent;
@@ -34,7 +33,6 @@ namespace RPGClone.Multiplayer
     public static class MMOSharedSessionNetworkOperationKind
     {
         public const string UpsertParticipant = "upsert_participant";
-        public const string UpsertParticipantRuntime = "upsert_participant_runtime";
         public const string RemoveParticipant = "remove_participant";
         public const string PublishAbilityEvent = "publish_ability_event";
         public const string MarkAbilityEventApplied = "mark_ability_event_applied";

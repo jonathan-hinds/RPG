@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using RPGClone.Social;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -44,7 +43,6 @@ namespace RPGClone.CharacterSelection
                 await persistenceAgent.SaveCurrentCharacterAsync();
             }
 
-            await MMOSocialPresenceController.SetSelectedCharacterOfflineAsync();
             MMOCharacterSession.Clear();
             SceneManager.LoadScene(characterSelectionSceneName);
         }

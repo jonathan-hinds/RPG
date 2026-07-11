@@ -110,6 +110,45 @@ namespace RPGClone.Animation
             ApplyAnimationSet();
         }
 
+        public void SetDeadState(bool shouldBeDead)
+        {
+            EnsureReferences();
+            if (shouldBeDead)
+            {
+                if (dead)
+                {
+                    if (animator != null)
+                    {
+                        animator.SetBool(DeadHash, true);
+                    }
+
+                    return;
+                }
+
+                dead = true;
+                if (animator == null)
+                {
+                    return;
+                }
+
+                animator.ResetTrigger(Attack1Hash);
+                animator.ResetTrigger(Attack2Hash);
+                animator.ResetTrigger(DamageHash);
+                animator.SetBool(DeadHash, true);
+                animator.SetTrigger(DeathHash);
+                return;
+            }
+
+            if (dead)
+            {
+                ResetAfterRespawn();
+            }
+            else if (animator != null)
+            {
+                animator.SetBool(DeadHash, false);
+            }
+        }
+
         private void ApplyAnimationSet()
         {
             if (animator == null || animationSet == null || animationSet.BaseController == null)
@@ -260,17 +299,12 @@ namespace RPGClone.Animation
 
         private void OnDied(MMOCombatant deadCombatant)
         {
-            if (deadCombatant != combatant || animator == null)
+            if (deadCombatant != combatant)
             {
                 return;
             }
 
-            dead = true;
-            animator.ResetTrigger(Attack1Hash);
-            animator.ResetTrigger(Attack2Hash);
-            animator.ResetTrigger(DamageHash);
-            animator.SetBool(DeadHash, true);
-            animator.SetTrigger(DeathHash);
+            SetDeadState(true);
         }
 
         private void ResetAfterRespawn()
@@ -280,6 +314,11 @@ namespace RPGClone.Animation
             attackPriorityUntil = 0f;
             nextDamageReactionTime = 0f;
             lastPosition = transform.position;
+
+            if (animator == null)
+            {
+                return;
+            }
 
             animator.ResetTrigger(Attack1Hash);
             animator.ResetTrigger(Attack2Hash);

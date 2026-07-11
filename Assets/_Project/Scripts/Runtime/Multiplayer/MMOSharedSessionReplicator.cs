@@ -16,7 +16,7 @@ namespace RPGClone.Multiplayer
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MMOCharacterIdentity))]
     [RequireComponent(typeof(MMOCharacterPersistenceAgent))]
-    public sealed class MMOLocalSharedSessionBridge : MonoBehaviour
+    public sealed class MMOSharedSessionReplicator : MonoBehaviour
     {
         [SerializeField, Min(0.25f)] private float publishSeconds = 1f;
         [SerializeField, Min(0.05f)] private float runtimePublishSeconds = 0.05f;
@@ -52,12 +52,12 @@ namespace RPGClone.Multiplayer
         private float nextWorldObjectSnapshotPublishTime;
         private string localCharacterId;
         private string observedSessionId;
-        private bool suppressStoreRemoval;
+        private bool suppressParticipantRemoval;
         private bool hasSessionPeers;
 
-        public void SuppressStoreRemoval()
+        public void SuppressParticipantRemoval()
         {
-            suppressStoreRemoval = true;
+            suppressParticipantRemoval = true;
         }
 
         private void Awake()
@@ -88,9 +88,9 @@ namespace RPGClone.Multiplayer
             MMOCombatEventStream.HealResolved -= OnHealResolved;
             MMOCombatEventStream.CombatEventResolved -= OnCombatEventResolved;
             MMOGameplaySessionService.SessionChanged -= OnSessionChanged;
-            if (!suppressStoreRemoval && !string.IsNullOrWhiteSpace(localCharacterId))
+            if (!suppressParticipantRemoval && !string.IsNullOrWhiteSpace(localCharacterId))
             {
-                MMOLocalSharedSessionStore.RemoveParticipant(MMOGameplaySessionService.SessionId, localCharacterId);
+                MMOSharedSessionState.RemoveParticipant(MMOGameplaySessionService.SessionId, localCharacterId);
             }
 
             ClearRemoteAvatars();
@@ -157,7 +157,7 @@ namespace RPGClone.Multiplayer
             participantId = ResolveParticipantId();
             MMOGameplaySessionService.RegisterLocalPlayer(gameObject, saveData.characterId, participantId);
 
-            MMOLocalSharedSessionStore.UpsertParticipant(new MMOSessionParticipantSnapshot
+            MMOSharedSessionState.UpsertParticipant(new MMOSessionParticipantSnapshot
             {
                 participantId = participantId,
                 characterId = saveData.characterId,
@@ -178,7 +178,7 @@ namespace RPGClone.Multiplayer
 
             participantId = ResolveParticipantId();
             MMOGameplaySessionService.RegisterLocalPlayer(gameObject, localCharacterId, participantId);
-            MMOLocalSharedSessionStore.UpsertParticipantRuntime(
+            MMOSharedSessionState.UpsertParticipantRuntime(
                 MMOGameplaySessionService.SessionId,
                 localCharacterId,
                 transform.position,
@@ -189,9 +189,9 @@ namespace RPGClone.Multiplayer
 
         private static string ResolveParticipantId()
         {
-            return string.IsNullOrWhiteSpace(MMOSocialIdentityService.SessionId)
-                ? "local-player"
-                : MMOSocialIdentityService.SessionId;
+            return !string.IsNullOrWhiteSpace(MMOSocialIdentityService.SessionId)
+                ? MMOSocialIdentityService.SessionId
+                : MMOSocialIdentityService.AccountId;
         }
 
         private void PollSession()
@@ -233,7 +233,7 @@ namespace RPGClone.Multiplayer
 
         private void PollParticipantRoster()
         {
-            IReadOnlyList<MMOSessionParticipantSnapshot> participants = MMOLocalSharedSessionStore.GetParticipants(MMOGameplaySessionService.SessionId);
+            IReadOnlyList<MMOSessionParticipantSnapshot> participants = MMOSharedSessionState.GetParticipants(MMOGameplaySessionService.SessionId);
             seenRemoteCharacters.Clear();
             foreach (MMOSessionParticipantSnapshot participant in participants)
             {
@@ -260,7 +260,7 @@ namespace RPGClone.Multiplayer
 
         private void ApplyParticipantRuntimeSnapshots()
         {
-            IReadOnlyList<MMOSessionParticipantRuntimeSnapshot> snapshots = MMOLocalSharedSessionStore.GetParticipantRuntimeSnapshots(MMOGameplaySessionService.SessionId);
+            IReadOnlyList<MMOSessionParticipantRuntimeSnapshot> snapshots = MMOSharedSessionState.GetParticipantRuntimeSnapshots(MMOGameplaySessionService.SessionId);
             bool sawRemote = false;
             foreach (MMOSessionParticipantRuntimeSnapshot snapshot in snapshots)
             {
@@ -294,9 +294,9 @@ namespace RPGClone.Multiplayer
                 remotePersistenceAgent.MarkAsRemoteSessionReplica();
             }
 
-            if (remoteObject.TryGetComponent(out MMOLocalSharedSessionBridge remoteBridge))
+            if (remoteObject.TryGetComponent(out MMOSharedSessionReplicator remoteBridge))
             {
-                remoteBridge.SuppressStoreRemoval();
+                remoteBridge.SuppressParticipantRemoval();
             }
 
             remoteObject.tag = "Untagged";
@@ -311,7 +311,7 @@ namespace RPGClone.Multiplayer
 
         private void ProcessPendingCombatRequests()
         {
-            IReadOnlyList<CombatActionRequest> requests = MMOLocalSharedSessionStore.GetPendingCombatRequests(MMOGameplaySessionService.SessionId);
+            IReadOnlyList<CombatActionRequest> requests = MMOSharedSessionState.GetPendingCombatRequests(MMOGameplaySessionService.SessionId);
             foreach (CombatActionRequest request in requests)
             {
                 if (request == null)
@@ -320,7 +320,7 @@ namespace RPGClone.Multiplayer
                 }
 
                 TryResolveCombatRequest(request, out _);
-                MMOLocalSharedSessionStore.MarkCombatRequestProcessed(request.requestId);
+                MMOSharedSessionState.MarkCombatRequestProcessed(request.requestId);
             }
         }
 
@@ -347,7 +347,7 @@ namespace RPGClone.Multiplayer
 
         private void ProcessPendingWorldObjectRequests()
         {
-            IReadOnlyList<MMOSharedWorldObjectInteractionRequest> requests = MMOLocalSharedSessionStore.GetPendingWorldObjectInteractionRequests(MMOGameplaySessionService.SessionId);
+            IReadOnlyList<MMOSharedWorldObjectInteractionRequest> requests = MMOSharedSessionState.GetPendingWorldObjectInteractionRequests(MMOGameplaySessionService.SessionId);
             foreach (MMOSharedWorldObjectInteractionRequest request in requests)
             {
                 if (request == null)
@@ -360,7 +360,7 @@ namespace RPGClone.Multiplayer
                     interactable.TryAuthorityConsumeFromRequest(request.actorCharacterId);
                 }
 
-                MMOLocalSharedSessionStore.MarkWorldObjectInteractionRequestProcessed(request.requestId);
+                MMOSharedSessionState.MarkWorldObjectInteractionRequestProcessed(request.requestId);
             }
         }
 
@@ -409,7 +409,7 @@ namespace RPGClone.Multiplayer
             record.abilityId = request.abilityId;
             record.targetPosition = new Vector3SaveData(targetPosition);
             record.hasGroundTarget = request.hasGroundTarget;
-            MMOLocalSharedSessionStore.PublishCombatEvent(record, localCharacterId);
+            MMOSharedSessionState.PublishCombatEvent(record, localCharacterId);
         }
 
         private void PublishEnemySnapshots()
@@ -444,7 +444,7 @@ namespace RPGClone.Multiplayer
 
             if (enemySnapshotBuffer.Count > 0)
             {
-                MMOLocalSharedSessionStore.UpsertEnemySnapshots(enemySnapshotBuffer);
+                MMOSharedSessionState.UpsertEnemySnapshots(enemySnapshotBuffer);
             }
         }
 
@@ -466,7 +466,7 @@ namespace RPGClone.Multiplayer
 
             if (worldObjectSnapshotBuffer.Count > 0)
             {
-                MMOLocalSharedSessionStore.UpsertWorldObjectSnapshots(worldObjectSnapshotBuffer);
+                MMOSharedSessionState.UpsertWorldObjectSnapshots(worldObjectSnapshotBuffer);
             }
         }
 
@@ -477,7 +477,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            IReadOnlyList<EnemySnapshot> snapshots = MMOLocalSharedSessionStore.GetEnemySnapshots(MMOGameplaySessionService.SessionId);
+            IReadOnlyList<EnemySnapshot> snapshots = MMOSharedSessionState.GetEnemySnapshots(MMOGameplaySessionService.SessionId);
             foreach (EnemySnapshot snapshot in snapshots)
             {
                 if (snapshot != null
@@ -597,7 +597,7 @@ namespace RPGClone.Multiplayer
 
         private void ApplyPendingAbilityEvents()
         {
-            IReadOnlyList<MMOSharedAbilityEvent> events = MMOLocalSharedSessionStore.GetPendingEvents(MMOGameplaySessionService.SessionId, localCharacterId);
+            IReadOnlyList<MMOSharedAbilityEvent> events = MMOSharedSessionState.GetPendingEvents(MMOGameplaySessionService.SessionId, localCharacterId);
             foreach (MMOSharedAbilityEvent sharedEvent in events)
             {
                 if (sharedEvent == null || appliedEventIds.Contains(sharedEvent.eventId))
@@ -608,14 +608,14 @@ namespace RPGClone.Multiplayer
                 if (ApplySharedAbilityEvent(sharedEvent))
                 {
                     appliedEventIds.Add(sharedEvent.eventId);
-                    MMOLocalSharedSessionStore.MarkEventApplied(sharedEvent.eventId, localCharacterId);
+                    MMOSharedSessionState.MarkEventApplied(sharedEvent.eventId, localCharacterId);
                 }
             }
         }
 
         private void ApplyPendingCombatEvents()
         {
-            IReadOnlyList<CombatEventRecord> events = MMOLocalSharedSessionStore.GetPendingCombatEvents(MMOGameplaySessionService.SessionId, localCharacterId);
+            IReadOnlyList<CombatEventRecord> events = MMOSharedSessionState.GetPendingCombatEvents(MMOGameplaySessionService.SessionId, localCharacterId);
             foreach (CombatEventRecord combatEvent in events)
             {
                 if (combatEvent == null || appliedEventIds.Contains(combatEvent.eventId))
@@ -626,14 +626,14 @@ namespace RPGClone.Multiplayer
                 if (ApplyCombatEvent(combatEvent))
                 {
                     appliedEventIds.Add(combatEvent.eventId);
-                    MMOLocalSharedSessionStore.MarkCombatEventApplied(combatEvent.eventId, localCharacterId);
+                    MMOSharedSessionState.MarkCombatEventApplied(combatEvent.eventId, localCharacterId);
                 }
             }
         }
 
         private void ApplyPendingRewardEvents()
         {
-            IReadOnlyList<MMOSharedRewardEvent> events = MMOLocalSharedSessionStore.GetPendingRewardEvents(MMOGameplaySessionService.SessionId, localCharacterId);
+            IReadOnlyList<MMOSharedRewardEvent> events = MMOSharedSessionState.GetPendingRewardEvents(MMOGameplaySessionService.SessionId, localCharacterId);
             foreach (MMOSharedRewardEvent rewardEvent in events)
             {
                 if (rewardEvent == null || appliedEventIds.Contains(rewardEvent.eventId))
@@ -644,7 +644,7 @@ namespace RPGClone.Multiplayer
                 if (ApplyRewardEvent(rewardEvent))
                 {
                     appliedEventIds.Add(rewardEvent.eventId);
-                    MMOLocalSharedSessionStore.MarkRewardEventApplied(rewardEvent.eventId, localCharacterId);
+                    MMOSharedSessionState.MarkRewardEventApplied(rewardEvent.eventId, localCharacterId);
                     _ = persistenceAgent.SaveCurrentCharacterAsync();
                 }
             }
@@ -699,7 +699,7 @@ namespace RPGClone.Multiplayer
 
         private void ApplyCorpseLootSnapshots()
         {
-            IReadOnlyList<MMOCorpseLootState> snapshots = MMOLocalSharedSessionStore.GetCorpseLootSnapshots(MMOGameplaySessionService.SessionId);
+            IReadOnlyList<MMOCorpseLootState> snapshots = MMOSharedSessionState.GetCorpseLootSnapshots(MMOGameplaySessionService.SessionId);
             foreach (MMOCorpseLootState snapshot in snapshots)
             {
                 if (snapshot == null
@@ -720,7 +720,7 @@ namespace RPGClone.Multiplayer
 
         private void ApplyWorldObjectSnapshots()
         {
-            IReadOnlyList<MMOSharedWorldObjectSnapshot> snapshots = MMOLocalSharedSessionStore.GetWorldObjectSnapshots(MMOGameplaySessionService.SessionId);
+            IReadOnlyList<MMOSharedWorldObjectSnapshot> snapshots = MMOSharedSessionState.GetWorldObjectSnapshots(MMOGameplaySessionService.SessionId);
             foreach (MMOSharedWorldObjectSnapshot snapshot in snapshots)
             {
                 if (snapshot == null
@@ -1105,7 +1105,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            MMOLocalSharedSessionStore.PublishCastStartedEvent(
+            MMOSharedSessionState.PublishCastStartedEvent(
                 MMOGameplaySessionService.SessionId,
                 sourceParticipant.CharacterId,
                 targetCharacterId,
@@ -1133,7 +1133,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            MMOLocalSharedSessionStore.PublishAbilityReleasedEvent(
+            MMOSharedSessionState.PublishAbilityReleasedEvent(
                 MMOGameplaySessionService.SessionId,
                 sourceParticipant.CharacterId,
                 targetCharacterId,
@@ -1174,7 +1174,7 @@ namespace RPGClone.Multiplayer
                 targetEnemySpawnId = targetEnemy.SpawnId;
             }
 
-            MMOLocalSharedSessionStore.PublishAutoAttackWindupEvent(
+            MMOSharedSessionState.PublishAutoAttackWindupEvent(
                 MMOGameplaySessionService.SessionId,
                 sourceParticipant.CharacterId,
                 targetCharacterId,
@@ -1357,7 +1357,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            MMOLocalSharedSessionStore.PublishHealEvent(
+            MMOSharedSessionState.PublishHealEvent(
                 MMOGameplaySessionService.SessionId,
                 sourceParticipant.CharacterId,
                 targetParticipant.CharacterId,
@@ -1384,7 +1384,7 @@ namespace RPGClone.Multiplayer
                 record.sessionId = MMOGameplaySessionService.SessionId;
             }
 
-            MMOLocalSharedSessionStore.PublishCombatEvent(record, localCharacterId);
+            MMOSharedSessionState.PublishCombatEvent(record, localCharacterId);
         }
     }
 }

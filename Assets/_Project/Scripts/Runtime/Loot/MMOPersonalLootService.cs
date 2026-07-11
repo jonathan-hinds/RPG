@@ -49,7 +49,7 @@ namespace RPGClone.Loot
             }
 
             state.updatedUtcTicks = DateTime.UtcNow.Ticks;
-            RPGClone.Multiplayer.MMOLocalSharedSessionStore.UpsertCorpseLootSnapshot(state);
+            RPGClone.Multiplayer.MMOSharedSessionState.UpsertCorpseLootSnapshot(state);
         }
 
         public static List<MMOItemStack> ToItemStacks(MMOPersonalLootState state)

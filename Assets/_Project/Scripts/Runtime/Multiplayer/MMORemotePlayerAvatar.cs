@@ -124,10 +124,10 @@ namespace RPGClone.Multiplayer
             }
 
             gameObject.tag = "Untagged";
-            MMOLocalSharedSessionBridge bridge = GetComponent<MMOLocalSharedSessionBridge>();
+            MMOSharedSessionReplicator bridge = GetComponent<MMOSharedSessionReplicator>();
             if (bridge != null)
             {
-                bridge.SuppressStoreRemoval();
+                bridge.SuppressParticipantRemoval();
                 bridge.enabled = false;
             }
 

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using RPGClone.CharacterSelection;
 using RPGClone.Characters;
@@ -85,13 +84,8 @@ namespace RPGClone.Multiplayer
         public long updatedUtcTicks;
     }
 
-    public static class MMOLocalSharedSessionStore
+    public static class MMOSharedSessionState
     {
-        private const string FileName = "rpg_clone_shared_sessions.json";
-        private const string RuntimeFileName = "rpg_clone_shared_session_runtime.json";
-        private const string EnemyRuntimeFileName = "rpg_clone_shared_session_enemies.json";
-        private const string StoreMutexName = "RPGClone_LocalSharedSessions";
-        private static readonly TimeSpan StoreMutexTimeout = TimeSpan.FromSeconds(5);
         private static readonly TimeSpan ParticipantTimeout = TimeSpan.FromSeconds(60);
         private static readonly TimeSpan EventTimeout = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan CombatRequestTimeout = TimeSpan.FromSeconds(10);
@@ -100,9 +94,19 @@ namespace RPGClone.Multiplayer
         private static readonly TimeSpan EnemySnapshotTimeout = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan CorpseLootSnapshotTimeout = TimeSpan.FromMinutes(5);
         private static readonly object Gate = new();
-        private static readonly StoreFileCache<MMOSharedSessionStore> SharedStoreCache = new(() => new MMOSharedSessionStore());
-        private static readonly StoreFileCache<MMOSharedSessionRuntimeStore> RuntimeStoreCache = new(() => new MMOSharedSessionRuntimeStore());
-        private static readonly StoreFileCache<MMOSharedEnemyRuntimeStore> EnemyRuntimeStoreCache = new(() => new MMOSharedEnemyRuntimeStore());
+        private static MMOSharedSessionStore sharedState = new();
+        private static MMOSharedSessionRuntimeStore participantRuntimeState = new();
+        private static MMOSharedEnemyRuntimeStore worldRuntimeState = new();
+
+        public static void Reset()
+        {
+            using (AcquireStateLease())
+            {
+                sharedState = new MMOSharedSessionStore();
+                participantRuntimeState = new MMOSharedSessionRuntimeStore();
+                worldRuntimeState = new MMOSharedEnemyRuntimeStore();
+            }
+        }
 
         public static void UpsertParticipant(MMOSessionParticipantSnapshot snapshot)
         {
@@ -120,7 +124,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -163,25 +167,22 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            if (MMONetcodeSharedSessionTransport.TrySubmitToHost(new MMOSharedSessionNetworkOperation
-                {
-                    kind = MMOSharedSessionNetworkOperationKind.UpsertParticipantRuntime,
-                    participantRuntime = new MMOSessionParticipantRuntimeSnapshot
-                    {
-                        sessionId = sessionId,
-                        characterId = characterId,
-                        position = new Vector3SaveData(position),
-                        rotationEuler = new Vector3SaveData(rotationEuler),
-                        currentHealth = currentHealth,
-                        currentMana = currentMana,
-                        updatedUtcTicks = DateTime.UtcNow.Ticks
-                    }
-                }))
+            MMOSessionParticipantRuntimeSnapshot runtimeSnapshot = new()
+            {
+                sessionId = sessionId,
+                characterId = characterId,
+                position = new Vector3SaveData(position),
+                rotationEuler = new Vector3SaveData(rotationEuler),
+                currentHealth = currentHealth,
+                currentMana = currentMana,
+                updatedUtcTicks = DateTime.UtcNow.Ticks
+            };
+            if (MMONetcodeSharedSessionTransport.TrySubmitParticipantRuntime(runtimeSnapshot))
             {
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 UpsertParticipantRuntimeInLease(sessionId, characterId, position, rotationEuler, currentHealth, currentMana);
             }
@@ -204,7 +205,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 MMOSharedSessionRuntimeStore runtimeStore = LoadRuntimeStore();
@@ -227,7 +228,7 @@ namespace RPGClone.Multiplayer
                 return Array.Empty<MMOSessionParticipantSnapshot>();
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 MMOSharedSessionRuntimeStore runtimeStore = LoadRuntimeStore();
@@ -263,7 +264,7 @@ namespace RPGClone.Multiplayer
                 return Array.Empty<MMOSessionParticipantRuntimeSnapshot>();
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionRuntimeStore runtimeStore = LoadRuntimeStore();
                 if (Prune(runtimeStore))
@@ -425,7 +426,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -445,7 +446,7 @@ namespace RPGClone.Multiplayer
                 return Array.Empty<MMOSharedAbilityEvent>();
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -485,7 +486,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 MMOSharedAbilityEvent sharedEvent = store.abilityEvents.Find(candidate => candidate.eventId == eventId);
@@ -516,7 +517,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -536,7 +537,7 @@ namespace RPGClone.Multiplayer
                 return Array.Empty<CombatActionRequest>();
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -573,7 +574,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 CombatActionRequest request = store.combatRequests.Find(candidate => candidate.requestId == requestId);
@@ -602,7 +603,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -631,7 +632,7 @@ namespace RPGClone.Multiplayer
                 return Array.Empty<CombatEventRecord>();
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -671,7 +672,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 MMOSharedCombatEvent sharedEvent = store.combatEvents.Find(candidate => candidate?.record != null && candidate.record.eventId == eventId);
@@ -763,7 +764,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -783,7 +784,7 @@ namespace RPGClone.Multiplayer
                 return Array.Empty<MMOSharedRewardEvent>();
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -824,7 +825,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 MMOSharedRewardEvent rewardEvent = store.rewardEvents.Find(candidate => candidate != null && candidate.eventId == eventId);
@@ -852,7 +853,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -892,7 +893,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -936,7 +937,7 @@ namespace RPGClone.Multiplayer
                 return Array.Empty<MMOSharedWorldObjectSnapshot>();
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -976,7 +977,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -996,7 +997,7 @@ namespace RPGClone.Multiplayer
                 return Array.Empty<MMOSharedWorldObjectInteractionRequest>();
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -1033,7 +1034,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 MMOSharedWorldObjectInteractionRequest request = store.worldObjectInteractionRequests.Find(candidate => candidate != null && candidate.requestId == requestId);
@@ -1061,7 +1062,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedEnemyRuntimeStore store = LoadEnemyRuntimeStore();
                 if (Prune(store))
@@ -1101,7 +1102,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedEnemyRuntimeStore store = LoadEnemyRuntimeStore();
                 if (Prune(store))
@@ -1145,7 +1146,7 @@ namespace RPGClone.Multiplayer
                 return Array.Empty<EnemySnapshot>();
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedEnemyRuntimeStore store = LoadEnemyRuntimeStore();
                 if (Prune(store))
@@ -1182,7 +1183,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedEnemyRuntimeStore store = LoadEnemyRuntimeStore();
                 if (Prune(store))
@@ -1212,7 +1213,7 @@ namespace RPGClone.Multiplayer
                 return Array.Empty<MMOCorpseLootState>();
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedEnemyRuntimeStore store = LoadEnemyRuntimeStore();
                 if (Prune(store))
@@ -1233,12 +1234,12 @@ namespace RPGClone.Multiplayer
             }
         }
 
-        private static IDisposable AcquireStoreLease()
+        private static IDisposable AcquireStateLease()
         {
             Monitor.Enter(Gate);
             try
             {
-                return new StoreLease(null);
+                return new StateLease();
             }
             catch
             {
@@ -1247,78 +1248,34 @@ namespace RPGClone.Multiplayer
             }
         }
 
-        private static Mutex TryAcquireStoreMutex()
-        {
-            try
-            {
-                Mutex mutex = new(false, StoreMutexName);
-                try
-                {
-                    if (mutex.WaitOne(StoreMutexTimeout))
-                    {
-                        return mutex;
-                    }
-                }
-                catch (AbandonedMutexException)
-                {
-                    return mutex;
-                }
-
-                mutex.Dispose();
-            }
-            catch (Exception exception)
-            {
-                Debug.LogWarning($"Shared session store lock unavailable; continuing with in-process synchronization. {exception.Message}");
-            }
-
-            return null;
-        }
-
         private static MMOSharedSessionStore LoadStore()
         {
-            return LoadCached(null, SharedStoreCache, "Shared session store");
+            return sharedState;
         }
 
         private static MMOSharedSessionRuntimeStore LoadRuntimeStore()
         {
-            return LoadCached(null, RuntimeStoreCache, "Shared session runtime store");
+            return participantRuntimeState;
         }
 
         private static MMOSharedEnemyRuntimeStore LoadEnemyRuntimeStore()
         {
-            return LoadCached(null, EnemyRuntimeStoreCache, "Shared enemy runtime store");
+            return worldRuntimeState;
         }
 
         private static void SaveStore(MMOSharedSessionStore store)
         {
-            SaveCached(null, store ?? new MMOSharedSessionStore(), SharedStoreCache);
+            sharedState = store ?? new MMOSharedSessionStore();
         }
 
         private static void SaveRuntimeStore(MMOSharedSessionRuntimeStore store)
         {
-            SaveCached(null, store ?? new MMOSharedSessionRuntimeStore(), RuntimeStoreCache);
+            participantRuntimeState = store ?? new MMOSharedSessionRuntimeStore();
         }
 
         private static void SaveEnemyRuntimeStore(MMOSharedEnemyRuntimeStore store)
         {
-            SaveCached(null, store ?? new MMOSharedEnemyRuntimeStore(), EnemyRuntimeStoreCache);
-        }
-
-        private static TStore LoadCached<TStore>(string path, StoreFileCache<TStore> cache, string label)
-            where TStore : class
-        {
-            if (cache.TryGetMemory(out TStore cachedStore))
-            {
-                return cachedStore;
-            }
-
-            return cache.UseMissingFile();
-        }
-
-        private static void SaveCached<TStore>(string path, TStore store, StoreFileCache<TStore> cache)
-            where TStore : class
-        {
-            cache.SetMemory(store);
+            worldRuntimeState = store ?? new MMOSharedEnemyRuntimeStore();
         }
 
         public static string CreateNetworkSnapshotJson()
@@ -1345,7 +1302,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore previousSharedStore = LoadStore();
                 MMOSharedSessionRuntimeStore previousRuntimeStore = LoadRuntimeStore();
@@ -1361,11 +1318,11 @@ namespace RPGClone.Multiplayer
                 string authoritativeSessionId = ResolveAuthoritativeSessionId(sharedStore, runtimeStore);
                 PreserveLocalParticipant(sharedStore, runtimeStore, localParticipant, localRuntime, authoritativeSessionId);
 
-                SharedStoreCache.SetMemory(sharedStore);
-                RuntimeStoreCache.SetMemory(runtimeStore);
-                EnemyRuntimeStoreCache.SetMemory(string.IsNullOrWhiteSpace(snapshot.enemyRuntimeStoreJson)
+                sharedState = sharedStore;
+                participantRuntimeState = runtimeStore;
+                worldRuntimeState = string.IsNullOrWhiteSpace(snapshot.enemyRuntimeStoreJson)
                     ? new MMOSharedEnemyRuntimeStore()
-                    : JsonUtility.FromJson<MMOSharedEnemyRuntimeStore>(snapshot.enemyRuntimeStoreJson) ?? new MMOSharedEnemyRuntimeStore());
+                    : JsonUtility.FromJson<MMOSharedEnemyRuntimeStore>(snapshot.enemyRuntimeStoreJson) ?? new MMOSharedEnemyRuntimeStore();
             }
         }
 
@@ -1563,18 +1520,6 @@ namespace RPGClone.Multiplayer
                 case MMOSharedSessionNetworkOperationKind.UpsertParticipant:
                     UpsertParticipant(operation.participant);
                     break;
-                case MMOSharedSessionNetworkOperationKind.UpsertParticipantRuntime:
-                    if (operation.participantRuntime != null)
-                    {
-                        UpsertParticipantRuntime(
-                            operation.participantRuntime.sessionId,
-                            operation.participantRuntime.characterId,
-                            operation.participantRuntime.position.ToVector3(),
-                            operation.participantRuntime.rotationEuler.ToVector3(),
-                            operation.participantRuntime.currentHealth,
-                            operation.participantRuntime.currentMana);
-                    }
-                    break;
                 case MMOSharedSessionNetworkOperationKind.RemoveParticipant:
                     RemoveParticipant(operation.sessionId, operation.characterId);
                     break;
@@ -1633,7 +1578,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -1653,7 +1598,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            using (AcquireStoreLease())
+            using (AcquireStateLease())
             {
                 MMOSharedSessionStore store = LoadStore();
                 if (Prune(store))
@@ -2228,15 +2173,9 @@ namespace RPGClone.Multiplayer
             return result;
         }
 
-        private sealed class StoreLease : IDisposable
+        private sealed class StateLease : IDisposable
         {
-            private readonly Mutex mutex;
             private bool disposed;
-
-            public StoreLease(Mutex mutex)
-            {
-                this.mutex = mutex;
-            }
 
             public void Dispose()
             {
@@ -2246,82 +2185,7 @@ namespace RPGClone.Multiplayer
                 }
 
                 disposed = true;
-                if (mutex != null)
-                {
-                    try
-                    {
-                        mutex.ReleaseMutex();
-                    }
-                    catch (ApplicationException)
-                    {
-                    }
-
-                    mutex.Dispose();
-                }
-
                 Monitor.Exit(Gate);
-            }
-        }
-
-        private sealed class StoreFileCache<TStore> where TStore : class
-        {
-            private readonly Func<TStore> createEmpty;
-            private TStore store;
-            private long writeTicks;
-            private long length;
-            private bool hasFileMetadata;
-
-            public StoreFileCache(Func<TStore> createEmpty)
-            {
-                this.createEmpty = createEmpty;
-            }
-
-            public TStore CreateEmpty()
-            {
-                return createEmpty.Invoke();
-            }
-
-            public bool TryGet(long fileWriteTicks, long fileLength, out TStore cachedStore)
-            {
-                if (store != null && hasFileMetadata && writeTicks == fileWriteTicks && length == fileLength)
-                {
-                    cachedStore = store;
-                    return true;
-                }
-
-                cachedStore = null;
-                return false;
-            }
-
-            public bool TryGetMemory(out TStore cachedStore)
-            {
-                cachedStore = store;
-                return cachedStore != null;
-            }
-
-            public void Set(TStore newStore, long fileWriteTicks, long fileLength)
-            {
-                store = newStore ?? createEmpty.Invoke();
-                writeTicks = fileWriteTicks;
-                length = fileLength;
-                hasFileMetadata = true;
-            }
-
-            public void SetMemory(TStore newStore)
-            {
-                store = newStore ?? createEmpty.Invoke();
-                writeTicks = 0;
-                length = 0;
-                hasFileMetadata = false;
-            }
-
-            public TStore UseMissingFile()
-            {
-                store = createEmpty.Invoke();
-                writeTicks = 0;
-                length = 0;
-                hasFileMetadata = false;
-                return store;
             }
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using RPGClone.CharacterSelection;
 
 namespace RPGClone.Social
 {
@@ -95,6 +96,38 @@ namespace RPGClone.Social
 
             string candidate = prefix + suffix;
             return NormalizeDisplayName(candidate.Length <= MaximumLength ? candidate : candidate.Substring(0, MaximumLength));
+        }
+
+        public static void EnsureCharacterData(MMOCharacterSaveData character)
+        {
+            if (character == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(character.characterId))
+            {
+                character.characterId = Guid.NewGuid().ToString("N");
+            }
+
+            if (MMOSocialIdentityService.IsAuthenticated)
+            {
+                character.accountId = MMOSocialIdentityService.AccountId;
+            }
+
+            if (string.IsNullOrWhiteSpace(character.characterName))
+            {
+                character.characterName = CreateFallbackName($"{character.race}{character.characterClass}", character.characterId);
+            }
+
+            if (!TryValidate(character.characterName, out string displayName, out string normalizedName, out _))
+            {
+                displayName = CreateFallbackName($"{character.race}{character.characterClass}", character.characterId);
+                normalizedName = NormalizeLookupName(displayName);
+            }
+
+            character.characterName = displayName;
+            character.normalizedCharacterName = normalizedName;
         }
 
         private static string CreateLettersFromId(string characterId)

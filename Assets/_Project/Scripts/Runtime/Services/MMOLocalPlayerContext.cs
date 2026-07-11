@@ -14,7 +14,7 @@ namespace RPGClone.Services
         private GameObject explicitPlayerObject;
         private GameObject cachedPlayerObject;
         private Camera cachedCamera;
-        private string localParticipantId = "local-player";
+        private string localParticipantId = string.Empty;
         private string localCharacterId = string.Empty;
         private float nextPlayerResolveTime;
         private float nextCameraResolveTime;
@@ -103,7 +103,7 @@ namespace RPGClone.Services
 
             explicitPlayerObject = null;
             cachedPlayerObject = null;
-            localParticipantId = "local-player";
+            localParticipantId = string.Empty;
             localCharacterId = string.Empty;
             componentCache.Clear();
             nextPlayerResolveTime = 0f;
@@ -153,14 +153,14 @@ namespace RPGClone.Services
             registry.RemoveInvalidParticipants();
         }
 
-        private void RegisterResolvedLocalPlayer(GameObject playerObject, string characterId, string participantId = "local-player")
+        private void RegisterResolvedLocalPlayer(GameObject playerObject, string characterId, string participantId = null)
         {
             if (playerObject == null || !playerObject.TryGetComponent(out MMOCharacterIdentity identity))
             {
                 return;
             }
 
-            localParticipantId = string.IsNullOrWhiteSpace(participantId) ? "local-player" : participantId;
+            localParticipantId = string.IsNullOrWhiteSpace(participantId) ? characterId ?? string.Empty : participantId;
             localCharacterId = characterId ?? string.Empty;
             registry.Register(new MMOPlayerParticipant(localParticipantId, localCharacterId, true, MMOGameplaySessionService.IsHostAuthority, identity));
         }

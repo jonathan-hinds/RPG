@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using RPGClone.Services;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
-using UnityEngine;
 
 namespace RPGClone.Social
 {
@@ -11,14 +10,10 @@ namespace RPGClone.Social
     {
         private const int MinimumAccountNameLength = 3;
         private const int MaximumAccountNameLength = 20;
-        private const int MinimumPasswordLength = 4;
-        private const bool TryUnityUsernamePasswordProvider = false;
-        private static bool usernamePasswordProviderUnavailable = !TryUnityUsernamePasswordProvider;
+        private const int MinimumPasswordLength = 8;
+        private const int MaximumPasswordLength = 30;
 
-        private readonly IAccountService localFallback = new MMOLocalAccountService();
-        private IAccountService activeService;
-
-        public async Task<MMOAccountServiceResult> RegisterAsync(string accountName, string password, string sessionLabel)
+        public async Task<MMOAccountServiceResult> RegisterAsync(string accountName, string password)
         {
             if (!TryValidateAccountName(accountName, out string displayName, out string normalizedName, out string error))
             {
@@ -30,22 +25,14 @@ namespace RPGClone.Social
                 return new MMOAccountServiceResult(false, error);
             }
 
-            if (usernamePasswordProviderUnavailable)
-            {
-                return await UseLocalFallbackAsync(accountName, password, sessionLabel, true);
-            }
-
-            (MMOAccountServiceResult result, bool providerUnavailable) = await AuthenticateAsync(
+            return await AuthenticateAsync(
                 displayName,
                 normalizedName,
                 "Account registered.",
                 () => AuthenticationService.Instance.SignUpWithUsernamePasswordAsync(normalizedName, password));
-            return providerUnavailable
-                ? await UseLocalFallbackAsync(accountName, password, sessionLabel, true)
-                : result;
         }
 
-        public async Task<MMOAccountServiceResult> LoginAsync(string accountName, string password, string sessionLabel)
+        public async Task<MMOAccountServiceResult> LoginAsync(string accountName, string password)
         {
             if (!TryValidateAccountName(accountName, out string displayName, out string normalizedName, out string error))
             {
@@ -57,28 +44,15 @@ namespace RPGClone.Social
                 return new MMOAccountServiceResult(false, "Enter a password.");
             }
 
-            if (usernamePasswordProviderUnavailable)
-            {
-                return await UseLocalFallbackAsync(accountName, password, sessionLabel, false);
-            }
-
-            (MMOAccountServiceResult result, bool providerUnavailable) = await AuthenticateAsync(
+            return await AuthenticateAsync(
                 displayName,
                 normalizedName,
                 "Logged in.",
                 () => AuthenticationService.Instance.SignInWithUsernamePasswordAsync(normalizedName, password));
-            return providerUnavailable
-                ? await UseLocalFallbackAsync(accountName, password, sessionLabel, false)
-                : result;
         }
 
         public MMOServiceResult Heartbeat(MMOAccountSession session)
         {
-            if (activeService != null && !ReferenceEquals(activeService, this))
-            {
-                return activeService.Heartbeat(session);
-            }
-
             if (session == null || !session.IsAuthenticated)
             {
                 return MMOServiceResult.Failure("No account is logged in.");
@@ -95,13 +69,6 @@ namespace RPGClone.Social
 
         public void Logout(MMOAccountSession session)
         {
-            if (activeService != null && !ReferenceEquals(activeService, this))
-            {
-                activeService.Logout(session);
-                activeService = null;
-                return;
-            }
-
             if (AuthenticationService.Instance == null || !AuthenticationService.Instance.IsSignedIn)
             {
                 MMOUnityServicesBootstrap.RefreshAuthenticationState();
@@ -110,10 +77,9 @@ namespace RPGClone.Social
 
             AuthenticationService.Instance.SignOut(true);
             MMOUnityServicesBootstrap.RefreshAuthenticationState();
-            activeService = null;
         }
 
-        private async Task<(MMOAccountServiceResult result, bool providerUnavailable)> AuthenticateAsync(
+        private async Task<MMOAccountServiceResult> AuthenticateAsync(
             string displayName,
             string normalizedName,
             string successMessage,
@@ -124,7 +90,7 @@ namespace RPGClone.Social
                 await MMOUnityServicesBootstrap.InitializeAsync();
                 if (!MMOUnityServicesBootstrap.IsInitialized)
                 {
-                    return (new MMOAccountServiceResult(false, "Unity services are not initialized. Check the project services configuration and network connection."), false);
+                    return new MMOAccountServiceResult(false, "Unity services are not initialized. Check the project services configuration and network connection.");
                 }
 
                 if (AuthenticationService.Instance.IsSignedIn)
@@ -137,14 +103,13 @@ namespace RPGClone.Social
                 string playerId = AuthenticationService.Instance.PlayerId;
                 if (string.IsNullOrWhiteSpace(playerId))
                 {
-                    return (new MMOAccountServiceResult(false, "Unity Authentication did not return a player id."), false);
+                    return new MMOAccountServiceResult(false, "Unity Authentication did not return a player id.");
                 }
 
-                activeService = this;
-                return (new MMOAccountServiceResult(
+                return new MMOAccountServiceResult(
                     true,
                     successMessage,
-                    new MMOAccountSession(playerId, displayName, $"{normalizedName}:{Guid.NewGuid():N}")), false);
+                    new MMOAccountSession(playerId, displayName, $"{normalizedName}:{Guid.NewGuid():N}"));
             }
             catch (AuthenticationException exception)
             {
@@ -156,38 +121,20 @@ namespace RPGClone.Social
             }
             catch (Exception exception)
             {
-                return (new MMOAccountServiceResult(false, $"Unity account sign-in failed. {exception.Message}"), false);
+                return new MMOAccountServiceResult(false, $"Unity account sign-in failed. {exception.Message}");
             }
         }
 
-        private async Task<MMOAccountServiceResult> UseLocalFallbackAsync(
-            string accountName,
-            string password,
-            string sessionLabel,
-            bool register)
-        {
-            usernamePasswordProviderUnavailable = true;
-            Debug.LogWarning("Unity username/password authentication is not enabled for this project. Using the local validated account store.");
-            MMOAccountServiceResult result = register
-                ? await localFallback.RegisterAsync(accountName, password, sessionLabel)
-                : await localFallback.LoginAsync(accountName, password, sessionLabel);
-            if (result.Succeeded)
-            {
-                activeService = localFallback;
-            }
-
-            return result;
-        }
-
-        private static (MMOAccountServiceResult result, bool providerUnavailable) HandleAuthenticationFailure(RequestFailedException exception)
+        private static MMOAccountServiceResult HandleAuthenticationFailure(RequestFailedException exception)
         {
             if (IsUsernamePasswordProviderUnavailable(exception))
             {
-                usernamePasswordProviderUnavailable = true;
-                return (new MMOAccountServiceResult(false, "Unity username/password authentication is not enabled for this project."), true);
+                return new MMOAccountServiceResult(
+                    false,
+                    "Unity Username & Password authentication is not enabled. Enable it in Services > Authentication before playing.");
             }
 
-            return (new MMOAccountServiceResult(false, FormatAuthenticationError(exception)), false);
+            return new MMOAccountServiceResult(false, FormatAuthenticationError(exception));
         }
 
         private static bool TryValidateAccountName(string accountName, out string displayName, out string normalizedName, out string error)
@@ -223,9 +170,29 @@ namespace RPGClone.Social
 
         private static bool TryValidatePassword(string password, out string error)
         {
-            if (string.IsNullOrEmpty(password) || password.Length < MinimumPasswordLength)
+            if (string.IsNullOrEmpty(password)
+                || password.Length < MinimumPasswordLength
+                || password.Length > MaximumPasswordLength)
             {
-                error = $"Passwords must be at least {MinimumPasswordLength} characters.";
+                error = $"Passwords must be {MinimumPasswordLength}-{MaximumPasswordLength} characters.";
+                return false;
+            }
+
+            bool hasLower = false;
+            bool hasUpper = false;
+            bool hasNumber = false;
+            bool hasSymbol = false;
+            foreach (char character in password)
+            {
+                hasLower |= char.IsLower(character);
+                hasUpper |= char.IsUpper(character);
+                hasNumber |= char.IsDigit(character);
+                hasSymbol |= !char.IsLetterOrDigit(character);
+            }
+
+            if (!hasLower || !hasUpper || !hasNumber || !hasSymbol)
+            {
+                error = "Passwords require a lowercase letter, uppercase letter, number, and symbol.";
                 return false;
             }
 

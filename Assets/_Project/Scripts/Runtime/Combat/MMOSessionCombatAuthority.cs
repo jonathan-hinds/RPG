@@ -76,7 +76,7 @@ namespace RPGClone.Combat
                 requestedTargetPosition,
                 hasGroundTarget,
                 requestKind);
-            MMOLocalSharedSessionStore.PublishCombatRequest(request);
+            MMOSharedSessionState.PublishCombatRequest(request);
             return true;
         }
 

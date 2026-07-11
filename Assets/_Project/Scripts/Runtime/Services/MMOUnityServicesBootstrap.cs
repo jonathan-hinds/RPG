@@ -36,33 +36,24 @@ namespace RPGClone.Services
             }
             catch (Exception exception)
             {
-                Debug.LogWarning($"Unity Gaming Services initialization failed. Local persistence remains available. {exception.Message}");
+                Debug.LogWarning($"Unity Gaming Services initialization failed. Online play is unavailable. {exception.Message}");
                 IsInitialized = false;
                 initializationTask = null;
             }
         }
 
-        public static async Task EnsureSignedInAnonymouslyAsync()
+        public static async Task EnsureAuthenticatedAsync()
         {
             await InitializeAsync();
             if (!IsInitialized)
             {
-                return;
+                throw new InvalidOperationException("Unity Gaming Services could not be initialized.");
             }
 
-            try
+            RefreshAuthenticationState();
+            if (!IsSignedIn)
             {
-                if (!AuthenticationService.Instance.IsSignedIn)
-                {
-                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                }
-
-                RefreshAuthenticationState();
-            }
-            catch (Exception exception)
-            {
-                Debug.LogWarning($"Unity anonymous sign-in failed. {exception.Message}");
-                RefreshAuthenticationState();
+                throw new InvalidOperationException("Sign in to a Unity account before starting or joining a gameplay session.");
             }
         }
 
@@ -75,7 +66,7 @@ namespace RPGClone.Services
 
         private static string ResolveServicesProfile()
         {
-            string source = Application.isEditor ? Application.dataPath : Application.persistentDataPath;
+            string source = Application.persistentDataPath;
             unchecked
             {
                 uint hash = 2166136261;

@@ -1,23 +1,7 @@
-using System;
 using System.Threading.Tasks;
 
 namespace RPGClone.Social
 {
-    [Serializable]
-    public sealed class MMOAccountRecord
-    {
-        public string accountId;
-        public string accountName;
-        public string normalizedAccountName;
-        public string passwordSalt;
-        public string passwordHash;
-        public long createdUtcTicks;
-        public long lastLoginUtcTicks;
-        public string activeSessionId;
-        public string activeSessionLabel;
-        public long activeSessionUpdatedUtcTicks;
-    }
-
     public sealed class MMOAccountSession
     {
         public MMOAccountSession(string accountId, string accountName, string sessionId)
@@ -47,10 +31,25 @@ namespace RPGClone.Social
         public MMOAccountSession Session { get; }
     }
 
+    public sealed class MMOServiceResult
+    {
+        public static MMOServiceResult Success(string message) => new(true, message);
+        public static MMOServiceResult Failure(string message) => new(false, message);
+
+        public MMOServiceResult(bool succeeded, string message)
+        {
+            Succeeded = succeeded;
+            Message = message ?? string.Empty;
+        }
+
+        public bool Succeeded { get; }
+        public string Message { get; }
+    }
+
     public interface IAccountService
     {
-        Task<MMOAccountServiceResult> RegisterAsync(string accountName, string password, string sessionLabel);
-        Task<MMOAccountServiceResult> LoginAsync(string accountName, string password, string sessionLabel);
+        Task<MMOAccountServiceResult> RegisterAsync(string accountName, string password);
+        Task<MMOAccountServiceResult> LoginAsync(string accountName, string password);
         MMOServiceResult Heartbeat(MMOAccountSession session);
         void Logout(MMOAccountSession session);
     }

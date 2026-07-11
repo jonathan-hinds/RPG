@@ -254,7 +254,7 @@ namespace RPGClone.Services
                 }
 
                 recipient.GameObject.GetComponent<MMOExperienceComponent>()?.AddExperience(adjustedExperience);
-                RPGClone.Multiplayer.MMOLocalSharedSessionStore.PublishExperienceRewardEvent(
+                RPGClone.Multiplayer.MMOSharedSessionState.PublishExperienceRewardEvent(
                     MMOGameplaySessionService.SessionId,
                     recipient.CharacterId,
                     enemyDefinition.name,
@@ -303,7 +303,7 @@ namespace RPGClone.Services
 
                 if (questLog.RecordCreatureKilled(enemyDefinition, creatureId))
                 {
-                    RPGClone.Multiplayer.MMOLocalSharedSessionStore.PublishQuestKillCreditEvent(
+                    RPGClone.Multiplayer.MMOSharedSessionState.PublishQuestKillCreditEvent(
                         MMOGameplaySessionService.SessionId,
                         recipient.CharacterId,
                         enemySpawnId,

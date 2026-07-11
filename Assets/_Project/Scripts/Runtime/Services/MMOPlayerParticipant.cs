@@ -12,7 +12,7 @@ namespace RPGClone.Services
             bool isHostAuthority,
             MMOCharacterIdentity identity)
         {
-            ParticipantId = string.IsNullOrWhiteSpace(participantId) ? "local-player" : participantId;
+            ParticipantId = string.IsNullOrWhiteSpace(participantId) ? characterId ?? string.Empty : participantId;
             CharacterId = characterId ?? string.Empty;
             IsLocal = isLocal;
             IsHostAuthority = isHostAuthority;

@@ -42,6 +42,7 @@ namespace RPGClone.Enemies
         private MMOCombatant combatant;
         private MMOAbilitySystem abilitySystem;
         private MMOAutoAttackController autoAttackController;
+        private MMOCreatureAnimator creatureAnimator;
         private NavMeshAgent agent;
         private MMOLootableCorpse lootableCorpse;
         private MMOCharacterIdentity currentTarget;
@@ -222,6 +223,7 @@ namespace RPGClone.Enemies
             identity.Mana.Configure(Mathf.Max(0, snapshot.maxMana), snapshot.currentMana, false);
             corpseActive = snapshot.runtimeState == EnemyRuntimeState.Corpse;
             respawning = snapshot.runtimeState == EnemyRuntimeState.Respawning;
+            creatureAnimator?.SetDeadState(snapshot.runtimeState != EnemyRuntimeState.Alive);
             bool shouldSnap = !proxyHasSnapshot
                 || wasRespawning != respawning
                 || wasCorpse != corpseActive
@@ -484,6 +486,7 @@ namespace RPGClone.Enemies
         private void BecomeCorpse()
         {
             corpseActive = true;
+            creatureAnimator?.SetDeadState(true);
             identity.SetSelectable(false);
             if (agent != null)
             {
@@ -571,6 +574,7 @@ namespace RPGClone.Enemies
         {
             corpseActive = false;
             respawning = false;
+            creatureAnimator?.SetDeadState(false);
             corpseDespawnEndTime = 0f;
             respawnEndTime = 0f;
             lastDamageSource = null;
@@ -612,7 +616,7 @@ namespace RPGClone.Enemies
             }
 
             participant = new MMOPlayerParticipant(
-                "local-player",
+                MMOGameplaySessionService.LocalPlayer.ParticipantId,
                 MMOGameplaySessionService.LocalPlayer.CharacterId,
                 lastDamageSource.Identity == MMOGameplaySessionService.LocalPlayer.Identity,
                 MMOGameplaySessionService.IsHostAuthority,
@@ -733,6 +737,11 @@ namespace RPGClone.Enemies
             if (autoAttackController == null)
             {
                 autoAttackController = GetComponent<MMOAutoAttackController>();
+            }
+
+            if (creatureAnimator == null)
+            {
+                creatureAnimator = GetComponent<MMOCreatureAnimator>();
             }
 
             if (agent == null)

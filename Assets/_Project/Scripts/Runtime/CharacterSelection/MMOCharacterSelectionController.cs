@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Inventory;
+using RPGClone.Multiplayer;
+using RPGClone.Services;
 using RPGClone.Social;
 using RPGClone.UI;
 using UnityEngine;
@@ -100,7 +102,20 @@ namespace RPGClone.CharacterSelection
         private async Task LoadRosterAsync()
         {
             SetStatus("Loading characters...");
-            roster = await repository.LoadAsync();
+            try
+            {
+                roster = await repository.LoadAsync();
+            }
+            catch (Exception exception)
+            {
+                roster = new MMOCharacterRosterSaveData();
+                selectedCharacter = null;
+                MMOCharacterSession.Clear();
+                Refresh();
+                SetStatus($"Unable to load characters from Unity Cloud Save. {exception.Message}");
+                return;
+            }
+
             roster.characters ??= new List<MMOCharacterSaveData>();
             bool migrated = NormalizeRosterCharacters();
             if (roster.characters.Count == 0)
@@ -115,7 +130,7 @@ namespace RPGClone.CharacterSelection
                 string previousAccountId = character.accountId;
                 string previousName = character.characterName;
                 string previousNormalizedName = character.normalizedCharacterName;
-                await MMOSocialPresenceController.RegisterCharacterNameAsync(character);
+                MMOCharacterNameUtility.EnsureCharacterData(character);
                 migrated |= previousAccountId != character.accountId
                     || previousName != character.characterName
                     || previousNormalizedName != character.normalizedCharacterName;
@@ -123,12 +138,22 @@ namespace RPGClone.CharacterSelection
 
             if (migrated)
             {
-                await repository.SaveAsync(roster);
+                try
+                {
+                    await repository.SaveAsync(roster);
+                }
+                catch (Exception exception)
+                {
+                    selectedCharacter = null;
+                    MMOCharacterSession.Clear();
+                    Refresh();
+                    SetStatus($"Unable to initialize the cloud character roster. {exception.Message}");
+                    return;
+                }
             }
 
             selectedCharacter = roster.characters[0];
             MMOCharacterSession.Select(selectedCharacter);
-            await MMOSocialPresenceController.SetSelectedCharacterPresenceAsync(MMOCharacterPresenceStatus.OnlineCharacterSelect, false);
             creatingCharacter = false;
             Refresh();
             SetStatus(string.Empty);
@@ -734,31 +759,14 @@ namespace RPGClone.CharacterSelection
                 return;
             }
 
-            MMOCharacterNameRecord existing = await MMOSocialServices.CharacterNames.FindByNameAsync(displayName);
-            if (existing != null)
-            {
-                SetStatus($"{displayName} is already taken.");
-                return;
-            }
-
             selectedCharacter = CreateCharacterData(displayName);
             roster.characters.Add(selectedCharacter);
-            MMOServiceResult registration = await MMOSocialServices.CharacterNames.RegisterOrUpdateAsync(new MMOCharacterNameRecord
-            {
-                playerId = MMOSocialIdentityService.AccountId,
-                characterId = selectedCharacter.characterId,
-                characterName = selectedCharacter.characterName,
-                normalizedCharacterName = selectedCharacter.normalizedCharacterName
-            });
-            if (!registration.Succeeded)
+            if (!await SaveRosterAsync())
             {
                 roster.characters.Remove(selectedCharacter);
                 selectedCharacter = roster.characters.Count > 0 ? roster.characters[0] : null;
-                SetStatus(registration.Message);
                 return;
             }
-
-            await SaveRosterAsync();
             creatingCharacter = false;
             Refresh();
         }
@@ -771,9 +779,18 @@ namespace RPGClone.CharacterSelection
                 return;
             }
 
-            roster.characters.Remove(selectedCharacter);
+            MMOCharacterSaveData characterToDelete = selectedCharacter;
+            int deletedIndex = roster.characters.IndexOf(characterToDelete);
+            roster.characters.Remove(characterToDelete);
             selectedCharacter = roster.characters.Count > 0 ? roster.characters[0] : null;
-            await SaveRosterAsync();
+            if (!await SaveRosterAsync())
+            {
+                roster.characters.Insert(Mathf.Clamp(deletedIndex, 0, roster.characters.Count), characterToDelete);
+                selectedCharacter = characterToDelete;
+                Refresh();
+                return;
+            }
+
             Refresh();
         }
 
@@ -791,19 +808,38 @@ namespace RPGClone.CharacterSelection
                 return;
             }
 
-            await SaveRosterAsync();
+            if (!await SaveRosterAsync())
+            {
+                return;
+            }
+
             MMOCharacterSession.Select(selectedCharacter);
-            await MMOSocialPresenceController.RegisterSelectedCharacterNameAsync();
+            SetStatus("Starting online session...");
+            if (!await MMOGameplaySessionService.StartHostedSessionAsync(selectedCharacter.characterName))
+            {
+                SetStatus($"Unable to enter the world: {MMOGameplaySessionService.LastError}");
+                return;
+            }
+
             string sceneName = string.IsNullOrWhiteSpace(selectedCharacter.sceneName) ? gameplaySceneName : selectedCharacter.sceneName;
             SceneManager.LoadScene(sceneName);
         }
 
-        private async Task SaveRosterAsync()
+        private async Task<bool> SaveRosterAsync()
         {
             SetStatus("Saving...");
             NormalizeRosterCharacters();
-            await repository.SaveAsync(roster);
-            SetStatus(string.Empty);
+            try
+            {
+                await repository.SaveAsync(roster);
+                SetStatus(string.Empty);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                SetStatus($"Unable to save characters to Unity Cloud Save. {exception.Message}");
+                return false;
+            }
         }
 
         private bool NormalizeRosterCharacters()
@@ -817,7 +853,7 @@ namespace RPGClone.CharacterSelection
                 string previousAccountId = character.accountId;
                 string previousName = character.characterName;
                 string previousNormalized = character.normalizedCharacterName;
-                MMOSocialPresenceController.EnsureCharacterNameData(character);
+                MMOCharacterNameUtility.EnsureCharacterData(character);
                 while (!usedNames.Add(character.normalizedCharacterName))
                 {
                     character.characterName = MMOCharacterNameUtility.CreateFallbackName($"{character.race}{character.characterClass}", character.characterId + usedNames.Count);
@@ -876,12 +912,14 @@ namespace RPGClone.CharacterSelection
             creatingCharacter = false;
             Refresh();
             await LoadRosterAsync();
-            SetStatus(message);
+            if (selectedCharacter != null)
+            {
+                SetStatus(message);
+            }
         }
 
-        private async void LogoutAccount()
+        private void LogoutAccount()
         {
-            await MMOSocialPresenceController.SetSelectedCharacterOfflineAsync();
             MMOCharacterSession.Clear();
             MMOSocialIdentityService.Logout();
             repository = null;

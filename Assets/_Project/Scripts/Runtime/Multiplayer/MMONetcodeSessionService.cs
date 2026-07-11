@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using System.Threading.Tasks;
 using RPGClone.Services;
 using Unity.Netcode;
@@ -73,7 +72,7 @@ namespace RPGClone.Multiplayer
                 }
 
                 await LeaveActiveSessionAsync();
-                await MMOUnityServicesBootstrap.EnsureSignedInAnonymouslyAsync();
+                await MMOUnityServicesBootstrap.EnsureAuthenticatedAsync();
                 EnsureNetworkManager();
                 MMONetcodeSharedSessionTransport.Initialize();
 
@@ -136,7 +135,7 @@ namespace RPGClone.Multiplayer
                 }
 
                 await LeaveActiveSessionAsync();
-                await MMOUnityServicesBootstrap.EnsureSignedInAnonymouslyAsync();
+                await MMOUnityServicesBootstrap.EnsureAuthenticatedAsync();
                 EnsureNetworkManager();
                 MMONetcodeSharedSessionTransport.Initialize();
 
@@ -235,11 +234,7 @@ namespace RPGClone.Multiplayer
             {
                 try
                 {
-                    MethodInfo leaveAsync = activeSession.GetType().GetMethod("LeaveAsync", Type.EmptyTypes);
-                    if (leaveAsync?.Invoke(activeSession, null) is Task leaveTask)
-                    {
-                        await leaveTask;
-                    }
+                    await activeSession.LeaveAsync();
                 }
                 catch (Exception exception)
                 {

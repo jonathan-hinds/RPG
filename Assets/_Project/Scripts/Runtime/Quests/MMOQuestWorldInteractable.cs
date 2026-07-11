@@ -457,7 +457,7 @@ namespace RPGClone.Quests
                 return;
             }
 
-            RPGClone.Multiplayer.MMOLocalSharedSessionStore.PublishWorldObjectInteractionRequest(
+            RPGClone.Multiplayer.MMOSharedSessionState.PublishWorldObjectInteractionRequest(
                 MMOSharedWorldObjectInteractionRequest.Create(
                     MMOGameplaySessionService.SessionId,
                     WorldObjectId,
@@ -466,7 +466,7 @@ namespace RPGClone.Quests
 
         private void PublishSharedSnapshot(float remainingRespawnSeconds)
         {
-            RPGClone.Multiplayer.MMOLocalSharedSessionStore.UpsertWorldObjectSnapshot(CreateSharedSnapshot(remainingRespawnSeconds));
+            RPGClone.Multiplayer.MMOSharedSessionState.UpsertWorldObjectSnapshot(CreateSharedSnapshot(remainingRespawnSeconds));
         }
 
         private System.Collections.IEnumerator RespawnAfterDelay(float delaySeconds)

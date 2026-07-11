@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using RPGClone.CharacterSelection;
+using RPGClone.Services;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -11,11 +13,16 @@ namespace RPGClone.Multiplayer
     {
         private const string OperationMessageName = "rpg_clone_shared_session_operation";
         private const string SnapshotMessageName = "rpg_clone_shared_session_snapshot";
+        private const string ParticipantRuntimeMessageName = "rpg_clone_participant_runtime";
+        private const int MaximumRuntimeIdentifierLength = 64;
+        private const int RuntimeSnapshotWriterCapacity = (MaximumRuntimeIdentifierLength * 2) + 64;
         private const NetworkDelivery SharedSessionDelivery = NetworkDelivery.ReliableFragmentedSequenced;
+        private const NetworkDelivery RuntimeSnapshotDelivery = NetworkDelivery.UnreliableSequenced;
         private static NetworkManager registeredManager;
         private static readonly Dictionary<ulong, string> HostCharacterIdsByClientId = new();
         private static bool applyingRemoteOperation;
         private static bool applyingSnapshot;
+        private static bool applyingRemoteRuntimeSnapshot;
 
         public static bool IsApplyingRemoteOperation => applyingRemoteOperation;
         public static bool IsApplyingSnapshot => applyingSnapshot;
@@ -25,13 +32,15 @@ namespace RPGClone.Multiplayer
             && !NetworkManager.Singleton.IsHost
             && NetworkManager.Singleton.IsConnectedClient
             && !applyingRemoteOperation
-            && !applyingSnapshot;
+            && !applyingSnapshot
+            && !applyingRemoteRuntimeSnapshot;
 
         private static bool ShouldBroadcastFromHost => NetworkManager.Singleton != null
             && NetworkManager.Singleton.IsHost
             && NetworkManager.Singleton.IsListening
             && !applyingRemoteOperation
-            && !applyingSnapshot;
+            && !applyingSnapshot
+            && !applyingRemoteRuntimeSnapshot;
 
         public static void Initialize()
         {
@@ -45,11 +54,13 @@ namespace RPGClone.Multiplayer
             {
                 registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(OperationMessageName);
                 registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(SnapshotMessageName);
+                registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(ParticipantRuntimeMessageName);
             }
 
             registeredManager = manager;
             manager.CustomMessagingManager.RegisterNamedMessageHandler(OperationMessageName, OnOperationMessage);
             manager.CustomMessagingManager.RegisterNamedMessageHandler(SnapshotMessageName, OnSnapshotMessage);
+            manager.CustomMessagingManager.RegisterNamedMessageHandler(ParticipantRuntimeMessageName, OnParticipantRuntimeMessage);
             manager.OnClientConnectedCallback -= OnClientConnected;
             manager.OnClientConnectedCallback += OnClientConnected;
             manager.OnClientDisconnectCallback -= OnClientDisconnected;
@@ -67,12 +78,14 @@ namespace RPGClone.Multiplayer
             {
                 registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(OperationMessageName);
                 registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(SnapshotMessageName);
+                registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(ParticipantRuntimeMessageName);
             }
 
             registeredManager.OnClientConnectedCallback -= OnClientConnected;
             registeredManager.OnClientDisconnectCallback -= OnClientDisconnected;
             registeredManager = null;
             HostCharacterIdsByClientId.Clear();
+            applyingRemoteRuntimeSnapshot = false;
         }
 
         public static bool TrySubmitToHost(MMOSharedSessionNetworkOperation operation)
@@ -86,13 +99,36 @@ namespace RPGClone.Multiplayer
             string json = JsonUtility.ToJson(operation, false);
             if (ShouldSubmitToHost)
             {
-                SendJsonToServer(OperationMessageName, json);
+                SendJsonToServer(OperationMessageName, json, SharedSessionDelivery);
                 return true;
             }
 
             if (ShouldBroadcastFromHost)
             {
                 BroadcastOperationJsonIfHost(json);
+            }
+
+            return false;
+        }
+
+        public static bool TrySubmitParticipantRuntime(MMOSessionParticipantRuntimeSnapshot snapshot)
+        {
+            Initialize();
+            if (!IsValidRuntimeSnapshot(snapshot))
+            {
+                Debug.LogWarning("Rejected participant runtime snapshot with invalid session or character identity.");
+                return ShouldSubmitToHost;
+            }
+
+            if (ShouldSubmitToHost)
+            {
+                SendParticipantRuntimeToServer(snapshot);
+                return true;
+            }
+
+            if (ShouldBroadcastFromHost)
+            {
+                BroadcastParticipantRuntimeIfHost(snapshot);
             }
 
             return false;
@@ -144,7 +180,8 @@ namespace RPGClone.Multiplayer
                 JsonUtility.ToJson(new MMOSharedSessionNetworkOperation
                 {
                     kind = MMOSharedSessionNetworkOperationKind.RequestSnapshot
-                }, false));
+                }, false),
+                SharedSessionDelivery);
         }
 
         private static void OnClientConnected(ulong clientId)
@@ -155,7 +192,7 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            string snapshotJson = MMOLocalSharedSessionStore.CreateNetworkSnapshotJson();
+            string snapshotJson = MMOSharedSessionState.CreateNetworkSnapshotJson();
             if (!string.IsNullOrWhiteSpace(snapshotJson))
             {
                 SendJsonToClient(SnapshotMessageName, clientId, snapshotJson);
@@ -194,7 +231,7 @@ namespace RPGClone.Multiplayer
             try
             {
                 applyingRemoteOperation = true;
-                MMOLocalSharedSessionStore.ApplyNetworkOperation(json);
+                MMOSharedSessionState.ApplyNetworkOperation(json);
             }
             catch (Exception exception)
             {
@@ -210,6 +247,44 @@ namespace RPGClone.Multiplayer
                 TrackClientParticipant(senderClientId, operation);
                 BroadcastOperationJsonIfHost(json);
             }
+        }
+
+        private static void OnParticipantRuntimeMessage(ulong senderClientId, FastBufferReader reader)
+        {
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager == null || !TryReadParticipantRuntime(reader, out MMOSessionParticipantRuntimeSnapshot snapshot))
+            {
+                return;
+            }
+
+            if (!string.Equals(snapshot.sessionId, MMOGameplaySessionService.SessionId, StringComparison.Ordinal))
+            {
+                Debug.LogWarning($"Rejected participant runtime snapshot for session '{snapshot.sessionId}'.");
+                return;
+            }
+
+            if (manager.IsHost)
+            {
+                if (senderClientId == manager.LocalClientId
+                    || !IsSenderParticipant(senderClientId, snapshot.characterId))
+                {
+                    Debug.LogWarning($"Rejected participant runtime snapshot from client {senderClientId}.");
+                    return;
+                }
+
+                ApplyParticipantRuntimeSnapshot(snapshot);
+                HostCharacterIdsByClientId[senderClientId] = snapshot.characterId;
+                BroadcastParticipantRuntimeIfHost(snapshot, senderClientId);
+                return;
+            }
+
+            if (senderClientId != NetworkManager.ServerClientId)
+            {
+                Debug.LogWarning($"Rejected participant runtime snapshot from non-host client {senderClientId}.");
+                return;
+            }
+
+            ApplyParticipantRuntimeSnapshot(snapshot);
         }
 
         private static void OnClientDisconnected(ulong clientId)
@@ -234,8 +309,6 @@ namespace RPGClone.Multiplayer
             {
                 MMOSharedSessionNetworkOperationKind.UpsertParticipant
                     => IsSenderParticipant(senderClientId, operation.participant?.characterId),
-                MMOSharedSessionNetworkOperationKind.UpsertParticipantRuntime
-                    => IsSenderParticipant(senderClientId, operation.participantRuntime?.characterId),
                 MMOSharedSessionNetworkOperationKind.RemoveParticipant
                     => IsSenderParticipant(senderClientId, operation.characterId),
                 MMOSharedSessionNetworkOperationKind.PublishAbilityEvent
@@ -274,7 +347,6 @@ namespace RPGClone.Multiplayer
             }
 
             string characterId = operation?.participant?.characterId
-                ?? operation?.participantRuntime?.characterId
                 ?? operation?.combatRequest?.casterCharacterId
                 ?? operation?.abilityEvent?.casterCharacterId
                 ?? operation?.worldObjectInteractionRequest?.actorCharacterId
@@ -296,7 +368,7 @@ namespace RPGClone.Multiplayer
             try
             {
                 applyingSnapshot = true;
-                MMOLocalSharedSessionStore.ApplyNetworkSnapshot(json);
+                MMOSharedSessionState.ApplyNetworkSnapshot(json);
             }
             catch (Exception exception)
             {
@@ -308,7 +380,7 @@ namespace RPGClone.Multiplayer
             }
         }
 
-        private static void SendJsonToServer(string messageName, string json)
+        private static void SendJsonToServer(string messageName, string json, NetworkDelivery delivery)
         {
             NetworkManager manager = NetworkManager.Singleton;
             if (manager?.CustomMessagingManager == null)
@@ -317,10 +389,30 @@ namespace RPGClone.Multiplayer
             }
 
             using FastBufferWriter writer = CreateWriter(json);
-            manager.CustomMessagingManager.SendNamedMessage(messageName, NetworkManager.ServerClientId, writer, SharedSessionDelivery);
+            manager.CustomMessagingManager.SendNamedMessage(messageName, NetworkManager.ServerClientId, writer, delivery);
         }
 
-        private static void SendJsonToClient(string messageName, ulong clientId, string json)
+        private static void SendParticipantRuntimeToServer(MMOSessionParticipantRuntimeSnapshot snapshot)
+        {
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager?.CustomMessagingManager == null)
+            {
+                return;
+            }
+
+            using FastBufferWriter writer = CreateParticipantRuntimeWriter(snapshot);
+            manager.CustomMessagingManager.SendNamedMessage(
+                ParticipantRuntimeMessageName,
+                NetworkManager.ServerClientId,
+                writer,
+                RuntimeSnapshotDelivery);
+        }
+
+        private static void SendJsonToClient(
+            string messageName,
+            ulong clientId,
+            string json,
+            NetworkDelivery delivery = SharedSessionDelivery)
         {
             NetworkManager manager = NetworkManager.Singleton;
             if (manager?.CustomMessagingManager == null)
@@ -329,12 +421,12 @@ namespace RPGClone.Multiplayer
             }
 
             using FastBufferWriter writer = CreateWriter(json);
-            manager.CustomMessagingManager.SendNamedMessage(messageName, clientId, writer, SharedSessionDelivery);
+            manager.CustomMessagingManager.SendNamedMessage(messageName, clientId, writer, delivery);
         }
 
         private static void SendSnapshotToClient(ulong clientId)
         {
-            string snapshotJson = MMOLocalSharedSessionStore.CreateNetworkSnapshotJson();
+            string snapshotJson = MMOSharedSessionState.CreateNetworkSnapshotJson();
             if (!string.IsNullOrWhiteSpace(snapshotJson))
             {
                 SendJsonToClient(SnapshotMessageName, clientId, snapshotJson);
@@ -362,6 +454,153 @@ namespace RPGClone.Multiplayer
                     SendJsonToClient(OperationMessageName, clientId, json);
                 }
             }
+        }
+
+        private static void BroadcastParticipantRuntimeIfHost(
+            MMOSessionParticipantRuntimeSnapshot snapshot,
+            ulong excludedClientId = ulong.MaxValue)
+        {
+            Initialize();
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager?.CustomMessagingManager == null
+                || !manager.IsHost
+                || !manager.IsListening
+                || applyingRemoteRuntimeSnapshot)
+            {
+                return;
+            }
+
+            using FastBufferWriter writer = CreateParticipantRuntimeWriter(snapshot);
+            foreach (ulong clientId in manager.ConnectedClientsIds)
+            {
+                if (clientId == manager.LocalClientId || clientId == excludedClientId)
+                {
+                    continue;
+                }
+
+                manager.CustomMessagingManager.SendNamedMessage(
+                    ParticipantRuntimeMessageName,
+                    clientId,
+                    writer,
+                    RuntimeSnapshotDelivery);
+            }
+        }
+
+        private static void ApplyParticipantRuntimeSnapshot(MMOSessionParticipantRuntimeSnapshot snapshot)
+        {
+            try
+            {
+                applyingRemoteRuntimeSnapshot = true;
+                MMOSharedSessionState.UpsertParticipantRuntime(
+                    snapshot.sessionId,
+                    snapshot.characterId,
+                    snapshot.position.ToVector3(),
+                    snapshot.rotationEuler.ToVector3(),
+                    snapshot.currentHealth,
+                    snapshot.currentMana);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Failed to apply participant runtime snapshot. {exception.Message}");
+            }
+            finally
+            {
+                applyingRemoteRuntimeSnapshot = false;
+            }
+        }
+
+        private static FastBufferWriter CreateParticipantRuntimeWriter(MMOSessionParticipantRuntimeSnapshot snapshot)
+        {
+            FastBufferWriter writer = new(RuntimeSnapshotWriterCapacity, Allocator.Temp);
+            writer.WriteValueSafe(snapshot.sessionId, true);
+            writer.WriteValueSafe(snapshot.characterId, true);
+
+            Vector3 position = snapshot.position.ToVector3();
+            Vector3 rotationEuler = snapshot.rotationEuler.ToVector3();
+            writer.WriteValueSafe(position);
+            writer.WriteValueSafe(rotationEuler);
+            writer.WriteValueSafe(snapshot.currentHealth);
+            writer.WriteValueSafe(snapshot.currentMana);
+            writer.WriteValueSafe(snapshot.updatedUtcTicks);
+            return writer;
+        }
+
+        private static bool TryReadParticipantRuntime(
+            FastBufferReader reader,
+            out MMOSessionParticipantRuntimeSnapshot snapshot)
+        {
+            snapshot = null;
+            try
+            {
+                reader.ReadValueSafe(out string sessionId, true);
+                reader.ReadValueSafe(out string characterId, true);
+                reader.ReadValueSafe(out Vector3 position);
+                reader.ReadValueSafe(out Vector3 rotationEuler);
+                reader.ReadValueSafe(out int currentHealth);
+                reader.ReadValueSafe(out int currentMana);
+                reader.ReadValueSafe(out long updatedUtcTicks);
+
+                snapshot = new MMOSessionParticipantRuntimeSnapshot
+                {
+                    sessionId = sessionId,
+                    characterId = characterId,
+                    position = new Vector3SaveData(position),
+                    rotationEuler = new Vector3SaveData(rotationEuler),
+                    currentHealth = currentHealth,
+                    currentMana = currentMana,
+                    updatedUtcTicks = updatedUtcTicks
+                };
+                return IsValidRuntimeSnapshot(snapshot);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Rejected malformed participant runtime snapshot. {exception.Message}");
+                return false;
+            }
+        }
+
+        private static bool IsValidRuntimeSnapshot(MMOSessionParticipantRuntimeSnapshot snapshot)
+        {
+            if (snapshot == null
+                || !IsValidRuntimeIdentifier(snapshot.sessionId)
+                || !IsValidRuntimeIdentifier(snapshot.characterId)
+                || snapshot.currentHealth < 0
+                || snapshot.currentMana < 0
+                || snapshot.updatedUtcTicks <= 0)
+            {
+                return false;
+            }
+
+            return IsFinite(snapshot.position.ToVector3())
+                && IsFinite(snapshot.rotationEuler.ToVector3());
+        }
+
+        private static bool IsValidRuntimeIdentifier(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value) || value.Length > MaximumRuntimeIdentifierLength)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (value[i] > byte.MaxValue)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x)
+                && !float.IsInfinity(value.x)
+                && !float.IsNaN(value.y)
+                && !float.IsInfinity(value.y)
+                && !float.IsNaN(value.z)
+                && !float.IsInfinity(value.z);
         }
 
         private static FastBufferWriter CreateWriter(string json)

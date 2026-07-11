@@ -20,11 +20,10 @@ namespace RPGClone.Social
 
         // Existing social/presence code treats this as the authenticated player identifier.
         public static string PlayerId => AccountId;
-        public static bool IsLocalTestIdentity => IsAuthenticated;
 
         public static async Task<MMOAccountServiceResult> RegisterAsync(string accountName, string password)
         {
-            MMOAccountServiceResult result = await AccountService.RegisterAsync(accountName, password, CreateSessionLabel());
+            MMOAccountServiceResult result = await AccountService.RegisterAsync(accountName, password);
             if (result.Succeeded)
             {
                 Activate(result.Session);
@@ -36,7 +35,7 @@ namespace RPGClone.Social
 
         public static async Task<MMOAccountServiceResult> LoginAsync(string accountName, string password)
         {
-            MMOAccountServiceResult result = await AccountService.LoginAsync(accountName, password, CreateSessionLabel());
+            MMOAccountServiceResult result = await AccountService.LoginAsync(accountName, password);
             if (result.Succeeded)
             {
                 Activate(result.Session);
@@ -81,9 +80,5 @@ namespace RPGClone.Social
             PlayerPrefs.Save();
         }
 
-        private static string CreateSessionLabel()
-        {
-            return $"{Application.productName} on {SystemInfo.deviceName}";
-        }
     }
 }
