@@ -19,6 +19,15 @@ namespace RPGClone.World.Foliage
         [Min(8f)]
         public float detailDrawDistance = 92f;
 
+        [Header("Terrain Placement")]
+        [Tooltip("Terrain details are never painted above this unsigned slope angle. This applies equally to inclines and declines.")]
+        [Range(0f, 90f)]
+        public float maximumDetailSlopeDegrees = MMOTerrainDetailSlopePolicy.DefaultMaximumSlopeDegrees;
+
+        [Tooltip("Foliage density fades over this many degrees before reaching the maximum slope. Set to zero for a hard cutoff.")]
+        [Range(0f, 90f)]
+        public float detailSlopeFadeRangeDegrees = MMOTerrainDetailSlopePolicy.DefaultSlopeFadeRangeDegrees;
+
         public int crossedPlaneCount = 3;
         public float cardWidth = 0.82f;
         public float cardHeight = 1.08f;

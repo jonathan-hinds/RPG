@@ -16,6 +16,8 @@ MonoBehaviour:
   detailResolutionPerPatch: 16
   terrainDetailDensity: 0.36
   detailDrawDistance: 220
+  maximumDetailSlopeDegrees: 30
+  detailSlopeFadeRangeDegrees: 30
   crossedPlaneCount: 3
   cardWidth: 0.82
   cardHeight: 1.08

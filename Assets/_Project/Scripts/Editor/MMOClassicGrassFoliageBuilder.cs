@@ -918,7 +918,7 @@ namespace RPGClone.EditorTools
                         float normalizedX = x / (float)(width - 1);
                         float normalizedZ = z / (float)(height - 1);
                         Vector2 world = DetailToWorld(terrain, normalizedX, normalizedZ);
-                        details[z, x] = CalculateDetailDensity(terrainData, alphamaps, variation, world, normalizedX, normalizedZ);
+                        details[z, x] = CalculateDetailDensity(terrainData, alphamaps, profile, variation, world, normalizedX, normalizedZ);
                     }
                 }
 
@@ -929,6 +929,7 @@ namespace RPGClone.EditorTools
         private static int CalculateDetailDensity(
             TerrainData terrainData,
             float[,,] alphamaps,
+            MMOClassicGrassFoliageProfile profile,
             MMOClassicGrassFoliageVariation variation,
             Vector2 world,
             float normalizedX,
@@ -936,7 +937,12 @@ namespace RPGClone.EditorTools
         {
             float terrainMask = Mathf.Clamp01(0.35f + SampleTerrainMask(terrainData, alphamaps, normalizedX, normalizedZ) * 0.65f);
             float pathMask = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(11f, 28f, DistanceToStarterPath(world)));
-            float slopeMask = Mathf.InverseLerp(38f, 8f, terrainData.GetSteepness(normalizedX, normalizedZ));
+            float slopeMask = MMOTerrainDetailSlopePolicy.EvaluateDensityMultiplier(
+                terrainData,
+                normalizedX,
+                normalizedZ,
+                profile.maximumDetailSlopeDegrees,
+                profile.detailSlopeFadeRangeDegrees);
             float cluster = Mathf.PerlinNoise(
                 world.x * variation.clusterNoiseScale + variation.noiseSeed,
                 world.y * variation.clusterNoiseScale - variation.noiseSeed);
