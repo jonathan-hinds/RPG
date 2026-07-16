@@ -482,9 +482,8 @@ namespace RPGClone.EditorTools
             {
                 profile.detailDrawDistance = ClassicGrassDrawDistance;
                 profile.terrainDetailDensity = 0.36f;
-                profile.opacity = 0.35f;
-                profile.healthyColor = Color.white;
-                profile.dryColor = Color.white;
+                profile.healthyColor = MMOClassicGrassFoliageProfile.DefaultHealthyColor;
+                profile.dryColor = MMOClassicGrassFoliageProfile.DefaultDryColor;
                 EditorUtility.SetDirty(profile);
             }
 

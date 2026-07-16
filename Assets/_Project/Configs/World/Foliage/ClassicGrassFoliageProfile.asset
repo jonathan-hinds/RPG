@@ -16,15 +16,16 @@ MonoBehaviour:
   detailResolutionPerPatch: 16
   terrainDetailDensity: 0.36
   detailDrawDistance: 220
+  terrainWindStrength: 0.25
+  terrainWindAmount: 0.25
   maximumDetailSlopeDegrees: 30
   detailSlopeFadeRangeDegrees: 30
   crossedPlaneCount: 3
   cardWidth: 0.82
   cardHeight: 1.08
   alphaCutoff: 0.02
-  opacity: 0.35
-  healthyColor: {r: 1, g: 1, b: 1, a: 1}
-  dryColor: {r: 1, g: 1, b: 1, a: 1}
+  healthyColor: {r: 0.42, g: 0.7, b: 0.48, a: 1}
+  dryColor: {r: 0.72, g: 0.56, b: 0.34, a: 1}
   variations:
   - displayName: Classic Grass 01
     texture: {fileID: 2800000, guid: 00d58f72b0dd4c440b5fd5bec404127b, type: 3}
@@ -39,7 +40,6 @@ MonoBehaviour:
     clusterThreshold: 0.46
     fineNoiseScale: 0.095
     fineThreshold: 0.24
-    opacity: 0.35
   - displayName: Classic Grass 02
     texture: {fileID: 2800000, guid: 1a2945e1efd38174f98af451c24d3cc9, type: 3}
     modelPrefab: {fileID: 0}
@@ -53,7 +53,6 @@ MonoBehaviour:
     clusterThreshold: 0.485
     fineNoiseScale: 0.113
     fineThreshold: 0.258
-    opacity: 0.35
   - displayName: Classic Grass 03
     texture: {fileID: 2800000, guid: caf0a15eca61ef5469a1a488ce72b520, type: 3}
     modelPrefab: {fileID: 0}
@@ -67,7 +66,6 @@ MonoBehaviour:
     clusterThreshold: 0.51
     fineNoiseScale: 0.131
     fineThreshold: 0.276
-    opacity: 0.35
   - displayName: Classic Grass 04
     texture: {fileID: 2800000, guid: 576e531f285653343b53e5aaf8f6d61e, type: 3}
     modelPrefab: {fileID: 0}
@@ -81,7 +79,6 @@ MonoBehaviour:
     clusterThreshold: 0.535
     fineNoiseScale: 0.149
     fineThreshold: 0.294
-    opacity: 0.35
   - displayName: Classic Bush 01
     texture: {fileID: 0}
     modelPrefab: {fileID: 919132149155446097, guid: 5c0bf4c95ab925c41945855e66103aba, type: 3}
@@ -95,7 +92,6 @@ MonoBehaviour:
     clusterThreshold: 0.63
     fineNoiseScale: 0.082
     fineThreshold: 0.34
-    opacity: 0.6
   - displayName: Classic Bush 02
     texture: {fileID: 0}
     modelPrefab: {fileID: 919132149155446097, guid: 276a2db9a9585cf429283faa0d431e4f, type: 3}
@@ -109,7 +105,6 @@ MonoBehaviour:
     clusterThreshold: 0.66
     fineNoiseScale: 0.078
     fineThreshold: 0.37
-    opacity: 0.6
   - displayName: Classic Bush 03
     texture: {fileID: 0}
     modelPrefab: {fileID: 919132149155446097, guid: 1492e028b7a4a3145819081316b3af78, type: 3}
@@ -123,4 +118,3 @@ MonoBehaviour:
     clusterThreshold: 0.61
     fineNoiseScale: 0.087
     fineThreshold: 0.32
-    opacity: 0.6

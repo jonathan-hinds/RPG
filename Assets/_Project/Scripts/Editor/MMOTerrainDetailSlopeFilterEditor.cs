@@ -13,6 +13,9 @@ namespace RPGClone.EditorTools
         private const string ProfileTypeFilter = "t:MMOClassicGrassFoliageProfile";
 
         private SerializedProperty foliageProfileProperty;
+        private SerializedProperty detailThinningPrototypeIndexProperty;
+        private SerializedProperty detailThinningRemovalPercentageProperty;
+        private SerializedProperty detailThinningRandomSeedProperty;
         private string operationResult;
         private MessageType operationResultType = MessageType.Info;
         private TerrainData loadedScaleTerrainData;
@@ -26,6 +29,9 @@ namespace RPGClone.EditorTools
         private void OnEnable()
         {
             foliageProfileProperty = serializedObject.FindProperty("foliageProfile");
+            detailThinningPrototypeIndexProperty = serializedObject.FindProperty("detailThinningPrototypeIndex");
+            detailThinningRemovalPercentageProperty = serializedObject.FindProperty("detailThinningRemovalPercentage");
+            detailThinningRandomSeedProperty = serializedObject.FindProperty("detailThinningRandomSeed");
             AssignDefaultProfileIfMissing();
         }
 
@@ -45,6 +51,7 @@ namespace RPGClone.EditorTools
             MMOTerrainDetailSlopeFilter slopeFilter = (MMOTerrainDetailSlopeFilter)target;
             DrawMaximumSlopeSetting(slopeFilter.FoliageProfile);
             DrawIndividualDetailScale(slopeFilter);
+            DrawRandomDetailThinning(slopeFilter);
 
             EditorGUILayout.Space();
             using (new EditorGUI.DisabledScope(!CanProcess(slopeFilter)))
@@ -185,6 +192,100 @@ namespace RPGClone.EditorTools
             {
                 ApplySelectedDetailScale(slopeFilter, terrain, terrainData, prototypes, detailNames[selectedDetailIndex]);
             }
+        }
+
+        private void DrawRandomDetailThinning(MMOTerrainDetailSlopeFilter slopeFilter)
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Random Detail Thinning", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Choose one Terrain detail type and remove an exact percentage of its painted instances at random. Other detail types are not changed. Nothing happens until you press the thinning button.",
+                MessageType.Info);
+
+            Terrain terrain = slopeFilter != null ? slopeFilter.GetComponent<Terrain>() : null;
+            TerrainData terrainData = terrain != null ? terrain.terrainData : null;
+            DetailPrototype[] prototypes = terrainData != null ? terrainData.detailPrototypes : null;
+            if (prototypes == null || prototypes.Length == 0)
+            {
+                EditorGUILayout.HelpBox("This Terrain does not have any detail prototypes to thin.", MessageType.Warning);
+                return;
+            }
+
+            string[] detailNames = BuildDetailNames(prototypes, slopeFilter.FoliageProfile);
+            int selectedIndex = Mathf.Clamp(
+                detailThinningPrototypeIndexProperty.intValue,
+                0,
+                prototypes.Length - 1);
+            detailThinningPrototypeIndexProperty.intValue = EditorGUILayout.Popup(
+                new GUIContent("Detail To Thin", "Only this grass or bush detail layer will be modified."),
+                selectedIndex,
+                detailNames);
+
+            detailThinningRemovalPercentageProperty.floatValue = EditorGUILayout.Slider(
+                new GUIContent("Removal Percentage", "Exact rounded percentage of the selected detail instances to remove."),
+                detailThinningRemovalPercentageProperty.floatValue,
+                0f,
+                100f);
+            EditorGUILayout.PropertyField(
+                detailThinningRandomSeedProperty,
+                new GUIContent("Random Seed", "The same terrain data, percentage, and seed produce the same random distribution."));
+
+            serializedObject.ApplyModifiedProperties();
+
+            float removalPercentage = detailThinningRemovalPercentageProperty.floatValue;
+            int detailIndex = detailThinningPrototypeIndexProperty.intValue;
+            using (new EditorGUI.DisabledScope(removalPercentage <= 0f))
+            {
+                if (GUILayout.Button(
+                        $"Randomly Remove {removalPercentage:0.##}% of {detailNames[detailIndex]}",
+                        GUILayout.Height(34f)))
+                {
+                    ThinSelectedDetail(
+                        slopeFilter,
+                        terrain,
+                        terrainData,
+                        detailIndex,
+                        detailNames[detailIndex],
+                        removalPercentage,
+                        detailThinningRandomSeedProperty.intValue);
+                }
+            }
+
+            EditorGUILayout.HelpBox(
+                "Each run is recorded as one Unity Undo operation. Use Ctrl+Z or Edit > Undo immediately after a run to restore every removed instance, adjust the percentage, and try again.",
+                MessageType.None);
+        }
+
+        private void ThinSelectedDetail(
+            MMOTerrainDetailSlopeFilter slopeFilter,
+            Terrain terrain,
+            TerrainData terrainData,
+            int detailIndex,
+            string detailName,
+            float removalPercentage,
+            int randomSeed)
+        {
+            string undoName = $"Thin Terrain Detail {detailName}";
+            Undo.IncrementCurrentGroup();
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName(undoName);
+            TerrainPaintUtilityEditor.UpdateTerrainDataUndo(terrainData, undoName);
+
+            long removedInstances = MMOTerrainDetailSlopeProcessor.RemoveRandomPercentage(
+                terrainData,
+                detailIndex,
+                removalPercentage,
+                randomSeed);
+
+            Undo.CollapseUndoOperations(undoGroup);
+            EditorUtility.SetDirty(terrainData);
+            AssetDatabase.SaveAssetIfDirty(terrainData);
+            terrain.Flush();
+            SceneView.RepaintAll();
+
+            operationResult = $"Randomly removed {removedInstances:N0} instances ({removalPercentage:0.##}%) of {detailName}. Use Ctrl+Z to undo this run.";
+            operationResultType = MessageType.Info;
+            Debug.Log($"{operationResult} Terrain: {terrain.name}. Seed: {randomSeed}.", slopeFilter);
         }
 
         private void LoadDetailScaleIfNeeded(TerrainData terrainData, DetailPrototype prototype)
@@ -404,6 +505,91 @@ namespace RPGClone.EditorTools
 
     public static class MMOTerrainDetailSlopeProcessor
     {
+        public static long RemoveRandomPercentage(
+            TerrainData terrainData,
+            int detailPrototypeIndex,
+            float removalPercentage,
+            int randomSeed)
+        {
+            if (terrainData == null)
+            {
+                throw new ArgumentNullException(nameof(terrainData));
+            }
+
+            int prototypeCount = terrainData.detailPrototypes.Length;
+            if (detailPrototypeIndex < 0 || detailPrototypeIndex >= prototypeCount)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(detailPrototypeIndex),
+                    detailPrototypeIndex,
+                    $"Detail prototype index must be between 0 and {prototypeCount - 1}.");
+            }
+
+            float clampedPercentage = Mathf.Clamp(removalPercentage, 0f, 100f);
+            if (clampedPercentage <= 0f)
+            {
+                return 0L;
+            }
+
+            int width = terrainData.detailWidth;
+            int height = terrainData.detailHeight;
+            int[,] details = terrainData.GetDetailLayer(
+                0,
+                0,
+                width,
+                height,
+                detailPrototypeIndex);
+
+            long totalInstances = 0L;
+            for (int z = 0; z < height; z++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    totalInstances += details[z, x];
+                }
+            }
+
+            long targetRemovalCount = (long)Math.Round(
+                totalInstances * (clampedPercentage / 100d),
+                MidpointRounding.AwayFromZero);
+            targetRemovalCount = Math.Max(0L, Math.Min(totalInstances, targetRemovalCount));
+            if (targetRemovalCount == 0L)
+            {
+                return 0L;
+            }
+
+            System.Random random = new(randomSeed);
+            long remainingInstances = totalInstances;
+            long remainingRemovals = targetRemovalCount;
+
+            for (int z = 0; z < height; z++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int density = details[z, x];
+                    int removalsFromCell = 0;
+                    for (int instanceIndex = 0; instanceIndex < density; instanceIndex++)
+                    {
+                        bool remove = remainingRemovals >= remainingInstances ||
+                                      remainingRemovals > 0L &&
+                                      random.NextDouble() < (double)remainingRemovals / remainingInstances;
+                        if (remove)
+                        {
+                            removalsFromCell++;
+                            remainingRemovals--;
+                        }
+
+                        remainingInstances--;
+                    }
+
+                    details[z, x] = density - removalsFromCell;
+                }
+            }
+
+            terrainData.SetDetailLayer(0, 0, detailPrototypeIndex, details);
+            return targetRemovalCount;
+        }
+
         public static int RemoveDisallowedDetails(TerrainData terrainData, float maximumSlopeDegrees)
         {
             if (terrainData == null)

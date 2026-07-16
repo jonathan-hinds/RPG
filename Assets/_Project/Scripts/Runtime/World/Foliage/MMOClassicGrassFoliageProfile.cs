@@ -7,6 +7,9 @@ namespace RPGClone.World.Foliage
     [CreateAssetMenu(menuName = "RPG Clone/World/Classic Grass Foliage Profile")]
     public sealed class MMOClassicGrassFoliageProfile : ScriptableObject
     {
+        public static readonly Color DefaultHealthyColor = new(0.42f, 0.70f, 0.48f, 1f);
+        public static readonly Color DefaultDryColor = new(0.72f, 0.56f, 0.34f, 1f);
+
         [Min(32)]
         public int detailResolution = 192;
 
@@ -18,6 +21,15 @@ namespace RPGClone.World.Foliage
 
         [Min(8f)]
         public float detailDrawDistance = 92f;
+
+        [Header("Terrain Wind")]
+        [Tooltip("Strength of Unity Terrain's native grass and foliage bending.")]
+        [Range(0f, 1f)]
+        public float terrainWindStrength = 0.25f;
+
+        [Tooltip("Distance that Unity Terrain's wind displaces grass and foliage vertices.")]
+        [Range(0f, 1f)]
+        public float terrainWindAmount = 0.25f;
 
         [Header("Terrain Placement")]
         [Tooltip("Terrain details are never painted above this unsigned slope angle. This applies equally to inclines and declines.")]
@@ -32,11 +44,13 @@ namespace RPGClone.World.Foliage
         public float cardWidth = 0.82f;
         public float cardHeight = 1.08f;
         public float alphaCutoff = 0.02f;
-        [Range(0.05f, 1f)]
-        public float opacity = 0.35f;
 
-        public Color healthyColor = Color.white;
-        public Color dryColor = Color.white;
+        [Header("Terrain Color Blending")]
+        [Tooltip("Tint for larger, healthier grass clumps. This multiplies the grass texture and should match the terrain's grass palette.")]
+        public Color healthyColor = DefaultHealthyColor;
+
+        [Tooltip("Tint for smaller, drier grass clumps. Unity blends between this and Healthy Color using native terrain detail variation.")]
+        public Color dryColor = DefaultDryColor;
 
         public List<MMOClassicGrassFoliageVariation> variations = new();
     }
@@ -73,8 +87,5 @@ namespace RPGClone.World.Foliage
         public float clusterThreshold = 0.58f;
         public float fineNoiseScale = 0.115f;
         public float fineThreshold = 0.36f;
-
-        [Range(0.05f, 1f)]
-        public float opacity = 0.35f;
     }
 }
