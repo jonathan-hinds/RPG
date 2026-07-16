@@ -27,6 +27,7 @@ namespace RPGClone.Abilities
         private MMOCombatant combatant;
         private ActiveCast activeCast;
         private ActiveCharge activeCharge;
+        private ReplicatedCastPresentation replicatedCast;
 
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity, string> AbilityFailed;
         public event Action<MMOAbilitySystem, MMOAbilityDefinition, MMOCharacterIdentity> AbilityUsed;
@@ -41,8 +42,15 @@ namespace RPGClone.Abilities
         public event Action<MMOAbilitySystem, MMOAbilityDefinition> AbilityLearned;
 
         public IReadOnlyList<MMOAbilityDefinition> KnownAbilities => startingAbilities;
-        public bool IsCasting => activeCast != null || activeCharge != null;
-        public float CurrentCastNormalized => activeCast == null ? 0f : Mathf.Clamp01((Time.time - activeCast.StartTime) / activeCast.Duration);
+        public bool IsCasting => activeCast != null || activeCharge != null || replicatedCast != null;
+        public MMOAbilityDefinition CurrentCastAbility => activeCast != null ? activeCast.Ability : replicatedCast?.Ability;
+        public MMOCharacterIdentity CurrentCastTarget => activeCast != null ? activeCast.Target : replicatedCast?.Target;
+        public float CurrentCastDuration => activeCast != null ? activeCast.Duration : replicatedCast != null ? replicatedCast.Duration : 0f;
+        public float CurrentCastNormalized => activeCast != null
+            ? Mathf.Clamp01((Time.time - activeCast.StartTime) / activeCast.Duration)
+            : replicatedCast != null
+                ? Mathf.Clamp01((Time.time - replicatedCast.StartTime) / replicatedCast.Duration)
+                : 0f;
         public MMOCharacterIdentity Identity
         {
             get
@@ -91,6 +99,7 @@ namespace RPGClone.Abilities
         private void Update()
         {
             UpdateCast();
+            UpdateReplicatedCastPresentation();
         }
 
         public bool KnowsAbility(MMOAbilityDefinition ability)
@@ -227,6 +236,7 @@ namespace RPGClone.Abilities
                 }
 
                 CastStarted?.Invoke(this, ability, resolvedTarget, ability.CastTimeSeconds);
+                PublishAuthorityEnemyCastEvent(CombatEventType.CastStarted, ability, resolvedTarget, ability.CastTimeSeconds);
                 return true;
             }
 
@@ -254,6 +264,7 @@ namespace RPGClone.Abilities
                 }
 
                 CastStarted?.Invoke(this, ability, null, ability.CastTimeSeconds);
+                PublishAuthorityEnemyCastEvent(CombatEventType.CastStarted, ability, null, ability.CastTimeSeconds);
                 return true;
             }
 
@@ -463,7 +474,61 @@ namespace RPGClone.Abilities
                 return;
             }
 
+            float duration = Mathf.Max(0.01f, durationSeconds);
+            if (replicatedCast != null && replicatedCast.Ability == ability)
+            {
+                replicatedCast.Target = target;
+                replicatedCast.Duration = duration;
+                return;
+            }
+
+            replicatedCast = new ReplicatedCastPresentation(ability, target, Time.time, duration);
             CastStarted?.Invoke(this, ability, target, Mathf.Max(0.01f, durationSeconds));
+        }
+
+        public void ApplyReplicatedCastSnapshot(
+            MMOAbilityDefinition ability,
+            MMOCharacterIdentity target,
+            float durationSeconds,
+            float normalizedProgress)
+        {
+            if (ability == null || durationSeconds <= 0f)
+            {
+                if (replicatedCast != null)
+                {
+                    PlayReplicatedCastInterrupted(replicatedCast.Ability, replicatedCast.Target, "Casting stopped.");
+                }
+
+                return;
+            }
+
+            float duration = Mathf.Max(0.01f, durationSeconds);
+            float synchronizedStartTime = Time.time - Mathf.Clamp01(normalizedProgress) * duration;
+            if (replicatedCast != null && replicatedCast.Ability == ability)
+            {
+                replicatedCast.Target = target;
+                replicatedCast.Duration = duration;
+                replicatedCast.StartTime = synchronizedStartTime;
+                return;
+            }
+
+            replicatedCast = new ReplicatedCastPresentation(ability, target, synchronizedStartTime, duration);
+            CastStarted?.Invoke(this, ability, target, duration);
+            CastProgressed?.Invoke(this, ability, target, normalizedProgress);
+        }
+
+        public void PlayReplicatedCastInterrupted(
+            MMOAbilityDefinition ability,
+            MMOCharacterIdentity target,
+            string reason)
+        {
+            MMOAbilityDefinition interruptedAbility = replicatedCast != null ? replicatedCast.Ability : ability;
+            MMOCharacterIdentity interruptedTarget = replicatedCast != null ? replicatedCast.Target : target;
+            replicatedCast = null;
+            if (interruptedAbility != null)
+            {
+                CastInterrupted?.Invoke(this, interruptedAbility, interruptedTarget, reason);
+            }
         }
 
         public void PlayReplicatedAbilityReleased(
@@ -479,11 +544,25 @@ namespace RPGClone.Abilities
 
             if (ability.CastTimeSeconds > 0f)
             {
+                replicatedCast = null;
                 CastCompleted?.Invoke(this, ability, target);
             }
 
             AbilityReleased?.Invoke(this, ability, target, targetPosition, hasGroundTarget);
             AbilityUsed?.Invoke(this, ability, target);
+        }
+
+        public MMOAbilityDefinition FindKnownAbilityById(string abilityId)
+        {
+            return FindKnownAbility(abilityId);
+        }
+
+        public void CancelActiveCast(string reason)
+        {
+            if (activeCast != null)
+            {
+                InterruptCast(string.IsNullOrWhiteSpace(reason) ? "Casting interrupted." : reason);
+            }
         }
 
         public bool TryResolveAuthorityRequest(CombatActionRequest request, MMOCharacterIdentity target, out string failureReason)
@@ -879,7 +958,7 @@ namespace RPGClone.Abilities
             {
                 if (!TryPrepareGroundAbility(ability, groundTargetPosition, out string groundFailureReason))
                 {
-                    CastInterrupted?.Invoke(this, ability, null, groundFailureReason);
+                    NotifyCastInterrupted(ability, null, groundFailureReason);
                     return;
                 }
 
@@ -890,12 +969,22 @@ namespace RPGClone.Abilities
 
             if (!TryPrepareAbility(ability, target, out string failureReason, out MMOCombatant targetCombatant))
             {
-                CastInterrupted?.Invoke(this, ability, target, failureReason);
+                NotifyCastInterrupted(ability, target, failureReason);
                 return;
             }
 
             ExecutePreparedAbility(ability, target, targetCombatant);
             CastCompleted?.Invoke(this, ability, target);
+        }
+
+        private void UpdateReplicatedCastPresentation()
+        {
+            if (replicatedCast == null)
+            {
+                return;
+            }
+
+            CastProgressed?.Invoke(this, replicatedCast.Ability, replicatedCast.Target, CurrentCastNormalized);
         }
 
         private bool TryValidateChannel(ActiveCast channel, out string failureReason)
@@ -1064,6 +1153,30 @@ namespace RPGClone.Abilities
             MMOCombatEventStream.PublishCombatEvent(record, combatant, targetCombatant, ability);
         }
 
+        private void PublishAuthorityEnemyCastEvent(
+            CombatEventType eventType,
+            MMOAbilityDefinition ability,
+            MMOCharacterIdentity target,
+            float durationSeconds)
+        {
+            if (!MMOGameplaySessionService.IsHostAuthority
+                || ability == null
+                || combatant == null
+                || combatant.GetComponent<MMOEnemyController>() == null)
+            {
+                return;
+            }
+
+            MMOCombatant targetCombatant = target != null ? target.GetComponent<MMOCombatant>() : null;
+            CombatEventRecord record = CombatEventRecord.Create(eventType);
+            record.sessionId = MMOGameplaySessionService.SessionId ?? string.Empty;
+            record.abilityId = ability.AbilityId;
+            record.castDurationSeconds = Mathf.Max(0f, durationSeconds);
+            PopulateCombatEndpoint(record, combatant, true);
+            PopulateCombatEndpoint(record, targetCombatant, false);
+            MMOCombatEventStream.PublishCombatEvent(record, combatant, targetCombatant, ability);
+        }
+
         private static void PopulateCombatEndpoint(CombatEventRecord record, MMOCombatant endpoint, bool sourceEndpoint)
         {
             if (record == null || endpoint == null || endpoint.Identity == null)
@@ -1142,8 +1255,14 @@ namespace RPGClone.Abilities
             MMOAbilityDefinition ability = activeCast.Ability;
             MMOCharacterIdentity target = activeCast.Target;
             activeCast = null;
-            CastInterrupted?.Invoke(this, ability, target, reason);
+            NotifyCastInterrupted(ability, target, reason);
             AbilityFailed?.Invoke(this, ability, target, reason);
+        }
+
+        private void NotifyCastInterrupted(MMOAbilityDefinition ability, MMOCharacterIdentity target, string reason)
+        {
+            CastInterrupted?.Invoke(this, ability, target, reason);
+            PublishAuthorityEnemyCastEvent(CombatEventType.CastInterrupted, ability, target, 0f);
         }
 
         private bool Fail(MMOAbilityDefinition ability, MMOCharacterIdentity target, string reason, out string failureReason)
@@ -1252,6 +1371,26 @@ namespace RPGClone.Abilities
                 TargetCombatant = targetCombatant;
                 Effect = effect;
                 Corners = corners ?? Array.Empty<Vector3>();
+            }
+        }
+
+        private sealed class ReplicatedCastPresentation
+        {
+            public readonly MMOAbilityDefinition Ability;
+            public MMOCharacterIdentity Target;
+            public float StartTime;
+            public float Duration;
+
+            public ReplicatedCastPresentation(
+                MMOAbilityDefinition ability,
+                MMOCharacterIdentity target,
+                float startTime,
+                float duration)
+            {
+                Ability = ability;
+                Target = target;
+                StartTime = startTime;
+                Duration = Mathf.Max(0.01f, duration);
             }
         }
     }

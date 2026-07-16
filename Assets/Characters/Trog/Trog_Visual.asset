@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ec76b4c3da7c5745bc508990c32e1e4, type: 3}
+  m_Name: Trog_Visual
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureVisualDefinition
+  creatureId: Trog
+  displayName: Trog Caster
+  modelPrefab: {fileID: 919132149155446097, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+  diffuseTexture: {fileID: 2800000, guid: c920f9bce6487df42ad0123a330c4aff, type: 3}
+  normalTexture: {fileID: 0}
+  animationSet: {fileID: 11400000, guid: f8089e9efa611af45a0eb4a23a996c30, type: 2}
+  defaultEnemyDefinition: {fileID: 11400000, guid: 9cfb41f16f018a54986a7fbbdaa53e00, type: 2}
+  matchingEnemyDefinitions:
+  - {fileID: 11400000, guid: 9cfb41f16f018a54986a7fbbdaa53e00, type: 2}
+  sceneNamePrefixes:
+  - Trog
+  - Trog Caster
+  bodyType: 0
+  targetHeight: 1.9
+  colliderRadius: 0.48
+  colliderLength: 1.9
+  colliderCenter: {x: 0, y: 0.95, z: 0}
+  visualLocalOffset: {x: 0, y: 0, z: 0}
+  visualLocalEulerAngles: {x: 0, y: 0, z: 0}
+  modelYawOffsetDegrees: 0
+  smoothness: 0.3
+  metallic: 0

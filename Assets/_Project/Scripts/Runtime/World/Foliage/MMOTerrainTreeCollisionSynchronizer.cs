@@ -23,7 +23,16 @@ namespace RPGClone.World.Foliage
         private void OnEnable()
         {
             CacheTerrain();
-            SyncNow();
+            if (Application.isPlaying || transform.Find(collisionRootName) == null)
+            {
+                SyncNow();
+                return;
+            }
+
+            // Generated blockers are serialized with the scene. Reuse them after an
+            // editor domain reload so unrelated script changes do not replace every
+            // blocker and churn the scene's local file IDs.
+            lastSyncedHash = ComputeTreeHash();
         }
 
         private void OnValidate()

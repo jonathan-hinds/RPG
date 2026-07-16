@@ -16,7 +16,10 @@ namespace RPGClone.Animation
         private static readonly int DamageHash = Animator.StringToHash(MMOCreatureAnimationSet.DamageParameter);
         private static readonly int DeathHash = Animator.StringToHash(MMOCreatureAnimationSet.DeathParameter);
         private static readonly int DeadHash = Animator.StringToHash(MMOCreatureAnimationSet.DeadParameter);
+        private static readonly int ActionSpeedHash = Animator.StringToHash(MMOCreatureAnimationSet.ActionSpeedParameter);
         private static readonly int LocomotionHash = Animator.StringToHash("Base Layer.Locomotion");
+        private static readonly int CastingStateHash = Animator.StringToHash("Base Layer.Casting");
+        private static readonly int CastStateHash = Animator.StringToHash("Base Layer.Cast");
 
         [SerializeField] private MMOCreatureAnimationSet animationSet;
         [SerializeField] private Animator animator;
@@ -35,6 +38,7 @@ namespace RPGClone.Animation
         private float nextDamageReactionTime;
         private int nextAttackIndex;
         private bool dead;
+        private float castReturnTime;
 
         private void Awake()
         {
@@ -50,6 +54,12 @@ namespace RPGClone.Animation
             {
                 abilitySystem.AbilityUsed -= OnAbilityUsed;
                 abilitySystem.AbilityUsed += OnAbilityUsed;
+                abilitySystem.CastStarted -= OnCastStarted;
+                abilitySystem.CastStarted += OnCastStarted;
+                abilitySystem.CastInterrupted -= OnCastInterrupted;
+                abilitySystem.CastInterrupted += OnCastInterrupted;
+                abilitySystem.CastCompleted -= OnCastCompleted;
+                abilitySystem.CastCompleted += OnCastCompleted;
             }
 
             if (combatant != null)
@@ -66,6 +76,9 @@ namespace RPGClone.Animation
             if (abilitySystem != null)
             {
                 abilitySystem.AbilityUsed -= OnAbilityUsed;
+                abilitySystem.CastStarted -= OnCastStarted;
+                abilitySystem.CastInterrupted -= OnCastInterrupted;
+                abilitySystem.CastCompleted -= OnCastCompleted;
             }
 
             if (combatant != null)
@@ -85,6 +98,15 @@ namespace RPGClone.Animation
             if (dead && combatant != null && combatant.IsAlive)
             {
                 ResetAfterRespawn();
+            }
+
+            if (!dead && castReturnTime > 0f && Time.time >= castReturnTime)
+            {
+                castReturnTime = 0f;
+                if (animator.HasState(0, LocomotionHash))
+                {
+                    animator.CrossFadeInFixedTime(LocomotionHash, 0.08f, 0, 0f);
+                }
             }
 
             float worldSpeed = dead ? 0f : GetWorldSpeed();
@@ -183,6 +205,7 @@ namespace RPGClone.Animation
             animator.runtimeAnimatorController = overrideController;
             animator.applyRootMotion = animationSet.ApplyRootMotion;
             animator.SetBool(DeadHash, dead);
+            animator.SetFloat(ActionSpeedHash, 1f);
 
             if (visualRoot != null)
             {
@@ -206,6 +229,8 @@ namespace RPGClone.Animation
                 MMOCreatureAnimationSet.Attack2PlaceholderName => animationSet.Attack2,
                 MMOCreatureAnimationSet.DamagePlaceholderName => animationSet.Damage,
                 MMOCreatureAnimationSet.DeathPlaceholderName => animationSet.Death,
+                MMOCreatureAnimationSet.CastingPlaceholderName => animationSet.Casting,
+                MMOCreatureAnimationSet.CastPlaceholderName => animationSet.Cast,
                 _ => null
             };
         }
@@ -260,6 +285,48 @@ namespace RPGClone.Animation
             attackPriorityUntil = Time.time + animationSet.AttackPrioritySeconds;
         }
 
+        private void OnCastStarted(MMOAbilitySystem source, MMOAbilityDefinition ability, MMOCharacterIdentity target, float duration)
+        {
+            if (source != abilitySystem || ability == null || animationSet == null || animationSet.Casting == null || dead || animator == null)
+            {
+                return;
+            }
+
+            animator.ResetTrigger(Attack1Hash);
+            animator.ResetTrigger(Attack2Hash);
+            animator.SetFloat(ActionSpeedHash, 1f);
+            animator.CrossFadeInFixedTime(CastingStateHash, 0.08f, 0, 0f);
+            attackPriorityUntil = Time.time + Mathf.Max(0.1f, duration);
+        }
+
+        private void OnCastInterrupted(MMOAbilitySystem source, MMOAbilityDefinition ability, MMOCharacterIdentity target, string reason)
+        {
+            if (source != abilitySystem || dead || animator == null)
+            {
+                return;
+            }
+
+            attackPriorityUntil = 0f;
+            castReturnTime = 0f;
+            if (animator.HasState(0, LocomotionHash))
+            {
+                animator.CrossFadeInFixedTime(LocomotionHash, 0.08f, 0, 0f);
+            }
+        }
+
+        private void OnCastCompleted(MMOAbilitySystem source, MMOAbilityDefinition ability, MMOCharacterIdentity target)
+        {
+            if (source != abilitySystem || ability == null || animationSet == null || animationSet.Cast == null || dead || animator == null)
+            {
+                return;
+            }
+
+            animator.SetFloat(ActionSpeedHash, 1f);
+            animator.CrossFadeInFixedTime(CastStateHash, 0.04f, 0, 0f);
+            attackPriorityUntil = Time.time + Mathf.Max(0.2f, animationSet.AttackPrioritySeconds);
+            castReturnTime = Time.time + Mathf.Max(0.1f, animationSet.Cast.length * 0.9f);
+        }
+
         private void OnDamaged(MMOCombatant source, MMOCombatant target, MMOAbilityDefinition ability, int amount)
         {
             if (target != combatant || amount <= 0 || dead || animator == null || animationSet == null)
@@ -312,6 +379,7 @@ namespace RPGClone.Animation
             dead = false;
             nextAttackIndex = 0;
             attackPriorityUntil = 0f;
+            castReturnTime = 0f;
             nextDamageReactionTime = 0f;
             lastPosition = transform.position;
 
@@ -326,6 +394,7 @@ namespace RPGClone.Animation
             animator.ResetTrigger(DeathHash);
             animator.SetBool(DeadHash, false);
             animator.SetFloat(MoveSpeedHash, 0f);
+            animator.SetFloat(ActionSpeedHash, 1f);
 
             if (animator.HasState(0, LocomotionHash))
             {

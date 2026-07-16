@@ -17,6 +17,7 @@ namespace RPGClone.UI
 
         private readonly List<MMOUnitFrameView> partyFrames = new();
         private RectTransform partyFrameRoot;
+        private MMOUnitFrameCastBarPresenter targetCastBar;
 
         private void Start()
         {
@@ -106,6 +107,8 @@ namespace RPGClone.UI
                 Transform targetFrameTransform = transform.Find("Target Unit Frame");
                 targetFrame = targetFrameTransform != null ? targetFrameTransform.GetComponent<MMOUnitFrameView>() : null;
             }
+
+            EnsureTargetCastBar();
         }
 
         private void BindFrames()
@@ -117,7 +120,9 @@ namespace RPGClone.UI
 
             if (targetFrame != null)
             {
-                targetFrame.Bind(targetSelectionController != null ? targetSelectionController.CurrentTarget : null);
+                MMOCharacterIdentity target = targetSelectionController != null ? targetSelectionController.CurrentTarget : null;
+                targetFrame.Bind(target);
+                targetCastBar?.Bind(target);
             }
         }
 
@@ -140,6 +145,28 @@ namespace RPGClone.UI
             if (targetFrame != null)
             {
                 targetFrame.Bind(target);
+                targetCastBar?.Bind(target);
+            }
+        }
+
+        private void EnsureTargetCastBar()
+        {
+            if (targetFrame == null || targetCastBar != null)
+            {
+                return;
+            }
+
+            Transform existing = targetFrame.transform.Find("Target Cast Bar");
+            if (existing != null)
+            {
+                targetCastBar = existing.GetComponent<MMOUnitFrameCastBarPresenter>();
+            }
+
+            if (targetCastBar == null)
+            {
+                GameObject castBarObject = new("Target Cast Bar", typeof(RectTransform));
+                castBarObject.transform.SetParent(targetFrame.transform, false);
+                targetCastBar = castBarObject.AddComponent<MMOUnitFrameCastBarPresenter>();
             }
         }
 

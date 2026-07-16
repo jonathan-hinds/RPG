@@ -11,6 +11,7 @@ namespace RPGClone.Animation
         public const string DamageParameter = "Damage";
         public const string DeathParameter = "Death";
         public const string DeadParameter = "Dead";
+        public const string ActionSpeedParameter = "ActionSpeed";
 
         public const string IdlePlaceholderName = "MMO_Idle";
         public const string WalkBackwardsPlaceholderName = "MMO_WalkBackwards";
@@ -20,6 +21,8 @@ namespace RPGClone.Animation
         public const string Attack2PlaceholderName = "MMO_Attack2";
         public const string DamagePlaceholderName = "MMO_Damage";
         public const string DeathPlaceholderName = "MMO_Death";
+        public const string CastingPlaceholderName = "MMO_Casting";
+        public const string CastPlaceholderName = "MMO_Cast";
 
         [Header("Controller")]
         [SerializeField] private RuntimeAnimatorController baseController;
@@ -37,6 +40,8 @@ namespace RPGClone.Animation
         [SerializeField] private AnimationClip attack2;
         [SerializeField] private AnimationClip damage;
         [SerializeField] private AnimationClip death;
+        [SerializeField] private AnimationClip casting;
+        [SerializeField] private AnimationClip cast;
         [SerializeField] private bool alternateAttacks = true;
         [SerializeField, Min(0f)] private float attackPrioritySeconds = 0.8f;
         [SerializeField, Min(0f)] private float damageReactionCooldownSeconds = 0.45f;
@@ -53,6 +58,8 @@ namespace RPGClone.Animation
         public AnimationClip Attack2 => attack2;
         public AnimationClip Damage => damage;
         public AnimationClip Death => death;
+        public AnimationClip Casting => casting;
+        public AnimationClip Cast => cast;
         public bool AlternateAttacks => alternateAttacks;
         public float AttackPrioritySeconds => attackPrioritySeconds;
         public float DamageReactionCooldownSeconds => damageReactionCooldownSeconds;
@@ -110,6 +117,12 @@ namespace RPGClone.Animation
             movementDampSeconds = Mathf.Max(0f, newMovementDampSeconds);
             applyRootMotion = newApplyRootMotion;
             modelYawOffsetDegrees = newModelYawOffsetDegrees;
+        }
+
+        public void ConfigureCasting(AnimationClip newCasting, AnimationClip newCast)
+        {
+            casting = newCasting;
+            cast = newCast;
         }
     }
 }

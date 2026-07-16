@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7be62599e92490e46baca1994a8fdda7, type: 3}
+  m_Name: Trog_AnimationSet
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureAnimationSet
+  baseController: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+  idle: {fileID: 7400000, guid: a477b2abf5c37b14cad6f8add38c39a4, type: 2}
+  walk: {fileID: 7400000, guid: 4c7689e69991ca849b439aead321b06a, type: 2}
+  run: {fileID: 7400000, guid: 8e70d5dc18568b64ebd1bfb3c9f0c262, type: 2}
+  walkSpeed: 1.45
+  runSpeed: 4.1
+  movementDampSeconds: 0.1
+  attack1: {fileID: 7400000, guid: 84d265f7b4bd76b4cbc2450495115dce, type: 2}
+  attack2: {fileID: 7400000, guid: 84d265f7b4bd76b4cbc2450495115dce, type: 2}
+  damage: {fileID: 7400000, guid: aa3132dcc0f959a49923a6f90261be24, type: 2}
+  death: {fileID: 7400000, guid: f427cd8c6f3e323468bf782b4823c87a, type: 2}
+  casting: {fileID: 7400000, guid: e8bda9a234634144aadb258955ae121f, type: 2}
+  cast: {fileID: 7400000, guid: aad81fbc801281c4cbaac6d47d71bc86, type: 2}
+  alternateAttacks: 1
+  attackPrioritySeconds: 0.75
+  damageReactionCooldownSeconds: 0.4
+  applyRootMotion: 0
+  modelYawOffsetDegrees: 0

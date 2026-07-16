@@ -9,7 +9,7 @@ The goal is that designers can follow the steps without needing to write code. T
 A working creature enemy needs four groups of assets:
 
 1. Model and textures: the visible creature.
-2. Animation clips: the seven standard creature animations.
+2. Animation clips: the seven standard creature animations, plus optional caster clips.
 3. Gameplay data: name, level, health, aggro behavior, loot, movement, and rewards.
 4. Generated prefab: the scene-ready enemy object that has the model, capsule, NavMeshAgent, combat components, and Animator hookup.
 
@@ -55,6 +55,13 @@ Every standard creature should have these seven animations:
 Idle, Walk, and Run should loop.
 
 Attack 1, Attack 2, Damage, and Death should not loop.
+
+Spellcasting creatures can additionally provide:
+
+1. Casting: a looping pose used for the cast-time channel.
+2. Cast: a non-looping release animation played when the spell completes.
+
+The shared controller works with either seven-animation melee sets or nine-animation caster sets. A creature with only one melee attack may assign the same clip to Attack 1 and Attack 2.
 
 The Wolf FBX contains all seven takes in one file:
 
@@ -164,8 +171,9 @@ The enemy definition controls how the creature behaves.
 5. Set `Disposition`.
 6. Assign `Assets/_Project/Configs/Abilities/Auto_Attack.asset` to `Auto Attack Ability`.
 7. Add the same Auto Attack asset to the `Abilities` list.
-8. Assign the loot table if the creature should drop loot.
-9. Tune movement and aggro.
+8. For a caster, add one or more hostile cast-time abilities after Auto Attack. Ability order is its spell priority.
+9. Assign the loot table if the creature should drop loot.
+10. Tune movement and aggro.
 
 Common enemy-definition values:
 
@@ -180,6 +188,8 @@ Chase Speed: speed while chasing a target.
 Stopping Distance: how close the agent tries to stand while attacking.
 Respawn Seconds: how long before the enemy returns after death.
 ```
+
+Caster enemies stop and cast once a ready hostile spell is in range. They chase into melee range and auto attack while their spells are unavailable. Cast-time abilities should normally have `Interrupt On Movement` enabled. Movement during a cast interrupts it, and damage uses the shared cast-pushback rules. Cast start, progress, interruption, release, and spell visuals are replicated through the same session path as player abilities.
 
 For the Wolf, the enemy definition is:
 
@@ -202,8 +212,9 @@ The animation set tells the shared creature Animator which seven clips to use.
 9. Assign the creature's Attack 2 clip.
 10. Assign the creature's Damage clip.
 11. Assign the creature's Death clip.
-12. Set `Walk Speed` and `Run Speed` close to the enemy definition's walk and chase speeds.
-13. Leave `Apply Root Motion` off unless an engineer specifically says the creature should move from animation root motion.
+12. For a caster, assign its looping Casting clip and non-looping Cast release clip.
+13. Set `Walk Speed` and `Run Speed` close to the enemy definition's walk and chase speeds.
+14. Leave `Apply Root Motion` off unless an engineer specifically says the creature should move from animation root motion.
 
 For the Wolf, the animation set uses all seven generated Wolf clips:
 
@@ -297,13 +308,17 @@ MMO Combatant
 MMO Ability System
 MMO Character Regeneration
 MMO Lootable Corpse
+MMO Ability VFX Anchors
 MMO Auto Attack Controller
 MMO Enemy Controller
 MMO Creature Animator
+Spell Cast Origin child transform
 The creature model as a child object
 ```
 
 Do not manually remove these components from the generated prefab.
+
+`Spell Cast Origin` is the per-creature control point for casting and spell-release visuals. Move that child in the prefab when a creature's effect should originate from a hand, weapon, mouth, or staff. Generated creature prefabs use this explicit point instead of depending on rig-specific hand-bone names, so Generic rigs from AccuRIG, Auto-Rig Pro, and other authoring tools use the same runtime path.
 
 ## Step 12: Place The Enemy In The World
 
@@ -354,6 +369,15 @@ Before calling the creature done, check these items:
 9. Death plays when the enemy dies.
 10. The enemy returns or respawns according to the enemy definition.
 11. The enemy drops expected loot if a loot table is assigned.
+
+For a caster, also confirm:
+
+1. It stops at spell range and does not slide while casting.
+2. Moving it during a cast interrupts the spell.
+3. Its target frame shows the cast name and synchronized progress bar.
+4. Casting and release animations play in order.
+5. The visual begins at `Spell Cast Origin` and reaches the target.
+6. A second connected player sees the same cast, interruption, damage, and visuals.
 
 ## Troubleshooting
 

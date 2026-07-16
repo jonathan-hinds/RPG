@@ -14,6 +14,8 @@ namespace RPGClone.Vfx
         [SerializeField] private Transform centerAnchor;
 
         public Transform CastingAnchor => castingAnchor != null ? castingAnchor : centerAnchor;
+        public bool HasExplicitCastingAnchor => castingAnchor != null;
+        public Vector3 ExplicitCastingPosition => castingAnchor != null ? castingAnchor.position : transform.position;
         public Transform LeftHandAnchor
         {
             get
@@ -58,6 +60,11 @@ namespace RPGClone.Vfx
 
         public Vector3 ResolveCastOriginPosition(MMOAbilityVfxDefinition definition)
         {
+            if (castOriginAnchor != null)
+            {
+                return castOriginAnchor.position;
+            }
+
             if (LeftHandAnchor != null && RightHandAnchor != null)
             {
                 return Vector3.Lerp(LeftHandAnchor.position, RightHandAnchor.position, 0.5f);
@@ -69,6 +76,25 @@ namespace RPGClone.Vfx
         public Vector3 ResolveHitPosition(MMOAbilityVfxDefinition definition)
         {
             return ResolveLocalPosition(HitAnchor, definition != null ? definition.HitLocalOffset : Vector3.zero);
+        }
+
+        public void Configure(
+            Transform newCastingAnchor,
+            Transform newCastOriginAnchor,
+            Transform newHitAnchor = null,
+            Transform newCenterAnchor = null,
+            bool newAutoResolveHandAnchors = true)
+        {
+            autoResolveHandAnchors = newAutoResolveHandAnchors;
+            castingAnchor = newCastingAnchor;
+            castOriginAnchor = newCastOriginAnchor;
+            hitAnchor = newHitAnchor;
+            centerAnchor = newCenterAnchor;
+            if (!autoResolveHandAnchors)
+            {
+                leftHandAnchor = null;
+                rightHandAnchor = null;
+            }
         }
 
         private Vector3 ResolveLocalPosition(Transform anchor, Vector3 localOffset)

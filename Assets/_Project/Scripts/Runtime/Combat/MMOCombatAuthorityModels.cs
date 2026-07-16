@@ -44,6 +44,8 @@ namespace RPGClone.Combat
 
     public enum CombatEventType
     {
+        CastStarted,
+        CastInterrupted,
         AbilityReleased,
         DamageResolved,
         HealResolved,
@@ -134,6 +136,7 @@ namespace RPGClone.Combat
         public string abilityId;
         public Vector3SaveData targetPosition;
         public bool hasGroundTarget;
+        public float castDurationSeconds;
         public int damageAmount;
         public int healAmount;
         public int blockedAmount;
@@ -185,6 +188,10 @@ namespace RPGClone.Combat
         public string currentTargetCharacterId;
         public bool inCombat;
         public bool leashing;
+        public string castAbilityId;
+        public string castTargetCharacterId;
+        public float castDurationSeconds;
+        public float castNormalizedProgress;
         public float corpseRemainingSeconds;
         public float respawnRemainingSeconds;
         public long updatedUtcTicks;

@@ -1844,6 +1844,7 @@ namespace RPGClone.Multiplayer
                     abilityId = source.abilityId,
                     targetPosition = source.targetPosition,
                     hasGroundTarget = source.hasGroundTarget,
+                    castDurationSeconds = source.castDurationSeconds,
                     damageAmount = source.damageAmount,
                     healAmount = source.healAmount,
                     blockedAmount = source.blockedAmount,
@@ -1944,6 +1945,10 @@ namespace RPGClone.Multiplayer
             destination.currentTargetCharacterId = source.currentTargetCharacterId;
             destination.inCombat = source.inCombat;
             destination.leashing = source.leashing;
+            destination.castAbilityId = source.castAbilityId;
+            destination.castTargetCharacterId = source.castTargetCharacterId;
+            destination.castDurationSeconds = source.castDurationSeconds;
+            destination.castNormalizedProgress = source.castNormalizedProgress;
             destination.corpseRemainingSeconds = source.corpseRemainingSeconds;
             destination.respawnRemainingSeconds = source.respawnRemainingSeconds;
             destination.updatedUtcTicks = source.updatedUtcTicks;

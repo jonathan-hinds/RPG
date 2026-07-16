@@ -9,6 +9,7 @@ using RPGClone.Combat;
 using RPGClone.Enemies;
 using RPGClone.Inventory;
 using RPGClone.Loot;
+using RPGClone.Vfx;
 using RPGClone.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -284,6 +285,19 @@ namespace RPGClone.EditorTools
             root.AddComponent<MMOAbilitySystem>();
             root.AddComponent<MMOCharacterRegeneration>();
             root.AddComponent<MMOLootableCorpse>();
+            GameObject spellCastOrigin = new("Spell Cast Origin");
+            spellCastOrigin.transform.SetParent(root.transform, false);
+            spellCastOrigin.transform.localPosition = new Vector3(
+                0f,
+                visualDefinition.TargetHeight * 0.62f,
+                visualDefinition.ColliderRadius * 0.6f);
+            MMOAbilityVfxAnchors vfxAnchors = root.AddComponent<MMOAbilityVfxAnchors>();
+            vfxAnchors.Configure(
+                spellCastOrigin.transform,
+                spellCastOrigin.transform,
+                null,
+                spellCastOrigin.transform,
+                false);
             MMOAutoAttackController autoAttack = root.AddComponent<MMOAutoAttackController>();
             autoAttack.SetHandleRightClickInput(false);
             MMOAbilityDefinition autoAttackAbility = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(AutoAttackPath);

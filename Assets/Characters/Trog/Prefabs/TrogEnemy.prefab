@@ -1,0 +1,401 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3099100334044622747
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5401066546903145275}
+  - component: {fileID: 3668865775632381645}
+  - component: {fileID: 7832243743922755358}
+  - component: {fileID: 5165237032871889936}
+  - component: {fileID: 2023483719911005507}
+  - component: {fileID: 6761196188971629242}
+  - component: {fileID: 3932550216001328321}
+  - component: {fileID: 560811822282110984}
+  - component: {fileID: 2559776948202220607}
+  - component: {fileID: 3559038372425610775}
+  - component: {fileID: 1747883186900913948}
+  - component: {fileID: 6961359899695869176}
+  m_Layer: 0
+  m_Name: TrogEnemy
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5401066546903145275
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099100334044622747}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2689319794141608164}
+  - {fileID: 5993966165314939750}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &3668865775632381645
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099100334044622747}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.48
+  m_Height: 1.9
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.95, z: 0}
+--- !u!195 &7832243743922755358
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099100334044622747}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.48
+  m_Speed: 1.45
+  m_Acceleration: 16
+  avoidancePriority: 50
+  m_AngularSpeed: 720
+  m_StoppingDistance: 2.5
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 1.9
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &5165237032871889936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099100334044622747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterIdentity
+  profile: {fileID: 11400000, guid: 1166f43fab1040e4391713fefd07f877, type: 2}
+  displayName: Trog Caster
+  level: 5
+  portrait: {fileID: 0}
+  portraitTint: {r: 0.38, g: 0.62, b: 0.32, a: 1}
+  faction: 3
+  selectable: 1
+  stats:
+    stamina: 12
+    strength: 7
+    agility: 7
+    intellect: 18
+    spirit: 15
+    armor: 8
+    attackPower: 7
+    spellPower: 16
+    meleeMinDamage: 4
+    meleeMaxDamage: 7
+    meleeAttackSpeed: 2.5
+    meleeRange: 3
+  health:
+    currentValue: 250
+    maxValue: 250
+  mana:
+    currentValue: 390
+    maxValue: 390
+--- !u!114 &2023483719911005507
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099100334044622747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 435fe087e6bff5749a08c97991818a52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Combat.MMOCombatant
+  combatDropDelaySeconds: 5
+--- !u!114 &6761196188971629242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099100334044622747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbd1ef234955ff94581217c98b9d6f06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Abilities.MMOAbilitySystem
+  startingAbilities:
+  - {fileID: 11400000, guid: 3c1aade4e9bf68c4c9c6ac4e85e35f96, type: 2}
+  - {fileID: 11400000, guid: 379100a294980a14288d05e0f35b3f3f, type: 2}
+  castKnockbackSeconds: 0.5
+  maxCastKnockbackSeconds: 2
+--- !u!114 &3932550216001328321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099100334044622747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba4da20881c39594382695b3fa3590f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterRegeneration
+  outOfCombatDelaySeconds: 5
+  tickSeconds: 1
+--- !u!114 &560811822282110984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099100334044622747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77cf9a6fa07c49d4f91b042f4521a182, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Loot.MMOLootableCorpse
+  loot: []
+  interactionDistance: 5
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &2559776948202220607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099100334044622747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d4c92cc2856a564498c45ef301929ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.MMOAbilityVfxAnchors
+  autoResolveHandAnchors: 0
+  castingAnchor: {fileID: 2689319794141608164}
+  leftHandAnchor: {fileID: 0}
+  rightHandAnchor: {fileID: 0}
+  castOriginAnchor: {fileID: 2689319794141608164}
+  hitAnchor: {fileID: 0}
+  centerAnchor: {fileID: 2689319794141608164}
+--- !u!114 &3559038372425610775
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099100334044622747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36843d1ce910e804f840f567cd102b6a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Combat.MMOAutoAttackController
+  autoAttackAbility: {fileID: 11400000, guid: 3c1aade4e9bf68c4c9c6ac4e85e35f96, type: 2}
+  targetSelectionController: {fileID: 0}
+  interactionCamera: {fileID: 0}
+  handleRightClickInput: 0
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  maxInteractionDistance: 250
+  selectRightClickedTarget: 1
+  ignorePointerOverUi: 1
+  faceTargetWhileAttacking: 1
+  facingDegreesPerSecond: 720
+  failedAttemptRetrySeconds: 0.5
+--- !u!114 &1747883186900913948
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099100334044622747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85a4e166f90a09c4ba42d316228cedd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Enemies.MMOEnemyController
+  definition: {fileID: 11400000, guid: 9cfb41f16f018a54986a7fbbdaa53e00, type: 2}
+  stableSpawnId: 
+  displayNameOverride: 
+  aggroMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  resetResourcesOnLeash: 1
+  drawDebugGizmos: 1
+  chaseRepathInterval: 0.2
+  chaseRepathDistance: 0.35
+  proxyInterpolationSeconds: 0.18
+  proxySnapDistance: 8
+  rewardEligibility:
+    partyCreditRadius: 80
+    partyLootRadius: 80
+    partyExperienceRadius: 80
+    requireAlive: 1
+--- !u!114 &6961359899695869176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3099100334044622747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c65118628d2d6d49ab49c66681665c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureAnimator
+  animationSet: {fileID: 11400000, guid: f8089e9efa611af45a0eb4a23a996c30, type: 2}
+  animator: {fileID: 418540838355955996}
+  visualRoot: {fileID: 5993966165314939750}
+  agent: {fileID: 7832243743922755358}
+  locomotionSourceBehaviour: {fileID: 1747883186900913948}
+  abilitySystem: {fileID: 6761196188971629242}
+  combatant: {fileID: 2023483719911005507}
+  visualYawOffsetDegrees: 0
+--- !u!1 &3603645121319101142
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2689319794141608164}
+  m_Layer: 0
+  m_Name: Spell Cast Origin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2689319794141608164
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3603645121319101142}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.479, y: 0.965, z: 0.042}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5401066546903145275}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &6099106470307286157
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5401066546903145275}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.6732266
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.6732266
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.6732266
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.008
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_Name
+      value: Trog Caster Visual
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+    - target: {fileID: 7969328392539465805, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 424bb798b18a2f541a2aaf98041b01e5, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+--- !u!95 &418540838355955996 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+  m_PrefabInstance: {fileID: 6099106470307286157}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5993966165314939750 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9a63543793373354ab12e43e89c38916, type: 3}
+  m_PrefabInstance: {fileID: 6099106470307286157}
+  m_PrefabAsset: {fileID: 0}

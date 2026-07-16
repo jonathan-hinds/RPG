@@ -184,6 +184,14 @@ namespace RPGClone.Enemies
                 currentTargetCharacterId = targetParticipant.CharacterId;
             }
 
+            MMOAbilityDefinition castAbility = abilitySystem != null ? abilitySystem.CurrentCastAbility : null;
+            string castTargetCharacterId = string.Empty;
+            MMOCharacterIdentity castTarget = abilitySystem != null ? abilitySystem.CurrentCastTarget : null;
+            if (castTarget != null && MMOGameplaySessionService.Players.TryGetParticipant(castTarget, out MMOPlayerParticipant castTargetParticipant))
+            {
+                castTargetCharacterId = castTargetParticipant.CharacterId;
+            }
+
             return new EnemySnapshot
             {
                 sessionId = MMOGameplaySessionService.SessionId,
@@ -201,6 +209,10 @@ namespace RPGClone.Enemies
                 currentTargetCharacterId = currentTargetCharacterId,
                 inCombat = IsInCombat,
                 leashing = currentTarget == null && CanMoveOnNavMesh() && agent.hasPath,
+                castAbilityId = castAbility != null ? castAbility.AbilityId : string.Empty,
+                castTargetCharacterId = castTargetCharacterId,
+                castDurationSeconds = abilitySystem != null ? abilitySystem.CurrentCastDuration : 0f,
+                castNormalizedProgress = abilitySystem != null ? abilitySystem.CurrentCastNormalized : 0f,
                 corpseRemainingSeconds = Mathf.Max(0f, corpseDespawnEndTime - Time.time),
                 respawnRemainingSeconds = Mathf.Max(0f, respawnEndTime - Time.time),
                 updatedUtcTicks = DateTime.UtcNow.Ticks
@@ -232,6 +244,19 @@ namespace RPGClone.Enemies
             proxyTargetRotation = snapshotRotation;
             proxyWorldSpeed = snapshot.runtimeState == EnemyRuntimeState.Alive ? Mathf.Max(0f, snapshot.worldSpeed) : 0f;
             proxyHasSnapshot = true;
+            MMOAbilityDefinition replicatedCastAbility = abilitySystem.FindKnownAbilityById(snapshot.castAbilityId);
+            MMOCharacterIdentity replicatedCastTarget = null;
+            if (!string.IsNullOrWhiteSpace(snapshot.castTargetCharacterId)
+                && MMOGameplaySessionService.Players.TryGetParticipantByCharacterId(snapshot.castTargetCharacterId, out MMOPlayerParticipant castTargetParticipant))
+            {
+                replicatedCastTarget = castTargetParticipant.Identity;
+            }
+
+            abilitySystem.ApplyReplicatedCastSnapshot(
+                replicatedCastAbility,
+                replicatedCastTarget,
+                snapshot.castDurationSeconds,
+                snapshot.castNormalizedProgress);
             if (shouldSnap)
             {
                 transform.SetPositionAndRotation(proxyTargetPosition, proxyTargetRotation);
@@ -299,27 +324,119 @@ namespace RPGClone.Enemies
                 return;
             }
 
-            float attackRange = GetAttackRange();
             float sqrDistance = (currentTarget.transform.position - transform.position).sqrMagnitude;
+
+            if (abilitySystem.IsCasting)
+            {
+                autoAttackController.StopAutoAttack();
+                StopForCasting();
+                FaceCurrentTarget();
+                return;
+            }
+
+            MMOAbilityDefinition readySpell = FindReadyCombatSpell();
+            if (readySpell != null)
+            {
+                float spellRange = Mathf.Max(0.1f, readySpell.Range);
+                bool inSpellRange = sqrDistance <= spellRange * spellRange;
+                autoAttackController.StopAutoAttack();
+
+                if (inSpellRange)
+                {
+                    StopForCasting();
+                    FaceCurrentTarget();
+                    abilitySystem.TryUseAbility(readySpell, currentTarget, out _);
+                }
+                else
+                {
+                    ChaseTarget(spellRange);
+                }
+
+                return;
+            }
+
+            float attackRange = GetAttackRange();
             bool inAttackRange = sqrDistance <= attackRange * attackRange;
+
+            ChaseTarget(attackRange, inAttackRange);
+
+            if (autoAttackController.CurrentTarget != currentTarget)
+            {
+                autoAttackController.StartAutoAttack(currentTarget);
+            }
+        }
+
+        private void ChaseTarget(float desiredRange, bool? rangeOverride = null)
+        {
+            bool inRange = rangeOverride ?? abilitySystem.IsInRange(currentTarget, desiredRange);
 
             if (CanMoveOnNavMesh())
             {
                 agent.speed = definition.ChaseSpeed * GetMovementSpeedMultiplier();
-                agent.stoppingDistance = Mathf.Max(0.05f, attackRange * 0.85f);
-                agent.isStopped = inAttackRange;
+                agent.stoppingDistance = Mathf.Max(0.05f, desiredRange * 0.85f);
+                agent.isStopped = inRange;
 
-                if (!inAttackRange && ShouldRepathToTarget(currentTarget.transform.position))
+                if (!inRange && ShouldRepathToTarget(currentTarget.transform.position))
                 {
                     lastChaseDestination = currentTarget.transform.position;
                     nextChaseRepathTime = Time.time + chaseRepathInterval;
                     agent.SetDestination(lastChaseDestination);
                 }
             }
+        }
 
-            if (autoAttackController.CurrentTarget != currentTarget)
+        private MMOAbilityDefinition FindReadyCombatSpell()
+        {
+            if (definition == null || identity == null || abilitySystem == null)
             {
-                autoAttackController.StartAutoAttack(currentTarget);
+                return null;
+            }
+
+            foreach (MMOAbilityDefinition ability in definition.Abilities)
+            {
+                if (ability == null
+                    || ability == definition.AutoAttackAbility
+                    || ability.IsAutoAttack
+                    || ability.RequiresGroundTarget
+                    || ability.TargetType != MMOAbilityTargetType.Hostile
+                    || ability.ManaCost > identity.Mana.CurrentValue
+                    || abilitySystem.IsOnCooldown(ability, out _))
+                {
+                    continue;
+                }
+
+                return ability;
+            }
+
+            return null;
+        }
+
+        private void StopForCasting()
+        {
+            if (!CanMoveOnNavMesh())
+            {
+                return;
+            }
+
+            agent.isStopped = true;
+            if (agent.hasPath)
+            {
+                agent.ResetPath();
+            }
+        }
+
+        private void FaceCurrentTarget()
+        {
+            if (currentTarget == null)
+            {
+                return;
+            }
+
+            Vector3 direction = currentTarget.transform.position - transform.position;
+            direction.y = 0f;
+            if (direction.sqrMagnitude > 0.0001f)
+            {
+                transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
             }
         }
 
@@ -416,6 +533,7 @@ namespace RPGClone.Enemies
 
         private void ClearCombat(bool leashReset)
         {
+            abilitySystem.CancelActiveCast(leashReset ? "Casting interrupted by leashing." : "Casting interrupted.");
             MMOCombatant targetCombatant = currentTarget != null ? currentTarget.GetComponent<MMOCombatant>() : null;
             currentTarget = null;
             autoAttackController.StopAutoAttack();

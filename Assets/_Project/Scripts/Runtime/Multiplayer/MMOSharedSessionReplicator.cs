@@ -519,6 +519,10 @@ namespace RPGClone.Multiplayer
                 hash = hash * 31 + StableHash(snapshot.currentTargetCharacterId);
                 hash = hash * 31 + (snapshot.inCombat ? 1 : 0);
                 hash = hash * 31 + (snapshot.leashing ? 1 : 0);
+                hash = hash * 31 + StableHash(snapshot.castAbilityId);
+                hash = hash * 31 + StableHash(snapshot.castTargetCharacterId);
+                hash = hash * 31 + Quantize(snapshot.castDurationSeconds, 0.05f);
+                hash = hash * 31 + Quantize(snapshot.castNormalizedProgress, 0.05f);
                 hash = hash * 31 + Quantize(snapshot.corpseRemainingSeconds, 0.25f);
                 hash = hash * 31 + Quantize(snapshot.respawnRemainingSeconds, 0.25f);
                 return hash;
@@ -744,6 +748,42 @@ namespace RPGClone.Multiplayer
 
             switch (combatEvent.eventType)
             {
+                case CombatEventType.CastStarted:
+                    if (sourceCombatant == null)
+                    {
+                        return false;
+                    }
+
+                    MMOAbilitySystem castingAbilitySystem = sourceCombatant.GetComponent<MMOAbilitySystem>();
+                    if (castingAbilitySystem == null || ability == null)
+                    {
+                        return false;
+                    }
+
+                    castingAbilitySystem.PlayReplicatedCastStarted(
+                        ability,
+                        targetCombatant != null ? targetCombatant.Identity : null,
+                        combatEvent.castDurationSeconds);
+                    return true;
+
+                case CombatEventType.CastInterrupted:
+                    if (sourceCombatant == null)
+                    {
+                        return false;
+                    }
+
+                    MMOAbilitySystem interruptedAbilitySystem = sourceCombatant.GetComponent<MMOAbilitySystem>();
+                    if (interruptedAbilitySystem == null || ability == null)
+                    {
+                        return false;
+                    }
+
+                    interruptedAbilitySystem.PlayReplicatedCastInterrupted(
+                        ability,
+                        targetCombatant != null ? targetCombatant.Identity : null,
+                        "Casting interrupted.");
+                    return true;
+
                 case CombatEventType.AbilityReleased:
                     if (sourceCombatant == null)
                     {

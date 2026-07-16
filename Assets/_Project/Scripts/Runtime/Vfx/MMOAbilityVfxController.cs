@@ -77,6 +77,12 @@ namespace RPGClone.Vfx
             }
 
             StopCastingVfx();
+            if (anchors != null && anchors.HasExplicitCastingAnchor)
+            {
+                SpawnCastingVfx(ability, definition, target, ResolveCastingParent(), anchors.ExplicitCastingPosition);
+                return;
+            }
+
             if (definition.UseHandCastingAnchors && TrySpawnHandCastingVfx(ability, definition, target))
             {
                 return;
