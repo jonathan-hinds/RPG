@@ -1,4 +1,6 @@
+using RPGClone.Characters;
 using RPGClone.Inventory;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,6 +9,7 @@ namespace RPGClone.UI
     public static class MMOItemIconView
     {
         private const float DefaultInset = 4f;
+        private static readonly Color RestrictedTint = new(1f, 0.24f, 0.24f, 1f);
 
         public static void AddToSlot(
             RectTransform slot,
@@ -21,7 +24,9 @@ namespace RPGClone.UI
                 return;
             }
 
-            Image icon = MMOUiFactory.CreateImage("Item Icon", slot, Color.white, false);
+            bool restricted = IsRestrictedForLocalPlayer(item);
+            Color iconTint = restricted ? RestrictedTint : Color.white;
+            Image icon = MMOUiFactory.CreateImage("Item Icon", slot, iconTint, false);
             icon.sprite = item.Icon;
             icon.preserveAspect = true;
             icon.gameObject.SetActive(item.Icon != null);
@@ -31,7 +36,7 @@ namespace RPGClone.UI
             {
                 Text placeholder = MMOUiFactory.CreateText("Icon Placeholder", slot, 16, FontStyle.Bold, TextAnchor.MiddleCenter);
                 placeholder.text = BuildFallbackLabel(item);
-                placeholder.color = GetQualityTextColor(item.Quality);
+                placeholder.color = restricted ? RestrictedTint : GetQualityTextColor(item.Quality);
                 MMOUiFactory.Stretch(placeholder.rectTransform);
                 placeholder.rectTransform.offsetMin = new Vector2(inset, inset);
                 placeholder.rectTransform.offsetMax = new Vector2(-inset, -inset);
@@ -64,6 +69,23 @@ namespace RPGClone.UI
                 MMOItemQuality.Epic => new Color(0.075f, 0.035f, 0.095f, 0.96f),
                 _ => new Color(0.055f, 0.05f, 0.045f, 0.96f)
             };
+        }
+
+        public static Color GetIconTint(MMOItemDefinition item)
+        {
+            return IsRestrictedForLocalPlayer(item) ? RestrictedTint : Color.white;
+        }
+
+        public static bool IsRestrictedForLocalPlayer(MMOItemDefinition item)
+        {
+            if (item == null
+                || !item.IsEquipment
+                || !MMOGameplaySessionService.LocalPlayer.TryGetComponent(out MMOCharacterCustomization customization))
+            {
+                return false;
+            }
+
+            return MMOItemClassCompatibility.IsRestricted(item, customization.CharacterClass);
         }
 
         public static Color GetQualityTextColor(MMOItemQuality quality)

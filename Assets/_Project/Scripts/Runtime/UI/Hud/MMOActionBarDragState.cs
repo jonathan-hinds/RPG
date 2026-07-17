@@ -88,7 +88,7 @@ namespace RPGClone.UI
 
             EndDrag();
             Current = payload;
-            CreateDragVisual(owner, label, icon);
+            CreateDragVisual(payload, owner, label, icon);
             UpdateDrag(eventData);
             return true;
         }
@@ -123,7 +123,7 @@ namespace RPGClone.UI
             dragVisual = null;
         }
 
-        private static void CreateDragVisual(Transform owner, string label, Sprite icon)
+        private static void CreateDragVisual(MMOActionBarDragPayload payload, Transform owner, string label, Sprite icon)
         {
             Canvas canvas = owner != null ? owner.GetComponentInParent<Canvas>() : null;
             Transform parent = canvas != null ? canvas.transform : owner;
@@ -144,13 +144,17 @@ namespace RPGClone.UI
 
             if (icon != null)
             {
-                Image iconImage = MMOUiFactory.CreateImage("Icon", dragVisual, Color.white, false);
+                Color iconTint = payload.Item != null ? MMOItemIconView.GetIconTint(payload.Item) : Color.white;
+                Image iconImage = MMOUiFactory.CreateImage("Icon", dragVisual, iconTint, false);
                 iconImage.sprite = icon;
                 MMOUiFactory.Stretch(iconImage.rectTransform);
             }
 
             Text text = MMOUiFactory.CreateText("Label", dragVisual, 9, FontStyle.Bold, TextAnchor.MiddleCenter);
             text.text = Shorten(label, 10);
+            text.color = payload.Item != null && icon == null
+                ? MMOItemIconView.GetIconTint(payload.Item)
+                : Color.white;
             text.rectTransform.anchorMin = Vector2.zero;
             text.rectTransform.anchorMax = Vector2.one;
             text.rectTransform.offsetMin = new Vector2(3f, 5f);

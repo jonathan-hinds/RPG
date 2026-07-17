@@ -121,6 +121,7 @@ namespace RPGClone.Player
                 return;
             }
 
+            Dictionary<string, Transform> liveSkeleton = BuildLiveSkeletonLookup();
             foreach (MMOEquippedItemSlot equippedItem in equipment.EquippedItems)
             {
                 MMOEquipmentVisualDefinition visualDefinition = equippedItem?.Item != null
@@ -128,16 +129,18 @@ namespace RPGClone.Player
                     : null;
                 if (visualDefinition != null && IsVisualCompatibleWithSlot(visualDefinition, equippedItem.SlotType))
                 {
-                    ApplyVisualDefinition(visualDefinition);
+                    ApplyVisualDefinition(visualDefinition, liveSkeleton);
                 }
             }
         }
 
-        private void ApplyVisualDefinition(MMOEquipmentVisualDefinition visualDefinition)
+        private void ApplyVisualDefinition(
+            MMOEquipmentVisualDefinition visualDefinition,
+            IReadOnlyDictionary<string, Transform> liveSkeleton)
         {
             if (visualDefinition.BindingMode == MMOEquipmentVisualBindingMode.AttachmentSocket)
             {
-                ApplyAttachmentVisualDefinition(visualDefinition);
+                ApplyAttachmentVisualDefinition(visualDefinition, liveSkeleton);
                 return;
             }
 
@@ -159,7 +162,6 @@ namespace RPGClone.Player
                 return;
             }
 
-            Dictionary<string, Transform> liveSkeleton = BuildLiveSkeletonLookup();
             Transform anchor = slot.Anchor != null ? slot.Anchor : transform;
             GameObject instance = Instantiate(visualDefinition.ModelPrefab, anchor);
             instance.name = visualDefinition.ModelPrefab.name;
@@ -301,7 +303,9 @@ namespace RPGClone.Player
             return true;
         }
 
-        private void ApplyAttachmentVisualDefinition(MMOEquipmentVisualDefinition visualDefinition)
+        private void ApplyAttachmentVisualDefinition(
+            MMOEquipmentVisualDefinition visualDefinition,
+            IReadOnlyDictionary<string, Transform> liveSkeleton)
         {
             bool isInCombat = IsInCombat();
             GameObject modelPrefab = visualDefinition.GetAttachmentModelPrefab(isInCombat);
@@ -311,11 +315,12 @@ namespace RPGClone.Player
             }
 
             string socketName = ResolveAttachmentSocketName(visualDefinition, isInCombat);
-            Transform socket = FindDeepChildByName(transform, socketName);
+            Transform socket = FindLiveSkeletonTransform(liveSkeleton, socketName);
             if (socket == null)
             {
                 Debug.LogWarning(
-                    $"Equipment visual '{visualDefinition.name}' could not find attachment socket '{socketName}' under '{name}'.",
+                    $"Equipment visual '{visualDefinition.name}' could not find attachment socket '{socketName}' " +
+                    $"on the live skeleton under '{name}'.",
                     this);
                 return;
             }
@@ -668,25 +673,26 @@ namespace RPGClone.Player
                     .ToLowerInvariant();
         }
 
-        private static Transform FindDeepChildByName(Transform root, string childName)
+        private static Transform FindLiveSkeletonTransform(
+            IReadOnlyDictionary<string, Transform> liveSkeleton,
+            string transformName)
         {
-            if (root == null || string.IsNullOrWhiteSpace(childName))
+            if (liveSkeleton == null || string.IsNullOrWhiteSpace(transformName))
             {
                 return null;
             }
 
-            string normalizedChildName = NormalizeName(childName);
-            if (NormalizeName(root.name) == normalizedChildName)
+            if (liveSkeleton.TryGetValue(transformName, out Transform exactMatch) && exactMatch != null)
             {
-                return root;
+                return exactMatch;
             }
 
-            for (int i = 0; i < root.childCount; i++)
+            string normalizedTransformName = NormalizeName(transformName);
+            foreach (KeyValuePair<string, Transform> candidate in liveSkeleton)
             {
-                Transform found = FindDeepChildByName(root.GetChild(i), childName);
-                if (found != null)
+                if (candidate.Value != null && NormalizeName(candidate.Key) == normalizedTransformName)
                 {
-                    return found;
+                    return candidate.Value;
                 }
             }
 

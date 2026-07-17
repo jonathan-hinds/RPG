@@ -70,7 +70,7 @@ namespace RPGClone.Inventory
 
             MMOCharacterCustomization customization = GetComponent<MMOCharacterCustomization>();
             MMOPlayableClass characterClass = customization != null ? customization.CharacterClass : MMOPlayableClass.Warrior;
-            if (!item.CanClassEquip(characterClass))
+            if (!MMOItemClassCompatibility.CanEquip(item, characterClass))
             {
                 return false;
             }
@@ -91,7 +91,7 @@ namespace RPGClone.Inventory
                 return false;
             }
 
-            return item.IsWeapon || item.IsShield || item.ArmorWeight <= GetMaximumArmorWeight(characterClass);
+            return true;
         }
 
         public bool TryEquipFromInventory(MMOInventoryContainer inventory, int slotIndex)
@@ -321,16 +321,6 @@ namespace RPGClone.Inventory
             return inventory.TryAddItem(item, 1, out int remainingQuantity) && remainingQuantity <= 0;
         }
 
-        private static MMOArmorWeight GetMaximumArmorWeight(MMOPlayableClass characterClass)
-        {
-            return characterClass switch
-            {
-                MMOPlayableClass.Mage => MMOArmorWeight.Cloth,
-                MMOPlayableClass.Shaman => MMOArmorWeight.Leather,
-                MMOPlayableClass.Warrior => MMOArmorWeight.Mail,
-                _ => MMOArmorWeight.Cloth
-            };
-        }
     }
 
     [Serializable]

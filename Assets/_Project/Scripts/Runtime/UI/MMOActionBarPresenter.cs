@@ -421,14 +421,17 @@ namespace RPGClone.UI
                 bool hasItem = slot.bindingType == MMOActionBarSlotBindingType.Item && item != null;
                 string displayName = hasItem ? item.DisplayName : hasAbility ? ability.DisplayName : string.Empty;
                 Sprite icon = hasItem ? item.Icon : hasAbility ? ability.Icon : null;
+                Color itemTint = hasItem ? MMOItemIconView.GetIconTint(item) : Color.white;
 
                 labels[i].text = !string.IsNullOrWhiteSpace(displayName) && icon == null ? Shorten(displayName) : string.Empty;
+                labels[i].color = itemTint;
                 keyLabels[i].text = slots[i].key == Key.None ? string.Empty : GetKeyLabel(slots[i].key);
                 buttons[i].interactable = true;
                 backgrounds[i].color = hasAbility || hasItem
                     ? new Color(0.12f, 0.09f, 0.055f, 0.98f)
                     : new Color(0.04f, 0.036f, 0.034f, 0.78f);
                 iconImages[i].sprite = icon;
+                iconImages[i].color = itemTint;
                 iconImages[i].gameObject.SetActive(icon != null);
                 tooltipTriggers[i].Configure(hasAbility ? ability : null);
                 MMOItemTooltipTrigger itemTooltip = buttons[i].GetComponent<MMOItemTooltipTrigger>();
