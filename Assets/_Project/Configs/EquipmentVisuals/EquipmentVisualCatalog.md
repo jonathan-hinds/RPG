@@ -2,6 +2,16 @@
 
 This folder contains designer-authored `MMOEquipmentVisualDefinition` assets for gear that changes player appearance.
 
+## Armor Asset Layout
+
+Reusable armor content lives under `Assets/_Project/Art/Equipment/Armor`:
+
+- `Models/<Slot>` contains the shared skinned model for each equipment slot.
+- `Materials/Shared/<Slot>` contains the base material imported for that slot model.
+- `Textures/<Armor Type>/<Slot>` contains item-specific textures, grouped by Cloth, Leather, or Mail.
+
+Armor variants should reference the shared slot model from their `MMOEquipmentVisualDefinition` and supply their own texture override. A new material or duplicate model is not required when only the surface treatment changes.
+
 ## Designer Workflow
 
 1. Create a new asset from `Create > RPG Clone > Characters > Equipment Visual`.
@@ -43,18 +53,18 @@ At runtime, attachment visuals use `Socket Name` and `Model Prefab` while the ch
 
 | Item | Slot | Binding | Target | Equipment visual asset | Visual |
 | --- | --- | --- | --- | --- | --- |
-| Ashguard Vest (Cloth) | Chest | Body Part | Torso | `EV_Ashguard_Vest_Cloth` | Color `#345D9D` |
-| Ashguard Vest (Leather) | Chest | Body Part | Torso | `EV_Ashguard_Vest_Leather` | Color `#6B3F22` |
-| Ashguard Vest (Mail) | Chest | Body Part | Torso | `EV_Ashguard_Vest_Mail` | Color `#9EA7B3` |
-| Razorcrag Grips (Cloth) | Hands | Body Part | Hands | `EV_Razorcrag_Grips_Cloth` | Color `#E6B33D` |
-| Razorcrag Grips (Leather) | Hands | Body Part | Hands | `EV_Razorcrag_Grips_Leather` | Color `#5B2F1A` |
-| Razorcrag Grips (Mail) | Hands | Body Part | Hands | `EV_Razorcrag_Grips_Mail` | Color `#7E8B95` |
-| Valley Watch Leggings (Cloth) | Legs | Body Part | Legs | `EV_Valley_Watch_Leggings_Cloth` | Color `#4868A8` |
-| Valley Watch Leggings (Leather) | Legs | Body Part | Legs | `EV_Valley_Watch_Leggings_Leather` | Color `#3E6B3A` |
-| Valley Watch Leggings (Mail) | Legs | Body Part | Legs | `EV_Valley_Watch_Leggings_Mail` | Color `#65727F` |
-| Trailbreaker's Boots (Cloth) | Feet | Body Part | Feet | `EV_Trailbreakers_Boots_Cloth` | Color `#6F5E9E` |
-| Trailbreaker's Boots (Leather) | Feet | Body Part | Feet | `EV_Trailbreakers_Boots_Leather` | Color `#4A2F1E` |
-| Trailbreaker's Boots (Mail) | Feet | Body Part | Feet | `EV_Trailbreakers_Boots_Mail` | Color `#535F68` |
+| Ashguard Vest (Cloth) | Chest | Body Part | Torso | `EV_Ashguard_Vest_Cloth` | Shared skinned model; cloth texture |
+| Ashguard Vest (Leather) | Chest | Body Part | Torso | `EV_Ashguard_Vest_Leather` | Item-specific leather skinned model and texture |
+| Ashguard Vest (Mail) | Chest | Body Part | Torso | `EV_Ashguard_Vest_Mail` | Item-specific mail skinned model and texture |
+| Razorcrag Grips (Cloth) | Hands | Body Part | Hands | `EV_Razorcrag_Grips_Cloth` | Shared skinned model; cloth texture |
+| Razorcrag Grips (Leather) | Hands | Body Part | Hands | `EV_Razorcrag_Grips_Leather` | Item-specific leather skinned model and texture |
+| Razorcrag Grips (Mail) | Hands | Body Part | Hands | `EV_Razorcrag_Grips_Mail` | Item-specific mail skinned model and texture |
+| Valley Watch Leggings (Cloth) | Legs | Body Part | Legs | `EV_Valley_Watch_Leggings_Cloth` | Shared skinned model; cloth texture |
+| Valley Watch Leggings (Leather) | Legs | Body Part | Legs | `EV_Valley_Watch_Leggings_Leather` | Item-specific leather skinned model and texture |
+| Valley Watch Leggings (Mail) | Legs | Body Part | Legs | `EV_Valley_Watch_Leggings_Mail` | Item-specific mail skinned model and texture |
+| Trailbreaker's Boots (Cloth) | Feet | Body Part | Feet | `EV_Trailbreakers_Boots_Cloth` | Shared skinned model; cloth texture |
+| Trailbreaker's Boots (Leather) | Feet | Body Part | Feet | `EV_Trailbreakers_Boots_Leather` | Item-specific leather skinned model and texture |
+| Trailbreaker's Boots (Mail) | Feet | Body Part | Feet | `EV_Trailbreakers_Boots_Mail` | Item-specific mail skinned model and texture |
 | Recruit's Shortsword | Main Hand | Attachment Socket | `cc_weapon_r` in combat, `cc_hip.l` stowed | `EV_Recruits_Shortsword_1H` | Prefab `PF_Recruits_Shortsword_Attachment` |
 | Recruit's Mace | Main Hand | Attachment Socket | `cc_weapon_r` in combat, `cc_hip.l` stowed | `EV_Recruits_Mace_1H` | Prefab `PF_Recruits_Mace_Attachment` |
 | Recruit's Greatsword | Main Hand | Attachment Socket | `cc_weapon_r` in combat, `cc_back_x` stowed | `EV_Recruits_Greatsword_2H` | Ready prefab `PF_Recruits_Greatsword_Attachment`, stowed prefab `PF_Recruits_Greatsword_StowedAttachment` |

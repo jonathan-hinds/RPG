@@ -12,15 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba80646583ded7a449dbe6b87c7538f7, type: 3}
   m_Name: EV_Trailbreakers_Boots_Mail
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOEquipmentVisualDefinition
+  bindingMode: 0
   equipmentSlot: 11
   bodyPart: 4
-  hideBaseBodyPart: 0
-  modelPrefab: {fileID: 0}
+  hideBaseBodyPart: 1
+  modelPrefab: {fileID: 919132149155446097, guid: 3ac7f879472f0f74b96e6d23148ceb11, type: 3}
+  stowedModelPrefab: {fileID: 0}
   materialOverride: {fileID: 0}
-  useColorOverride: 1
-  colorOverride: {r: 0.3255, g: 0.3725, b: 0.4078, a: 1}
-  diffuseTexture: {fileID: 0}
+  useColorOverride: 0
+  colorOverride: {r: 1, g: 1, b: 1, a: 1}
+  diffuseTexture: {fileID: 2800000, guid: 30d75b910ba09f54b8041a15e51f3789, type: 3}
   normalTexture: {fileID: 0}
+  socketName: cc_weapon_r
+  stowedSocketName: cc_hip.l
   localPosition: {x: 0, y: 0, z: 0}
   localEulerAngles: {x: 0, y: 0, z: 0}
   localScale: {x: 1, y: 1, z: 1}

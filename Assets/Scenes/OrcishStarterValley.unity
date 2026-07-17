@@ -130311,6 +130311,36 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 4ea4c09a90b35294d8fc1cbd4217d439, type: 2}
     quantity: 1
     priceCopper: 0
+  - item: {fileID: 11400000, guid: 59e3098987740d44c85edce444e450f8, type: 2}
+    quantity: 1
+    priceCopper: 0
+  - item: {fileID: 11400000, guid: 5ac5024d1d564144e9d2c50f56a2f337, type: 2}
+    quantity: 1
+    priceCopper: 0
+  - item: {fileID: 11400000, guid: 6300c8f1e8e79344ab3f24b34fde5c0e, type: 2}
+    quantity: 1
+    priceCopper: 0
+  - item: {fileID: 11400000, guid: 0a9a9f66032dca244aa662525bd0deae, type: 2}
+    quantity: 1
+    priceCopper: 0
+  - item: {fileID: 11400000, guid: 360f3d9b64b0e1d4eadd09fe5bd08c55, type: 2}
+    quantity: 1
+    priceCopper: 0
+  - item: {fileID: 11400000, guid: c1cc0a9f3c2783c42aedeb673daff08f, type: 2}
+    quantity: 1
+    priceCopper: 0
+  - item: {fileID: 11400000, guid: 3d377abd44eaf11448105138510afa0f, type: 2}
+    quantity: 1
+    priceCopper: 0
+  - item: {fileID: 11400000, guid: 1c7af54dbd8412e4dab49867c1eac580, type: 2}
+    quantity: 1
+    priceCopper: 0
+  - item: {fileID: 11400000, guid: 4d3f8739520be7747bdc30fb5f3f8513, type: 2}
+    quantity: 1
+    priceCopper: 0
+  - item: {fileID: 11400000, guid: e41139562aeb4034b8816b4663f76275, type: 2}
+    quantity: 1
+    priceCopper: 0
   buysTrash: 1
   interactionDistance: 5
   interactionMask:
@@ -130373,7 +130403,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1427268690}
-  m_Material: {fileID: 2051053038}
+  m_Material: {fileID: 1883405330}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -164045,6 +164075,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1882891586}
   m_CullTransparentMesh: 1
+--- !u!134 &1883405330
+PhysicsMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ' (Instance) (Instance) (Instance)'
+  serializedVersion: 2
+  m_DynamicFriction: 0.6
+  m_StaticFriction: 0.6
+  m_Bounciness: 0
+  m_FrictionCombine: 0
+  m_BounceCombine: 0
 --- !u!1 &1883545804
 GameObject:
   m_ObjectHideFlags: 0
@@ -181517,19 +181560,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 81bccdadd30d7c74e89423c452f7a155, type: 3}
---- !u!134 &2051053038
-PhysicsMaterial:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: ' (Instance) (Instance)'
-  serializedVersion: 2
-  m_DynamicFriction: 0.6
-  m_StaticFriction: 0.6
-  m_Bounciness: 0
-  m_FrictionCombine: 0
-  m_BounceCombine: 0
 --- !u!1001 &2054498741
 PrefabInstance:
   m_ObjectHideFlags: 0

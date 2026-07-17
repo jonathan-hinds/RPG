@@ -529,7 +529,17 @@ namespace RPGClone.EditorTools
                 new MMOVendorStockEntry(LoadItem("Recruits_Shield"), 1, 0),
                 new MMOVendorStockEntry(LoadItem("Initiates_Cudgel"), 1, 0),
                 new MMOVendorStockEntry(LoadItem("Millwrights_Hammer"), 1, 0),
-                new MMOVendorStockEntry(LoadItem("Cleavers_Stone_Maul"), 1, 0)
+                new MMOVendorStockEntry(LoadItem("Cleavers_Stone_Maul"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Ashguard_Vest_Cloth"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Valley_Watch_Leggings_Cloth"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Ashguard_Vest_Mail"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Razorcrag_Grips_Mail"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Valley_Watch_Leggings_Mail"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Trailbreaker's_Boots_Mail"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Ashguard_Vest_Leather"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Razorcrag_Grips_Leather"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Valley_Watch_Leggings_Leather"), 1, 0),
+                new MMOVendorStockEntry(LoadItem("Trailbreaker's_Boots_Leather"), 1, 0)
             }, friendlyNpcProfile);
             Physics.SyncTransforms();
 

@@ -147,18 +147,19 @@ namespace RPGClone.Player
                 return;
             }
 
-            if (visualDefinition.HideBaseBodyPart)
-            {
-                SetRenderersEnabled(slot.Renderers, false);
-            }
-
-            ApplyMaterialOverride(slot.Renderers, visualDefinition);
-
             if (visualDefinition.ModelPrefab == null)
             {
+                ApplyMaterialOverride(slot.Renderers, visualDefinition);
+
+                if (visualDefinition.HideBaseBodyPart)
+                {
+                    SetRenderersEnabled(slot.Renderers, false);
+                }
+
                 return;
             }
 
+            Dictionary<string, Transform> liveSkeleton = BuildLiveSkeletonLookup();
             Transform anchor = slot.Anchor != null ? slot.Anchor : transform;
             GameObject instance = Instantiate(visualDefinition.ModelPrefab, anchor);
             instance.name = visualDefinition.ModelPrefab.name;
@@ -167,7 +168,137 @@ namespace RPGClone.Player
             instance.transform.localScale = visualDefinition.LocalScale;
             MarkRuntimeVisual(instance);
             StripEditorOnlyChildren(instance);
+
+            if (!PrepareSkinnedBodyPartVisual(instance, liveSkeleton, visualDefinition))
+            {
+                Destroy(instance);
+                return;
+            }
+
+            if (visualDefinition.HideBaseBodyPart)
+            {
+                SetRenderersEnabled(slot.Renderers, false);
+            }
+
             activeVisualInstances.Add(instance);
+        }
+
+        private Dictionary<string, Transform> BuildLiveSkeletonLookup()
+        {
+            Dictionary<string, Transform> transformsByName = new(StringComparer.Ordinal);
+            foreach (Transform candidate in GetComponentsInChildren<Transform>(true))
+            {
+                if (candidate == null || candidate.GetComponentInParent<MMOEquipmentVisualInstanceMarker>() != null)
+                {
+                    continue;
+                }
+
+                transformsByName.TryAdd(candidate.name, candidate);
+            }
+
+            return transformsByName;
+        }
+
+        private bool PrepareSkinnedBodyPartVisual(
+            GameObject instance,
+            IReadOnlyDictionary<string, Transform> liveSkeleton,
+            MMOEquipmentVisualDefinition visualDefinition)
+        {
+            foreach (Animator importedAnimator in instance.GetComponentsInChildren<Animator>(true))
+            {
+                importedAnimator.enabled = false;
+            }
+
+            foreach (Camera importedCamera in instance.GetComponentsInChildren<Camera>(true))
+            {
+                importedCamera.enabled = false;
+            }
+
+            foreach (Light importedLight in instance.GetComponentsInChildren<Light>(true))
+            {
+                importedLight.enabled = false;
+            }
+
+            foreach (Renderer importedRenderer in instance.GetComponentsInChildren<Renderer>(true))
+            {
+                if (importedRenderer is not SkinnedMeshRenderer)
+                {
+                    importedRenderer.enabled = false;
+                }
+            }
+
+            bool reboundAnyRenderer = false;
+            foreach (SkinnedMeshRenderer skinnedRenderer in instance.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (TryRebindSkinnedRenderer(skinnedRenderer, liveSkeleton, visualDefinition))
+                {
+                    ApplyMaterialOverride(new Renderer[] { skinnedRenderer }, visualDefinition);
+                    skinnedRenderer.enabled = true;
+                    reboundAnyRenderer = true;
+                }
+                else
+                {
+                    skinnedRenderer.enabled = false;
+                }
+            }
+
+            if (!reboundAnyRenderer)
+            {
+                Debug.LogWarning(
+                    $"Equipment visual '{visualDefinition.name}' did not contain a skinned mesh that could bind to '{name}'. " +
+                    "The base body part will remain visible.",
+                    this);
+            }
+
+            return reboundAnyRenderer;
+        }
+
+        private bool TryRebindSkinnedRenderer(
+            SkinnedMeshRenderer skinnedRenderer,
+            IReadOnlyDictionary<string, Transform> liveSkeleton,
+            MMOEquipmentVisualDefinition visualDefinition)
+        {
+            Transform[] sourceBones = skinnedRenderer.bones;
+            if (sourceBones == null || sourceBones.Length == 0)
+            {
+                Debug.LogWarning(
+                    $"Skinned mesh '{skinnedRenderer.name}' on equipment visual '{visualDefinition.name}' has no bone bindings.",
+                    this);
+                return false;
+            }
+
+            Transform[] reboundBones = new Transform[sourceBones.Length];
+            List<string> missingBoneNames = new();
+            for (int i = 0; i < sourceBones.Length; i++)
+            {
+                string boneName = sourceBones[i] != null ? sourceBones[i].name : string.Empty;
+                if (string.IsNullOrEmpty(boneName) || !liveSkeleton.TryGetValue(boneName, out Transform liveBone))
+                {
+                    missingBoneNames.Add(string.IsNullOrEmpty(boneName) ? $"index {i}" : boneName);
+                    continue;
+                }
+
+                reboundBones[i] = liveBone;
+            }
+
+            if (missingBoneNames.Count > 0)
+            {
+                Debug.LogWarning(
+                    $"Equipment visual '{visualDefinition.name}' could not bind skinned mesh '{skinnedRenderer.name}'. " +
+                    $"Missing player bones: {string.Join(", ", missingBoneNames)}.",
+                    this);
+                return false;
+            }
+
+            Transform reboundRootBone = null;
+            if (skinnedRenderer.rootBone != null)
+            {
+                liveSkeleton.TryGetValue(skinnedRenderer.rootBone.name, out reboundRootBone);
+            }
+
+            skinnedRenderer.bones = reboundBones;
+            skinnedRenderer.rootBone = reboundRootBone ?? reboundBones[0];
+            return true;
         }
 
         private void ApplyAttachmentVisualDefinition(MMOEquipmentVisualDefinition visualDefinition)
