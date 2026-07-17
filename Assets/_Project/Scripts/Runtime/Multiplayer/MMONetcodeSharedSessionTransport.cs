@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using RPGClone.CharacterSelection;
+using RPGClone.Combat;
+using RPGClone.Enemies;
 using RPGClone.Services;
 using Unity.Collections;
 using Unity.Netcode;
@@ -14,7 +16,10 @@ namespace RPGClone.Multiplayer
         private const string OperationMessageName = "rpg_clone_shared_session_operation";
         private const string SnapshotMessageName = "rpg_clone_shared_session_snapshot";
         private const string ParticipantRuntimeMessageName = "rpg_clone_participant_runtime";
+        private const string EnemyRuntimeMessageName = "rpg_clone_enemy_runtime";
         private const int MaximumRuntimeIdentifierLength = 64;
+        private const int MaximumEnemySpawnIdentifierLength = 512;
+        private const int MaximumAbilityIdentifierLength = 128;
         private const int RuntimeSnapshotWriterCapacity = (MaximumRuntimeIdentifierLength * 2) + 64;
         private const NetworkDelivery SharedSessionDelivery = NetworkDelivery.ReliableFragmentedSequenced;
         private const NetworkDelivery RuntimeSnapshotDelivery = NetworkDelivery.UnreliableSequenced;
@@ -23,9 +28,31 @@ namespace RPGClone.Multiplayer
         private static bool applyingRemoteOperation;
         private static bool applyingSnapshot;
         private static bool applyingRemoteRuntimeSnapshot;
+        private static bool applyingRemoteEnemySnapshot;
 
         public static bool IsApplyingRemoteOperation => applyingRemoteOperation;
         public static bool IsApplyingSnapshot => applyingSnapshot;
+        public static bool HasRemoteClients
+        {
+            get
+            {
+                NetworkManager manager = NetworkManager.Singleton;
+                if (manager == null || !manager.IsListening)
+                {
+                    return false;
+                }
+
+                foreach (ulong clientId in manager.ConnectedClientsIds)
+                {
+                    if (clientId != manager.LocalClientId)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
 
         public static bool ShouldSubmitToHost => NetworkManager.Singleton != null
             && NetworkManager.Singleton.IsClient
@@ -33,14 +60,16 @@ namespace RPGClone.Multiplayer
             && NetworkManager.Singleton.IsConnectedClient
             && !applyingRemoteOperation
             && !applyingSnapshot
-            && !applyingRemoteRuntimeSnapshot;
+            && !applyingRemoteRuntimeSnapshot
+            && !applyingRemoteEnemySnapshot;
 
         private static bool ShouldBroadcastFromHost => NetworkManager.Singleton != null
             && NetworkManager.Singleton.IsHost
             && NetworkManager.Singleton.IsListening
             && !applyingRemoteOperation
             && !applyingSnapshot
-            && !applyingRemoteRuntimeSnapshot;
+            && !applyingRemoteRuntimeSnapshot
+            && !applyingRemoteEnemySnapshot;
 
         public static void Initialize()
         {
@@ -55,12 +84,14 @@ namespace RPGClone.Multiplayer
                 registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(OperationMessageName);
                 registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(SnapshotMessageName);
                 registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(ParticipantRuntimeMessageName);
+                registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(EnemyRuntimeMessageName);
             }
 
             registeredManager = manager;
             manager.CustomMessagingManager.RegisterNamedMessageHandler(OperationMessageName, OnOperationMessage);
             manager.CustomMessagingManager.RegisterNamedMessageHandler(SnapshotMessageName, OnSnapshotMessage);
             manager.CustomMessagingManager.RegisterNamedMessageHandler(ParticipantRuntimeMessageName, OnParticipantRuntimeMessage);
+            manager.CustomMessagingManager.RegisterNamedMessageHandler(EnemyRuntimeMessageName, OnEnemyRuntimeMessage);
             manager.OnClientConnectedCallback -= OnClientConnected;
             manager.OnClientConnectedCallback += OnClientConnected;
             manager.OnClientDisconnectCallback -= OnClientDisconnected;
@@ -79,6 +110,7 @@ namespace RPGClone.Multiplayer
                 registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(OperationMessageName);
                 registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(SnapshotMessageName);
                 registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(ParticipantRuntimeMessageName);
+                registeredManager.CustomMessagingManager.UnregisterNamedMessageHandler(EnemyRuntimeMessageName);
             }
 
             registeredManager.OnClientConnectedCallback -= OnClientConnected;
@@ -86,6 +118,7 @@ namespace RPGClone.Multiplayer
             registeredManager = null;
             HostCharacterIdsByClientId.Clear();
             applyingRemoteRuntimeSnapshot = false;
+            applyingRemoteEnemySnapshot = false;
         }
 
         public static bool TrySubmitToHost(MMOSharedSessionNetworkOperation operation)
@@ -132,6 +165,39 @@ namespace RPGClone.Multiplayer
             }
 
             return false;
+        }
+
+        public static bool TryBroadcastEnemyRuntime(EnemySnapshot snapshot)
+        {
+            Initialize();
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager?.CustomMessagingManager == null
+                || !manager.IsHost
+                || !manager.IsListening
+                || applyingRemoteEnemySnapshot
+                || !IsValidEnemyRuntimeSnapshot(snapshot))
+            {
+                return false;
+            }
+
+            bool sent = false;
+            using FastBufferWriter writer = CreateEnemyRuntimeWriter(snapshot);
+            foreach (ulong clientId in manager.ConnectedClientsIds)
+            {
+                if (clientId == manager.LocalClientId)
+                {
+                    continue;
+                }
+
+                manager.CustomMessagingManager.SendNamedMessage(
+                    EnemyRuntimeMessageName,
+                    clientId,
+                    writer,
+                    NetworkDelivery.Unreliable);
+                sent = true;
+            }
+
+            return sent;
         }
 
         public static void BroadcastSnapshotIfHost(string snapshotJson)
@@ -285,6 +351,26 @@ namespace RPGClone.Multiplayer
             }
 
             ApplyParticipantRuntimeSnapshot(snapshot);
+        }
+
+        private static void OnEnemyRuntimeMessage(ulong senderClientId, FastBufferReader reader)
+        {
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager == null
+                || manager.IsHost
+                || senderClientId != NetworkManager.ServerClientId
+                || !TryReadEnemyRuntime(reader, out EnemySnapshot snapshot))
+            {
+                return;
+            }
+
+            if (!string.Equals(snapshot.sessionId, MMOGameplaySessionService.SessionId, StringComparison.Ordinal))
+            {
+                Debug.LogWarning($"Rejected enemy runtime snapshot for session '{snapshot.sessionId}'.");
+                return;
+            }
+
+            ApplyEnemyRuntimeSnapshot(snapshot);
         }
 
         private static void OnClientDisconnected(ulong clientId)
@@ -509,6 +595,30 @@ namespace RPGClone.Multiplayer
             }
         }
 
+        private static void ApplyEnemyRuntimeSnapshot(EnemySnapshot snapshot)
+        {
+            try
+            {
+                applyingRemoteEnemySnapshot = true;
+                if (MMOEnemyController.TryGetEnemy(snapshot.spawnId, out MMOEnemyController enemy) && enemy != null)
+                {
+                    enemy.ApplySnapshot(snapshot);
+                }
+                else
+                {
+                    MMOSharedSessionState.UpsertEnemySnapshot(snapshot);
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Failed to apply enemy runtime snapshot. {exception.Message}");
+            }
+            finally
+            {
+                applyingRemoteEnemySnapshot = false;
+            }
+        }
+
         private static FastBufferWriter CreateParticipantRuntimeWriter(MMOSessionParticipantRuntimeSnapshot snapshot)
         {
             FastBufferWriter writer = new(RuntimeSnapshotWriterCapacity, Allocator.Temp);
@@ -575,9 +685,136 @@ namespace RPGClone.Multiplayer
                 && IsFinite(snapshot.rotationEuler.ToVector3());
         }
 
+        private static FastBufferWriter CreateEnemyRuntimeWriter(EnemySnapshot snapshot)
+        {
+            int stringCapacity = snapshot.sessionId.Length
+                + snapshot.spawnId.Length
+                + (snapshot.currentTargetCharacterId?.Length ?? 0)
+                + (snapshot.castAbilityId?.Length ?? 0)
+                + (snapshot.castTargetCharacterId?.Length ?? 0);
+            FastBufferWriter writer = new(stringCapacity + 160, Allocator.Temp);
+            writer.WriteValueSafe(snapshot.sessionId, true);
+            writer.WriteValueSafe(snapshot.spawnId, true);
+            writer.WriteValueSafe((int)snapshot.runtimeState);
+            writer.WriteValueSafe(snapshot.currentHealth);
+            writer.WriteValueSafe(snapshot.maxHealth);
+            writer.WriteValueSafe(snapshot.currentMana);
+            writer.WriteValueSafe(snapshot.maxMana);
+            writer.WriteValueSafe(snapshot.position.ToVector3());
+            writer.WriteValueSafe(snapshot.rotationEuler.ToVector3());
+            writer.WriteValueSafe(snapshot.worldSpeed);
+            writer.WriteValueSafe(snapshot.currentTargetCharacterId ?? string.Empty, true);
+            writer.WriteValueSafe(snapshot.inCombat);
+            writer.WriteValueSafe(snapshot.leashing);
+            writer.WriteValueSafe(snapshot.castAbilityId ?? string.Empty, true);
+            writer.WriteValueSafe(snapshot.castTargetCharacterId ?? string.Empty, true);
+            writer.WriteValueSafe(snapshot.castDurationSeconds);
+            writer.WriteValueSafe(snapshot.castNormalizedProgress);
+            writer.WriteValueSafe(snapshot.corpseRemainingSeconds);
+            writer.WriteValueSafe(snapshot.respawnRemainingSeconds);
+            writer.WriteValueSafe(snapshot.updatedUtcTicks);
+            return writer;
+        }
+
+        private static bool TryReadEnemyRuntime(FastBufferReader reader, out EnemySnapshot snapshot)
+        {
+            snapshot = null;
+            try
+            {
+                reader.ReadValueSafe(out string sessionId, true);
+                reader.ReadValueSafe(out string spawnId, true);
+                reader.ReadValueSafe(out int runtimeState);
+                reader.ReadValueSafe(out int currentHealth);
+                reader.ReadValueSafe(out int maxHealth);
+                reader.ReadValueSafe(out int currentMana);
+                reader.ReadValueSafe(out int maxMana);
+                reader.ReadValueSafe(out Vector3 position);
+                reader.ReadValueSafe(out Vector3 rotationEuler);
+                reader.ReadValueSafe(out float worldSpeed);
+                reader.ReadValueSafe(out string currentTargetCharacterId, true);
+                reader.ReadValueSafe(out bool inCombat);
+                reader.ReadValueSafe(out bool leashing);
+                reader.ReadValueSafe(out string castAbilityId, true);
+                reader.ReadValueSafe(out string castTargetCharacterId, true);
+                reader.ReadValueSafe(out float castDurationSeconds);
+                reader.ReadValueSafe(out float castNormalizedProgress);
+                reader.ReadValueSafe(out float corpseRemainingSeconds);
+                reader.ReadValueSafe(out float respawnRemainingSeconds);
+                reader.ReadValueSafe(out long updatedUtcTicks);
+
+                snapshot = new EnemySnapshot
+                {
+                    sessionId = sessionId,
+                    spawnId = spawnId,
+                    runtimeState = (EnemyRuntimeState)runtimeState,
+                    currentHealth = currentHealth,
+                    maxHealth = maxHealth,
+                    currentMana = currentMana,
+                    maxMana = maxMana,
+                    position = new Vector3SaveData(position),
+                    rotationEuler = new Vector3SaveData(rotationEuler),
+                    worldSpeed = worldSpeed,
+                    currentTargetCharacterId = currentTargetCharacterId,
+                    inCombat = inCombat,
+                    leashing = leashing,
+                    castAbilityId = castAbilityId,
+                    castTargetCharacterId = castTargetCharacterId,
+                    castDurationSeconds = castDurationSeconds,
+                    castNormalizedProgress = castNormalizedProgress,
+                    corpseRemainingSeconds = corpseRemainingSeconds,
+                    respawnRemainingSeconds = respawnRemainingSeconds,
+                    updatedUtcTicks = updatedUtcTicks
+                };
+                return IsValidEnemyRuntimeSnapshot(snapshot);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Rejected malformed enemy runtime snapshot. {exception.Message}");
+                return false;
+            }
+        }
+
+        private static bool IsValidEnemyRuntimeSnapshot(EnemySnapshot snapshot)
+        {
+            if (snapshot == null
+                || !IsValidRuntimeIdentifier(snapshot.sessionId)
+                || !IsValidRuntimeIdentifier(snapshot.spawnId, MaximumEnemySpawnIdentifierLength)
+                || !IsValidOptionalRuntimeIdentifier(snapshot.currentTargetCharacterId, MaximumRuntimeIdentifierLength)
+                || !IsValidOptionalRuntimeIdentifier(snapshot.castAbilityId, MaximumAbilityIdentifierLength)
+                || !IsValidOptionalRuntimeIdentifier(snapshot.castTargetCharacterId, MaximumRuntimeIdentifierLength)
+                || !Enum.IsDefined(typeof(EnemyRuntimeState), snapshot.runtimeState)
+                || snapshot.currentHealth < 0
+                || snapshot.maxHealth < 0
+                || snapshot.currentMana < 0
+                || snapshot.maxMana < 0
+                || snapshot.worldSpeed < 0f
+                || snapshot.updatedUtcTicks <= 0)
+            {
+                return false;
+            }
+
+            return IsFinite(snapshot.position.ToVector3())
+                && IsFinite(snapshot.rotationEuler.ToVector3())
+                && IsFinite(snapshot.worldSpeed)
+                && IsFinite(snapshot.castDurationSeconds)
+                && IsFinite(snapshot.castNormalizedProgress)
+                && IsFinite(snapshot.corpseRemainingSeconds)
+                && IsFinite(snapshot.respawnRemainingSeconds);
+        }
+
         private static bool IsValidRuntimeIdentifier(string value)
         {
-            if (string.IsNullOrWhiteSpace(value) || value.Length > MaximumRuntimeIdentifierLength)
+            return IsValidRuntimeIdentifier(value, MaximumRuntimeIdentifierLength);
+        }
+
+        private static bool IsValidOptionalRuntimeIdentifier(string value, int maximumLength)
+        {
+            return string.IsNullOrEmpty(value) || IsValidRuntimeIdentifier(value, maximumLength);
+        }
+
+        private static bool IsValidRuntimeIdentifier(string value, int maximumLength)
+        {
+            if (string.IsNullOrWhiteSpace(value) || value.Length > maximumLength)
             {
                 return false;
             }
@@ -591,6 +828,11 @@ namespace RPGClone.Multiplayer
             }
 
             return true;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private static bool IsFinite(Vector3 value)

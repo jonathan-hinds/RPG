@@ -17,7 +17,7 @@ Armor variants should reference the shared slot model from their `MMOEquipmentVi
 1. Create a new asset from `Create > RPG Clone > Characters > Equipment Visual`.
 2. For armor, keep `Binding Mode` as `Body Part`, set `Equipment Slot` to the item slot, and set `Body Part` to the visible character part it should affect.
 3. For color-only gear, leave `Hide Base Body Part` off, turn `Use Color Override` on, and pick the color.
-4. For weapons and shields, set `Binding Mode` to `Attachment Socket`, set the item slot, set the ready and stowed socket names from the socket table below, assign the in-combat wrapper prefab to `Model Prefab`, and optionally assign a separate out-of-combat wrapper prefab to `Stowed Model Prefab`.
+4. For weapons and shields, set `Binding Mode` to `Attachment Socket`, set the item slot, set the ready and stowed socket names from the socket table below, assign the in-combat wrapper prefab to `Model Prefab`, and optionally assign separate out-of-combat and in-combat locomotion wrappers to `Stowed Model Prefab` and `Combat Movement Model Prefab`.
 5. Assign the Equipment Visual asset to the item's `Equipment > Equipment Visual` field.
 
 Current visible mappings:
@@ -41,7 +41,7 @@ Open the wrapper prefab, keep the prefab root at the intended socket origin, and
 
 The guide points and line are tagged `EditorOnly`; they are visible while authoring the prefab and stripped from spawned equipment visuals at runtime. Designers should move the weapon mesh child, not the guide points, unless deliberately changing the grip convention for that weapon family.
 
-At runtime, attachment visuals use `Socket Name` and `Model Prefab` while the character is in combat. Out of combat they use `Stowed Socket Name` and `Stowed Model Prefab`; when `Stowed Model Prefab` is empty, the visual falls back to `Model Prefab`.
+At runtime, attachment visuals use `Socket Name` and `Model Prefab` while the character is stationary in combat. Walking, running, backpedaling, and jumping in combat use `Combat Movement Socket Name` and `Combat Movement Model Prefab`. Out of combat they use `Stowed Socket Name` and `Stowed Model Prefab`. Optional state-specific sockets and prefabs fall back to the ready socket and prefab when empty.
 
 | Equipment family | Slot | Ready socket | Stowed socket |
 | --- | --- | --- | --- |
@@ -70,7 +70,7 @@ At runtime, attachment visuals use `Socket Name` and `Model Prefab` while the ch
 | Recruit's Greatsword | Main Hand | Attachment Socket | `cc_weapon_r` in combat, `cc_back_x` stowed | `EV_Recruits_Greatsword_2H` | Ready prefab `PF_Recruits_Greatsword_Attachment`, stowed prefab `PF_Recruits_Greatsword_StowedAttachment` |
 | Recruit's Maul | Main Hand | Attachment Socket | `cc_weapon_r` in combat, `cc_back_x` stowed | `EV_Recruits_Maul_2H` | Ready prefab `PF_Recruits_Maul_Attachment`, stowed prefab `PF_Recruits_Maul_StowedAttachment` |
 | Recruit's Staff | Main Hand | Attachment Socket | `cc_weapon_r` in combat, `cc_back_x` stowed | `EV_Recruits_Staff_2H` | Ready prefab `PF_Recruits_Staff_Attachment`, stowed prefab `PF_Recruits_Staff_StowedAttachment` |
-| Recruit's Shield | Off Hand | Attachment Socket | `cc_shield.l` in combat, `cc_back_center.x` stowed | `EV_Recruits_Shield_OffHand` | Ready prefab `PF_Recruits_Shield_Attachment`, stowed prefab `PF_Recruits_Shield_StowedAttachment` |
+| Recruit's Shield | Off Hand | Attachment Socket | `cc_shield.l` ready/moving in combat, `cc_back_center.x` stowed | `EV_Recruits_Shield_OffHand` | Ready prefab `PF_Recruits_Shield_Attachment`, movement prefab `PF_Recruits_Shield_MovementAttachment`, stowed prefab `PF_Recruits_Shield_StowedAttachment` |
 
 ## Weapon Coverage
 

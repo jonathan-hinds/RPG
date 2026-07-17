@@ -18,6 +18,7 @@ MonoBehaviour:
   hideBaseBodyPart: 0
   modelPrefab: {fileID: 8260495069803934807, guid: 9d597848a8cefcf40ae97d8c9874d529, type: 3}
   stowedModelPrefab: {fileID: 8260495069803934807, guid: ba66d68018f7f74469b7d82b13a85daa, type: 3}
+  combatMovementModelPrefab: {fileID: 8260495069803934807, guid: 275eff5b4b0860b4dbdf20a7f62f44b9, type: 3}
   materialOverride: {fileID: 0}
   useColorOverride: 0
   colorOverride: {r: 1, g: 1, b: 1, a: 1}
@@ -25,6 +26,7 @@ MonoBehaviour:
   normalTexture: {fileID: 0}
   socketName: cc_shield.l
   stowedSocketName: cc_back_center.x
+  combatMovementSocketName: cc_shield.l
   localPosition: {x: 0, y: 0, z: 0}
   localEulerAngles: {x: 0, y: 0, z: 0}
   localScale: {x: 1, y: 1, z: 1}

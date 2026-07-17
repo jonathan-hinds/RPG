@@ -9,6 +9,32 @@ namespace RPGClone.Characters
         AttachmentSocket
     }
 
+    public enum MMOEquipmentAttachmentPresentationState
+    {
+        Stowed,
+        Ready,
+        CombatMovement
+    }
+
+    public static class MMOEquipmentAttachmentPresentationResolver
+    {
+        public static MMOEquipmentAttachmentPresentationState Resolve(
+            bool isInCombat,
+            bool isAirborne,
+            float planarSpeed,
+            float movementSpeedThreshold)
+        {
+            if (!isInCombat)
+            {
+                return MMOEquipmentAttachmentPresentationState.Stowed;
+            }
+
+            return isAirborne || planarSpeed > Mathf.Max(0f, movementSpeedThreshold)
+                ? MMOEquipmentAttachmentPresentationState.CombatMovement
+                : MMOEquipmentAttachmentPresentationState.Ready;
+        }
+    }
+
     [CreateAssetMenu(menuName = "RPG Clone/Characters/Equipment Visual", fileName = "EquipmentVisual")]
     public sealed class MMOEquipmentVisualDefinition : ScriptableObject
     {
@@ -22,6 +48,8 @@ namespace RPGClone.Characters
         [SerializeField] private GameObject modelPrefab;
         [Tooltip("Optional prefab used for attachment visuals while stowed/out of combat. Falls back to Model Prefab when empty.")]
         [SerializeField] private GameObject stowedModelPrefab;
+        [Tooltip("Optional prefab used for attachment visuals while moving or airborne in combat. Falls back to Model Prefab when empty.")]
+        [SerializeField] private GameObject combatMovementModelPrefab;
         [SerializeField] private Material materialOverride;
         [SerializeField] private bool useColorOverride;
         [SerializeField] private Color colorOverride = Color.white;
@@ -33,6 +61,8 @@ namespace RPGClone.Characters
         [SerializeField] private string socketName = "cc_weapon_r";
         [Tooltip("Skeleton transform name used while the item is stowed/out of combat.")]
         [SerializeField] private string stowedSocketName = "cc_hip.l";
+        [Tooltip("Optional skeleton transform name used while moving or airborne in combat. Falls back to Socket Name when empty.")]
+        [SerializeField] private string combatMovementSocketName;
 
         [Header("Placement")]
         [SerializeField] private Vector3 localPosition;
@@ -45,6 +75,7 @@ namespace RPGClone.Characters
         public bool HideBaseBodyPart => hideBaseBodyPart;
         public GameObject ModelPrefab => modelPrefab;
         public GameObject StowedModelPrefab => stowedModelPrefab;
+        public GameObject CombatMovementModelPrefab => combatMovementModelPrefab;
         public Material MaterialOverride => materialOverride;
         public bool UseColorOverride => useColorOverride;
         public Color ColorOverride => colorOverride;
@@ -52,12 +83,36 @@ namespace RPGClone.Characters
         public Texture2D NormalTexture => normalTexture;
         public string SocketName => string.IsNullOrWhiteSpace(socketName) ? "cc_weapon_r" : socketName;
         public string StowedSocketName => string.IsNullOrWhiteSpace(stowedSocketName) ? SocketName : stowedSocketName;
+        public string CombatMovementSocketName => string.IsNullOrWhiteSpace(combatMovementSocketName) ? SocketName : combatMovementSocketName;
         public Vector3 LocalPosition => localPosition;
         public Vector3 LocalEulerAngles => localEulerAngles;
         public Vector3 LocalScale => localScale == Vector3.zero ? Vector3.one : localScale;
         public GameObject GetAttachmentModelPrefab(bool isInCombat)
         {
-            return !isInCombat && stowedModelPrefab != null ? stowedModelPrefab : modelPrefab;
+            return GetAttachmentModelPrefab(
+                isInCombat
+                    ? MMOEquipmentAttachmentPresentationState.Ready
+                    : MMOEquipmentAttachmentPresentationState.Stowed);
+        }
+
+        public GameObject GetAttachmentModelPrefab(MMOEquipmentAttachmentPresentationState presentationState)
+        {
+            return presentationState switch
+            {
+                MMOEquipmentAttachmentPresentationState.Stowed when stowedModelPrefab != null => stowedModelPrefab,
+                MMOEquipmentAttachmentPresentationState.CombatMovement when combatMovementModelPrefab != null => combatMovementModelPrefab,
+                _ => modelPrefab
+            };
+        }
+
+        public string GetAttachmentSocketName(MMOEquipmentAttachmentPresentationState presentationState)
+        {
+            return presentationState switch
+            {
+                MMOEquipmentAttachmentPresentationState.Stowed => StowedSocketName,
+                MMOEquipmentAttachmentPresentationState.CombatMovement => CombatMovementSocketName,
+                _ => SocketName
+            };
         }
 
         public void Configure(
@@ -80,6 +135,7 @@ namespace RPGClone.Characters
             hideBaseBodyPart = newHideBaseBodyPart;
             modelPrefab = newModelPrefab;
             stowedModelPrefab = null;
+            combatMovementModelPrefab = null;
             materialOverride = newMaterialOverride;
             useColorOverride = newUseColorOverride;
             colorOverride = newColorOverride;
@@ -100,12 +156,39 @@ namespace RPGClone.Characters
             Vector3 newLocalEulerAngles,
             Vector3 newLocalScale)
         {
+            ConfigureAttachment(
+                newEquipmentSlot,
+                newSocketName,
+                newStowedSocketName,
+                string.Empty,
+                newModelPrefab,
+                newStowedModelPrefab,
+                null,
+                newLocalPosition,
+                newLocalEulerAngles,
+                newLocalScale);
+        }
+
+        public void ConfigureAttachment(
+            MMOEquipmentSlotType newEquipmentSlot,
+            string newSocketName,
+            string newStowedSocketName,
+            string newCombatMovementSocketName,
+            GameObject newModelPrefab,
+            GameObject newStowedModelPrefab,
+            GameObject newCombatMovementModelPrefab,
+            Vector3 newLocalPosition,
+            Vector3 newLocalEulerAngles,
+            Vector3 newLocalScale)
+        {
             bindingMode = MMOEquipmentVisualBindingMode.AttachmentSocket;
             equipmentSlot = newEquipmentSlot;
             socketName = string.IsNullOrWhiteSpace(newSocketName) ? "cc_weapon_r" : newSocketName;
             stowedSocketName = string.IsNullOrWhiteSpace(newStowedSocketName) ? socketName : newStowedSocketName;
+            combatMovementSocketName = string.IsNullOrWhiteSpace(newCombatMovementSocketName) ? socketName : newCombatMovementSocketName;
             modelPrefab = newModelPrefab;
             stowedModelPrefab = newStowedModelPrefab;
+            combatMovementModelPrefab = newCombatMovementModelPrefab;
             localPosition = newLocalPosition;
             localEulerAngles = newLocalEulerAngles;
             localScale = newLocalScale == Vector3.zero ? Vector3.one : newLocalScale;

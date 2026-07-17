@@ -228,6 +228,7 @@ namespace RPGClone.Multiplayer
                 DestroyVisualPrefabChildren(visual.ModelPrefab);
                 DestroyVisualPrefabChildren(visual.GetAttachmentModelPrefab(false));
                 DestroyVisualPrefabChildren(visual.GetAttachmentModelPrefab(true));
+                DestroyVisualPrefabChildren(visual.CombatMovementModelPrefab);
             }
         }
 

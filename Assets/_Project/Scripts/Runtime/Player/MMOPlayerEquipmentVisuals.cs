@@ -15,12 +15,14 @@ namespace RPGClone.Player
         [SerializeField] private MMOCharacterEquipment equipment;
         [SerializeField] private MMOCombatant combatant;
         [SerializeField] private List<MMOBodyPartRendererSlot> bodyPartSlots = new();
+        [SerializeField, Min(0f)] private float attachmentMovementSpeedThreshold = 0.05f;
 
         private readonly List<GameObject> activeVisualInstances = new();
         private readonly List<Material> activeMaterialInstances = new();
         private readonly Dictionary<Renderer, Material[]> originalMaterials = new();
         private MMOCharacterEquipment subscribedEquipment;
         private MMOCombatant subscribedCombatant;
+        private IMMOPlayerLocomotionSource locomotionSource;
         private int lastEquipmentSignature;
 
         private void Awake()
@@ -81,6 +83,7 @@ namespace RPGClone.Player
 
             equipment = newEquipment;
             combatant = GetComponent<MMOCombatant>();
+            locomotionSource = GetComponent<MMOPlayerMotor>();
             bodyPartSlots = newBodyPartSlots != null
                 ? new List<MMOBodyPartRendererSlot>(newBodyPartSlots)
                 : new List<MMOBodyPartRendererSlot>();
@@ -307,14 +310,14 @@ namespace RPGClone.Player
             MMOEquipmentVisualDefinition visualDefinition,
             IReadOnlyDictionary<string, Transform> liveSkeleton)
         {
-            bool isInCombat = IsInCombat();
-            GameObject modelPrefab = visualDefinition.GetAttachmentModelPrefab(isInCombat);
+            MMOEquipmentAttachmentPresentationState presentationState = ResolveAttachmentPresentationState();
+            GameObject modelPrefab = visualDefinition.GetAttachmentModelPrefab(presentationState);
             if (modelPrefab == null)
             {
                 return;
             }
 
-            string socketName = ResolveAttachmentSocketName(visualDefinition, isInCombat);
+            string socketName = visualDefinition.GetAttachmentSocketName(presentationState);
             Transform socket = FindLiveSkeletonTransform(liveSkeleton, socketName);
             if (socket == null)
             {
@@ -341,18 +344,6 @@ namespace RPGClone.Player
             {
                 instance.AddComponent<MMOEquipmentVisualInstanceMarker>();
             }
-        }
-
-        private string ResolveAttachmentSocketName(MMOEquipmentVisualDefinition visualDefinition, bool isInCombat)
-        {
-            if (visualDefinition == null)
-            {
-                return "cc_weapon_r";
-            }
-
-            return isInCombat
-                ? visualDefinition.SocketName
-                : visualDefinition.StowedSocketName;
         }
 
         private static void StripEditorOnlyChildren(GameObject instance)
@@ -710,6 +701,11 @@ namespace RPGClone.Player
             {
                 combatant = GetComponent<MMOCombatant>();
             }
+
+            if (!IsLocomotionSourceAvailable(locomotionSource))
+            {
+                locomotionSource = ResolveLocomotionSource();
+            }
         }
 
         private void SubscribeToEquipment()
@@ -754,7 +750,8 @@ namespace RPGClone.Player
 
         private int CalculateEquipmentSignature()
         {
-            int combatState = IsInCombat() ? 1 : 0;
+            MMOEquipmentAttachmentPresentationState presentationState = ResolveAttachmentPresentationState();
+            int combatState = (int)presentationState;
             if (equipment == null)
             {
                 return combatState;
@@ -782,6 +779,34 @@ namespace RPGClone.Player
         private bool IsInCombat()
         {
             return combatant != null && combatant.IsInCombat;
+        }
+
+        private MMOEquipmentAttachmentPresentationState ResolveAttachmentPresentationState()
+        {
+            return MMOEquipmentAttachmentPresentationResolver.Resolve(
+                IsInCombat(),
+                locomotionSource != null && locomotionSource.IsAirborne,
+                locomotionSource != null ? locomotionSource.CurrentPlanarSpeed : 0f,
+                attachmentMovementSpeedThreshold);
+        }
+
+        private IMMOPlayerLocomotionSource ResolveLocomotionSource()
+        {
+            MonoBehaviour[] behaviours = GetComponents<MonoBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is IMMOPlayerLocomotionSource source && behaviours[i].isActiveAndEnabled)
+                {
+                    return source;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsLocomotionSourceAvailable(IMMOPlayerLocomotionSource source)
+        {
+            return source is MonoBehaviour behaviour && behaviour != null && behaviour.isActiveAndEnabled;
         }
 
         private static void SetRenderersEnabled(Renderer[] renderers, bool enabled)

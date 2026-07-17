@@ -127,6 +127,7 @@ namespace RPGClone.Multiplayer
             }
 
             if (MMOGameplaySessionService.IsHostAuthority
+                && MMONetcodeSharedSessionTransport.HasRemoteClients
                 && Time.unscaledTime >= nextEnemySnapshotPublishTime)
             {
                 nextEnemySnapshotPublishTime = Time.unscaledTime + enemySnapshotPublishSeconds;
@@ -134,7 +135,7 @@ namespace RPGClone.Multiplayer
             }
 
             if (MMOGameplaySessionService.IsHostAuthority
-                && HasKnownSessionPeers()
+                && MMONetcodeSharedSessionTransport.HasRemoteClients
                 && Time.unscaledTime >= nextWorldObjectSnapshotPublishTime)
             {
                 nextWorldObjectSnapshotPublishTime = Time.unscaledTime + worldObjectSnapshotPublishSeconds;
@@ -204,11 +205,6 @@ namespace RPGClone.Multiplayer
             else
             {
                 ApplyParticipantRuntimeSnapshots();
-            }
-
-            if (!hasSessionPeers)
-            {
-                return;
             }
 
             if (MMOGameplaySessionService.IsHostAuthority)
@@ -414,7 +410,7 @@ namespace RPGClone.Multiplayer
 
         private void PublishEnemySnapshots()
         {
-            if (!HasRemoteParticipants())
+            if (!MMONetcodeSharedSessionTransport.HasRemoteClients)
             {
                 return;
             }
@@ -431,6 +427,7 @@ namespace RPGClone.Multiplayer
                 if (enemy != null)
                 {
                     EnemySnapshot snapshot = enemy.CreateSnapshot();
+                    MMONetcodeSharedSessionTransport.TryBroadcastEnemyRuntime(snapshot);
                     int signature = CalculateEnemySnapshotSignature(snapshot);
                     if (forceFullSnapshot
                         || !publishedEnemySnapshotSignatures.TryGetValue(snapshot.spawnId, out int previousSignature)
@@ -499,8 +496,6 @@ namespace RPGClone.Multiplayer
                 return 0;
             }
 
-            Vector3 position = snapshot.position.ToVector3();
-            Vector3 rotation = snapshot.rotationEuler.ToVector3();
             unchecked
             {
                 int hash = 17;
@@ -511,20 +506,12 @@ namespace RPGClone.Multiplayer
                 hash = hash * 31 + snapshot.maxHealth;
                 hash = hash * 31 + snapshot.currentMana;
                 hash = hash * 31 + snapshot.maxMana;
-                hash = hash * 31 + Quantize(position.x, 0.05f);
-                hash = hash * 31 + Quantize(position.y, 0.05f);
-                hash = hash * 31 + Quantize(position.z, 0.05f);
-                hash = hash * 31 + Quantize(rotation.y, 1f);
-                hash = hash * 31 + Quantize(snapshot.worldSpeed, 0.05f);
                 hash = hash * 31 + StableHash(snapshot.currentTargetCharacterId);
                 hash = hash * 31 + (snapshot.inCombat ? 1 : 0);
                 hash = hash * 31 + (snapshot.leashing ? 1 : 0);
                 hash = hash * 31 + StableHash(snapshot.castAbilityId);
                 hash = hash * 31 + StableHash(snapshot.castTargetCharacterId);
                 hash = hash * 31 + Quantize(snapshot.castDurationSeconds, 0.05f);
-                hash = hash * 31 + Quantize(snapshot.castNormalizedProgress, 0.05f);
-                hash = hash * 31 + Quantize(snapshot.corpseRemainingSeconds, 0.25f);
-                hash = hash * 31 + Quantize(snapshot.respawnRemainingSeconds, 0.25f);
                 return hash;
             }
         }

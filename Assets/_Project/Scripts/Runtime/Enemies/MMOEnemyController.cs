@@ -66,6 +66,10 @@ namespace RPGClone.Enemies
         private Quaternion proxyTargetRotation;
         private float proxyWorldSpeed;
         private bool proxyHasSnapshot;
+        private bool authorityEventsSubscribed;
+        private bool authorityModeInitialized;
+        private bool lastAuthorityMode;
+        private long lastAppliedSnapshotUtcTicks;
 
         public MMOEnemyDefinition Definition => definition;
         public string SpawnId
@@ -109,25 +113,19 @@ namespace RPGClone.Enemies
         {
             EnsureReferences();
             RegisterSpawn();
-            if (IsAuthorityOwner)
-            {
-                combatant.Damaged += OnDamaged;
-                combatant.Died += OnDied;
-            }
+            RefreshAuthorityMode();
         }
 
         private void OnDisable()
         {
             UnregisterSpawn();
-            if (combatant != null)
-            {
-                combatant.Damaged -= OnDamaged;
-                combatant.Died -= OnDied;
-            }
+            SetAuthorityEventSubscriptions(false);
+            authorityModeInitialized = false;
         }
 
         private void Update()
         {
+            RefreshAuthorityMode();
             if (!IsAuthorityOwner)
             {
                 UpdateProxyPresentation();
@@ -221,12 +219,16 @@ namespace RPGClone.Enemies
 
         public void ApplySnapshot(EnemySnapshot snapshot)
         {
-            if (snapshot == null || snapshot.spawnId != SpawnId || IsAuthorityOwner)
+            if (snapshot == null
+                || snapshot.spawnId != SpawnId
+                || IsAuthorityOwner
+                || snapshot.updatedUtcTicks <= lastAppliedSnapshotUtcTicks)
             {
                 return;
             }
 
             EnsureReferences();
+            lastAppliedSnapshotUtcTicks = snapshot.updatedUtcTicks;
             Vector3 snapshotPosition = snapshot.position.ToVector3();
             Quaternion snapshotRotation = Quaternion.Euler(snapshot.rotationEuler.ToVector3());
             bool wasRespawning = respawning;
@@ -235,6 +237,7 @@ namespace RPGClone.Enemies
             identity.Mana.Configure(Mathf.Max(0, snapshot.maxMana), snapshot.currentMana, false);
             corpseActive = snapshot.runtimeState == EnemyRuntimeState.Corpse;
             respawning = snapshot.runtimeState == EnemyRuntimeState.Respawning;
+            currentTarget = ResolveSnapshotTarget(snapshot);
             creatureAnimator?.SetDeadState(snapshot.runtimeState != EnemyRuntimeState.Alive);
             bool shouldSnap = !proxyHasSnapshot
                 || wasRespawning != respawning
@@ -263,7 +266,7 @@ namespace RPGClone.Enemies
             }
 
             SetPresentationActive(snapshot.runtimeState != EnemyRuntimeState.Respawning);
-            identity.SetSelectable(snapshot.runtimeState != EnemyRuntimeState.Respawning);
+            identity.SetSelectable(snapshot.runtimeState == EnemyRuntimeState.Alive);
             if (agent != null)
             {
                 agent.enabled = false;
@@ -875,6 +878,78 @@ namespace RPGClone.Enemies
                     lootableCorpse = gameObject.AddComponent<MMOLootableCorpse>();
                 }
             }
+        }
+
+        private MMOCharacterIdentity ResolveSnapshotTarget(EnemySnapshot snapshot)
+        {
+            if (snapshot == null
+                || !snapshot.inCombat
+                || string.IsNullOrWhiteSpace(snapshot.currentTargetCharacterId)
+                || !MMOGameplaySessionService.Players.TryGetParticipantByCharacterId(
+                    snapshot.currentTargetCharacterId,
+                    out MMOPlayerParticipant participant))
+            {
+                return null;
+            }
+
+            return participant.Identity;
+        }
+
+        private void RefreshAuthorityMode()
+        {
+            bool isAuthority = IsAuthorityOwner;
+            if (authorityModeInitialized && lastAuthorityMode == isAuthority)
+            {
+                return;
+            }
+
+            authorityModeInitialized = true;
+            lastAuthorityMode = isAuthority;
+            SetAuthorityEventSubscriptions(isAuthority);
+
+            if (agent == null)
+            {
+                return;
+            }
+
+            if (!isAuthority)
+            {
+                if (agent.enabled && agent.isOnNavMesh)
+                {
+                    agent.isStopped = true;
+                    agent.ResetPath();
+                }
+
+                agent.enabled = false;
+                return;
+            }
+
+            proxyHasSnapshot = false;
+            proxyWorldSpeed = 0f;
+            lastAppliedSnapshotUtcTicks = 0;
+            if (!corpseActive && !respawning && combatant != null && combatant.IsAlive)
+            {
+                agent.enabled = true;
+                EnsureAgentOnNavMesh();
+            }
+        }
+
+        private void SetAuthorityEventSubscriptions(bool subscribe)
+        {
+            if (combatant == null || authorityEventsSubscribed == subscribe)
+            {
+                return;
+            }
+
+            combatant.Damaged -= OnDamaged;
+            combatant.Died -= OnDied;
+            if (subscribe)
+            {
+                combatant.Damaged += OnDamaged;
+                combatant.Died += OnDied;
+            }
+
+            authorityEventsSubscribed = subscribe;
         }
 
         private void EnsureSpawnId()
