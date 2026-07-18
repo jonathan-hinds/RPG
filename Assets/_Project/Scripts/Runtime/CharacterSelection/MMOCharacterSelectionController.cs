@@ -30,6 +30,7 @@ namespace RPGClone.CharacterSelection
         private MMOCharacterSaveData selectedCharacter;
         private MMOPlayableRace selectedRace = MMOPlayableRace.Orc;
         private MMOPlayableClass selectedClass = MMOPlayableClass.Warrior;
+        private string selectedHeadStyleId = "head_1";
         private string selectedHairstyleId = "hair_1";
         private GameObject previewModel;
         private RectTransform root;
@@ -99,6 +100,9 @@ namespace RPGClone.CharacterSelection
             appearanceCatalog = appearances;
             playerVisualPrefab = previewPrefab;
             gameplaySceneName = string.IsNullOrWhiteSpace(worldSceneName) ? gameplaySceneName : worldSceneName;
+            selectedHeadStyleId = appearanceCatalog != null
+                ? appearanceCatalog.DefaultHeadStyleId
+                : selectedHeadStyleId;
             selectedHairstyleId = appearanceCatalog != null
                 ? appearanceCatalog.DefaultHairstyleId
                 : selectedHairstyleId;
@@ -672,6 +676,9 @@ namespace RPGClone.CharacterSelection
             string hairstyleId = creatingCharacter
                 ? selectedHairstyleId
                 : selectedCharacter?.hairstyleId;
+            string headStyleId = creatingCharacter
+                ? selectedHeadStyleId
+                : selectedCharacter?.headStyleId;
             previewModel = MMOCharacterPreviewActor.Create(
                 playerVisualPrefab,
                 previewRoot,
@@ -679,7 +686,8 @@ namespace RPGClone.CharacterSelection
                 characterClass,
                 equipmentItems,
                 appearanceCatalog,
-                hairstyleId);
+                hairstyleId,
+                headStyleId);
         }
 
         private IEnumerable<MMOItemDefinition> ResolveSavedEquipment(MMOCharacterSaveData character)
@@ -727,6 +735,9 @@ namespace RPGClone.CharacterSelection
                 normalizedCharacterName = normalizedName,
                 race = selectedRace,
                 characterClass = selectedClass,
+                headStyleId = appearanceCatalog != null
+                    ? appearanceCatalog.NormalizeHeadStyleId(selectedHeadStyleId)
+                    : selectedHeadStyleId,
                 hairstyleId = appearanceCatalog != null
                     ? appearanceCatalog.NormalizeHairstyleId(selectedHairstyleId)
                     : selectedHairstyleId,
@@ -860,6 +871,9 @@ namespace RPGClone.CharacterSelection
             if (creatingCharacter)
             {
                 pendingCharacterName = string.Empty;
+                selectedHeadStyleId = appearanceCatalog != null
+                    ? appearanceCatalog.DefaultHeadStyleId
+                    : "head_1";
                 selectedHairstyleId = appearanceCatalog != null
                     ? appearanceCatalog.DefaultHairstyleId
                     : "hair_1";
@@ -976,8 +990,12 @@ namespace RPGClone.CharacterSelection
                 string previousAccountId = character.accountId;
                 string previousName = character.characterName;
                 string previousNormalized = character.normalizedCharacterName;
+                string previousHeadStyleId = character.headStyleId;
                 string previousHairstyleId = character.hairstyleId;
                 MMOCharacterNameUtility.EnsureCharacterData(character);
+                character.headStyleId = appearanceCatalog != null
+                    ? appearanceCatalog.NormalizeHeadStyleId(character.headStyleId)
+                    : string.IsNullOrWhiteSpace(character.headStyleId) ? "head_1" : character.headStyleId;
                 character.hairstyleId = appearanceCatalog != null
                     ? appearanceCatalog.NormalizeHairstyleId(character.hairstyleId)
                     : string.IsNullOrWhiteSpace(character.hairstyleId) ? "hair_1" : character.hairstyleId;
@@ -991,6 +1009,7 @@ namespace RPGClone.CharacterSelection
                     || previousAccountId != character.accountId
                     || previousName != character.characterName
                     || previousNormalized != character.normalizedCharacterName
+                    || previousHeadStyleId != character.headStyleId
                     || previousHairstyleId != character.hairstyleId;
             }
 

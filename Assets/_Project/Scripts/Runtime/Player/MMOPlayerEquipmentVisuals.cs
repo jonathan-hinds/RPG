@@ -28,6 +28,7 @@ namespace RPGClone.Player
         private MMOEquipmentAttachmentPresentationState attachmentPresentationOverride;
         private readonly Dictionary<MMOEquipmentVisualDefinition, MMOEquipmentAttachmentPresentationState>
             attachmentPresentationOverridesByVisual = new();
+        private readonly HashSet<MMOCharacterBodyPart> equipmentHiddenBodyParts = new();
 
         private void Awake()
         {
@@ -62,6 +63,7 @@ namespace RPGClone.Player
             }
 
             ClearRuntimeVisuals();
+            equipmentHiddenBodyParts.Clear();
             RestoreBaseBody();
         }
 
@@ -152,6 +154,7 @@ namespace RPGClone.Player
             EnsureBodyPartSlots();
             CacheOriginalMaterials();
             ClearRuntimeVisuals();
+            equipmentHiddenBodyParts.Clear();
             RestoreBaseBody();
             lastEquipmentSignature = CalculateEquipmentSignature();
 
@@ -195,7 +198,7 @@ namespace RPGClone.Player
 
                 if (visualDefinition.HideBaseBodyPart)
                 {
-                    SetRenderersEnabled(slot.Renderers, false);
+                    SetBaseBodyPartHidden(slot.BodyPart, true);
                 }
 
                 return;
@@ -218,7 +221,7 @@ namespace RPGClone.Player
 
             if (visualDefinition.HideBaseBodyPart)
             {
-                SetRenderersEnabled(slot.Renderers, false);
+                SetBaseBodyPartHidden(slot.BodyPart, true);
             }
 
             activeVisualInstances.Add(instance);
@@ -374,6 +377,41 @@ namespace RPGClone.Player
             return null;
         }
 
+        public void RefreshBaseBodyPartVisibility(MMOCharacterBodyPart bodyPart)
+        {
+            EnsureBodyPartSlots();
+            MMOBodyPartRendererSlot slot = FindSlot(bodyPart);
+            if (slot != null)
+            {
+                SetRenderersEnabled(slot.Renderers, !ShouldHideBaseBodyPart(bodyPart));
+            }
+        }
+
+        private void SetBaseBodyPartHidden(MMOCharacterBodyPart bodyPart, bool hidden)
+        {
+            if (hidden)
+            {
+                equipmentHiddenBodyParts.Add(bodyPart);
+            }
+            else
+            {
+                equipmentHiddenBodyParts.Remove(bodyPart);
+            }
+
+            RefreshBaseBodyPartVisibility(bodyPart);
+        }
+
+        private bool ShouldHideBaseBodyPart(MMOCharacterBodyPart bodyPart)
+        {
+            if (equipmentHiddenBodyParts.Contains(bodyPart))
+            {
+                return true;
+            }
+
+            MMOCharacterAppearanceVisuals appearanceVisuals = GetComponent<MMOCharacterAppearanceVisuals>();
+            return appearanceVisuals != null && appearanceVisuals.ReplacesBodyPart(bodyPart);
+        }
+
         private void RestoreBaseBody()
         {
             foreach (MMOBodyPartRendererSlot slot in bodyPartSlots)
@@ -383,7 +421,7 @@ namespace RPGClone.Player
                     continue;
                 }
 
-                SetRenderersEnabled(slot.Renderers, true);
+                SetRenderersEnabled(slot.Renderers, !ShouldHideBaseBodyPart(slot.BodyPart));
                 foreach (Renderer renderer in slot.Renderers)
                 {
                     if (renderer != null && originalMaterials.TryGetValue(renderer, out Material[] materials))

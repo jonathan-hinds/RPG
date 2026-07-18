@@ -15,7 +15,8 @@ namespace RPGClone.CharacterSelection
             MMOPlayableClass characterClass,
             IEnumerable<MMOItemDefinition> equipmentItems,
             MMOCharacterAppearanceCatalog appearanceCatalog,
-            string hairstyleId)
+            string hairstyleId,
+            string headStyleId = null)
         {
             if (playerVisualPrefab == null || parent == null)
             {
@@ -79,7 +80,7 @@ namespace RPGClone.CharacterSelection
             MMOCharacterAppearanceVisuals appearanceVisuals = actor.GetComponent<MMOCharacterAppearanceVisuals>()
                 ?? actor.AddComponent<MMOCharacterAppearanceVisuals>();
             appearanceVisuals.enabled = true;
-            appearanceVisuals.Configure(appearanceCatalog, hairstyleId);
+            appearanceVisuals.Configure(appearanceCatalog, headStyleId, hairstyleId);
 
             foreach (Animator animator in actor.GetComponentsInChildren<Animator>(true))
             {

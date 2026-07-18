@@ -432,7 +432,12 @@ namespace RPGClone.EditorTools
                 hairstyles.Add(hairstyle);
             }
 
-            catalog.Configure(hairstyles);
+            MMOHeadStyleDefinition defaultHeadStyle = new();
+            defaultHeadStyle.Configure(
+                "head_1",
+                "Default Head",
+                AssetDatabase.LoadAssetAtPath<GameObject>("Assets/PlayerWeaponStow/StyledHead.fbx"));
+            catalog.Configure(new[] { defaultHeadStyle }, hairstyles);
             EditorUtility.SetDirty(catalog);
             return catalog;
         }

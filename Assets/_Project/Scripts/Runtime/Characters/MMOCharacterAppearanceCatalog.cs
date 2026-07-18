@@ -5,6 +5,25 @@ using UnityEngine;
 namespace RPGClone.Characters
 {
     [Serializable]
+    public sealed class MMOHeadStyleDefinition
+    {
+        [SerializeField] private string headStyleId = "head_1";
+        [SerializeField] private string displayName = "Head Style 1";
+        [SerializeField] private GameObject modelPrefab;
+
+        public string HeadStyleId => headStyleId;
+        public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? headStyleId : displayName;
+        public GameObject ModelPrefab => modelPrefab;
+
+        public void Configure(string newHeadStyleId, string newDisplayName, GameObject newModelPrefab)
+        {
+            headStyleId = string.IsNullOrWhiteSpace(newHeadStyleId) ? "head_1" : newHeadStyleId.Trim();
+            displayName = string.IsNullOrWhiteSpace(newDisplayName) ? headStyleId : newDisplayName.Trim();
+            modelPrefab = newModelPrefab;
+        }
+    }
+
+    [Serializable]
     public sealed class MMOHairstyleDefinition
     {
         [SerializeField] private string hairstyleId = "hair_1";
@@ -26,12 +45,41 @@ namespace RPGClone.Characters
     [CreateAssetMenu(menuName = "RPG Clone/Characters/Appearance Catalog", fileName = "CharacterAppearanceCatalog")]
     public sealed class MMOCharacterAppearanceCatalog : ScriptableObject
     {
+        [SerializeField] private List<MMOHeadStyleDefinition> headStyles = new();
         [SerializeField] private List<MMOHairstyleDefinition> hairstyles = new();
 
+        public IReadOnlyList<MMOHeadStyleDefinition> HeadStyles => headStyles;
         public IReadOnlyList<MMOHairstyleDefinition> Hairstyles => hairstyles;
+        public string DefaultHeadStyleId => headStyles.Count > 0 && headStyles[0] != null
+            ? headStyles[0].HeadStyleId
+            : "head_1";
         public string DefaultHairstyleId => hairstyles.Count > 0 && hairstyles[0] != null
             ? hairstyles[0].HairstyleId
             : "hair_1";
+
+        public MMOHeadStyleDefinition FindHeadStyle(string headStyleId)
+        {
+            if (string.IsNullOrWhiteSpace(headStyleId))
+            {
+                return null;
+            }
+
+            foreach (MMOHeadStyleDefinition headStyle in headStyles)
+            {
+                if (headStyle != null && string.Equals(headStyle.HeadStyleId, headStyleId, StringComparison.Ordinal))
+                {
+                    return headStyle;
+                }
+            }
+
+            return null;
+        }
+
+        public string NormalizeHeadStyleId(string headStyleId)
+        {
+            MMOHeadStyleDefinition headStyle = FindHeadStyle(headStyleId);
+            return headStyle != null ? headStyle.HeadStyleId : DefaultHeadStyleId;
+        }
 
         public MMOHairstyleDefinition FindHairstyle(string hairstyleId)
         {
@@ -70,11 +118,21 @@ namespace RPGClone.Characters
             return hairstyles.Count > 0 ? 0 : -1;
         }
 
-        public void Configure(IEnumerable<MMOHairstyleDefinition> newHairstyles)
+        public void Configure(
+            IEnumerable<MMOHeadStyleDefinition> newHeadStyles,
+            IEnumerable<MMOHairstyleDefinition> newHairstyles)
         {
+            headStyles = newHeadStyles != null
+                ? new List<MMOHeadStyleDefinition>(newHeadStyles)
+                : new List<MMOHeadStyleDefinition>();
             hairstyles = newHairstyles != null
                 ? new List<MMOHairstyleDefinition>(newHairstyles)
                 : new List<MMOHairstyleDefinition>();
+        }
+
+        public void Configure(IEnumerable<MMOHairstyleDefinition> newHairstyles)
+        {
+            Configure(headStyles, newHairstyles);
         }
     }
 }

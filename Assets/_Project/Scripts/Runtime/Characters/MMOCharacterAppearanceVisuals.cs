@@ -8,9 +8,19 @@ namespace RPGClone.Characters
     public sealed class MMOCharacterAppearanceVisuals : MonoBehaviour
     {
         [SerializeField] private MMOCharacterAppearanceCatalog appearanceCatalog;
+        [SerializeField] private string headStyleId = "head_1";
         [SerializeField] private string hairstyleId = "hair_1";
 
+        private GameObject activeHeadStyle;
         private GameObject activeHairstyle;
+        private bool headStyleBound;
+        private Animator productionAnimator;
+        private AnimatorCullingMode productionAnimatorOriginalCullingMode;
+        private bool hasProductionAnimatorCullingOverride;
+
+        public string HeadStyleId => appearanceCatalog != null
+            ? appearanceCatalog.NormalizeHeadStyleId(headStyleId)
+            : headStyleId;
 
         public string HairstyleId => appearanceCatalog != null
             ? appearanceCatalog.NormalizeHairstyleId(hairstyleId)
@@ -23,12 +33,27 @@ namespace RPGClone.Characters
 
         private void OnDisable()
         {
-            ClearActiveHairstyle();
+            ClearActiveVisual(ref activeHeadStyle);
+            ClearActiveVisual(ref activeHairstyle);
+            headStyleBound = false;
+            RefreshBaseHeadVisibility();
+            RestoreProductionAnimatorCulling();
         }
 
         public void Configure(MMOCharacterAppearanceCatalog newAppearanceCatalog, string newHairstyleId)
         {
+            Configure(newAppearanceCatalog, newAppearanceCatalog?.DefaultHeadStyleId, newHairstyleId);
+        }
+
+        public void Configure(
+            MMOCharacterAppearanceCatalog newAppearanceCatalog,
+            string newHeadStyleId,
+            string newHairstyleId)
+        {
             appearanceCatalog = newAppearanceCatalog;
+            headStyleId = appearanceCatalog != null
+                ? appearanceCatalog.NormalizeHeadStyleId(newHeadStyleId)
+                : newHeadStyleId;
             hairstyleId = appearanceCatalog != null
                 ? appearanceCatalog.NormalizeHairstyleId(newHairstyleId)
                 : newHairstyleId;
@@ -37,12 +62,13 @@ namespace RPGClone.Characters
 
         private void Rebuild()
         {
-            ClearActiveHairstyle();
-            MMOHairstyleDefinition hairstyle = appearanceCatalog != null
-                ? appearanceCatalog.FindHairstyle(hairstyleId)
-                : null;
-            if (!isActiveAndEnabled || hairstyle?.ModelPrefab == null)
+            ClearActiveVisual(ref activeHeadStyle);
+            ClearActiveVisual(ref activeHairstyle);
+            headStyleBound = false;
+
+            if (!isActiveAndEnabled)
             {
+                RefreshBaseHeadVisibility();
                 return;
             }
 
@@ -51,29 +77,70 @@ namespace RPGClone.Characters
                 candidate => candidate != null
                     && (candidate.GetComponentInParent<MMOAppearanceVisualInstanceMarker>() != null
                         || candidate.GetComponentInParent<MMOEquipmentVisualInstanceMarker>() != null));
-            activeHairstyle = Instantiate(hairstyle.ModelPrefab, transform);
-            activeHairstyle.name = hairstyle.ModelPrefab.name;
-            activeHairstyle.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-            activeHairstyle.transform.localScale = Vector3.one;
-            activeHairstyle.AddComponent<MMOAppearanceVisualInstanceMarker>();
 
-            foreach (Animator importedAnimator in activeHairstyle.GetComponentsInChildren<Animator>(true))
+            MMOHeadStyleDefinition headStyle = appearanceCatalog != null
+                ? appearanceCatalog.FindHeadStyle(headStyleId)
+                : null;
+            if (headStyle?.ModelPrefab != null)
+            {
+                headStyleBound = TryCreateSkinnedVisual(
+                    headStyle.ModelPrefab,
+                    headStyle.DisplayName,
+                    liveSkeleton,
+                    out activeHeadStyle);
+            }
+
+            RefreshBaseHeadVisibility();
+
+            MMOHairstyleDefinition hairstyle = appearanceCatalog != null
+                ? appearanceCatalog.FindHairstyle(hairstyleId)
+                : null;
+            if (hairstyle?.ModelPrefab != null)
+            {
+                TryCreateSkinnedVisual(
+                    hairstyle.ModelPrefab,
+                    hairstyle.DisplayName,
+                    liveSkeleton,
+                    out activeHairstyle);
+            }
+
+            ApplyProductionAnimatorCullingPolicy();
+        }
+
+        public bool ReplacesBodyPart(MMOCharacterBodyPart bodyPart)
+        {
+            return bodyPart == MMOCharacterBodyPart.Head && headStyleBound && activeHeadStyle != null;
+        }
+
+        private bool TryCreateSkinnedVisual(
+            GameObject modelPrefab,
+            string displayName,
+            IReadOnlyDictionary<string, Transform> liveSkeleton,
+            out GameObject instance)
+        {
+            instance = Instantiate(modelPrefab, transform);
+            instance.name = modelPrefab.name;
+            instance.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            instance.transform.localScale = Vector3.one;
+            instance.AddComponent<MMOAppearanceVisualInstanceMarker>();
+
+            foreach (Animator importedAnimator in instance.GetComponentsInChildren<Animator>(true))
             {
                 importedAnimator.enabled = false;
             }
 
-            foreach (Camera importedCamera in activeHairstyle.GetComponentsInChildren<Camera>(true))
+            foreach (Camera importedCamera in instance.GetComponentsInChildren<Camera>(true))
             {
                 importedCamera.enabled = false;
             }
 
-            foreach (Light importedLight in activeHairstyle.GetComponentsInChildren<Light>(true))
+            foreach (Light importedLight in instance.GetComponentsInChildren<Light>(true))
             {
                 importedLight.enabled = false;
             }
 
             bool reboundAnyRenderer = false;
-            foreach (Renderer importedRenderer in activeHairstyle.GetComponentsInChildren<Renderer>(true))
+            foreach (Renderer importedRenderer in instance.GetComponentsInChildren<Renderer>(true))
             {
                 if (importedRenderer is not SkinnedMeshRenderer skinnedRenderer)
                 {
@@ -90,7 +157,7 @@ namespace RPGClone.Characters
                 {
                     skinnedRenderer.enabled = false;
                     Debug.LogWarning(
-                        $"Hairstyle '{hairstyle.DisplayName}' could not bind '{skinnedRenderer.name}' to '{name}'. " +
+                        $"Appearance style '{displayName}' could not bind '{skinnedRenderer.name}' to '{name}'. " +
                         $"Missing player bones: {string.Join(", ", missingBoneNames)}.",
                         this);
                 }
@@ -98,24 +165,89 @@ namespace RPGClone.Characters
 
             if (!reboundAnyRenderer)
             {
-                Debug.LogWarning($"Hairstyle '{hairstyle.DisplayName}' did not contain a compatible skinned renderer.", this);
+                Debug.LogWarning($"Appearance style '{displayName}' did not contain a compatible skinned renderer.", this);
+                ClearActiveVisual(ref instance);
+            }
+
+            return reboundAnyRenderer;
+        }
+
+        private void RefreshBaseHeadVisibility()
+        {
+            MMOPlayerEquipmentVisuals equipmentVisuals = GetComponent<MMOPlayerEquipmentVisuals>();
+            if (equipmentVisuals != null)
+            {
+                equipmentVisuals.RefreshBaseBodyPartVisibility(MMOCharacterBodyPart.Head);
             }
         }
 
-        private void ClearActiveHairstyle()
+        private void ApplyProductionAnimatorCullingPolicy()
         {
-            if (activeHairstyle != null)
+            if (activeHeadStyle == null && activeHairstyle == null)
+            {
+                RestoreProductionAnimatorCulling();
+                return;
+            }
+
+            productionAnimator = ResolveProductionAnimator();
+            if (productionAnimator == null)
+            {
+                return;
+            }
+
+            if (!hasProductionAnimatorCullingOverride)
+            {
+                productionAnimatorOriginalCullingMode = productionAnimator.cullingMode;
+                hasProductionAnimatorCullingOverride = true;
+            }
+
+            // Runtime appearance renderers are rebound to the production skeleton but
+            // are not part of the Animator's originally imported renderer set. If all
+            // authored body renderers are hidden by modular armor/appearance, Unity's
+            // renderer-based culling can otherwise freeze the skeleton on frame zero.
+            productionAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        }
+
+        private Animator ResolveProductionAnimator()
+        {
+            foreach (Animator candidate in GetComponentsInChildren<Animator>(true))
+            {
+                if (candidate != null
+                    && candidate.GetComponentInParent<MMOAppearanceVisualInstanceMarker>() == null
+                    && candidate.GetComponentInParent<MMOEquipmentVisualInstanceMarker>() == null)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        private void RestoreProductionAnimatorCulling()
+        {
+            if (hasProductionAnimatorCullingOverride && productionAnimator != null)
+            {
+                productionAnimator.cullingMode = productionAnimatorOriginalCullingMode;
+            }
+
+            productionAnimator = null;
+            hasProductionAnimatorCullingOverride = false;
+        }
+
+        private static void ClearActiveVisual(ref GameObject activeVisual)
+        {
+            if (activeVisual != null)
             {
                 if (Application.isPlaying)
                 {
-                    Destroy(activeHairstyle);
+                    Destroy(activeVisual);
                 }
                 else
                 {
-                    DestroyImmediate(activeHairstyle);
+                    DestroyImmediate(activeVisual);
                 }
 
-                activeHairstyle = null;
+                activeVisual = null;
             }
         }
     }
