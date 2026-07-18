@@ -11,19 +11,24 @@ namespace RPGClone.Vfx.Warrior
 
         [Header("Visual Roots")]
         [SerializeField] private Transform visualRoot;
+        [SerializeField] private Transform impactLayersRoot;
         [SerializeField] private Transform groundReactionRoot;
         [SerializeField] private Transform stunAccentRoot;
 
         [Header("Impact Layers")]
         [SerializeField] private ParticleSystem swingAccent;
+        [SerializeField] private ParticleSystem impactBackplate;
         [SerializeField] private ParticleSystem impactFlash;
         [SerializeField] private ParticleSystem heavyImpactBurst;
+        [SerializeField] private ParticleSystem secondaryImpactBurst;
         [SerializeField] private ParticleSystem directionalForceBurst;
+        [SerializeField] private ParticleSystem momentumStreaks;
         [SerializeField] private ParticleSystem armorSparks;
 
         [Header("Ground Layers")]
         [SerializeField] private ParticleSystem dustBurst;
         [SerializeField] private ParticleSystem radialDustRing;
+        [SerializeField] private ParticleSystem groundDebris;
 
         [Header("Stun Layer")]
         [SerializeField] private ParticleSystem stunStars;
@@ -60,6 +65,7 @@ namespace RPGClone.Vfx.Warrior
             }
 
             float elapsed = Time.time - startedAt;
+            AnimateImpactPunch(elapsed);
             if (stunPlaying && stunAccentRoot != null)
             {
                 float bob = Mathf.Sin(elapsed * profile.StunBobSpeed) * profile.StunBobAmount;
@@ -70,7 +76,7 @@ namespace RPGClone.Vfx.Warrior
             }
 
             float totalDuration = stunPlaying
-                ? Mathf.Max(profile.DustDuration, profile.StunDuration)
+                ? Mathf.Max(profile.DustDuration + profile.GroundReactionDelay, profile.StunDuration + profile.StunDelay)
                 : Mathf.Max(profile.DustDuration, profile.DustRingDuration);
             if (elapsed >= totalDuration + 0.08f)
             {
@@ -99,12 +105,16 @@ namespace RPGClone.Vfx.Warrior
             startedAt = Time.time;
 
             PlayOneShot(swingAccent);
+            PlayOneShot(impactBackplate);
             PlayOneShot(impactFlash);
             PlayOneShot(heavyImpactBurst);
+            PlayOneShot(secondaryImpactBurst);
             PlayOneShot(directionalForceBurst);
+            PlayOneShot(momentumStreaks);
             PlayOneShot(armorSparks);
             PlayOneShot(dustBurst);
             PlayOneShot(radialDustRing);
+            PlayOneShot(groundDebris);
             if (stunPlaying)
             {
                 PlayOneShot(stunStars);
@@ -137,28 +147,38 @@ namespace RPGClone.Vfx.Warrior
         public void ConfigureAuthoring(
             BashVFXProfile newProfile,
             Transform newVisualRoot,
+            Transform newImpactLayersRoot,
             Transform newGroundReactionRoot,
             Transform newStunAccentRoot,
             ParticleSystem newSwingAccent,
+            ParticleSystem newImpactBackplate,
             ParticleSystem newImpactFlash,
             ParticleSystem newHeavyImpactBurst,
+            ParticleSystem newSecondaryImpactBurst,
             ParticleSystem newDirectionalForceBurst,
+            ParticleSystem newMomentumStreaks,
             ParticleSystem newArmorSparks,
             ParticleSystem newDustBurst,
             ParticleSystem newRadialDustRing,
+            ParticleSystem newGroundDebris,
             ParticleSystem newStunStars)
         {
             profile = newProfile;
             visualRoot = newVisualRoot;
+            impactLayersRoot = newImpactLayersRoot;
             groundReactionRoot = newGroundReactionRoot;
             stunAccentRoot = newStunAccentRoot;
             swingAccent = newSwingAccent;
+            impactBackplate = newImpactBackplate;
             impactFlash = newImpactFlash;
             heavyImpactBurst = newHeavyImpactBurst;
+            secondaryImpactBurst = newSecondaryImpactBurst;
             directionalForceBurst = newDirectionalForceBurst;
+            momentumStreaks = newMomentumStreaks;
             armorSparks = newArmorSparks;
             dustBurst = newDustBurst;
             radialDustRing = newRadialDustRing;
+            groundDebris = newGroundDebris;
             stunStars = newStunStars;
             CacheParticles(true);
         }
@@ -183,29 +203,44 @@ namespace RPGClone.Vfx.Warrior
 
             Color flash = ApplyMaster(profile.FlashColor, profile.FlashIntensity);
             Color impact = ApplyMaster(profile.ImpactColor, 1f);
+            Color backplate = ApplyMaster(profile.ImpactBackplateColor, 1f);
+            Color secondary = ApplyMaster(profile.SecondaryImpactColor, 1f);
             Color dust = ApplyMaster(profile.DustColor, 1f);
+            Color debris = ApplyMaster(profile.DebrisColor, 1f);
             Color spark = ApplyMaster(profile.SparkColor, 1f);
             Color stun = ApplyMaster(profile.StunColor, 1f);
 
-            ConfigureOneShot(swingAccent, 1, profile.SwingDuration, 0f, profile.SwingArcSize, impact);
-            ConfigureOneShot(impactFlash, 1, profile.FlashDuration, 0f, profile.FlashSize, flash);
-            ConfigureOneShot(heavyImpactBurst, profile.BurstPieceCount, profile.ImpactDuration, 1.15f, profile.ImpactBurstSize, impact);
+            ConfigureOneShot(swingAccent, 1, profile.SwingDuration, 0f, profile.SwingArcSize, impact, 0f);
+            ConfigureOneShot(impactBackplate, Mathf.Max(3, profile.BurstPieceCount / 2), profile.ImpactDuration, 0.62f, profile.ImpactBackplateSize, backplate, 0.008f);
+            ConfigureOneShot(impactFlash, 1, profile.FlashDuration, 0f, profile.FlashSize, flash, 0.012f);
+            ConfigureOneShot(heavyImpactBurst, profile.BurstPieceCount, profile.ImpactDuration, 1.15f, profile.ImpactBurstSize, impact, 0.018f);
+            ConfigureOneShot(
+                secondaryImpactBurst,
+                Mathf.Max(3, profile.BurstPieceCount / 2),
+                profile.ImpactDuration * 0.9f,
+                1.45f,
+                profile.SecondaryBurstSize,
+                secondary,
+                profile.SecondaryBurstDelay);
             ConfigureOneShot(
                 directionalForceBurst,
                 Mathf.Max(1, profile.BurstPieceCount / 2),
                 profile.ImpactDuration,
                 profile.DirectionalForceDistance / Mathf.Max(0.05f, profile.ImpactDuration),
                 profile.ImpactBurstSize * 0.58f,
-                impact);
-            ConfigureOneShot(armorSparks, profile.SparkCount, profile.ImpactDuration, profile.SparkSpeed, profile.SparkSize, spark);
-            ConfigureOneShot(dustBurst, profile.DustAmount, profile.DustDuration, 0.9f, profile.DustSize, dust);
+                impact,
+                0.026f);
+            ConfigureOneShot(momentumStreaks, profile.MomentumStreakCount, profile.ImpactDuration * 0.72f, profile.MomentumStreakSpeed, profile.SparkSize * 0.72f, spark, 0.03f);
+            ConfigureOneShot(armorSparks, profile.SparkCount, profile.ImpactDuration, profile.SparkSpeed, profile.SparkSize, spark, 0.022f);
+            ConfigureOneShot(dustBurst, profile.DustAmount, profile.DustDuration, 0.9f, profile.DustSize, dust, profile.GroundReactionDelay);
 
             Color ringColor = dust;
             ringColor.a *= profile.DustRingOpacity;
-            ConfigureOneShot(radialDustRing, 1, profile.DustRingDuration, 0f, profile.DustRingRadius, ringColor);
+            ConfigureOneShot(radialDustRing, 1, profile.DustRingDuration, 0f, profile.DustRingRadius, ringColor, profile.GroundReactionDelay);
             ConfigureScaleCurve(radialDustRing, profile.DustRingStartScale, 1f, 1.08f);
+            ConfigureOneShot(groundDebris, profile.DebrisCount, profile.DustDuration * 0.9f, profile.DebrisSpeed, profile.DustSize * 0.34f, debris, profile.GroundReactionDelay);
 
-            ConfigureOneShot(stunStars, profile.StunStarCount, profile.StunDuration, 0f, profile.StunStarSize, stun);
+            ConfigureOneShot(stunStars, profile.StunStarCount, profile.StunDuration, 0f, profile.StunStarSize, stun, profile.StunDelay);
             if (stunStars != null)
             {
                 ParticleSystem.ShapeModule shape = stunStars.shape;
@@ -220,6 +255,35 @@ namespace RPGClone.Vfx.Warrior
                 stunAccentRoot.localRotation = Quaternion.identity;
                 baseStunHeight = position.y;
             }
+
+            if (impactLayersRoot != null)
+            {
+                impactLayersRoot.localScale = Vector3.one * (1f - profile.ImpactPunchOvershoot * 0.4f);
+            }
+        }
+
+        private void AnimateImpactPunch(float elapsed)
+        {
+            if (impactLayersRoot == null || profile.ImpactPunchDuration <= 0f)
+            {
+                return;
+            }
+
+            float normalized = Mathf.Clamp01(elapsed / profile.ImpactPunchDuration);
+            float peak = 0.34f;
+            float scale;
+            if (normalized < peak)
+            {
+                float rise = Mathf.SmoothStep(0f, 1f, normalized / peak);
+                scale = Mathf.Lerp(1f - profile.ImpactPunchOvershoot * 0.4f, 1f + profile.ImpactPunchOvershoot, rise);
+            }
+            else
+            {
+                float settle = Mathf.SmoothStep(0f, 1f, (normalized - peak) / (1f - peak));
+                scale = Mathf.Lerp(1f + profile.ImpactPunchOvershoot, 1f, settle);
+            }
+
+            impactLayersRoot.localScale = Vector3.one * scale;
         }
 
         private Color ApplyMaster(Color color, float layerIntensity)
@@ -243,7 +307,8 @@ namespace RPGClone.Vfx.Warrior
             float lifetime,
             float speed,
             float size,
-            Color color)
+            Color color,
+            float delay)
         {
             if (particleSystem == null)
             {
@@ -253,6 +318,7 @@ namespace RPGClone.Vfx.Warrior
             int safeCount = Mathf.Clamp(count, 0, short.MaxValue);
             ParticleSystem.MainModule main = particleSystem.main;
             main.duration = Mathf.Max(0.05f, lifetime);
+            main.startDelay = Mathf.Max(0f, delay);
             main.startLifetime = Mathf.Max(0.05f, lifetime);
             main.startSpeed = Mathf.Max(0f, speed);
             float safeSize = Mathf.Max(0.01f, size);
@@ -312,6 +378,10 @@ namespace RPGClone.Vfx.Warrior
 
             isPlaying = false;
             stunPlaying = false;
+            if (impactLayersRoot != null)
+            {
+                impactLayersRoot.localScale = Vector3.one;
+            }
             if (notify)
             {
                 Completed?.Invoke(this);

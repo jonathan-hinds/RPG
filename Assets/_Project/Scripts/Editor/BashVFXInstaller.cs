@@ -37,10 +37,13 @@ namespace RPGClone.EditorTools
         private static readonly string[] RequiredMaterialNames =
         {
             "Bash_SwingAccent",
+            "Bash_ImpactBackplate",
             "Bash_ImpactFlash",
             "Bash_ImpactBurst",
+            "Bash_SecondaryBurst",
             "Bash_Dust",
             "Bash_DustRing",
+            "Bash_Debris",
             "Bash_Sparks",
             "Bash_StunStars"
         };
@@ -53,6 +56,7 @@ namespace RPGClone.EditorTools
             ConfigureTextureImporters();
 
             BashVFXProfile profile = LoadOrCreateProfile();
+            EditorUtility.SetDirty(profile);
             Dictionary<string, Material> materials = CreateMaterials();
             GameObject prefab = CreatePrefab(profile, materials);
             WireIntoBash(prefab);
@@ -81,15 +85,30 @@ namespace RPGClone.EditorTools
                 }
             }
 
+            foreach (string layerPath in new[]
+            {
+                "Visual Root/Impact Layers/Dark Impact Backplate",
+                "Visual Root/Impact Layers/Secondary Orange Impact",
+                "Visual Root/Impact Layers/Forward Momentum Streaks",
+                "Visual Root/Ground Reaction/Ground Debris Chunks",
+                "Visual Root/Ground Reaction/Radial Dust Ring"
+            })
+            {
+                if (prefab.transform.Find(layerPath) == null)
+                {
+                    throw new MissingReferenceException($"BashVFX polish layer is missing: {layerPath}");
+                }
+            }
+
             BashVFX controller = prefab.GetComponent<BashVFX>();
             if (controller == null || controller.Profile == null)
             {
                 throw new MissingReferenceException("BashVFX controller or profile reference is missing.");
             }
 
-            if (prefab.GetComponentsInChildren<ParticleSystem>(true).Length != 8)
+            if (prefab.GetComponentsInChildren<ParticleSystem>(true).Length != 12)
             {
-                throw new UnityException("BashVFX must contain exactly eight bounded particle layers.");
+                throw new UnityException("BashVFX must contain exactly twelve bounded particle layers.");
             }
 
             if (prefab.GetComponentsInChildren<Light>(true).Length != 0
@@ -257,10 +276,13 @@ namespace RPGClone.EditorTools
             return new Dictionary<string, Material>
             {
                 ["Swing"] = CreateMaterial("Bash_SwingAccent", shader, "Bash_BrushArc.png", new Color(1f, 0.92f, 0.72f, 0.72f), true, 1.05f),
+                ["Backplate"] = CreateMaterial("Bash_ImpactBackplate", shader, "Bash_ImpactBurstAtlas.png", new Color(0.22f, 0.1f, 0.03f, 0.76f), false, 0.82f),
                 ["Flash"] = CreateMaterial("Bash_ImpactFlash", shader, "Bash_ImpactFlash.png", Color.white, true, 1.35f),
                 ["Burst"] = CreateMaterial("Bash_ImpactBurst", shader, "Bash_ImpactBurstAtlas.png", Color.white, true, 1.05f),
+                ["Secondary"] = CreateMaterial("Bash_SecondaryBurst", shader, "Bash_ImpactBurstAtlas.png", new Color(1f, 0.36f, 0.06f, 0.82f), true, 0.92f),
                 ["Dust"] = CreateMaterial("Bash_Dust", shader, "Bash_DustPuffAtlas.png", new Color(0.72f, 0.68f, 0.6f, 0.72f), false, 0.92f),
                 ["DustRing"] = CreateMaterial("Bash_DustRing", shader, "Bash_DustRing.png", new Color(0.72f, 0.68f, 0.6f, 0.72f), false, 0.9f),
+                ["Debris"] = CreateMaterial("Bash_Debris", shader, "Bash_ImpactBurstAtlas.png", new Color(0.42f, 0.34f, 0.25f, 0.9f), false, 0.72f),
                 ["Sparks"] = CreateMaterial("Bash_Sparks", shader, "Bash_MetallicSpark.png", Color.white, true, 1.25f),
                 ["Stun"] = CreateMaterial("Bash_StunStars", shader, "Bash_StunStar.png", Color.white, true, 1.08f)
             };
@@ -310,26 +332,35 @@ namespace RPGClone.EditorTools
                 stunRoot.localPosition = new Vector3(0f, 0.9f, 0f);
 
                 ParticleSystem swing = CreateSwingAccent(impactRoot, materials["Swing"]);
+                ParticleSystem backplate = CreateImpactBackplate(impactRoot, materials["Backplate"]);
                 ParticleSystem flash = CreateImpactFlash(impactRoot, materials["Flash"]);
                 ParticleSystem burst = CreateImpactBurst(impactRoot, materials["Burst"]);
+                ParticleSystem secondary = CreateSecondaryImpactBurst(impactRoot, materials["Secondary"]);
                 ParticleSystem directional = CreateDirectionalBurst(impactRoot, materials["Burst"]);
+                ParticleSystem momentum = CreateMomentumStreaks(impactRoot, materials["Sparks"]);
                 ParticleSystem sparks = CreateArmorSparks(impactRoot, materials["Sparks"]);
                 ParticleSystem dust = CreateDustBurst(groundRoot, materials["Dust"]);
                 ParticleSystem ring = CreateDustRing(groundRoot, materials["DustRing"]);
+                ParticleSystem debris = CreateGroundDebris(groundRoot, materials["Debris"]);
                 ParticleSystem stars = CreateStunStars(stunRoot, materials["Stun"]);
 
                 controller.ConfigureAuthoring(
                     profile,
                     visualRoot,
+                    impactRoot,
                     groundRoot,
                     stunRoot,
                     swing,
+                    backplate,
                     flash,
                     burst,
+                    secondary,
                     directional,
+                    momentum,
                     sparks,
                     dust,
                     ring,
+                    debris,
                     stars);
 
                 root.AddComponent<MMOAbilityVfxLifetime>().Configure(2.25f, true, true);
@@ -399,6 +430,21 @@ namespace RPGClone.EditorTools
             return system;
         }
 
+        private static ParticleSystem CreateImpactBackplate(Transform parent, Material material)
+        {
+            ParticleSystem system = CreateOneShot("Dark Impact Backplate", parent, material, 0.3f, 0.62f, 1.48f, 5, new Color(0.22f, 0.1f, 0.025f, 0.74f), 3);
+            ParticleSystem.ShapeModule shape = system.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.055f;
+            ParticleSystem.RotationOverLifetimeModule rotation = system.rotationOverLifetime;
+            rotation.enabled = true;
+            rotation.z = new ParticleSystem.MinMaxCurve(-0.85f, 0.85f);
+            ConfigureAtlas(system, 2, 2);
+            ConfigureFadeAndScale(system, 0.5f, 1.08f, 1.2f, 0f, 0.34f);
+            return system;
+        }
+
         private static ParticleSystem CreateImpactBurst(Transform parent, Material material)
         {
             ParticleSystem system = CreateOneShot("Heavy Impact Burst", parent, material, 0.34f, 1.15f, 1.35f, 9, new Color(1f, 0.78f, 0.36f, 0.92f), 6);
@@ -428,6 +474,42 @@ namespace RPGClone.EditorTools
             drag.dampen = 0.36f;
             ConfigureAtlas(system, 2, 2);
             ConfigureFadeAndScale(system, 0.32f, 0.9f, 0.18f, 0f, 0.25f);
+            return system;
+        }
+
+        private static ParticleSystem CreateSecondaryImpactBurst(Transform parent, Material material)
+        {
+            ParticleSystem system = CreateOneShot("Secondary Orange Impact", parent, material, 0.3f, 1.45f, 1.62f, 5, new Color(1f, 0.4f, 0.08f, 0.8f), 5);
+            ParticleSystem.ShapeModule shape = system.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.1f;
+            ParticleSystem.RotationOverLifetimeModule rotation = system.rotationOverLifetime;
+            rotation.enabled = true;
+            rotation.z = new ParticleSystem.MinMaxCurve(-1.1f, 1.1f);
+            ConfigureAtlas(system, 2, 2);
+            ConfigureFadeAndScale(system, 0.34f, 1.08f, 1.24f, 0f, 0.3f);
+            return system;
+        }
+
+        private static ParticleSystem CreateMomentumStreaks(Transform parent, Material material)
+        {
+            ParticleSystem system = CreateOneShot("Forward Momentum Streaks", parent, material, 0.24f, 7.2f, 0.115f, 6, Color.white, 8);
+            ParticleSystem.ShapeModule shape = system.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 11f;
+            shape.radius = 0.055f;
+            shape.length = 0.04f;
+            ParticleSystem.LimitVelocityOverLifetimeModule drag = system.limitVelocityOverLifetime;
+            drag.enabled = true;
+            drag.dampen = 0.22f;
+            ParticleSystemRenderer renderer = system.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Stretch;
+            renderer.lengthScale = 2.6f;
+            renderer.velocityScale = 0.16f;
+            renderer.cameraVelocityScale = 0f;
+            ConfigureFadeAndScale(system, 0.78f, 1f, 0f, 0f, 0.46f);
             return system;
         }
 
@@ -474,6 +556,26 @@ namespace RPGClone.EditorTools
             renderer.alignment = ParticleSystemRenderSpace.Local;
             renderer.allowRoll = false;
             ConfigureFadeAndScale(system, 0.24f, 1f, 1.08f, 0f, 0.2f);
+            return system;
+        }
+
+        private static ParticleSystem CreateGroundDebris(Transform parent, Material material)
+        {
+            ParticleSystem system = CreateOneShot("Ground Debris Chunks", parent, material, 0.44f, 2.35f, 0.18f, 6, new Color(0.4f, 0.33f, 0.24f, 0.86f), 3);
+            system.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
+            ParticleSystem.MainModule main = system.main;
+            main.gravityModifier = 1.45f;
+            ParticleSystem.ShapeModule shape = system.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 62f;
+            shape.radius = 0.18f;
+            shape.radiusThickness = 0.8f;
+            ParticleSystem.RotationOverLifetimeModule rotation = system.rotationOverLifetime;
+            rotation.enabled = true;
+            rotation.z = new ParticleSystem.MinMaxCurve(-3.2f, 3.2f);
+            ConfigureAtlas(system, 2, 2);
+            ConfigureFadeAndScale(system, 0.84f, 1f, 0.3f, 0f, 0.68f);
             return system;
         }
 
