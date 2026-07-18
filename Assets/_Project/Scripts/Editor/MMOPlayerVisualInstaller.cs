@@ -9,6 +9,7 @@ using UnityEditor;
 using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace RPGClone.EditorTools
@@ -52,7 +53,7 @@ namespace RPGClone.EditorTools
             MMOPlayerLocomotionAnimationSet animationSet = CreateOrUpdateAnimationSet();
             MMOPlayerCombatAnimationSet combatAnimationSet = CreateOrUpdateCombatAnimationSet();
             GameObject prefab = UpdatePlayerPrefab(animationSet, combatAnimationSet);
-            UpdateActiveScenePlayer(animationSet, combatAnimationSet);
+            RestoreActiveScenePlayerVisualInheritance();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -61,6 +62,141 @@ namespace RPGClone.EditorTools
             {
                 Debug.Log($"Installed player visual prefab at {PlayerPrefabPath}.");
             }
+        }
+
+        [MenuItem("Tools/RPG Clone/Player/Restore Prefab Visual Inheritance")]
+        public static void RestoreActiveScenePlayerVisualInheritance()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid() || !activeScene.isLoaded || string.IsNullOrEmpty(activeScene.path))
+            {
+                Debug.LogWarning("Open a saved gameplay scene before restoring player prefab visual inheritance.");
+                return;
+            }
+
+            GameObject player = activeScene.GetRootGameObjects()
+                .FirstOrDefault(candidate => candidate.CompareTag("Player"));
+            if (player == null)
+            {
+                Debug.LogWarning($"Could not find a root player tagged Player in {activeScene.name}.");
+                return;
+            }
+
+            string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(player);
+            if (!string.Equals(prefabPath, PlayerPrefabPath, StringComparison.Ordinal))
+            {
+                Debug.LogWarning(
+                    $"The scene player in {activeScene.name} is not an instance of {PlayerPrefabPath}. " +
+                    "Visual inheritance was not changed.",
+                    player);
+                return;
+            }
+
+            bool changed = RevertAddedCharacterVisuals(player);
+            changed |= RevertRemovedCharacterVisuals(player);
+            changed |= RevertVisualReferenceOverrides(player.GetComponent<MMOPlayerLocomotionAnimator>(),
+                "animator", "visualRoot", "upperBodyCounterYawBones");
+            changed |= RevertVisualReferenceOverrides(player.GetComponent<MMOPlayerEquipmentVisuals>(),
+                "bodyPartSlots");
+            changed |= RevertVisualReferenceOverrides(player.GetComponent<MMOPlayerCombatAnimator>(),
+                "animator");
+
+            if (!changed)
+            {
+                Debug.Log($"The scene player in {activeScene.name} already inherits its visual from {PlayerPrefabPath}.", player);
+                return;
+            }
+
+            PrefabUtility.RemoveUnusedOverrides(new[] { player }, InteractionMode.AutomatedAction);
+            EditorSceneManager.MarkSceneDirty(activeScene);
+            EditorSceneManager.SaveScene(activeScene);
+            Debug.Log($"Restored prefab-owned player visuals in {activeScene.name} from {PlayerPrefabPath}.", player);
+        }
+
+        private static bool RevertAddedCharacterVisuals(GameObject player)
+        {
+            bool changed = false;
+            foreach (AddedGameObject addedObject in PrefabUtility.GetAddedGameObjects(player).ToArray())
+            {
+                GameObject instance = addedObject.instanceGameObject;
+                if (instance == null || !string.Equals(instance.name, "Character Visual", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                addedObject.Revert(InteractionMode.AutomatedAction);
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static bool RevertRemovedCharacterVisuals(GameObject player)
+        {
+            bool changed = false;
+            foreach (RemovedGameObject removedObject in PrefabUtility.GetRemovedGameObjects(player).ToArray())
+            {
+                if (!IsCharacterVisualObject(removedObject.assetGameObject))
+                {
+                    continue;
+                }
+
+                removedObject.Revert(InteractionMode.AutomatedAction);
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static bool IsCharacterVisualObject(GameObject candidate)
+        {
+            for (Transform current = candidate != null ? candidate.transform : null; current != null; current = current.parent)
+            {
+                if (string.Equals(current.name, "Character Visual", StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool RevertVisualReferenceOverrides(Component component, params string[] propertyRoots)
+        {
+            if (component == null)
+            {
+                return false;
+            }
+
+            SerializedObject serializedObject = new(component);
+            SerializedProperty iterator = serializedObject.GetIterator();
+            List<string> propertyPaths = new();
+            bool enterChildren = true;
+            while (iterator.NextVisible(enterChildren))
+            {
+                enterChildren = true;
+                if (iterator.propertyType != SerializedPropertyType.ObjectReference
+                    || !iterator.prefabOverride
+                    || !propertyRoots.Any(root => iterator.propertyPath == root
+                        || iterator.propertyPath.StartsWith(root + ".", StringComparison.Ordinal)))
+                {
+                    continue;
+                }
+
+                propertyPaths.Add(iterator.propertyPath);
+            }
+
+            foreach (string propertyPath in propertyPaths)
+            {
+                serializedObject.Update();
+                SerializedProperty property = serializedObject.FindProperty(propertyPath);
+                if (property != null && property.prefabOverride)
+                {
+                    PrefabUtility.RevertPropertyOverride(property, InteractionMode.AutomatedAction);
+                }
+            }
+
+            return propertyPaths.Count > 0;
         }
 
         private static MMOPlayerLocomotionAnimationSet CreateOrUpdateAnimationSet()
@@ -734,21 +870,6 @@ namespace RPGClone.EditorTools
             {
                 PrefabUtility.UnloadPrefabContents(prefabRoot);
             }
-        }
-
-        private static void UpdateActiveScenePlayer(MMOPlayerLocomotionAnimationSet animationSet, MMOPlayerCombatAnimationSet combatAnimationSet)
-        {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player == null)
-            {
-                Debug.LogWarning("Could not find an active scene player tagged Player.");
-                return;
-            }
-
-            ApplyVisualSetup(player, animationSet, combatAnimationSet);
-            EditorUtility.SetDirty(player);
-            EditorSceneManager.MarkSceneDirty(player.scene);
-            EditorSceneManager.SaveScene(player.scene);
         }
 
         private static void ApplyVisualSetup(GameObject root, MMOPlayerLocomotionAnimationSet animationSet, MMOPlayerCombatAnimationSet combatAnimationSet)

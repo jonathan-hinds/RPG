@@ -21,6 +21,7 @@ namespace RPGClone.EditorTools
         private const string TerrainFolder = GeneratedFolder + "/Terrain";
         private const string ConfigFolder = RootFolder + "/Configs";
         private const string PrefabFolder = RootFolder + "/Prefabs/Player";
+        private const string PlayerPrefabPath = PrefabFolder + "/PlayerCapsule.prefab";
         private const string SceneFolder = "Assets/Scenes";
         private const string ScenePath = SceneFolder + "/OrcishStarterValley.unity";
         private const float TerrainSize = 520f;
@@ -494,7 +495,7 @@ namespace RPGClone.EditorTools
 
         private static GameObject InstantiatePlayer(Terrain terrain, WorldPalette palette, MMOPlayerMovementConfig movementConfig)
         {
-            GameObject prefab = BuildPlayerPrefab(palette, movementConfig);
+            GameObject prefab = LoadOrCreatePlayerPrefab(palette, movementConfig);
             GameObject instance = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
             if (instance == null)
             {
@@ -507,9 +508,14 @@ namespace RPGClone.EditorTools
             return instance;
         }
 
-        private static GameObject BuildPlayerPrefab(WorldPalette palette, MMOPlayerMovementConfig movementConfig)
+        private static GameObject LoadOrCreatePlayerPrefab(WorldPalette palette, MMOPlayerMovementConfig movementConfig)
         {
-            string prefabPath = $"{PrefabFolder}/PlayerCapsule.prefab";
+            GameObject existingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
+            if (existingPrefab != null)
+            {
+                return existingPrefab;
+            }
+
             GameObject root = new("PlayerCapsule");
             root.tag = "Player";
             CharacterController controller = root.AddComponent<CharacterController>();
@@ -532,7 +538,7 @@ namespace RPGClone.EditorTools
             UnityEngine.Object.DestroyImmediate(visual.GetComponent<Collider>());
             visual.GetComponent<Renderer>().sharedMaterial = palette.Player;
 
-            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return saved;
         }
