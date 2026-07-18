@@ -23,6 +23,7 @@ namespace RPGClone.CharacterSelection
         [SerializeField] private string gameplaySceneName = "OrcishStarterValley";
         [SerializeField] private Transform previewRoot;
         [SerializeField] private Camera previewCamera;
+        [SerializeField, Min(0.01f)] private float previewScaleMultiplier = MMOCharacterPreviewActor.DefaultScaleMultiplier;
 
         private readonly List<Button> characterButtons = new();
         private MMOCharacterRosterRepository repository;
@@ -31,6 +32,7 @@ namespace RPGClone.CharacterSelection
         private MMOPlayableRace selectedRace = MMOPlayableRace.Orc;
         private MMOPlayableClass selectedClass = MMOPlayableClass.Warrior;
         private string selectedHeadStyleId = "head_1";
+        private string selectedFaceId = "face_1";
         private string selectedHairstyleId = "hair_1";
         private GameObject previewModel;
         private RectTransform root;
@@ -103,6 +105,9 @@ namespace RPGClone.CharacterSelection
             selectedHeadStyleId = appearanceCatalog != null
                 ? appearanceCatalog.DefaultHeadStyleId
                 : selectedHeadStyleId;
+            selectedFaceId = appearanceCatalog != null
+                ? appearanceCatalog.DefaultFaceId
+                : selectedFaceId;
             selectedHairstyleId = appearanceCatalog != null
                 ? appearanceCatalog.DefaultHairstyleId
                 : selectedHairstyleId;
@@ -616,22 +621,27 @@ namespace RPGClone.CharacterSelection
             appearanceHeader.rectTransform.anchorMin = new Vector2(0.5f, 0f);
             appearanceHeader.rectTransform.anchorMax = new Vector2(0.5f, 0f);
             appearanceHeader.rectTransform.pivot = new Vector2(0.5f, 0f);
-            appearanceHeader.rectTransform.anchoredPosition = new Vector2(0f, 190f);
+            appearanceHeader.rectTransform.anchoredPosition = new Vector2(0f, 220f);
             appearanceHeader.rectTransform.sizeDelta = new Vector2(330f, 34f);
 
+            MMOFaceDefinition face = appearanceCatalog != null
+                ? appearanceCatalog.FindFace(selectedFaceId)
+                : null;
             MMOHairstyleDefinition hairstyle = appearanceCatalog != null
                 ? appearanceCatalog.FindHairstyle(selectedHairstyleId)
                 : null;
-            Text hairstyleLabel = MMOUiFactory.CreateText("Hairstyle Label", infoPanel, 17, FontStyle.Bold, TextAnchor.MiddleCenter);
-            hairstyleLabel.text = hairstyle != null ? hairstyle.DisplayName : "Hairstyle";
-            hairstyleLabel.rectTransform.anchorMin = new Vector2(0.5f, 0f);
-            hairstyleLabel.rectTransform.anchorMax = new Vector2(0.5f, 0f);
-            hairstyleLabel.rectTransform.pivot = new Vector2(0.5f, 0f);
-            hairstyleLabel.rectTransform.anchoredPosition = new Vector2(0f, 126f);
-            hairstyleLabel.rectTransform.sizeDelta = new Vector2(210f, 46f);
-
-            CreateAppearanceArrow("Previous Hairstyle", "<", -132f, CyclePreviousHairstyle);
-            CreateAppearanceArrow("Next Hairstyle", ">", 132f, CycleNextHairstyle);
+            CreateAppearanceSelector(
+                "Face",
+                face != null ? face.DisplayName : "Face",
+                158f,
+                CyclePreviousFace,
+                CycleNextFace);
+            CreateAppearanceSelector(
+                "Hairstyle",
+                hairstyle != null ? hairstyle.DisplayName : "Hairstyle",
+                104f,
+                CyclePreviousHairstyle,
+                CycleNextHairstyle);
 
             Text appearanceHint = MMOUiFactory.CreateText("Appearance Hint", infoPanel, 13, FontStyle.Italic, TextAnchor.MiddleCenter);
             appearanceHint.text = "This choice is permanent after creation.";
@@ -639,11 +649,30 @@ namespace RPGClone.CharacterSelection
             appearanceHint.rectTransform.anchorMin = new Vector2(0.5f, 0f);
             appearanceHint.rectTransform.anchorMax = new Vector2(0.5f, 0f);
             appearanceHint.rectTransform.pivot = new Vector2(0.5f, 0f);
-            appearanceHint.rectTransform.anchoredPosition = new Vector2(0f, 82f);
+            appearanceHint.rectTransform.anchoredPosition = new Vector2(0f, 62f);
             appearanceHint.rectTransform.sizeDelta = new Vector2(330f, 34f);
         }
 
-        private void CreateAppearanceArrow(string objectName, string label, float x, UnityEngine.Events.UnityAction action)
+        private void CreateAppearanceSelector(
+            string objectName,
+            string displayName,
+            float y,
+            UnityEngine.Events.UnityAction previousAction,
+            UnityEngine.Events.UnityAction nextAction)
+        {
+            Text label = MMOUiFactory.CreateText($"{objectName} Label", infoPanel, 17, FontStyle.Bold, TextAnchor.MiddleCenter);
+            label.text = displayName;
+            label.rectTransform.anchorMin = new Vector2(0.5f, 0f);
+            label.rectTransform.anchorMax = new Vector2(0.5f, 0f);
+            label.rectTransform.pivot = new Vector2(0.5f, 0f);
+            label.rectTransform.anchoredPosition = new Vector2(0f, y);
+            label.rectTransform.sizeDelta = new Vector2(210f, 46f);
+
+            CreateAppearanceArrow($"Previous {objectName}", "<", -132f, y, previousAction);
+            CreateAppearanceArrow($"Next {objectName}", ">", 132f, y, nextAction);
+        }
+
+        private void CreateAppearanceArrow(string objectName, string label, float x, float y, UnityEngine.Events.UnityAction action)
         {
             Button button = MMOUiFactory.CreateTextButton(objectName, infoPanel, label, new Vector2(58f, 46f), new Color(0.18f, 0.12f, 0.06f, 0.96f));
             button.onClick.AddListener(action);
@@ -651,7 +680,7 @@ namespace RPGClone.CharacterSelection
             rect.anchorMin = new Vector2(0.5f, 0f);
             rect.anchorMax = new Vector2(0.5f, 0f);
             rect.pivot = new Vector2(0.5f, 0f);
-            rect.anchoredPosition = new Vector2(x, 126f);
+            rect.anchoredPosition = new Vector2(x, y);
         }
 
         private void RefreshPreview()
@@ -679,6 +708,9 @@ namespace RPGClone.CharacterSelection
             string headStyleId = creatingCharacter
                 ? selectedHeadStyleId
                 : selectedCharacter?.headStyleId;
+            string faceId = creatingCharacter
+                ? selectedFaceId
+                : selectedCharacter?.faceId;
             previewModel = MMOCharacterPreviewActor.Create(
                 playerVisualPrefab,
                 previewRoot,
@@ -687,7 +719,10 @@ namespace RPGClone.CharacterSelection
                 equipmentItems,
                 appearanceCatalog,
                 hairstyleId,
-                headStyleId);
+                headStyleId,
+                faceId,
+                previewCamera,
+                previewScaleMultiplier);
         }
 
         private IEnumerable<MMOItemDefinition> ResolveSavedEquipment(MMOCharacterSaveData character)
@@ -738,6 +773,9 @@ namespace RPGClone.CharacterSelection
                 headStyleId = appearanceCatalog != null
                     ? appearanceCatalog.NormalizeHeadStyleId(selectedHeadStyleId)
                     : selectedHeadStyleId,
+                faceId = appearanceCatalog != null
+                    ? appearanceCatalog.NormalizeFaceId(selectedFaceId)
+                    : selectedFaceId,
                 hairstyleId = appearanceCatalog != null
                     ? appearanceCatalog.NormalizeHairstyleId(selectedHairstyleId)
                     : selectedHairstyleId,
@@ -843,6 +881,33 @@ namespace RPGClone.CharacterSelection
             CycleHairstyle(-1);
         }
 
+        private void CyclePreviousFace()
+        {
+            CycleFace(-1);
+        }
+
+        private void CycleNextFace()
+        {
+            CycleFace(1);
+        }
+
+        private void CycleFace(int direction)
+        {
+            if (appearanceCatalog == null || appearanceCatalog.Faces.Count == 0)
+            {
+                return;
+            }
+
+            int currentIndex = appearanceCatalog.IndexOfFace(selectedFaceId);
+            int nextIndex = (currentIndex + direction + appearanceCatalog.Faces.Count) % appearanceCatalog.Faces.Count;
+            MMOFaceDefinition face = appearanceCatalog.Faces[nextIndex];
+            if (face != null)
+            {
+                selectedFaceId = face.FaceId;
+                Refresh();
+            }
+        }
+
         private void CycleNextHairstyle()
         {
             CycleHairstyle(1);
@@ -874,6 +939,9 @@ namespace RPGClone.CharacterSelection
                 selectedHeadStyleId = appearanceCatalog != null
                     ? appearanceCatalog.DefaultHeadStyleId
                     : "head_1";
+                selectedFaceId = appearanceCatalog != null
+                    ? appearanceCatalog.DefaultFaceId
+                    : "face_1";
                 selectedHairstyleId = appearanceCatalog != null
                     ? appearanceCatalog.DefaultHairstyleId
                     : "hair_1";
@@ -991,11 +1059,15 @@ namespace RPGClone.CharacterSelection
                 string previousName = character.characterName;
                 string previousNormalized = character.normalizedCharacterName;
                 string previousHeadStyleId = character.headStyleId;
+                string previousFaceId = character.faceId;
                 string previousHairstyleId = character.hairstyleId;
                 MMOCharacterNameUtility.EnsureCharacterData(character);
                 character.headStyleId = appearanceCatalog != null
                     ? appearanceCatalog.NormalizeHeadStyleId(character.headStyleId)
                     : string.IsNullOrWhiteSpace(character.headStyleId) ? "head_1" : character.headStyleId;
+                character.faceId = appearanceCatalog != null
+                    ? appearanceCatalog.NormalizeFaceId(character.faceId)
+                    : string.IsNullOrWhiteSpace(character.faceId) ? "face_1" : character.faceId;
                 character.hairstyleId = appearanceCatalog != null
                     ? appearanceCatalog.NormalizeHairstyleId(character.hairstyleId)
                     : string.IsNullOrWhiteSpace(character.hairstyleId) ? "hair_1" : character.hairstyleId;
@@ -1010,6 +1082,7 @@ namespace RPGClone.CharacterSelection
                     || previousName != character.characterName
                     || previousNormalized != character.normalizedCharacterName
                     || previousHeadStyleId != character.headStyleId
+                    || previousFaceId != character.faceId
                     || previousHairstyleId != character.hairstyleId;
             }
 

@@ -350,6 +350,7 @@ namespace RPGClone.CharacterSelection
             if (appearanceVisuals != null)
             {
                 saveData.headStyleId = appearanceVisuals.HeadStyleId;
+                saveData.faceId = appearanceVisuals.FaceId;
                 saveData.hairstyleId = appearanceVisuals.HairstyleId;
             }
 
@@ -396,6 +397,7 @@ namespace RPGClone.CharacterSelection
             destination.race = source.race;
             destination.characterClass = source.characterClass;
             destination.headStyleId = source.headStyleId;
+            destination.faceId = source.faceId;
             destination.hairstyleId = source.hairstyleId;
             destination.level = source.level;
             destination.currentExperience = source.currentExperience;
@@ -426,6 +428,7 @@ namespace RPGClone.CharacterSelection
             destination.characterId = source.characterId;
             destination.accountId = MMOSocialIdentityService.AccountId;
             destination.headStyleId = source.headStyleId;
+            destination.faceId = source.faceId;
             destination.hairstyleId = source.hairstyleId;
             if (MMOCharacterNameUtility.TryValidate(
                     source.characterName,
@@ -907,6 +910,7 @@ namespace RPGClone.CharacterSelection
             appearanceVisuals.Configure(
                 appearanceCatalog,
                 saveData != null ? saveData.headStyleId : string.Empty,
+                saveData != null ? saveData.faceId : string.Empty,
                 saveData != null ? saveData.hairstyleId : string.Empty);
         }
 

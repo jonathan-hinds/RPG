@@ -4,6 +4,7 @@ using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Inventory;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace RPGClone.Player
 {
@@ -105,16 +106,22 @@ namespace RPGClone.Player
             RebuildEquipmentVisuals();
         }
 
-        public void ApplyBodyPartLighting(Renderer renderer)
+        public void ApplyCharacterSurface(Renderer renderer)
         {
             if (renderer == null)
             {
                 return;
             }
 
-            // Unlit surfaces ignore scene lighting. Shadow casting remains a renderer
-            // concern and is intentionally left at the mesh's authored value.
+            // Unlit surfaces ignore scene lighting but still use URP's ShadowCaster
+            // pass. Preserve authored casting modes and repair modes that cannot
+            // produce a visible, shadow-casting character surface.
             renderer.receiveShadows = false;
+            if (renderer.shadowCastingMode is ShadowCastingMode.Off or ShadowCastingMode.ShadowsOnly)
+            {
+                renderer.shadowCastingMode = ShadowCastingMode.On;
+            }
+
             Material[] materials = renderer.sharedMaterials;
             bool changed = false;
             for (int i = 0; i < materials.Length; i++)
@@ -130,7 +137,7 @@ namespace RPGClone.Player
             }
         }
 
-        public void ApplyBodyPartLighting(IEnumerable<Renderer> renderers)
+        public void ApplyCharacterSurfaces(IEnumerable<Renderer> renderers)
         {
             if (renderers == null)
             {
@@ -139,7 +146,7 @@ namespace RPGClone.Player
 
             foreach (Renderer renderer in renderers)
             {
-                ApplyBodyPartLighting(renderer);
+                ApplyCharacterSurface(renderer);
             }
         }
 
@@ -309,7 +316,7 @@ namespace RPGClone.Player
                 if (TryRebindSkinnedRenderer(skinnedRenderer, liveSkeleton, visualDefinition))
                 {
                     ApplyMaterialOverride(new Renderer[] { skinnedRenderer }, visualDefinition);
-                    ApplyBodyPartLighting(skinnedRenderer);
+                    ApplyCharacterSurface(skinnedRenderer);
                     skinnedRenderer.enabled = true;
                     reboundAnyRenderer = true;
                 }
@@ -375,7 +382,26 @@ namespace RPGClone.Player
             instance.transform.localScale = visualDefinition.LocalScale;
             MarkRuntimeVisual(instance);
             StripEditorOnlyChildren(instance);
+            ApplyAttachmentSurfacePolicy(instance);
             activeVisualInstances.Add(instance);
+        }
+
+        private void ApplyAttachmentSurfacePolicy(GameObject instance)
+        {
+            if (instance == null)
+            {
+                return;
+            }
+
+            foreach (Renderer renderer in instance.GetComponentsInChildren<Renderer>(true))
+            {
+                // Trail, line, and particle renderers retain their purpose-built VFX
+                // materials. Visible weapon and shield geometry uses mesh renderers.
+                if (renderer is MeshRenderer or SkinnedMeshRenderer)
+                {
+                    ApplyCharacterSurface(renderer);
+                }
+            }
         }
 
         private static void MarkRuntimeVisual(GameObject instance)
@@ -468,7 +494,7 @@ namespace RPGClone.Player
                     {
                         renderer.sharedMaterials = materials;
                     }
-                    ApplyBodyPartLighting(renderer);
+                    ApplyCharacterSurface(renderer);
                 }
             }
         }
@@ -678,7 +704,7 @@ namespace RPGClone.Player
                     if (renderer != null)
                     {
                         originalMaterials[renderer] = renderer.sharedMaterials;
-                        ApplyBodyPartLighting(renderer);
+                        ApplyCharacterSurface(renderer);
                     }
                 }
             }

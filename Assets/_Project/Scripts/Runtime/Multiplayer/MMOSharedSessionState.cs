@@ -2044,6 +2044,7 @@ namespace RPGClone.Multiplayer
                 race = source.race,
                 characterClass = source.characterClass,
                 headStyleId = source.headStyleId,
+                faceId = source.faceId,
                 hairstyleId = source.hairstyleId,
                 level = source.level,
                 currentExperience = source.currentExperience,

@@ -7,8 +7,12 @@ namespace RPGClone.Characters
     [DisallowMultipleComponent]
     public sealed class MMOCharacterAppearanceVisuals : MonoBehaviour
     {
+        private static readonly int BaseMapPropertyId = Shader.PropertyToID("_BaseMap");
+        private static readonly int MainTexturePropertyId = Shader.PropertyToID("_MainTex");
+
         [SerializeField] private MMOCharacterAppearanceCatalog appearanceCatalog;
         [SerializeField] private string headStyleId = "head_1";
+        [SerializeField] private string faceId = "face_1";
         [SerializeField] private string hairstyleId = "hair_1";
 
         private GameObject activeHeadStyle;
@@ -21,6 +25,10 @@ namespace RPGClone.Characters
         public string HeadStyleId => appearanceCatalog != null
             ? appearanceCatalog.NormalizeHeadStyleId(headStyleId)
             : headStyleId;
+
+        public string FaceId => appearanceCatalog != null
+            ? appearanceCatalog.NormalizeFaceId(faceId)
+            : faceId;
 
         public string HairstyleId => appearanceCatalog != null
             ? appearanceCatalog.NormalizeHairstyleId(hairstyleId)
@@ -42,7 +50,11 @@ namespace RPGClone.Characters
 
         public void Configure(MMOCharacterAppearanceCatalog newAppearanceCatalog, string newHairstyleId)
         {
-            Configure(newAppearanceCatalog, newAppearanceCatalog?.DefaultHeadStyleId, newHairstyleId);
+            Configure(
+                newAppearanceCatalog,
+                newAppearanceCatalog?.DefaultHeadStyleId,
+                newAppearanceCatalog?.DefaultFaceId,
+                newHairstyleId);
         }
 
         public void Configure(
@@ -50,10 +62,22 @@ namespace RPGClone.Characters
             string newHeadStyleId,
             string newHairstyleId)
         {
+            Configure(newAppearanceCatalog, newHeadStyleId, newAppearanceCatalog?.DefaultFaceId, newHairstyleId);
+        }
+
+        public void Configure(
+            MMOCharacterAppearanceCatalog newAppearanceCatalog,
+            string newHeadStyleId,
+            string newFaceId,
+            string newHairstyleId)
+        {
             appearanceCatalog = newAppearanceCatalog;
             headStyleId = appearanceCatalog != null
                 ? appearanceCatalog.NormalizeHeadStyleId(newHeadStyleId)
                 : newHeadStyleId;
+            faceId = appearanceCatalog != null
+                ? appearanceCatalog.NormalizeFaceId(newFaceId)
+                : newFaceId;
             hairstyleId = appearanceCatalog != null
                 ? appearanceCatalog.NormalizeHairstyleId(newHairstyleId)
                 : newHairstyleId;
@@ -81,12 +105,16 @@ namespace RPGClone.Characters
             MMOHeadStyleDefinition headStyle = appearanceCatalog != null
                 ? appearanceCatalog.FindHeadStyle(headStyleId)
                 : null;
+            MMOFaceDefinition face = appearanceCatalog != null
+                ? appearanceCatalog.FindFace(faceId)
+                : null;
             if (headStyle?.ModelPrefab != null)
             {
                 headStyleBound = TryCreateSkinnedVisual(
                     headStyle.ModelPrefab,
                     headStyle.DisplayName,
                     liveSkeleton,
+                    face?.AlbedoTexture,
                     out activeHeadStyle);
             }
 
@@ -101,6 +129,7 @@ namespace RPGClone.Characters
                     hairstyle.ModelPrefab,
                     hairstyle.DisplayName,
                     liveSkeleton,
+                    null,
                     out activeHairstyle);
             }
 
@@ -116,6 +145,7 @@ namespace RPGClone.Characters
             GameObject modelPrefab,
             string displayName,
             IReadOnlyDictionary<string, Transform> liveSkeleton,
+            Texture2D albedoOverride,
             out GameObject instance)
         {
             instance = Instantiate(modelPrefab, transform);
@@ -150,7 +180,8 @@ namespace RPGClone.Characters
 
                 if (MMOSkinnedVisualBindingUtility.TryRebind(skinnedRenderer, liveSkeleton, out List<string> missingBoneNames))
                 {
-                    ApplyBodyPartLighting(skinnedRenderer);
+                    ApplyCharacterSurface(skinnedRenderer);
+                    ApplyAlbedoOverride(skinnedRenderer, albedoOverride);
                     skinnedRenderer.enabled = true;
                     reboundAnyRenderer = true;
                 }
@@ -173,12 +204,26 @@ namespace RPGClone.Characters
             return reboundAnyRenderer;
         }
 
-        private void ApplyBodyPartLighting(Renderer renderer)
+        private static void ApplyAlbedoOverride(Renderer renderer, Texture2D albedoTexture)
+        {
+            if (renderer == null || albedoTexture == null)
+            {
+                return;
+            }
+
+            MaterialPropertyBlock propertyBlock = new();
+            renderer.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetTexture(BaseMapPropertyId, albedoTexture);
+            propertyBlock.SetTexture(MainTexturePropertyId, albedoTexture);
+            renderer.SetPropertyBlock(propertyBlock);
+        }
+
+        private void ApplyCharacterSurface(Renderer renderer)
         {
             MMOPlayerEquipmentVisuals equipmentVisuals = GetComponent<MMOPlayerEquipmentVisuals>();
             if (equipmentVisuals != null)
             {
-                equipmentVisuals.ApplyBodyPartLighting(renderer);
+                equipmentVisuals.ApplyCharacterSurface(renderer);
             }
         }
 

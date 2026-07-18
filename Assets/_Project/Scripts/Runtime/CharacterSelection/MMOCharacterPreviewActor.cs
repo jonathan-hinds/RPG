@@ -8,6 +8,8 @@ namespace RPGClone.CharacterSelection
 {
     public static class MMOCharacterPreviewActor
     {
+        public const float DefaultScaleMultiplier = 1.5f;
+
         public static GameObject Create(
             GameObject playerVisualPrefab,
             Transform parent,
@@ -16,7 +18,10 @@ namespace RPGClone.CharacterSelection
             IEnumerable<MMOItemDefinition> equipmentItems,
             MMOCharacterAppearanceCatalog appearanceCatalog,
             string hairstyleId,
-            string headStyleId = null)
+            string headStyleId = null,
+            string faceId = null,
+            Camera previewCamera = null,
+            float scaleMultiplier = DefaultScaleMultiplier)
         {
             if (playerVisualPrefab == null || parent == null)
             {
@@ -80,7 +85,7 @@ namespace RPGClone.CharacterSelection
             MMOCharacterAppearanceVisuals appearanceVisuals = actor.GetComponent<MMOCharacterAppearanceVisuals>()
                 ?? actor.AddComponent<MMOCharacterAppearanceVisuals>();
             appearanceVisuals.enabled = true;
-            appearanceVisuals.Configure(appearanceCatalog, headStyleId, hairstyleId);
+            appearanceVisuals.Configure(appearanceCatalog, headStyleId, faceId, hairstyleId);
 
             foreach (Animator animator in actor.GetComponentsInChildren<Animator>(true))
             {
@@ -96,7 +101,70 @@ namespace RPGClone.CharacterSelection
                 animator.Update(0f);
             }
 
+            ApplyPresentation(actor, previewCamera, scaleMultiplier);
+
             return actor;
+        }
+
+        private static void ApplyPresentation(GameObject actor, Camera previewCamera, float scaleMultiplier)
+        {
+            if (actor == null || !TryGetCharacterBounds(actor, out Bounds originalBounds))
+            {
+                return;
+            }
+
+            float resolvedScaleMultiplier = Mathf.Max(0.01f, scaleMultiplier);
+            actor.transform.localScale *= resolvedScaleMultiplier;
+
+            if (!TryGetCharacterBounds(actor, out Bounds scaledBounds))
+            {
+                return;
+            }
+
+            actor.transform.position += originalBounds.center - scaledBounds.center;
+            if (previewCamera == null || !TryGetCharacterBounds(actor, out Bounds centeredBounds))
+            {
+                return;
+            }
+
+            float cameraDepth = Vector3.Dot(
+                centeredBounds.center - previewCamera.transform.position,
+                previewCamera.transform.forward);
+            if (cameraDepth <= previewCamera.nearClipPlane)
+            {
+                return;
+            }
+
+            Vector3 viewportCenter = previewCamera.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, cameraDepth));
+            actor.transform.position += viewportCenter - centeredBounds.center;
+        }
+
+        private static bool TryGetCharacterBounds(GameObject actor, out Bounds bounds)
+        {
+            bounds = default;
+            bool hasBounds = false;
+            foreach (Renderer renderer in actor.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer == null
+                    || !renderer.enabled
+                    || !renderer.gameObject.activeInHierarchy
+                    || renderer.GetComponentInParent<MMOEquipmentVisualInstanceMarker>() != null)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return hasBounds;
         }
     }
 }

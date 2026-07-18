@@ -52,6 +52,16 @@ namespace RPGClone.EditorTools
             Debug.Log("Built character selection scene, race/class archetypes, abilities, and gameplay persistence hooks.");
         }
 
+        [MenuItem("Tools/RPG Clone/Refresh Character Appearance Catalog")]
+        public static void RefreshCharacterAppearanceCatalog()
+        {
+            EnsureFolders();
+            MMOCharacterAppearanceCatalog catalog = CreateAppearanceCatalog();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"Refreshed character appearance catalog with {catalog.Faces.Count} faces and {catalog.Hairstyles.Count} hairstyles.");
+        }
+
         private static void EnsureFolders()
         {
             CreateFolderIfMissing(RootFolder);
@@ -432,12 +442,24 @@ namespace RPGClone.EditorTools
                 hairstyles.Add(hairstyle);
             }
 
+            List<MMOFaceDefinition> faces = new();
+            for (int index = 1; index <= 3; index++)
+            {
+                string textureSuffix = index == 1 ? string.Empty : index.ToString();
+                MMOFaceDefinition face = new();
+                face.Configure(
+                    $"face_{index}",
+                    $"Face {index}",
+                    AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/PlayerWeaponStow/styledhead{textureSuffix}.png"));
+                faces.Add(face);
+            }
+
             MMOHeadStyleDefinition defaultHeadStyle = new();
             defaultHeadStyle.Configure(
                 "head_1",
                 "Default Head",
                 AssetDatabase.LoadAssetAtPath<GameObject>("Assets/PlayerWeaponStow/StyledHead.fbx"));
-            catalog.Configure(new[] { defaultHeadStyle }, hairstyles);
+            catalog.Configure(new[] { defaultHeadStyle }, faces, hairstyles);
             EditorUtility.SetDirty(catalog);
             return catalog;
         }

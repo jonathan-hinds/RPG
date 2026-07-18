@@ -22,14 +22,21 @@ namespace RPGClone.EditorTests
             {
                 MMOHeadStyleDefinition head = new();
                 head.Configure("head_1", "Default Head", null);
+                MMOFaceDefinition firstFace = new();
+                firstFace.Configure("face_1", "Face 1", null);
+                MMOFaceDefinition secondFace = new();
+                secondFace.Configure("face_2", "Face 2", null);
                 MMOHairstyleDefinition first = new();
                 first.Configure("hair_1", "Hairstyle 1", null);
                 MMOHairstyleDefinition second = new();
                 second.Configure("hair_2", "Hairstyle 2", null);
-                catalog.Configure(new[] { head }, new[] { first, second });
+                catalog.Configure(new[] { head }, new[] { firstFace, secondFace }, new[] { first, second });
 
                 Assert.That(catalog.NormalizeHeadStyleId(string.Empty), Is.EqualTo("head_1"));
                 Assert.That(catalog.NormalizeHeadStyleId("unknown"), Is.EqualTo("head_1"));
+                Assert.That(catalog.NormalizeFaceId(string.Empty), Is.EqualTo("face_1"));
+                Assert.That(catalog.NormalizeFaceId("unknown"), Is.EqualTo("face_1"));
+                Assert.That(catalog.NormalizeFaceId("face_2"), Is.EqualTo("face_2"));
                 Assert.That(catalog.NormalizeHairstyleId(string.Empty), Is.EqualTo("hair_1"));
                 Assert.That(catalog.NormalizeHairstyleId("unknown"), Is.EqualTo("hair_1"));
                 Assert.That(catalog.NormalizeHairstyleId("hair_2"), Is.EqualTo("hair_2"));
@@ -46,11 +53,12 @@ namespace RPGClone.EditorTests
             MMOCharacterSaveData saveData = new();
 
             Assert.That(saveData.headStyleId, Is.EqualTo("head_1"));
+            Assert.That(saveData.faceId, Is.EqualTo("face_1"));
             Assert.That(saveData.hairstyleId, Is.EqualTo("hair_1"));
         }
 
         [Test]
-        public void BodyPartLighting_UsesUnlitTextureWithoutChangingAuthoredCastingMode()
+        public void CharacterSurface_UsesUnlitTextureAndGuaranteesShadowCasting()
         {
             Material sourceMaterial = AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/PlayerWeaponStow/Material.003 1.mat");
@@ -66,7 +74,7 @@ namespace RPGClone.EditorTests
                 renderer.receiveShadows = true;
                 renderer.shadowCastingMode = ShadowCastingMode.TwoSided;
 
-                equipmentVisuals.ApplyBodyPartLighting(renderer);
+                equipmentVisuals.ApplyCharacterSurface(renderer);
 
                 Assert.That(renderer.receiveShadows, Is.False);
                 Assert.That(renderer.shadowCastingMode, Is.EqualTo(ShadowCastingMode.TwoSided));
@@ -76,6 +84,10 @@ namespace RPGClone.EditorTests
                 Assert.That(
                     Vector4.Distance(renderer.sharedMaterial.color, sourceMaterial.color),
                     Is.LessThan(0.0001f));
+
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                equipmentVisuals.ApplyCharacterSurface(renderer);
+                Assert.That(renderer.shadowCastingMode, Is.EqualTo(ShadowCastingMode.On));
             }
             finally
             {
@@ -84,9 +96,14 @@ namespace RPGClone.EditorTests
         }
 
         [Test]
-        public void SharedSessionClone_PreservesHeadStyleForRemotePlayers()
+        public void SharedSessionClone_PreservesAppearanceForRemotePlayers()
         {
-            MMOCharacterSaveData source = new() { headStyleId = "head_custom" };
+            MMOCharacterSaveData source = new()
+            {
+                headStyleId = "head_custom",
+                faceId = "face_custom",
+                hairstyleId = "hair_custom"
+            };
             MethodInfo cloneMethod = typeof(MMOSharedSessionState).GetMethod(
                 "CloneCharacter",
                 BindingFlags.Static | BindingFlags.NonPublic);
@@ -96,6 +113,8 @@ namespace RPGClone.EditorTests
 
             Assert.That(clone, Is.Not.Null);
             Assert.That(clone.headStyleId, Is.EqualTo("head_custom"));
+            Assert.That(clone.faceId, Is.EqualTo("face_custom"));
+            Assert.That(clone.hairstyleId, Is.EqualTo("hair_custom"));
         }
 
         [Test]
@@ -269,6 +288,131 @@ namespace RPGClone.EditorTests
         }
 
         [Test]
+        public void FaceTextures_AreCataloguedAndAppliedWithoutDuplicatingHeadGeometry()
+        {
+            GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Player/PlayerCapsule.prefab");
+            MMOCharacterAppearanceCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOCharacterAppearanceCatalog>(
+                "Assets/Resources/RPGClone/Character_Appearance_Catalog.asset");
+            Assert.That(playerPrefab, Is.Not.Null);
+            Assert.That(catalog, Is.Not.Null);
+            Assert.That(catalog.Faces, Has.Count.EqualTo(3));
+
+            GameObject root = new("Face Texture Preview Test Root");
+            try
+            {
+                for (int index = 0; index < catalog.Faces.Count; index++)
+                {
+                    MMOFaceDefinition face = catalog.Faces[index];
+                    Assert.That(face, Is.Not.Null);
+                    Assert.That(face.AlbedoTexture, Is.Not.Null, face.DisplayName);
+                    string expectedSuffix = index == 0 ? string.Empty : (index + 1).ToString();
+                    Assert.That(
+                        AssetDatabase.GetAssetPath(face.AlbedoTexture),
+                        Is.EqualTo($"Assets/PlayerWeaponStow/styledhead{expectedSuffix}.png"));
+
+                    GameObject actor = MMOCharacterPreviewActor.Create(
+                        playerPrefab,
+                        root.transform,
+                        MMOPlayableRace.Orc,
+                        MMOPlayableClass.Warrior,
+                        null,
+                        catalog,
+                        catalog.DefaultHairstyleId,
+                        catalog.DefaultHeadStyleId,
+                        face.FaceId);
+                    MMOCharacterAppearanceVisuals appearance = actor.GetComponent<MMOCharacterAppearanceVisuals>();
+                    Assert.That(appearance.FaceId, Is.EqualTo(face.FaceId));
+
+                    MMOHeadStyleDefinition headStyle = catalog.HeadStyles[0];
+                    MMOAppearanceVisualInstanceMarker headMarker = System.Array.Find(
+                        actor.GetComponentsInChildren<MMOAppearanceVisualInstanceMarker>(true),
+                        candidate => candidate.name == headStyle.ModelPrefab.name);
+                    Assert.That(headMarker, Is.Not.Null);
+                    SkinnedMeshRenderer renderer = headMarker.GetComponentInChildren<SkinnedMeshRenderer>(true);
+                    Assert.That(renderer, Is.Not.Null);
+                    MaterialPropertyBlock propertyBlock = new();
+                    renderer.GetPropertyBlock(propertyBlock);
+                    Assert.That(
+                        propertyBlock.GetTexture(Shader.PropertyToID("_BaseMap")),
+                        Is.SameAs(face.AlbedoTexture));
+
+                    Object.DestroyImmediate(actor);
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void PreviewActor_IsFiftyPercentLargerAndCenteredOnCamera()
+        {
+            GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Player/PlayerCapsule.prefab");
+            MMOCharacterAppearanceCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOCharacterAppearanceCatalog>(
+                "Assets/Resources/RPGClone/Character_Appearance_Catalog.asset");
+            Assert.That(playerPrefab, Is.Not.Null);
+            Assert.That(catalog, Is.Not.Null);
+
+            GameObject root = new("Centered Preview Test Root");
+            GameObject cameraObject = new("Centered Preview Test Camera");
+            try
+            {
+                cameraObject.transform.SetPositionAndRotation(new Vector3(0f, 1.8f, -8f), Quaternion.Euler(8f, 0f, 0f));
+                Camera camera = cameraObject.AddComponent<Camera>();
+                camera.fieldOfView = 42f;
+                GameObject actor = MMOCharacterPreviewActor.Create(
+                    playerPrefab,
+                    root.transform,
+                    MMOPlayableRace.Orc,
+                    MMOPlayableClass.Warrior,
+                    null,
+                    catalog,
+                    catalog.DefaultHairstyleId,
+                    catalog.DefaultHeadStyleId,
+                    catalog.DefaultFaceId,
+                    camera);
+
+                Assert.That(
+                    Vector3.Distance(actor.transform.localScale, playerPrefab.transform.localScale * 1.5f),
+                    Is.LessThan(0.0001f));
+
+                bool hasBounds = false;
+                Bounds characterBounds = default;
+                foreach (Renderer renderer in actor.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (!renderer.enabled
+                        || !renderer.gameObject.activeInHierarchy
+                        || renderer.GetComponentInParent<MMOEquipmentVisualInstanceMarker>() != null)
+                    {
+                        continue;
+                    }
+
+                    if (!hasBounds)
+                    {
+                        characterBounds = renderer.bounds;
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        characterBounds.Encapsulate(renderer.bounds);
+                    }
+                }
+
+                Assert.That(hasBounds, Is.True);
+                Vector3 viewportCenter = camera.WorldToViewportPoint(characterBounds.center);
+                Assert.That(viewportCenter.z, Is.GreaterThan(0f));
+                Assert.That(Mathf.Abs(viewportCenter.x - 0.5f), Is.LessThan(0.001f));
+                Assert.That(Mathf.Abs(viewportCenter.y - 0.5f), Is.LessThan(0.001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(cameraObject);
+            }
+        }
+
+        [Test]
         public void GameplayAppearance_KeepsProductionAnimatorClockAdvancingWithoutPreviewRepair()
         {
             GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Player/PlayerCapsule.prefab");
@@ -388,16 +532,25 @@ namespace RPGClone.EditorTests
                     new[] { sword, shield },
                     null,
                     string.Empty);
-                bool foundReadySword = false;
-                bool foundMobilityShield = false;
+                MMOEquipmentVisualInstanceMarker readySword = null;
+                MMOEquipmentVisualInstanceMarker mobilityShield = null;
                 foreach (MMOEquipmentVisualInstanceMarker marker in actor.GetComponentsInChildren<MMOEquipmentVisualInstanceMarker>(true))
                 {
-                    foundReadySword |= marker.name == sword.EquipmentVisual.ModelPrefab.name;
-                    foundMobilityShield |= marker.name == shield.EquipmentVisual.CombatMovementModelPrefab.name;
+                    if (marker.name == sword.EquipmentVisual.ModelPrefab.name)
+                    {
+                        readySword = marker;
+                    }
+
+                    if (marker.name == shield.EquipmentVisual.CombatMovementModelPrefab.name)
+                    {
+                        mobilityShield = marker;
+                    }
                 }
 
-                Assert.That(foundReadySword, Is.True, "The weapon preview should retain its ready-position prefab.");
-                Assert.That(foundMobilityShield, Is.True, "The shield preview should use its mobility-positioned prefab.");
+                Assert.That(readySword, Is.Not.Null, "The weapon preview should retain its ready-position prefab.");
+                Assert.That(mobilityShield, Is.Not.Null, "The shield preview should use its mobility-positioned prefab.");
+                AssertAttachmentSurfacePolicy(readySword, "ready weapon");
+                AssertAttachmentSurfacePolicy(mobilityShield, "movement shield");
             }
             finally
             {
@@ -469,7 +622,39 @@ namespace RPGClone.EditorTests
                     material.shader.name,
                     Is.EqualTo(MMOCharacterUnlitMaterialUtility.UnlitShaderName),
                     $"{visualName} should render its authored texture without scene-lighting variation.");
+                Assert.That(
+                    material.FindPass("ShadowCaster"),
+                    Is.GreaterThanOrEqualTo(0),
+                    $"{visualName}'s Unlit shader must retain a ShadowCaster pass.");
             }
+        }
+
+        private static void AssertAttachmentSurfacePolicy(
+            MMOEquipmentVisualInstanceMarker marker,
+            string visualName)
+        {
+            bool foundVisibleSurface = false;
+            foreach (Renderer renderer in marker.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!renderer.enabled || renderer is not (MeshRenderer or SkinnedMeshRenderer))
+                {
+                    continue;
+                }
+
+                foundVisibleSurface = true;
+                Assert.That(renderer.receiveShadows, Is.False, $"{visualName} should not receive scene shadows.");
+                Assert.That(
+                    renderer.shadowCastingMode,
+                    Is.Not.EqualTo(ShadowCastingMode.Off),
+                    $"{visualName} should cast a world shadow.");
+                Assert.That(
+                    renderer.shadowCastingMode,
+                    Is.Not.EqualTo(ShadowCastingMode.ShadowsOnly),
+                    $"{visualName} should remain visible while casting its shadow.");
+                AssertRendererUsesCharacterUnlitMaterials(renderer, visualName);
+            }
+
+            Assert.That(foundVisibleSurface, Is.True, $"No visible mesh renderer was found for {visualName}.");
         }
 
         [TestCase("Assets/_Project/Configs/Archetypes/Orc_Warrior.asset", MMOArmorWeight.Mail)]

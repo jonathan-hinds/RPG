@@ -6,7 +6,7 @@ namespace RPGClone.Characters
 {
     public static class MMOCharacterUnlitMaterialUtility
     {
-        public const string UnlitShaderName = "Universal Render Pipeline/Unlit";
+        public const string UnlitShaderName = "RPG Clone/Characters/Unlit Shadow Caster";
 
         private const string TemplateResourcePath = "RPGClone/Materials/Character_Unlit_Template";
 
