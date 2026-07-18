@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: Mage_Fire_Blast_VFX
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.MMOAbilityVfxDefinition
   castingPrefab: {fileID: 0}
-  castPrefab: {fileID: 2239042611246115430, guid: da667505db16ed347acd03575f2af31e, type: 3}
-  hitPrefab: {fileID: 6321964207988828930, guid: 5125564005443344284685bc03768065, type: 3}
+  castPrefab: {fileID: 3254917982604482282, guid: c37b99ea14db1b84c83b63671dec130c, type: 3}
+  hitPrefab: {fileID: 0}
   attachCastingToCaster: 1
   useHandCastingAnchors: 1
-  attachHitToTarget: 1
+  attachHitToTarget: 0
   alignCastPrefabToTarget: 1
   castingLocalOffset: {x: 0, y: 1.15, z: 0.42}
   handCastingLocalOffset: {x: 0, y: 0, z: 0}
   castOriginLocalOffset: {x: 0, y: 1.18, z: 0.48}
-  hitLocalOffset: {x: 0, y: 0.85, z: 0}
-  hitDelaySeconds: 0.03
-  castPrefabControlsHitTiming: 1
+  hitLocalOffset: {x: 0, y: 0.9, z: 0}
+  hitDelaySeconds: 0.02
+  castPrefabControlsHitTiming: 0
