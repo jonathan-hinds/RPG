@@ -15,6 +15,7 @@ namespace RPGClone.Player
         [SerializeField] private MMOCharacterEquipment equipment;
         [SerializeField] private MMOCombatant combatant;
         [SerializeField] private List<MMOBodyPartRendererSlot> bodyPartSlots = new();
+        [Header("Attachment Presentation")]
         [SerializeField, Min(0f)] private float attachmentMovementSpeedThreshold = 0.05f;
 
         private readonly List<GameObject> activeVisualInstances = new();
@@ -102,6 +103,44 @@ namespace RPGClone.Player
             SubscribeToEquipment();
             SubscribeToCombatant();
             RebuildEquipmentVisuals();
+        }
+
+        public void ApplyBodyPartLighting(Renderer renderer)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            // Unlit surfaces ignore scene lighting. Shadow casting remains a renderer
+            // concern and is intentionally left at the mesh's authored value.
+            renderer.receiveShadows = false;
+            Material[] materials = renderer.sharedMaterials;
+            bool changed = false;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                Material unlitMaterial = MMOCharacterUnlitMaterialUtility.GetOrCreateSharedVariant(materials[i]);
+                changed |= unlitMaterial != materials[i];
+                materials[i] = unlitMaterial;
+            }
+
+            if (changed)
+            {
+                renderer.sharedMaterials = materials;
+            }
+        }
+
+        public void ApplyBodyPartLighting(IEnumerable<Renderer> renderers)
+        {
+            if (renderers == null)
+            {
+                return;
+            }
+
+            foreach (Renderer renderer in renderers)
+            {
+                ApplyBodyPartLighting(renderer);
+            }
         }
 
         public void SetAttachmentPresentationOverride(MMOEquipmentAttachmentPresentationState? presentationState)
@@ -270,6 +309,7 @@ namespace RPGClone.Player
                 if (TryRebindSkinnedRenderer(skinnedRenderer, liveSkeleton, visualDefinition))
                 {
                     ApplyMaterialOverride(new Renderer[] { skinnedRenderer }, visualDefinition);
+                    ApplyBodyPartLighting(skinnedRenderer);
                     skinnedRenderer.enabled = true;
                     reboundAnyRenderer = true;
                 }
@@ -428,6 +468,7 @@ namespace RPGClone.Player
                     {
                         renderer.sharedMaterials = materials;
                     }
+                    ApplyBodyPartLighting(renderer);
                 }
             }
         }
@@ -464,7 +505,7 @@ namespace RPGClone.Player
             Material baseMaterial = visualDefinition.MaterialOverride != null ? visualDefinition.MaterialOverride : sourceMaterial;
             if (!hasTextureOverride && !hasColorOverride)
             {
-                return baseMaterial;
+                return MMOCharacterUnlitMaterialUtility.GetOrCreateSharedVariant(baseMaterial);
             }
 
             Material materialInstance = baseMaterial != null
@@ -489,6 +530,7 @@ namespace RPGClone.Player
                 materialInstance.EnableKeyword("_NORMALMAP");
             }
 
+            MMOCharacterUnlitMaterialUtility.ConvertToUnlit(materialInstance);
             activeMaterialInstances.Add(materialInstance);
             return materialInstance;
         }
@@ -636,6 +678,7 @@ namespace RPGClone.Player
                     if (renderer != null)
                     {
                         originalMaterials[renderer] = renderer.sharedMaterials;
+                        ApplyBodyPartLighting(renderer);
                     }
                 }
             }

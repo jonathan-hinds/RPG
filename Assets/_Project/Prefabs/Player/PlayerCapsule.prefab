@@ -153,6 +153,7 @@ MonoBehaviour:
     anchor: {fileID: 9036683200063047158}
     renderers:
     - {fileID: 4429707252935037155}
+  attachmentMovementSpeedThreshold: 0.05
 --- !u!114 &2317643359883830498
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -198,7 +199,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.1542024
+      value: -0.173
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_LocalPosition.z

@@ -150,6 +150,7 @@ namespace RPGClone.Characters
 
                 if (MMOSkinnedVisualBindingUtility.TryRebind(skinnedRenderer, liveSkeleton, out List<string> missingBoneNames))
                 {
+                    ApplyBodyPartLighting(skinnedRenderer);
                     skinnedRenderer.enabled = true;
                     reboundAnyRenderer = true;
                 }
@@ -170,6 +171,15 @@ namespace RPGClone.Characters
             }
 
             return reboundAnyRenderer;
+        }
+
+        private void ApplyBodyPartLighting(Renderer renderer)
+        {
+            MMOPlayerEquipmentVisuals equipmentVisuals = GetComponent<MMOPlayerEquipmentVisuals>();
+            if (equipmentVisuals != null)
+            {
+                equipmentVisuals.ApplyBodyPartLighting(renderer);
+            }
         }
 
         private void RefreshBaseHeadVisibility()

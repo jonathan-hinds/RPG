@@ -8,6 +8,7 @@ using RPGClone.Multiplayer;
 using RPGClone.Player;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace RPGClone.EditorTests
 {
@@ -46,6 +47,40 @@ namespace RPGClone.EditorTests
 
             Assert.That(saveData.headStyleId, Is.EqualTo("head_1"));
             Assert.That(saveData.hairstyleId, Is.EqualTo("hair_1"));
+        }
+
+        [Test]
+        public void BodyPartLighting_UsesUnlitTextureWithoutChangingAuthoredCastingMode()
+        {
+            Material sourceMaterial = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/PlayerWeaponStow/Material.003 1.mat");
+            Assert.That(sourceMaterial, Is.Not.Null);
+            Assert.That(sourceMaterial.mainTexture, Is.Not.Null);
+
+            GameObject root = new("Body Part Lighting Policy Test Root");
+            try
+            {
+                MMOPlayerEquipmentVisuals equipmentVisuals = root.AddComponent<MMOPlayerEquipmentVisuals>();
+                MeshRenderer renderer = root.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = sourceMaterial;
+                renderer.receiveShadows = true;
+                renderer.shadowCastingMode = ShadowCastingMode.TwoSided;
+
+                equipmentVisuals.ApplyBodyPartLighting(renderer);
+
+                Assert.That(renderer.receiveShadows, Is.False);
+                Assert.That(renderer.shadowCastingMode, Is.EqualTo(ShadowCastingMode.TwoSided));
+                Assert.That(renderer.sharedMaterial, Is.Not.SameAs(sourceMaterial));
+                Assert.That(renderer.sharedMaterial.shader.name, Is.EqualTo(MMOCharacterUnlitMaterialUtility.UnlitShaderName));
+                Assert.That(renderer.sharedMaterial.mainTexture, Is.SameAs(sourceMaterial.mainTexture));
+                Assert.That(
+                    Vector4.Distance(renderer.sharedMaterial.color, sourceMaterial.color),
+                    Is.LessThan(0.0001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
         }
 
         [Test]
@@ -156,6 +191,7 @@ namespace RPGClone.EditorTests
                     candidate => candidate.name == headStyle.ModelPrefab.name);
                 Assert.That(marker, Is.Not.Null, "The configured default head was not instantiated.");
                 AssertGeneratedSkinnedMeshesUseProductionBones(new[] { marker }, "default head");
+                AssertBodyPartLightingPolicy(new[] { marker }, "default head");
 
                 SkinnedMeshRenderer baseHead = System.Array.Find(
                     actor.GetComponentsInChildren<SkinnedMeshRenderer>(true),
@@ -305,12 +341,20 @@ namespace RPGClone.EditorTests
                     Assert.That(renderer, Is.Not.Null);
                     Assert.That(renderer.GetComponentInParent<MMOEquipmentVisualInstanceMarker>(), Is.Null);
                     Assert.That(renderer.GetComponentInParent<MMOAppearanceVisualInstanceMarker>(), Is.Null);
+                    Assert.That(renderer.receiveShadows, Is.False, "Base body parts should use baked texture shading.");
+                    AssertRendererUsesCharacterUnlitMaterials(renderer, "base body part");
                 }
 
                 AssertGeneratedSkinnedMeshesUseProductionBones(
                     actor.GetComponentsInChildren<MMOEquipmentVisualInstanceMarker>(true),
                     "chest armor");
+                AssertBodyPartLightingPolicy(
+                    actor.GetComponentsInChildren<MMOEquipmentVisualInstanceMarker>(true),
+                    "chest armor");
                 AssertGeneratedSkinnedMeshesUseProductionBones(
+                    actor.GetComponentsInChildren<MMOAppearanceVisualInstanceMarker>(true),
+                    "hairstyle");
+                AssertBodyPartLightingPolicy(
                     actor.GetComponentsInChildren<MMOAppearanceVisualInstanceMarker>(true),
                     "hairstyle");
             }
@@ -389,6 +433,43 @@ namespace RPGClone.EditorTests
             }
 
             Assert.That(foundEnabledRenderer, Is.True, $"No enabled skinned renderer was found for {visualName}.");
+        }
+
+        private static void AssertBodyPartLightingPolicy<TMarker>(
+            IReadOnlyList<TMarker> markers,
+            string visualName)
+            where TMarker : Component
+        {
+            bool foundEnabledRenderer = false;
+            foreach (TMarker marker in markers)
+            {
+                foreach (SkinnedMeshRenderer renderer in marker.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                {
+                    if (!renderer.enabled)
+                    {
+                        continue;
+                    }
+
+                    foundEnabledRenderer = true;
+                    Assert.That(renderer.receiveShadows, Is.False, $"{visualName} should use baked texture shading.");
+                    AssertRendererUsesCharacterUnlitMaterials(renderer, visualName);
+                }
+            }
+
+            Assert.That(foundEnabledRenderer, Is.True, $"No enabled skinned renderer was found for {visualName}.");
+        }
+
+        private static void AssertRendererUsesCharacterUnlitMaterials(Renderer renderer, string visualName)
+        {
+            Assert.That(renderer.sharedMaterials, Is.Not.Empty, $"{visualName} has no material.");
+            foreach (Material material in renderer.sharedMaterials)
+            {
+                Assert.That(material, Is.Not.Null, $"{visualName} has a missing material.");
+                Assert.That(
+                    material.shader.name,
+                    Is.EqualTo(MMOCharacterUnlitMaterialUtility.UnlitShaderName),
+                    $"{visualName} should render its authored texture without scene-lighting variation.");
+            }
         }
 
         [TestCase("Assets/_Project/Configs/Archetypes/Orc_Warrior.asset", MMOArmorWeight.Mail)]
