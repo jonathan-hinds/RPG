@@ -55,7 +55,7 @@ namespace RPGClone.Vfx
                 abilitySystem.ChargeCompleted -= OnChargeCompleted;
             }
 
-            StopCastingVfx();
+            StopCastingVfx(true);
             if (pendingHitRoutine != null)
             {
                 StopCoroutine(pendingHitRoutine);
@@ -76,7 +76,7 @@ namespace RPGClone.Vfx
                 return;
             }
 
-            StopCastingVfx();
+            StopCastingVfx(true);
             if (anchors != null && anchors.HasExplicitCastingAnchor)
             {
                 SpawnCastingVfx(ability, definition, target, ResolveCastingParent(), anchors.ExplicitCastingPosition);
@@ -95,7 +95,7 @@ namespace RPGClone.Vfx
         {
             if (source == abilitySystem)
             {
-                StopCastingVfx();
+                StopCastingVfx(true);
             }
         }
 
@@ -103,7 +103,7 @@ namespace RPGClone.Vfx
         {
             if (source == abilitySystem)
             {
-                StopCastingVfx();
+                StopCastingVfx(false);
             }
         }
 
@@ -321,7 +321,7 @@ namespace RPGClone.Vfx
             InitializeInstance(instance, ability, definition, target, position, ResolveTargetPosition(target, position, false), false, null);
         }
 
-        private void StopCastingVfx()
+        private void StopCastingVfx(bool immediate)
         {
             if (activeCastingInstances.Count == 0)
             {
@@ -331,6 +331,22 @@ namespace RPGClone.Vfx
             foreach (GameObject activeCastingInstance in activeCastingInstances)
             {
                 if (activeCastingInstance == null)
+                {
+                    continue;
+                }
+
+                bool customReleaseHandled = false;
+                MonoBehaviour[] behaviours = activeCastingInstance.GetComponentsInChildren<MonoBehaviour>(true);
+                foreach (MonoBehaviour behaviour in behaviours)
+                {
+                    if (behaviour is IMMOAbilityVfxReleaseHandler releaseHandler)
+                    {
+                        releaseHandler.Release(immediate);
+                        customReleaseHandled = true;
+                    }
+                }
+
+                if (customReleaseHandled)
                 {
                     continue;
                 }

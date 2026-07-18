@@ -16,6 +16,8 @@ namespace RPGClone.EditorTools
         private const string TextureFolder = RootFolder + "/Textures";
         private const string SoftParticleTexturePath = TextureFolder + "/VFX_Soft_Radial.png";
         private const string AbilityFolder = "Assets/_Project/Configs/Abilities";
+        private const string HealingBeamPrefabPath = "Assets/_Project/VFX/HealingBeam/Prefabs/HealingBeamVFX.prefab";
+        private const string HealingBeamChargePrefabPath = "Assets/_Project/VFX/HealingBeam/Prefabs/HealingBeamChargeVFX.prefab";
 
         [MenuItem("Tools/RPG Clone/VFX/Install Ability VFX Content")]
         public static void InstallAbilityVfxContent()
@@ -79,7 +81,8 @@ namespace RPGClone.EditorTools
                 FireBlast = CreateBeamPrefab("Fire_Blast_Short", lineMaterials["Fire"], particleMaterials["Fire"], 0.18f, 7, 0.035f, 18f, true, 0.06f, 0.38f),
                 Flamestrike = CreateColumnPrefab("Flamestrike_Column", particleMaterials["Fire"], new Color(1f, 0.22f, 0.02f, 0.8f), new Color(1f, 0.75f, 0.08f, 0.48f), 0.92f, 180, 1.05f),
 
-                HealingBeam = CreateBeamPrefab("Healing_Beam", lineMaterials["Holy"], particleMaterials["Holy"], 0.48f, 9, 0.045f, 26f, true, 0.045f, 0.5f),
+                HealingBeam = AssetDatabase.LoadAssetAtPath<GameObject>(HealingBeamPrefabPath)
+                    ?? CreateBeamPrefab("Healing_Beam", lineMaterials["Holy"], particleMaterials["Holy"], 0.48f, 9, 0.045f, 26f, true, 0.045f, 0.5f),
                 HealingImpact = CreateAuraBurstPrefab("Healing_Target_Aura", particleMaterials["Holy"], new Color(0.5f, 1f, 0.25f, 0.58f), new Color(1f, 0.92f, 0.18f, 0.52f), 0.46f, 112, 0.82f),
                 LightningBeam = CreateBeamPrefab("Lightning_Bolt_Beam", lineMaterials["Nature"], particleMaterials["Nature"], 0.36f, 10, 0.08f, 38f, true, 0.042f, 0.36f),
                 LightningImpact = CreateBurstPrefab("Lightning_Impact", particleMaterials["Nature"], new Color(0.5f, 1f, 0.22f, 0.82f), new Color(1f, 0.96f, 0.24f, 0.58f), 0.5f, 88, 0.46f, 0.062f),
@@ -99,6 +102,12 @@ namespace RPGClone.EditorTools
                 Regeneration = CreateAuraBurstPrefab("Regeneration_Aura", particleMaterials["Nature"], new Color(0.18f, 1f, 0.18f, 0.5f), new Color(1f, 0.95f, 0.2f, 0.34f), 0.5f, 92, 0.98f)
             };
 
+            prefabs.HealingCharge = AssetDatabase.LoadAssetAtPath<GameObject>(HealingBeamChargePrefabPath);
+            if (prefabs.HealingCharge == null)
+            {
+                throw new MissingReferenceException($"Build Healing Beam VFX before installing ability VFX content. Missing: {HealingBeamChargePrefabPath}");
+            }
+
             return prefabs;
         }
 
@@ -111,7 +120,15 @@ namespace RPGClone.EditorTools
                 ["mage_flamestrike"] = ConfigureDefinition("Mage_Flamestrike_VFX", prefabs.FireCasting, null, prefabs.Flamestrike, 0.05f, false, false),
                 ["mage_arcane_missile"] = ConfigureDefinition("Mage_Arcane_Missile_VFX", prefabs.ArcaneCasting, prefabs.ArcaneMissile, prefabs.ArcaneImpact, 0.35f, false),
                 ["mage_mage_armor"] = ConfigureDefinition("Mage_Mage_Armor_VFX", null, null, prefabs.MageArmor, 0.02f, false),
-                ["shaman_healing_beam"] = ConfigureDefinition("Shaman_Healing_Beam_VFX", prefabs.HolyCasting, prefabs.HealingBeam, prefabs.HealingImpact, 0.08f, true),
+                ["shaman_healing_beam"] = ConfigureDefinition(
+                    "Shaman_Healing_Beam_VFX",
+                    prefabs.HealingCharge,
+                    prefabs.HealingBeam,
+                    null,
+                    0f,
+                    false,
+                    useHandCastingAnchors: false,
+                    alignCastPrefabToTarget: false),
                 ["shaman_lightning_bolt"] = ConfigureDefinition("Shaman_Lightning_Bolt_VFX", prefabs.NatureCasting, prefabs.LightningBeam, prefabs.LightningImpact, 0.08f, true),
                 ["shaman_frost_shock"] = ConfigureDefinition("Shaman_Frost_Shock_VFX", null, prefabs.FrostShock, prefabs.FrostImpact, 0.04f, true),
                 ["shaman_water_shield"] = ConfigureDefinition("Shaman_Water_Shield_VFX", null, null, prefabs.WaterShield, 0.02f, false),
@@ -135,7 +152,9 @@ namespace RPGClone.EditorTools
             GameObject hitPrefab,
             float hitDelaySeconds,
             bool castPrefabControlsHitTiming,
-            bool attachHitToTarget = true)
+            bool attachHitToTarget = true,
+            bool useHandCastingAnchors = true,
+            bool alignCastPrefabToTarget = true)
         {
             string path = $"{DefinitionFolder}/{assetName}.asset";
             MMOAbilityVfxDefinition definition = AssetDatabase.LoadAssetAtPath<MMOAbilityVfxDefinition>(path);
@@ -150,9 +169,9 @@ namespace RPGClone.EditorTools
                 castPrefab,
                 hitPrefab,
                 true,
-                true,
+                useHandCastingAnchors,
                 attachHitToTarget,
-                true,
+                alignCastPrefabToTarget,
                 new Vector3(0f, 1.15f, 0.42f),
                 Vector3.zero,
                 new Vector3(0f, 1.18f, 0.48f),
@@ -574,6 +593,7 @@ namespace RPGClone.EditorTools
             public GameObject FireBlast;
             public GameObject Flamestrike;
             public GameObject HealingBeam;
+            public GameObject HealingCharge;
             public GameObject HealingImpact;
             public GameObject LightningBeam;
             public GameObject LightningImpact;

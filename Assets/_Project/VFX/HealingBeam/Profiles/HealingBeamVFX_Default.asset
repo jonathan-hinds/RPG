@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6622a68134ff0eb438a6e7279aefaaf3, type: 3}
+  m_Name: HealingBeamVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Healing.HealingBeamVFXProfile
+  beamWidth: 0.24
+  beamSegments: 12
+  textureWorldLength: 1.1
+  beamSway: 0.11
+  beamSwaySpeed: 1.25
+  beamArcHeight: 0.12
+  outerGlowColor: {r: 1, g: 0.68, b: 0.18, a: 0.32}
+  ribbonColor: {r: 1, g: 0.82, b: 0.34, a: 0.82}
+  coreColor: {r: 1.25, g: 1.15, b: 0.82, a: 0.92}
+  glowIntensity: 1.15
+  glowFlowSpeed: -0.28
+  ribbonFlowSpeed: -0.82
+  coreFlowSpeed: -1.18
+  distortionStrength: 0.045
+  pulseSpeed: 1.7
+  pulseWidth: 0.16
+  pulseBrightness: 2.2
+  tickFlashDuration: 0.3
+  casterOrbitParticleCount: 7
+  casterInwardParticleCount: 6
+  targetRisingParticleCount: 9
+  targetSparkleCount: 5
+  tickSparkCount: 7
+  particleSize: 0.14
+  casterEffectScale: 1
+  endpointOrbSizeMultiplier: 1.5
+  endpointSparkleSizeMultiplier: 2
+  targetEffectScale: 1
+  groundRingSize: 2.2
+  groundRingVerticalOffset: -1.05
+  fadeInDuration: 0.18
+  fadeOutDuration: 0.38
+  overallIntensity: 1
