@@ -312,6 +312,10 @@ PrefabInstance:
       value: Wolf Visual
       objectReference: {fileID: 0}
     - target: {fileID: 2664098864995057252, guid: 33c377e56a6b7444d8ef59996327073f, type: 3}
+      propertyPath: m_ReceiveShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2664098864995057252, guid: 33c377e56a6b7444d8ef59996327073f, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 690a027a3111ae945b72380b2a6d29f6, type: 2}

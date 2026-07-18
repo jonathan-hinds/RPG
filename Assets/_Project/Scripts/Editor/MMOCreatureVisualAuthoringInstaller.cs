@@ -185,6 +185,33 @@ namespace RPGClone.EditorTools
             Debug.Log($"Rebuilt {builtCount} creature visual prefab(s).");
         }
 
+        [MenuItem("Tools/RPG Clone/Creatures/Apply Unlit Creature Surfaces")]
+        public static void ApplyUnlitCreatureSurfaces()
+        {
+            int updatedMaterialCount = 0;
+            int updatedPrefabCount = 0;
+            foreach (MMOCreatureVisualDefinition visualDefinition in LoadAllVisualDefinitions())
+            {
+                string materialsFolder = $"{GetAssetFolder(visualDefinition)}/Materials";
+                CreateFolderIfMissing(materialsFolder);
+                if (CreateOrUpdateMaterial(visualDefinition, materialsFolder) != null)
+                {
+                    updatedMaterialCount++;
+                }
+
+                if (ApplySurfacePolicyToPrefab(visualDefinition))
+                {
+                    updatedPrefabCount++;
+                }
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log(
+                $"Applied the Unlit shadow-casting surface to {updatedMaterialCount} creature material(s) " +
+                $"and {updatedPrefabCount} creature prefab(s).");
+        }
+
         [MenuItem("Tools/RPG Clone/Creatures/Convert Active Scene Creature Visuals")]
         public static void ConvertActiveSceneCreatureVisuals()
         {
@@ -1001,16 +1028,23 @@ namespace RPGClone.EditorTools
         {
             string materialPath = $"{materialsFolder}/{visualDefinition.CreatureId}_Body.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            Shader shader = Shader.Find(MMOCharacterUnlitMaterialUtility.UnlitShaderName);
+            if (shader == null)
+            {
+                Debug.LogError(
+                    $"Creature material '{materialPath}' requires shader " +
+                    $"'{MMOCharacterUnlitMaterialUtility.UnlitShaderName}'.");
+                return material;
+            }
+
             if (material == null)
             {
-                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
-                if (shader == null)
-                {
-                    shader = Shader.Find("Standard");
-                }
-
                 material = new Material(shader);
                 AssetDatabase.CreateAsset(material, materialPath);
+            }
+            else if (material.shader != shader)
+            {
+                material.shader = shader;
             }
 
             SetTextureIfPresent(material, "_BaseMap", visualDefinition.DiffuseTexture);
@@ -1028,6 +1062,35 @@ namespace RPGClone.EditorTools
             SetColorIfPresent(material, "_Color", Color.white);
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static bool ApplySurfacePolicyToPrefab(MMOCreatureVisualDefinition visualDefinition)
+        {
+            string creatureFolder = GetAssetFolder(visualDefinition);
+            string prefabPath = $"{creatureFolder}/Prefabs/{visualDefinition.CreatureId}Enemy.prefab";
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+            {
+                Debug.LogWarning($"Creature prefab '{prefabPath}' does not exist; rebuild it before applying surfaces.");
+                return false;
+            }
+
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            if (prefabRoot == null)
+            {
+                Debug.LogWarning($"Could not load creature prefab '{prefabPath}' to update its surfaces.");
+                return false;
+            }
+
+            try
+            {
+                MMOCharacterUnlitMaterialUtility.ApplyVisibleMeshSurfaces(prefabRoot.transform);
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+                return true;
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
         }
 
         private static void SetTextureIfPresent(Material material, string propertyName, Texture texture)
@@ -1067,6 +1130,7 @@ namespace RPGClone.EditorTools
                 if (materials == null || materials.Length == 0)
                 {
                     renderer.sharedMaterial = material;
+                    MMOCharacterUnlitMaterialUtility.ApplySurface(renderer);
                     continue;
                 }
 
@@ -1076,6 +1140,7 @@ namespace RPGClone.EditorTools
                 }
 
                 renderer.sharedMaterials = materials;
+                MMOCharacterUnlitMaterialUtility.ApplySurface(renderer);
             }
         }
 

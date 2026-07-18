@@ -336,6 +336,10 @@ PrefabInstance:
       value: -0.11
       objectReference: {fileID: 0}
     - target: {fileID: -1271170800438393849, guid: a76a3c339be2c3841843cf409a05898d, type: 3}
+      propertyPath: m_ReceiveShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -1271170800438393849, guid: a76a3c339be2c3841843cf409a05898d, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: ede176659cfd939409ae1f52b18f4a12, type: 2}

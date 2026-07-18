@@ -4,7 +4,6 @@ using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Inventory;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace RPGClone.Player
 {
@@ -108,33 +107,7 @@ namespace RPGClone.Player
 
         public void ApplyCharacterSurface(Renderer renderer)
         {
-            if (renderer == null)
-            {
-                return;
-            }
-
-            // Unlit surfaces ignore scene lighting but still use URP's ShadowCaster
-            // pass. Preserve authored casting modes and repair modes that cannot
-            // produce a visible, shadow-casting character surface.
-            renderer.receiveShadows = false;
-            if (renderer.shadowCastingMode is ShadowCastingMode.Off or ShadowCastingMode.ShadowsOnly)
-            {
-                renderer.shadowCastingMode = ShadowCastingMode.On;
-            }
-
-            Material[] materials = renderer.sharedMaterials;
-            bool changed = false;
-            for (int i = 0; i < materials.Length; i++)
-            {
-                Material unlitMaterial = MMOCharacterUnlitMaterialUtility.GetOrCreateSharedVariant(materials[i]);
-                changed |= unlitMaterial != materials[i];
-                materials[i] = unlitMaterial;
-            }
-
-            if (changed)
-            {
-                renderer.sharedMaterials = materials;
-            }
+            MMOCharacterUnlitMaterialUtility.ApplySurface(renderer);
         }
 
         public void ApplyCharacterSurfaces(IEnumerable<Renderer> renderers)
@@ -393,15 +366,9 @@ namespace RPGClone.Player
                 return;
             }
 
-            foreach (Renderer renderer in instance.GetComponentsInChildren<Renderer>(true))
-            {
-                // Trail, line, and particle renderers retain their purpose-built VFX
-                // materials. Visible weapon and shield geometry uses mesh renderers.
-                if (renderer is MeshRenderer or SkinnedMeshRenderer)
-                {
-                    ApplyCharacterSurface(renderer);
-                }
-            }
+            // Trail, line, and particle renderers retain their purpose-built VFX
+            // materials. Visible weapon and shield geometry uses mesh renderers.
+            MMOCharacterUnlitMaterialUtility.ApplyVisibleMeshSurfaces(instance.transform);
         }
 
         private static void MarkRuntimeVisual(GameObject instance)

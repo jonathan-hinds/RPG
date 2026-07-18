@@ -312,6 +312,10 @@ PrefabInstance:
       value: Ash Canyon Creature Visual
       objectReference: {fileID: 0}
     - target: {fileID: 2664098864995057252, guid: b9433dc9f198e0c4e865a1ed2ef26928, type: 3}
+      propertyPath: m_ReceiveShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2664098864995057252, guid: b9433dc9f198e0c4e865a1ed2ef26928, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c3660991fc3e66a4cb7995f14f01bad1, type: 2}

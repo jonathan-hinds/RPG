@@ -43,6 +43,7 @@ namespace RPGClone.Animation
         private void Awake()
         {
             EnsureReferences();
+            ApplyCreatureSurfacePolicy();
             ApplyAnimationSet();
             lastPosition = transform.position;
         }
@@ -50,6 +51,7 @@ namespace RPGClone.Animation
         private void OnEnable()
         {
             EnsureReferences();
+            ApplyCreatureSurfacePolicy();
             if (abilitySystem != null)
             {
                 abilitySystem.AbilityUsed -= OnAbilityUsed;
@@ -129,7 +131,13 @@ namespace RPGClone.Animation
             animator = newAnimator;
             visualRoot = newVisualRoot;
             visualYawOffsetDegrees = newVisualYawOffsetDegrees;
+            ApplyCreatureSurfacePolicy();
             ApplyAnimationSet();
+        }
+
+        private void ApplyCreatureSurfacePolicy()
+        {
+            MMOCharacterUnlitMaterialUtility.ApplyVisibleMeshSurfaces(visualRoot);
         }
 
         public void SetDeadState(bool shouldBeDead)

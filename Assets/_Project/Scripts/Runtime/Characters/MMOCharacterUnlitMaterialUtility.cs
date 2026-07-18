@@ -46,6 +46,50 @@ namespace RPGClone.Characters
                 && material.shader.name == UnlitShaderName;
         }
 
+        public static void ApplySurface(Renderer renderer)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            renderer.receiveShadows = false;
+            if (renderer.shadowCastingMode is ShadowCastingMode.Off or ShadowCastingMode.ShadowsOnly)
+            {
+                renderer.shadowCastingMode = ShadowCastingMode.On;
+            }
+
+            Material[] materials = renderer.sharedMaterials;
+            bool changed = false;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                Material unlitMaterial = GetOrCreateSharedVariant(materials[i]);
+                changed |= unlitMaterial != materials[i];
+                materials[i] = unlitMaterial;
+            }
+
+            if (changed)
+            {
+                renderer.sharedMaterials = materials;
+            }
+        }
+
+        public static void ApplyVisibleMeshSurfaces(Transform visualRoot)
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            foreach (Renderer renderer in visualRoot.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer is MeshRenderer or SkinnedMeshRenderer)
+                {
+                    ApplySurface(renderer);
+                }
+            }
+        }
+
         public static Material GetOrCreateSharedVariant(Material source)
         {
             if (source == null || IsCharacterUnlit(source))

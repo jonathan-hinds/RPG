@@ -314,6 +314,10 @@ PrefabInstance:
       value: Ash General Visual
       objectReference: {fileID: 0}
     - target: {fileID: 2664098864995057252, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
+      propertyPath: m_ReceiveShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2664098864995057252, guid: 36a4367d56d5e0f48ae4eccd3ee51116, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 4d9c4a45ef9ac9c4096e6b82d67fe59c, type: 2}
