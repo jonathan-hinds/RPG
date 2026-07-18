@@ -5,8 +5,8 @@
 ## Existing spell wiring
 
 - `FireballVFX_Casting.prefab` starts the buildup at the resolved casting anchor and releases its launch flash when the cast completes.
-- `FireballVFX_Projectile.prefab` starts the core, layered flame shell, short trails, embers, and smoke. `MMOAbilityVfxProjectile` remains responsible for travel and hit timing.
-- `FireballVFX_Impact.prefab` plays the flash, burst, shockwave, embers, smoke, and optional scorch at the resolved hit point.
+- `FireballVFX_Projectile.prefab` starts the hot core, asymmetric comet head, layered shell, counter-rotating flame corona, short trails, embers, and smoke. `MMOAbilityVfxProjectile` remains responsible for travel and hit timing.
+- `FireballVFX_Impact.prefab` uses a brief hot-frame hang followed by the burst, heavy flame crown, two expanding rings, embers, smoke, and optional scorch at the resolved hit point.
 - All three wrappers contain the reusable `FireballVFX.prefab`, whose five top-level visual sections remain available for direct integration and pooling.
 
 ## Direct or pooled use
@@ -35,7 +35,7 @@ Subscribe to `Completed` or poll `ReadyForPool` before returning a normally comp
 
 ## Authoring
 
-- Edit `FireballVFX_Default.asset` for projectile/core/flame size, trail lifetime/width/brightness, HDR fire colors, flicker, distortion, particle budgets, impact/shockwave scale, durations, scorch, and master intensity.
+- Edit `FireballVFX_Default.asset` for projectile/core/flame/comet/corona size, trail lifetime/width/brightness, HDR fire colors, flicker, distortion, corona rotation, particle budgets, impact/crown/ring scale, hot-frame hang, durations, scorch, and master intensity.
 - Re-run **Tools > RPG Clone > VFX > Build Fireball VFX** after changing textures, shaders, or material construction.
 - Disable `Enable Scorch` in the profile for targets or environments where a flat temporary mark is unsuitable.
 - The effect uses no lights, Timeline, animation clips, runtime texture generation, editor-only runtime fallback, or gameplay/network branching.

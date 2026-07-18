@@ -12,30 +12,38 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c18dba275d25e9840a4867c706af9606, type: 3}
   m_Name: FireballVFX_Default
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Fire.FireballVFXProfile
-  projectileScale: 1
-  coreSize: 0.42
-  flameSize: 0.82
-  outerShellSize: 1.08
-  directionalStretch: 0.16
-  trailLength: 0.26
-  trailWidth: 0.46
-  trailBrightness: 1.15
-  hotColor: {r: 1.45, g: 1.12, b: 0.55, a: 1}
-  flameColor: {r: 1.3, g: 0.42, b: 0.05, a: 0.92}
-  outerColor: {r: 0.82, g: 0.13, b: 0.015, a: 0.62}
-  smokeColor: {r: 0.22, g: 0.12, b: 0.085, a: 0.48}
-  flickerSpeed: 9
-  distortionAmount: 0.065
+  projectileScale: 1.1
+  coreSize: 0.46
+  flameSize: 0.9
+  outerShellSize: 1.16
+  cometHeadSize: 1.22
+  flameCoronaSize: 1.48
+  directionalStretch: 0.22
+  trailLength: 0.31
+  trailWidth: 0.54
+  trailBrightness: 1.28
+  hotColor: {r: 1.65, g: 1.22, b: 0.58, a: 1}
+  flameColor: {r: 1.46, g: 0.43, b: 0.035, a: 0.96}
+  outerColor: {r: 0.92, g: 0.12, b: 0.01, a: 0.68}
+  smokeColor: {r: 0.23, g: 0.11, b: 0.07, a: 0.44}
+  flickerSpeed: 10.5
+  distortionAmount: 0.075
   flameScrollSpeed: {x: -0.55, y: 0.18}
-  emberCount: 8
+  coronaRotationSpeed: 74
+  emberCount: 9
   smokeAmount: 4
-  impactSize: 2.2
-  shockwaveSize: 2.8
-  burstDuration: 0.48
+  impactSize: 2.45
+  shockwaveSize: 3.15
+  impactCrownSize: 2.85
+  heatRingSize: 3.75
+  launchRingSize: 1.55
+  burstDuration: 0.56
+  impactHangTime: 0.065
   enableScorch: 1
   scorchSize: 1.7
   scorchDuration: 3.5
-  castingDuration: 0.48
-  castReleaseDuration: 0.38
-  aftermathDuration: 1.8
-  overallIntensity: 1
+  castingDuration: 0.5
+  castReleaseDuration: 0.42
+  aftermathDuration: 1.9
+  overallIntensity: 1.1
+  contentVersion: 2

@@ -36,7 +36,11 @@ namespace RPGClone.EditorTools
             "Fireball_ImpactFlash.png",
             "Fireball_Shockwave.png",
             "Fireball_Smoke.png",
-            "Fireball_Scorch.png"
+            "Fireball_Scorch.png",
+            "Fireball_CometHead.png",
+            "Fireball_FlameCorona.png",
+            "Fireball_ImpactCrown.png",
+            "Fireball_HeatRing.png"
         };
 
         [MenuItem("Tools/RPG Clone/VFX/Build Fireball VFX")]
@@ -47,6 +51,7 @@ namespace RPGClone.EditorTools
             ConfigureTextureImporters();
 
             FireballVFXProfile profile = LoadOrCreateProfile();
+            profile.UpgradePolishDefaults();
             EditorUtility.SetDirty(profile);
             Dictionary<string, Material> materials = CreateMaterials();
             GameObject completePrefab = CreateCompletePrefab(profile, materials);
@@ -96,6 +101,26 @@ namespace RPGClone.EditorTools
                 || prefab.GetComponentsInChildren<ParticleSystem>(true).Length != 10)
             {
                 throw new UnityException("FireballVFX must contain exactly two trail layers and ten budgeted particle systems.");
+            }
+
+            foreach (string layerPath in new[]
+                     {
+                         "Casting Effect/Launch Heat Ring",
+                         "Projectile Effect/Asymmetric Comet Head",
+                         "Projectile Effect/Rotating Flame Corona",
+                         "Impact Effect/Heavy Impact Crown",
+                         "Impact Effect/Expanding Heat Ring"
+                     })
+            {
+                if (prefab.transform.Find(layerPath) == null)
+                {
+                    throw new MissingReferenceException($"Polished FireballVFX layer is missing: {layerPath}");
+                }
+            }
+
+            if (AssetDatabase.FindAssets("t:Material", new[] { MaterialFolder }).Length != 14)
+            {
+                throw new UnityException("FireballVFX must contain exactly fourteen reusable materials after the polish pass.");
             }
 
             foreach (string textureName in RequiredTextureNames)
@@ -237,11 +262,13 @@ namespace RPGClone.EditorTools
             {
                 bool isNoise = textureName == "Fireball_Noise.png";
                 bool repeat = isNoise || textureName == "Fireball_FlameRibbon.png";
-                int maxSize = textureName == "Fireball_FlameRibbon.png" ? 512 : textureName == "Fireball_Ember.png" ? 128 : 256;
+                bool isPolishTexture = textureName is "Fireball_CometHead.png" or "Fireball_FlameCorona.png" or "Fireball_ImpactCrown.png" or "Fireball_HeatRing.png";
+                int maxSize = textureName == "Fireball_FlameRibbon.png" || isPolishTexture ? 512 : textureName == "Fireball_Ember.png" ? 128 : 256;
                 ConfigureTexture(textureName, repeat ? TextureWrapMode.Repeat : TextureWrapMode.Clamp, maxSize, !isNoise, !isNoise);
             }
 
             ConfigureTexture("Fireball_SourceAtlas.png", TextureWrapMode.Clamp, 2048, false, true);
+            ConfigureTexture("Fireball_PolishSourceAtlas.png", TextureWrapMode.Clamp, 2048, false, true);
         }
 
         private static void ConfigureTexture(string fileName, TextureWrapMode wrapMode, int maxSize, bool hasAlpha, bool sRgb)
@@ -283,16 +310,20 @@ namespace RPGClone.EditorTools
             Texture noise = LoadTexture("Fireball_Noise.png");
             return new Dictionary<string, Material>
             {
-                ["Core"] = CreateMaterial("Fireball_Core", shader, LoadTexture("Fireball_Core.png"), noise, new Color(1.45f, 1.12f, 0.55f, 1f), true),
-                ["FlameBody"] = CreateMaterial("Fireball_FlameBody", shader, LoadTexture("Fireball_FlameBody.png"), noise, new Color(1.3f, 0.42f, 0.05f, 0.92f), true),
-                ["OuterShell"] = CreateMaterial("Fireball_OuterFlameShell", shader, LoadTexture("Fireball_FlameBody.png"), noise, new Color(0.82f, 0.13f, 0.015f, 0.62f), true),
-                ["FlameTrail"] = CreateMaterial("Fireball_FlameTrail", shader, LoadTexture("Fireball_FlameRibbon.png"), noise, new Color(1.2f, 0.34f, 0.03f, 0.82f), true),
-                ["Ember"] = CreateMaterial("Fireball_Embers", shader, LoadTexture("Fireball_Ember.png"), noise, new Color(1.35f, 0.48f, 0.08f, 0.92f), true),
-                ["Smoke"] = CreateMaterial("Fireball_Smoke", shader, LoadTexture("Fireball_Smoke.png"), noise, new Color(0.28f, 0.16f, 0.11f, 0.48f), false),
-                ["ImpactFlash"] = CreateMaterial("Fireball_ImpactFlash", shader, LoadTexture("Fireball_ImpactFlash.png"), noise, new Color(1.5f, 1.15f, 0.62f, 1f), true),
-                ["FireBurst"] = CreateMaterial("Fireball_FireBurst", shader, LoadTexture("Fireball_Burst.png"), noise, new Color(1.2f, 0.33f, 0.025f, 0.92f), true),
-                ["Shockwave"] = CreateMaterial("Fireball_Shockwave", shader, LoadTexture("Fireball_Shockwave.png"), noise, new Color(1.1f, 0.38f, 0.06f, 0.72f), true),
-                ["GroundScorch"] = CreateMaterial("Fireball_GroundScorch", shader, LoadTexture("Fireball_Scorch.png"), noise, new Color(0.2f, 0.095f, 0.045f, 0.58f), false)
+                ["Core"] = CreateMaterial("Fireball_Core", shader, LoadTexture("Fireball_Core.png"), noise, new Color(1.18f, 0.58f, 0.12f, 1f), new Color(1.9f, 1.55f, 0.88f, 1f), true),
+                ["FlameBody"] = CreateMaterial("Fireball_FlameBody", shader, LoadTexture("Fireball_FlameBody.png"), noise, new Color(1.35f, 0.26f, 0.018f, 0.94f), new Color(1.72f, 0.92f, 0.26f, 1f), true),
+                ["OuterShell"] = CreateMaterial("Fireball_OuterFlameShell", shader, LoadTexture("Fireball_FlameBody.png"), noise, new Color(0.78f, 0.06f, 0.005f, 0.66f), new Color(1.28f, 0.31f, 0.025f, 1f), true),
+                ["CometHead"] = CreateMaterial("Fireball_CometHead", shader, LoadTexture("Fireball_CometHead.png"), noise, new Color(1.38f, 0.19f, 0.012f, 0.94f), new Color(1.82f, 1.08f, 0.38f, 1f), true),
+                ["FlameCorona"] = CreateMaterial("Fireball_FlameCorona", shader, LoadTexture("Fireball_FlameCorona.png"), noise, new Color(0.92f, 0.07f, 0.004f, 0.68f), new Color(1.52f, 0.42f, 0.045f, 1f), true),
+                ["FlameTrail"] = CreateMaterial("Fireball_FlameTrail", shader, LoadTexture("Fireball_FlameRibbon.png"), noise, new Color(1.23f, 0.18f, 0.008f, 0.86f), new Color(1.68f, 0.82f, 0.16f, 1f), true),
+                ["Ember"] = CreateMaterial("Fireball_Embers", shader, LoadTexture("Fireball_Ember.png"), noise, new Color(1.36f, 0.25f, 0.02f, 0.94f), new Color(1.78f, 1.04f, 0.34f, 1f), true),
+                ["Smoke"] = CreateMaterial("Fireball_Smoke", shader, LoadTexture("Fireball_Smoke.png"), noise, new Color(0.25f, 0.12f, 0.075f, 0.45f), new Color(0.38f, 0.2f, 0.11f, 1f), false, 0.7f, 1.05f),
+                ["ImpactFlash"] = CreateMaterial("Fireball_ImpactFlash", shader, LoadTexture("Fireball_ImpactFlash.png"), noise, new Color(1.55f, 0.88f, 0.2f, 1f), new Color(2f, 1.72f, 1.1f, 1f), true, 0.5f, 0.72f),
+                ["FireBurst"] = CreateMaterial("Fireball_FireBurst", shader, LoadTexture("Fireball_Burst.png"), noise, new Color(1.26f, 0.15f, 0.008f, 0.94f), new Color(1.76f, 0.78f, 0.15f, 1f), true),
+                ["ImpactCrown"] = CreateMaterial("Fireball_ImpactCrown", shader, LoadTexture("Fireball_ImpactCrown.png"), noise, new Color(1.12f, 0.09f, 0.004f, 0.9f), new Color(1.82f, 0.92f, 0.24f, 1f), true),
+                ["Shockwave"] = CreateMaterial("Fireball_Shockwave", shader, LoadTexture("Fireball_Shockwave.png"), noise, new Color(1.08f, 0.18f, 0.015f, 0.74f), new Color(1.55f, 0.58f, 0.08f, 1f), true),
+                ["HeatRing"] = CreateMaterial("Fireball_HeatRing", shader, LoadTexture("Fireball_HeatRing.png"), noise, new Color(0.94f, 0.07f, 0.004f, 0.72f), new Color(1.48f, 0.38f, 0.035f, 1f), true),
+                ["GroundScorch"] = CreateMaterial("Fireball_GroundScorch", shader, LoadTexture("Fireball_Scorch.png"), noise, new Color(0.18f, 0.07f, 0.025f, 0.58f), new Color(0.34f, 0.12f, 0.035f, 1f), false, 0.72f, 0.9f)
             };
         }
 
@@ -303,7 +334,7 @@ namespace RPGClone.EditorTools
             return texture;
         }
 
-        private static Material CreateMaterial(string name, Shader shader, Texture texture, Texture noise, Color tint, bool additive)
+        private static Material CreateMaterial(string name, Shader shader, Texture texture, Texture noise, Color tint, Color hotTint, bool additive, float hotThreshold = 0.58f, float alphaPower = 0.82f)
         {
             string path = $"{MaterialFolder}/{name}.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -320,6 +351,9 @@ namespace RPGClone.EditorTools
             material.SetTexture("_BaseMap", texture);
             material.SetTexture("_NoiseMap", noise);
             material.SetColor("_Tint", tint);
+            material.SetColor("_HotTint", hotTint);
+            material.SetFloat("_HotThreshold", hotThreshold);
+            material.SetFloat("_AlphaPower", alphaPower);
             material.SetFloat("_Opacity", 1f);
             material.SetFloat("_DistortionStrength", 0.04f);
             material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
@@ -344,11 +378,14 @@ namespace RPGClone.EditorTools
                 ParticleSystem launch = CreateOneShot("Launch Flash", castingRoot, materials["ImpactFlash"], 0.22f, 0f, 0.64f, 1, new Color(1f, 0.92f, 0.58f, 1f), 5);
                 ConfigureFadeAndScale(launch, 0.2f, 1.45f, 1.8f);
                 ParticleSystem residual = CreateBurstEmbers("Release Embers", castingRoot, materials["Ember"], 5, 0.45f, 0.8f, 0.1f);
+                MeshRenderer launchRing = CreateQuad("Launch Heat Ring", castingRoot, materials["HeatRing"], Vector3.zero, Vector3.one, Quaternion.identity, 0);
 
                 Transform projectileRoot = CreateSection("Projectile Effect", root.transform);
-                MeshRenderer core = CreateQuad("Hot Inner Core", projectileRoot, materials["Core"], Vector3.zero, Vector3.one, Quaternion.identity, 4);
-                MeshRenderer body = CreateQuad("Main Flame Body", projectileRoot, materials["FlameBody"], Vector3.zero, Vector3.one, Quaternion.identity, 3);
+                MeshRenderer core = CreateQuad("Hot Inner Core", projectileRoot, materials["Core"], Vector3.zero, Vector3.one, Quaternion.identity, 7);
+                MeshRenderer body = CreateQuad("Main Flame Body", projectileRoot, materials["FlameBody"], Vector3.zero, Vector3.one, Quaternion.identity, 4);
                 MeshRenderer outer = CreateQuad("Outer Flame Shell", projectileRoot, materials["OuterShell"], Vector3.zero, Vector3.one, Quaternion.identity, 2);
+                MeshRenderer cometHead = CreateQuad("Asymmetric Comet Head", projectileRoot, materials["CometHead"], Vector3.zero, Vector3.one, Quaternion.identity, 5);
+                MeshRenderer corona = CreateQuad("Rotating Flame Corona", projectileRoot, materials["FlameCorona"], Vector3.zero, Vector3.one, Quaternion.identity, 1);
                 ParticleSystem projectileEmbers = CreateLoopingTravelParticles("Projectile Embers", projectileRoot, materials["Ember"], 5f, 0.62f, 0.06f, new Color(1f, 0.54f, 0.12f, 0.9f), 8, false);
 
                 Transform trailRoot = CreateSection("Trail Effect", root.transform);
@@ -358,11 +395,13 @@ namespace RPGClone.EditorTools
                 ParticleSystem smokeTrail = CreateLoopingTravelParticles("Light Smoke Trail", trailRoot, materials["Smoke"], 1.8f, 0.72f, 0.24f, new Color(0.52f, 0.31f, 0.21f, 0.38f), 4, true);
 
                 Transform impactRoot = CreateSection("Impact Effect", root.transform);
-                MeshRenderer impactFlash = CreateQuad("Immediate Impact Flash", impactRoot, materials["ImpactFlash"], Vector3.zero, Vector3.one, Quaternion.identity, 8);
+                MeshRenderer impactFlash = CreateQuad("Immediate Impact Flash", impactRoot, materials["ImpactFlash"], Vector3.zero, Vector3.one, Quaternion.identity, 10);
                 MeshRenderer burst = CreateQuad("Chunky Fire Burst", impactRoot, materials["FireBurst"], Vector3.zero, Vector3.one, Quaternion.identity, 6);
                 MeshRenderer shockwave = CreateQuad("Broken Painted Shockwave", impactRoot, materials["Shockwave"], Vector3.zero, Vector3.one, Quaternion.identity, 5);
-                ParticleSystem impactEmbers = CreateBurstEmbers("Impact Embers", impactRoot, materials["Ember"], 8, 0.85f, 1.55f, 0.09f);
-                ParticleSystem impactFlames = CreateBurstParticles("Impact Flame Shapes", impactRoot, materials["FlameBody"], 5, 0.48f, 0.75f, 0.38f);
+                MeshRenderer impactCrown = CreateQuad("Heavy Impact Crown", impactRoot, materials["ImpactCrown"], Vector3.zero, Vector3.one, Quaternion.identity, 7);
+                MeshRenderer heatRing = CreateQuad("Expanding Heat Ring", impactRoot, materials["HeatRing"], Vector3.zero, Vector3.one, Quaternion.identity, 4);
+                ParticleSystem impactEmbers = CreateBurstEmbers("Impact Embers", impactRoot, materials["Ember"], 9, 0.9f, 1.65f, 0.1f);
+                ParticleSystem impactFlames = CreateBurstParticles("Impact Flame Shapes", impactRoot, materials["FlameBody"], 7, 0.54f, 0.82f, 0.42f);
 
                 Transform aftermathRoot = CreateSection("Aftermath Effect", root.transform);
                 ParticleSystem impactSmoke = CreateImpactSmoke("Rising Smoke Bloom", aftermathRoot, materials["Smoke"]);
@@ -370,10 +409,10 @@ namespace RPGClone.EditorTools
 
                 controller.ConfigureAuthoring(
                     profile,
-                    castingRoot, castGlow, gathering, swirl, launch, residual,
-                    projectileRoot, core, body, outer, projectileEmbers,
+                    castingRoot, castGlow, gathering, swirl, launch, residual, launchRing,
+                    projectileRoot, core, body, outer, cometHead, corona, projectileEmbers,
                     trailRoot, brightTrail, outerTrail, trailEmbers, smokeTrail,
-                    impactRoot, impactFlash, burst, shockwave, impactEmbers, impactFlames,
+                    impactRoot, impactFlash, burst, shockwave, impactCrown, heatRing, impactEmbers, impactFlames,
                     aftermathRoot, impactSmoke, scorch);
 
                 castingRoot.gameObject.SetActive(false);

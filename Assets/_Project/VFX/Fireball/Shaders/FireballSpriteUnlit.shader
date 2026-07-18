@@ -5,6 +5,9 @@ Shader "RPG Clone/VFX/Fireball Sprite Unlit"
         _BaseMap ("Painted Texture", 2D) = "white" {}
         _NoiseMap ("Flow Noise", 2D) = "gray" {}
         [HDR] _Tint ("Tint", Color) = (1, 0.4, 0.05, 1)
+        [HDR] _HotTint ("Hot Tint", Color) = (1.5, 1.05, 0.45, 1)
+        _HotThreshold ("Hot Threshold", Range(0, 1)) = 0.58
+        _AlphaPower ("Alpha Shape", Range(0.25, 2)) = 0.82
         _Opacity ("Opacity", Range(0, 1)) = 1
         _Scroll ("UV Scroll", Vector) = (0, 0, 0, 0)
         _DistortionStrength ("Distortion", Range(0, 0.25)) = 0.04
@@ -47,6 +50,9 @@ Shader "RPG Clone/VFX/Fireball Sprite Unlit"
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 float4 _Tint;
+                float4 _HotTint;
+                float _HotThreshold;
+                float _AlphaPower;
                 float _Opacity;
                 float4 _Scroll;
                 float _DistortionStrength;
@@ -69,8 +75,12 @@ Shader "RPG Clone/VFX/Fireball Sprite Unlit"
                 half2 noise = SAMPLE_TEXTURE2D(_NoiseMap, sampler_NoiseMap, noiseUv).rg - 0.5h;
                 float2 paintedUv = input.uv * _BaseMap_ST.xy + _BaseMap_ST.zw + _Scroll.xy + noise * _DistortionStrength;
                 half4 painted = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, paintedUv);
-                half4 color = painted * _Tint * input.color;
-                color.a *= _Opacity;
+                half value = dot(painted.rgb, half3(0.299h, 0.587h, 0.114h));
+                half hotMask = smoothstep(_HotThreshold, 1.0h, value);
+                half3 fireRamp = lerp(_Tint.rgb, _HotTint.rgb, hotMask);
+                half4 color;
+                color.rgb = painted.rgb * fireRamp * input.color.rgb;
+                color.a = pow(saturate(painted.a), _AlphaPower) * _Tint.a * input.color.a * _Opacity;
                 return color;
             }
             ENDHLSL

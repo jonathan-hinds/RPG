@@ -30,12 +30,15 @@ namespace RPGClone.Vfx.Fire
         [SerializeField] private ParticleSystem swirlingFlames;
         [SerializeField] private ParticleSystem launchFlash;
         [SerializeField] private ParticleSystem residualEmbers;
+        [SerializeField] private Renderer launchRing;
 
         [Header("Projectile Effect")]
         [SerializeField] private Transform projectileEffectRoot;
         [SerializeField] private Renderer hotCore;
         [SerializeField] private Renderer mainFlameBody;
         [SerializeField] private Renderer outerFlameShell;
+        [SerializeField] private Renderer cometHead;
+        [SerializeField] private Renderer flameCorona;
         [SerializeField] private ParticleSystem projectileEmbers;
 
         [Header("Trail Effect")]
@@ -50,6 +53,8 @@ namespace RPGClone.Vfx.Fire
         [SerializeField] private Renderer impactFlash;
         [SerializeField] private Renderer fireBurst;
         [SerializeField] private Renderer shockwave;
+        [SerializeField] private Renderer impactCrown;
+        [SerializeField] private Renderer heatRing;
         [SerializeField] private ParticleSystem impactEmbers;
         [SerializeField] private ParticleSystem impactFlames;
 
@@ -227,10 +232,13 @@ namespace RPGClone.Vfx.Fire
             ParticleSystem newSwirlingFlames,
             ParticleSystem newLaunchFlash,
             ParticleSystem newResidualEmbers,
+            Renderer newLaunchRing,
             Transform newProjectileEffectRoot,
             Renderer newHotCore,
             Renderer newMainFlameBody,
             Renderer newOuterFlameShell,
+            Renderer newCometHead,
+            Renderer newFlameCorona,
             ParticleSystem newProjectileEmbers,
             Transform newTrailEffectRoot,
             TrailRenderer newBrightFlameTrail,
@@ -241,6 +249,8 @@ namespace RPGClone.Vfx.Fire
             Renderer newImpactFlash,
             Renderer newFireBurst,
             Renderer newShockwave,
+            Renderer newImpactCrown,
+            Renderer newHeatRing,
             ParticleSystem newImpactEmbers,
             ParticleSystem newImpactFlames,
             Transform newAftermathEffectRoot,
@@ -254,10 +264,13 @@ namespace RPGClone.Vfx.Fire
             swirlingFlames = newSwirlingFlames;
             launchFlash = newLaunchFlash;
             residualEmbers = newResidualEmbers;
+            launchRing = newLaunchRing;
             projectileEffectRoot = newProjectileEffectRoot;
             hotCore = newHotCore;
             mainFlameBody = newMainFlameBody;
             outerFlameShell = newOuterFlameShell;
+            cometHead = newCometHead;
+            flameCorona = newFlameCorona;
             projectileEmbers = newProjectileEmbers;
             trailEffectRoot = newTrailEffectRoot;
             brightFlameTrail = newBrightFlameTrail;
@@ -268,6 +281,8 @@ namespace RPGClone.Vfx.Fire
             impactFlash = newImpactFlash;
             fireBurst = newFireBurst;
             shockwave = newShockwave;
+            impactCrown = newImpactCrown;
+            heatRing = newHeatRing;
             impactEmbers = newImpactEmbers;
             impactFlames = newImpactFlames;
             aftermathEffectRoot = newAftermathEffectRoot;
@@ -307,6 +322,14 @@ namespace RPGClone.Vfx.Fire
                 Billboard(castGlow.transform, elapsed * 28f);
                 SetRenderer(castGlow, profile.FlameColor, Mathf.SmoothStep(0f, 0.72f, normalized), profile.FlameScrollSpeed * elapsed, profile.DistortionAmount);
             }
+
+            if (launchRing != null)
+            {
+                float breathe = 1f + Mathf.Sin(elapsed * profile.FlickerSpeed * 0.7f) * 0.08f;
+                launchRing.transform.localScale = Vector3.one * profile.LaunchRingSize * Mathf.Lerp(0.45f, 0.72f, normalized) * breathe;
+                Billboard(launchRing.transform, -elapsed * profile.CoronaRotationSpeed * 0.35f);
+                SetRenderer(launchRing, profile.OuterColor, normalized * 0.24f, Vector2.zero, 0f);
+            }
         }
 
         private void AnimateCastRelease()
@@ -317,6 +340,14 @@ namespace RPGClone.Vfx.Fire
                 castGlow.transform.localScale = Vector3.one * profile.FlameSize * Mathf.Lerp(0.9f, 1.35f, normalized);
                 Billboard(castGlow.transform, normalized * 50f);
                 SetRenderer(castGlow, profile.HotColor, 1f - normalized, profile.FlameScrollSpeed * Time.time, profile.DistortionAmount);
+            }
+
+            if (launchRing != null)
+            {
+                float ringEase = 1f - Mathf.Pow(1f - normalized, 3f);
+                launchRing.transform.localScale = Vector3.one * profile.LaunchRingSize * Mathf.Lerp(0.35f, 1.35f, ringEase);
+                Billboard(launchRing.transform, -normalized * 70f);
+                SetRenderer(launchRing, profile.FlameColor, (1f - normalized) * 0.86f, Vector2.zero, 0f);
             }
 
             if (normalized >= 1f)
@@ -341,8 +372,10 @@ namespace RPGClone.Vfx.Fire
             float stretch = 1f + Mathf.Clamp01(estimatedSpeed / 18f) * profile.DirectionalStretch;
 
             AnimateProjectileLayer(hotCore, profile.CoreSize, fastPulse, stretch, elapsed * 52f, profile.HotColor, 1f, elapsed);
-            AnimateProjectileLayer(mainFlameBody, profile.FlameSize, slowPulse, stretch, -elapsed * 31f, profile.FlameColor, 0.92f, elapsed * 0.82f);
-            AnimateProjectileLayer(outerFlameShell, profile.OuterShellSize, 1f + (slowPulse - 1f) * 0.7f, stretch, elapsed * 19f, profile.OuterColor, 0.66f, elapsed * 0.46f);
+            AnimateProjectileLayer(mainFlameBody, profile.FlameSize, slowPulse, stretch, -elapsed * 27f, profile.FlameColor, 0.94f, elapsed * 0.82f);
+            AnimateProjectileLayer(outerFlameShell, profile.OuterShellSize, 1f + (slowPulse - 1f) * 0.7f, stretch, elapsed * 16f, profile.OuterColor, 0.7f, elapsed * 0.46f);
+            AnimateProjectileLayer(cometHead, profile.CometHeadSize, 1f + (fastPulse - 1f) * 0.5f, stretch * 1.08f, Mathf.Sin(elapsed * 2.8f) * 7f, profile.FlameColor, 0.88f, elapsed * 0.62f);
+            AnimateProjectileLayer(flameCorona, profile.FlameCoronaSize, 1f + (slowPulse - 1f) * 0.45f, 1f, -elapsed * profile.CoronaRotationSpeed, profile.OuterColor, 0.55f, elapsed * 0.32f);
 
             SetRenderer(brightFlameTrail, profile.HotColor * profile.TrailBrightness, 0.86f * intensity, new Vector2(-elapsed * 1.7f, 0f), profile.DistortionAmount);
             SetRenderer(outerOrangeTrail, profile.OuterColor * profile.TrailBrightness, 0.7f * intensity, new Vector2(-elapsed * 0.9f, 0f), profile.DistortionAmount * 0.7f);
@@ -364,12 +397,17 @@ namespace RPGClone.Vfx.Fire
         private void AnimateImpact()
         {
             float elapsed = Time.time - stateStartedAt;
-            float burstT = Mathf.Clamp01(elapsed / profile.BurstDuration);
+            float effectTime = Mathf.Max(0f, elapsed - profile.ImpactHangTime);
+            float burstT = Mathf.Clamp01(effectTime / profile.BurstDuration);
             float flashT = Mathf.Clamp01(elapsed / Mathf.Min(0.16f, profile.BurstDuration));
-            float shockT = Mathf.Clamp01(elapsed / Mathf.Max(0.12f, profile.BurstDuration * 0.75f));
-            AnimateImpactRenderer(impactFlash, profile.ImpactSize * Mathf.Lerp(0.18f, 1.05f, flashT), 1f - flashT, elapsed * 36f, profile.HotColor);
-            AnimateImpactRenderer(fireBurst, profile.ImpactSize * Mathf.Lerp(0.2f, 1f, Mathf.SmoothStep(0f, 1f, burstT)), (1f - burstT) * 0.95f, -elapsed * 42f, Color.Lerp(profile.HotColor, profile.FlameColor, burstT));
-            AnimateImpactRenderer(shockwave, profile.ShockwaveSize * Mathf.Lerp(0.15f, 1f, shockT), (1f - shockT) * 0.72f, elapsed * 18f, profile.FlameColor);
+            float shockT = Mathf.Clamp01(effectTime / Mathf.Max(0.12f, profile.BurstDuration * 0.72f));
+            float crownT = Mathf.Clamp01(effectTime / Mathf.Max(0.12f, profile.BurstDuration * 0.88f));
+            float heatT = Mathf.Clamp01(Mathf.Max(0f, effectTime - 0.045f) / Mathf.Max(0.12f, profile.BurstDuration * 1.05f));
+            AnimateImpactRenderer(impactFlash, profile.ImpactSize * Mathf.Lerp(0.22f, 1.08f, flashT), Mathf.Pow(1f - flashT, 1.45f), elapsed * 36f, profile.HotColor);
+            AnimateImpactRenderer(fireBurst, profile.ImpactSize * Mathf.Lerp(0.18f, 1f, 1f - Mathf.Pow(1f - burstT, 3f)), Mathf.Pow(1f - burstT, 0.85f) * 0.98f, -effectTime * 42f, Color.Lerp(profile.HotColor, profile.FlameColor, burstT));
+            AnimateImpactRenderer(shockwave, profile.ShockwaveSize * Mathf.Lerp(0.12f, 1f, shockT), Mathf.Pow(1f - shockT, 1.4f) * 0.78f, effectTime * 18f, profile.FlameColor);
+            AnimateImpactRenderer(impactCrown, profile.ImpactCrownSize * Mathf.Lerp(0.2f, 1f, 1f - Mathf.Pow(1f - crownT, 2.4f)), Mathf.Pow(1f - crownT, 0.8f) * 0.9f, effectTime * 31f, Color.Lerp(profile.HotColor, profile.OuterColor, crownT));
+            AnimateImpactRenderer(heatRing, profile.HeatRingSize * Mathf.Lerp(0.08f, 1f, heatT), Mathf.Sin(heatT * Mathf.PI) * 0.74f, -effectTime * 22f, profile.OuterColor);
 
             if (groundScorch != null && profile.EnableScorch)
             {

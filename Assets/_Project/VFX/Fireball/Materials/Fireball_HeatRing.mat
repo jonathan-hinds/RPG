@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Fireball_Core
+  m_Name: Fireball_HeatRing
   m_Shader: {fileID: 4800000, guid: 0c503b2a4e0b9d74380a40c103def00b, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -24,7 +24,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: 725f9f02060b9d14390f4c7b8290ee52, type: 3}
+        m_Texture: {fileID: 2800000, guid: 7d3b1df1322b588419d6770ff694a746, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NoiseMap:
@@ -40,8 +40,8 @@ Material:
     - _Opacity: 1
     - _SrcBlend: 5
     m_Colors:
-    - _HotTint: {r: 1.9, g: 1.55, b: 0.88, a: 1}
+    - _HotTint: {r: 1.48, g: 0.38, b: 0.035, a: 1}
     - _Scroll: {r: 0, g: 0, b: 0, a: 0}
-    - _Tint: {r: 1.18, g: 0.58, b: 0.12, a: 1}
+    - _Tint: {r: 0.94, g: 0.07, b: 0.004, a: 0.72}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
