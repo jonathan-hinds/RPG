@@ -453,12 +453,17 @@ namespace RPGClone.EditorTests
         public void PreviewActor_PreservesBodyBindingsAndKeepsGeneratedMeshesOnProductionSkeleton()
         {
             GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Player/PlayerCapsule.prefab");
-            MMOItemDefinition chest = AssetDatabase.LoadAssetAtPath<MMOItemDefinition>(
-                "Assets/_Project/Configs/Items/Ashguard_Vest_Mail.asset");
+            MMOItemDefinition[] startingArmor =
+            {
+                AssetDatabase.LoadAssetAtPath<MMOItemDefinition>("Assets/_Project/Configs/Items/Threadbare_Cloth_Tunic.asset"),
+                AssetDatabase.LoadAssetAtPath<MMOItemDefinition>("Assets/_Project/Configs/Items/Threadbare_Cloth_Gloves.asset"),
+                AssetDatabase.LoadAssetAtPath<MMOItemDefinition>("Assets/_Project/Configs/Items/Threadbare_Cloth_Pants.asset"),
+                AssetDatabase.LoadAssetAtPath<MMOItemDefinition>("Assets/_Project/Configs/Items/Threadbare_Cloth_Shoes.asset")
+            };
             MMOCharacterAppearanceCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOCharacterAppearanceCatalog>(
                 "Assets/Resources/RPGClone/Character_Appearance_Catalog.asset");
             Assert.That(playerPrefab, Is.Not.Null);
-            Assert.That(chest, Is.Not.Null);
+            Assert.That(startingArmor, Has.None.Null);
             Assert.That(catalog, Is.Not.Null);
 
             GameObject root = new("Character Preview Binding Test Root");
@@ -469,7 +474,7 @@ namespace RPGClone.EditorTests
                     root.transform,
                     MMOPlayableRace.Orc,
                     MMOPlayableClass.Warrior,
-                    new[] { chest },
+                    startingArmor,
                     catalog,
                     "hair_1");
                 MMOPlayerEquipmentVisuals equipmentVisuals = actor.GetComponent<MMOPlayerEquipmentVisuals>();
@@ -491,10 +496,10 @@ namespace RPGClone.EditorTests
 
                 AssertGeneratedSkinnedMeshesUseProductionBones(
                     actor.GetComponentsInChildren<MMOEquipmentVisualInstanceMarker>(true),
-                    "chest armor");
+                    "shared starting armor");
                 AssertBodyPartLightingPolicy(
                     actor.GetComponentsInChildren<MMOEquipmentVisualInstanceMarker>(true),
-                    "chest armor");
+                    "shared starting armor");
                 AssertGeneratedSkinnedMeshesUseProductionBones(
                     actor.GetComponentsInChildren<MMOAppearanceVisualInstanceMarker>(true),
                     "hairstyle");
@@ -657,15 +662,66 @@ namespace RPGClone.EditorTests
             Assert.That(foundVisibleSurface, Is.True, $"No visible mesh renderer was found for {visualName}.");
         }
 
+        [TestCase("Assets/_Project/Configs/Archetypes/Orc_Warrior.asset")]
+        [TestCase("Assets/_Project/Configs/Archetypes/Orc_Mage.asset")]
+        [TestCase("Assets/_Project/Configs/Archetypes/Orc_Shaman.asset")]
+        [TestCase("Assets/_Project/Configs/Archetypes/Troll_Warrior.asset")]
+        [TestCase("Assets/_Project/Configs/Archetypes/Troll_Mage.asset")]
+        [TestCase("Assets/_Project/Configs/Archetypes/Troll_Shaman.asset")]
+        public void StartingEquipment_UsesSharedPoorClothArmor(string archetypePath)
+        {
+            MMOCharacterArchetypeDefinition archetype = AssetDatabase.LoadAssetAtPath<MMOCharacterArchetypeDefinition>(archetypePath);
+            Assert.That(archetype, Is.Not.Null);
+            Assert.That(archetype.StartingEquipment, Is.Not.Empty);
+
+            HashSet<string> expectedArmorIds = new()
+            {
+                "threadbare_cloth_tunic",
+                "threadbare_cloth_gloves",
+                "threadbare_cloth_pants",
+                "threadbare_cloth_shoes"
+            };
+            MMOItemCatalog itemCatalog = AssetDatabase.LoadAssetAtPath<MMOItemCatalog>(
+                "Assets/_Project/Configs/Items/Starter_Item_Catalog.asset");
+            Assert.That(itemCatalog, Is.Not.Null);
+            foreach (string itemId in expectedArmorIds)
+            {
+                Assert.That(itemCatalog.FindById(itemId), Is.Not.Null, $"{itemId} is missing from the runtime item catalog.");
+            }
+
+            HashSet<string> startingArmorIds = new();
+            foreach (MMOItemDefinition item in archetype.StartingEquipment)
+            {
+                Assert.That(item, Is.Not.Null);
+                if (item.EquipmentSlot is MMOEquipmentSlotType.Chest
+                    or MMOEquipmentSlotType.Hands
+                    or MMOEquipmentSlotType.Legs
+                    or MMOEquipmentSlotType.Feet)
+                {
+                    Assert.That(item.ArmorWeight, Is.EqualTo(MMOArmorWeight.Cloth), item.DisplayName);
+                    Assert.That(item.Quality, Is.EqualTo(MMOItemQuality.Poor), item.DisplayName);
+                    startingArmorIds.Add(item.ItemId);
+                }
+            }
+
+            Assert.That(startingArmorIds.SetEquals(expectedArmorIds), Is.True, archetype.DisplayName);
+        }
+
         [TestCase("Assets/_Project/Configs/Archetypes/Orc_Warrior.asset", MMOArmorWeight.Mail)]
         [TestCase("Assets/_Project/Configs/Archetypes/Orc_Mage.asset", MMOArmorWeight.Cloth)]
         [TestCase("Assets/_Project/Configs/Archetypes/Orc_Shaman.asset", MMOArmorWeight.Leather)]
-        public void CreationPreview_UsesClassArmorAndIncludesWeapon(string archetypePath, MMOArmorWeight expectedArmorWeight)
+        [TestCase("Assets/_Project/Configs/Archetypes/Troll_Warrior.asset", MMOArmorWeight.Mail)]
+        [TestCase("Assets/_Project/Configs/Archetypes/Troll_Mage.asset", MMOArmorWeight.Cloth)]
+        [TestCase("Assets/_Project/Configs/Archetypes/Troll_Shaman.asset", MMOArmorWeight.Leather)]
+        public void CreationPreview_UsesClassTierArmorAndIncludesWeapon(
+            string archetypePath,
+            MMOArmorWeight expectedArmorWeight)
         {
             MMOCharacterArchetypeDefinition archetype = AssetDatabase.LoadAssetAtPath<MMOCharacterArchetypeDefinition>(archetypePath);
             Assert.That(archetype, Is.Not.Null);
             Assert.That(archetype.CreationPreviewEquipment, Is.Not.Empty);
 
+            int armorPieceCount = 0;
             bool hasWeapon = false;
             foreach (MMOItemDefinition item in archetype.CreationPreviewEquipment)
             {
@@ -676,10 +732,13 @@ namespace RPGClone.EditorTests
                     or MMOEquipmentSlotType.Legs
                     or MMOEquipmentSlotType.Feet)
                 {
+                    armorPieceCount++;
                     Assert.That(item.ArmorWeight, Is.EqualTo(expectedArmorWeight), item.DisplayName);
+                    Assert.That(item.ItemId, Does.Not.StartWith("threadbare_cloth_"), item.DisplayName);
                 }
             }
 
+            Assert.That(armorPieceCount, Is.EqualTo(4), $"{archetype.DisplayName} preview should show its four-piece class tier set.");
             Assert.That(hasWeapon, Is.True, $"{archetype.DisplayName} preview has no weapon.");
         }
     }

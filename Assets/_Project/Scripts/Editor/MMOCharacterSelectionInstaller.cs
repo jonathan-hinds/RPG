@@ -402,7 +402,7 @@ namespace RPGClone.EditorTools
             {
                 foreach (MMOItemDefinition item in startingEquipment)
                 {
-                    if (item != null && !items.Contains(item))
+                    if (item != null && item.IsWeapon && !items.Contains(item))
                     {
                         items.Add(item);
                     }

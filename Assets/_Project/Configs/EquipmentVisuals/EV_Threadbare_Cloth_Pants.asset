@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba80646583ded7a449dbe6b87c7538f7, type: 3}
+  m_Name: EV_Threadbare_Cloth_Pants
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOEquipmentVisualDefinition
+  bindingMode: 0
+  equipmentSlot: 10
+  bodyPart: 3
+  hideBaseBodyPart: 1
+  modelPrefab: {fileID: 919132149155446097, guid: 238c51c10dbbb104faebd5468200c714, type: 3}
+  stowedModelPrefab: {fileID: 0}
+  combatMovementModelPrefab: {fileID: 0}
+  materialOverride: {fileID: 0}
+  useColorOverride: 0
+  colorOverride: {r: 1, g: 1, b: 1, a: 1}
+  diffuseTexture: {fileID: 2800000, guid: 4b6ff2961bab8d3489d38b6d762a0450, type: 3}
+  normalTexture: {fileID: 0}
+  socketName: cc_weapon_r
+  stowedSocketName: cc_hip.l
+  combatMovementSocketName: 
+  localPosition: {x: 0, y: 0, z: 0}
+  localEulerAngles: {x: 0, y: 0, z: 0}
+  localScale: {x: 1, y: 1, z: 1}
