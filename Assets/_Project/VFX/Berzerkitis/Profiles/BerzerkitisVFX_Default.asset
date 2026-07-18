@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3bf38feabd12247a382cc5194767ee, type: 3}
+  m_Name: BerzerkitisVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.BerzerkitisVFXProfile
+  overallBrightness: 1.15
+  colors:
+    WhiteHot: {r: 2.4, g: 2.05, b: 1.15, a: 1}
+    HotYellow: {r: 2, g: 1.25, b: 0.18, a: 1}
+    GoldenOrange: {r: 1.6, g: 0.62, b: 0.08, a: 1}
+    DeepOrange: {r: 1.18, g: 0.22, b: 0.025, a: 1}
+    BloodRed: {r: 0.74, g: 0.045, b: 0.018, a: 1}
+    DarkCrimson: {r: 0.2, g: 0.008, b: 0.008, a: 1}
+    Charcoal: {r: 0.105, g: 0.08, b: 0.075, a: 0.62}
+    Dust: {r: 0.5, g: 0.31, b: 0.18, a: 0.68}
+  particleQuality: 2
+  buffFadeOutDuration: 0.4
+  overallActivationScale: 1
+  activationDuration: 1.25
+  chestFlashBrightness: 2.3
+  rageEnvelopeSize: 2.65
+  rageEnvelopeOpacity: 0.68
+  flameColumnCount: 6
+  flameColumnHeight: 3.5
+  rageSilhouetteScale: 1.35
+  shockwaveSize: 4.4
+  shockwaveSpeed: 1
+  activationEmberCount: 44
+  dustAmount: 18
+  heatDistortionStrength: 0.045
+  emblemScale: 1.25
+  emblemHeight: 1.55
+  emblemEmergenceSpeed: 1
+  emblemFacesGameplayCamera: 1
+  emblemPulseIntensity: 0.16
+  emblemLifetime: 1.05
+  emblemGlowBrightness: 1.8
+  emblemDissolveSpeed: 1
+  handFlameScale: 0.21
+  flameHeight: 0.36
+  flameDensity: 9
+  coreBrightness: 2.15
+  outerFlameIntensity: 1.05
+  wristRibbonSpeed: 115
+  emberSpawnRate: 16
+  motionTrailWidth: 0.22
+  motionTrailLifetime: 0.14
+  attackPulseIntensity: 1.75
+  attackPulseDuration: 0.16
+  leftHandPositionOffset: {x: -0.015, y: 0.015, z: 0}
+  rightHandPositionOffset: {x: 0.015, y: 0.015, z: 0}

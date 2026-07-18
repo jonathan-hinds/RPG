@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.MMOAbilityVfxDefinition
   castingPrefab: {fileID: 0}
   castPrefab: {fileID: 0}
-  hitPrefab: {fileID: 716069893400191692, guid: 3f3665b26657dfc438ae8acbf12fc719, type: 3}
+  hitPrefab: {fileID: 3475082950627371381, guid: bcef13db20d9cdf478a996cf2fd73c2f, type: 3}
   attachCastingToCaster: 1
-  useHandCastingAnchors: 1
+  useHandCastingAnchors: 0
   attachHitToTarget: 1
-  alignCastPrefabToTarget: 1
-  castingLocalOffset: {x: 0, y: 1.15, z: 0.42}
+  alignCastPrefabToTarget: 0
+  castingLocalOffset: {x: 0, y: 0, z: 0}
   handCastingLocalOffset: {x: 0, y: 0, z: 0}
-  castOriginLocalOffset: {x: 0, y: 1.18, z: 0.48}
-  hitLocalOffset: {x: 0, y: 0.85, z: 0}
+  castOriginLocalOffset: {x: 0, y: 1.2, z: 0}
+  hitLocalOffset: {x: 0, y: 0, z: 0}
   hitDelaySeconds: 0.02
   castPrefabControlsHitTiming: 0

@@ -19,6 +19,7 @@ namespace RPGClone.EditorTools
         private const string HealingBeamPrefabPath = "Assets/_Project/VFX/HealingBeam/Prefabs/HealingBeamVFX.prefab";
         private const string HealingBeamChargePrefabPath = "Assets/_Project/VFX/HealingBeam/Prefabs/HealingBeamChargeVFX.prefab";
         private const string BashPrefabPath = "Assets/_Project/VFX/Bash/Prefabs/BashVFX.prefab";
+        private const string BerzerkitisPrefabPath = "Assets/_Project/VFX/Berzerkitis/Prefabs/BerzerkitisVFX.prefab";
 
         [MenuItem("Tools/RPG Clone/VFX/Install Ability VFX Content")]
         public static void InstallAbilityVfxContent()
@@ -144,7 +145,13 @@ namespace RPGClone.EditorTools
                     0.04f,
                     false),
                 ["warrior_charge"] = ConfigureDefinition("Warrior_Charge_VFX", null, prefabs.ChargeDust, prefabs.PhysicalImpact, 0.02f, false),
-                ["warrior_berzerkitis"] = ConfigureDefinition("Warrior_Berzerkitis_VFX", null, null, prefabs.BloodFury, 0.02f, false),
+                ["warrior_berzerkitis"] = ConfigureDefinition(
+                    "Warrior_Berzerkitis_VFX",
+                    null,
+                    null,
+                    AssetDatabase.LoadAssetAtPath<GameObject>(BerzerkitisPrefabPath) ?? prefabs.BloodFury,
+                    0.02f,
+                    false),
                 ["orc_blood_fury"] = ConfigureDefinition("Orc_Blood_Fury_VFX", null, null, prefabs.BloodFury, 0.02f, false),
                 ["troll_regeneration"] = ConfigureDefinition("Troll_Regeneration_VFX", null, null, prefabs.Regeneration, 0.02f, false)
             };
