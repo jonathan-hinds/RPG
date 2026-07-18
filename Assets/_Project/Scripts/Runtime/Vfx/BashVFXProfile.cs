@@ -37,6 +37,21 @@ namespace RPGClone.Vfx.Warrior
         [SerializeField, Min(0f)] private float debrisSpeed = 2.35f;
         [SerializeField, Min(0f)] private float groundReactionDelay = 0.035f;
 
+        [Header("Environmental Impact")]
+        [Tooltip("World-space painterly ground pieces layered beneath the existing Bash contact burst.")]
+        [SerializeField, Range(0, 24)] private int environmentalBurstAmount = 8;
+        [SerializeField, Min(0.05f)] private float environmentalBurstSize = 1.72f;
+        [SerializeField, Min(0.05f)] private float environmentalBurstLifetime = 0.46f;
+        [Tooltip("Rolling world-space dust that remains planted at the collision point.")]
+        [SerializeField, Range(0, 48)] private int environmentalHeavyDustAmount = 18;
+        [SerializeField, Min(0.05f)] private float environmentalHeavyDustSize = 0.9f;
+        [SerializeField, Min(0.05f)] private float environmentalHeavyDustLifetime = 1.65f;
+        [Tooltip("Lighter airborne recovery dust that outlives the contact flash.")]
+        [SerializeField, Range(0, 48)] private int environmentalFineDustAmount = 12;
+        [SerializeField, Min(0.05f)] private float environmentalFineDustSize = 0.55f;
+        [SerializeField, Min(0.05f)] private float environmentalFineDustLifetime = 2.25f;
+        [SerializeField, Min(0f)] private float environmentalDustDelay = 0.02f;
+
         [Header("Armor Sparks")]
         [SerializeField, Range(0, 20)] private int sparkCount = 6;
         [SerializeField, Min(0f)] private float sparkSpeed = 5.8f;
@@ -71,6 +86,9 @@ namespace RPGClone.Vfx.Warrior
         [SerializeField, ColorUsage(true, true)] private Color secondaryImpactColor = new(1.18f, 0.42f, 0.08f, 0.84f);
         [SerializeField] private Color dustColor = new(0.62f, 0.58f, 0.5f, 0.7f);
         [SerializeField] private Color debrisColor = new(0.38f, 0.31f, 0.23f, 0.86f);
+        [SerializeField] private Color environmentalBurstColor = new(0.72f, 0.48f, 0.25f, 0.86f);
+        [SerializeField] private Color environmentalHeavyDustColor = new(0.62f, 0.48f, 0.31f, 0.72f);
+        [SerializeField] private Color environmentalFineDustColor = new(0.82f, 0.7f, 0.5f, 0.48f);
         [SerializeField, ColorUsage(true, true)] private Color sparkColor = new(1.35f, 1.08f, 0.58f, 1f);
         [SerializeField, ColorUsage(true, true)] private Color stunColor = new(1.2f, 0.88f, 0.26f, 0.84f);
 
@@ -98,6 +116,16 @@ namespace RPGClone.Vfx.Warrior
         public int DebrisCount => debrisCount;
         public float DebrisSpeed => debrisSpeed;
         public float GroundReactionDelay => groundReactionDelay;
+        public int EnvironmentalBurstAmount => environmentalBurstAmount;
+        public float EnvironmentalBurstSize => environmentalBurstSize;
+        public float EnvironmentalBurstLifetime => environmentalBurstLifetime;
+        public int EnvironmentalHeavyDustAmount => environmentalHeavyDustAmount;
+        public float EnvironmentalHeavyDustSize => environmentalHeavyDustSize;
+        public float EnvironmentalHeavyDustLifetime => environmentalHeavyDustLifetime;
+        public int EnvironmentalFineDustAmount => environmentalFineDustAmount;
+        public float EnvironmentalFineDustSize => environmentalFineDustSize;
+        public float EnvironmentalFineDustLifetime => environmentalFineDustLifetime;
+        public float EnvironmentalDustDelay => environmentalDustDelay;
         public int SparkCount => sparkCount;
         public float SparkSpeed => sparkSpeed;
         public float SparkSize => sparkSize;
@@ -122,6 +150,9 @@ namespace RPGClone.Vfx.Warrior
         public Color SecondaryImpactColor => secondaryImpactColor;
         public Color DustColor => dustColor;
         public Color DebrisColor => debrisColor;
+        public Color EnvironmentalBurstColor => environmentalBurstColor;
+        public Color EnvironmentalHeavyDustColor => environmentalHeavyDustColor;
+        public Color EnvironmentalFineDustColor => environmentalFineDustColor;
         public Color SparkColor => sparkColor;
         public Color StunColor => stunColor;
     }

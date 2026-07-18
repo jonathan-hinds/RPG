@@ -22,6 +22,9 @@ namespace RPGClone.EditorTools
         private const string ShaderPath = ShaderFolder + "/BashSpriteUnlit.shader";
         private const string DefinitionPath = "Assets/_Project/VFX/Definitions/Warrior_Bash_VFX.asset";
         private const string AbilityPath = "Assets/_Project/Configs/Abilities/Warrior_Bash.asset";
+        private const string ChargeHeavyDustTexturePath = "Assets/_Project/VFX/Charge/Textures/Charge_HeavyDustAtlas.png";
+        private const string ChargeFineDustTexturePath = "Assets/_Project/VFX/Charge/Textures/Charge_FineDustAtlas.png";
+        private const string ChargeGroundBurstTexturePath = "Assets/_Project/VFX/Charge/Textures/Charge_GroundBurstAtlas.png";
 
         private static readonly string[] RequiredTextureNames =
         {
@@ -44,6 +47,9 @@ namespace RPGClone.EditorTools
             "Bash_Dust",
             "Bash_DustRing",
             "Bash_Debris",
+            "Bash_EnvironmentalGroundBurst",
+            "Bash_EnvironmentalHeavyDust",
+            "Bash_EnvironmentalFineDust",
             "Bash_Sparks",
             "Bash_StunStars"
         };
@@ -91,7 +97,10 @@ namespace RPGClone.EditorTools
                 "Visual Root/Impact Layers/Secondary Orange Impact",
                 "Visual Root/Impact Layers/Forward Momentum Streaks",
                 "Visual Root/Ground Reaction/Ground Debris Chunks",
-                "Visual Root/Ground Reaction/Radial Dust Ring"
+                "Visual Root/Ground Reaction/Radial Dust Ring",
+                "Visual Root/Ground Reaction/Environmental Ground Burst",
+                "Visual Root/Ground Reaction/Environmental Heavy Dust",
+                "Visual Root/Ground Reaction/Environmental Fine Dust"
             })
             {
                 if (prefab.transform.Find(layerPath) == null)
@@ -106,9 +115,24 @@ namespace RPGClone.EditorTools
                 throw new MissingReferenceException("BashVFX controller or profile reference is missing.");
             }
 
-            if (prefab.GetComponentsInChildren<ParticleSystem>(true).Length != 12)
+            ParticleSystem[] particles = prefab.GetComponentsInChildren<ParticleSystem>(true);
+            if (particles.Length != 15)
             {
-                throw new UnityException("BashVFX must contain exactly twelve bounded particle layers.");
+                throw new UnityException($"BashVFX must contain exactly fifteen bounded particle layers; found {particles.Length}.");
+            }
+
+            foreach (string worldLayerPath in new[]
+            {
+                "Visual Root/Ground Reaction/Environmental Ground Burst",
+                "Visual Root/Ground Reaction/Environmental Heavy Dust",
+                "Visual Root/Ground Reaction/Environmental Fine Dust"
+            })
+            {
+                ParticleSystem worldLayer = prefab.transform.Find(worldLayerPath)?.GetComponent<ParticleSystem>();
+                if (worldLayer == null || worldLayer.main.simulationSpace != ParticleSystemSimulationSpace.World)
+                {
+                    throw new UnityException($"Bash environmental layer must remain in world space: {worldLayerPath}");
+                }
             }
 
             if (prefab.GetComponentsInChildren<Light>(true).Length != 0
@@ -131,6 +155,19 @@ namespace RPGClone.EditorTools
                 if (AssetDatabase.LoadAssetAtPath<Material>($"{MaterialFolder}/{materialName}.mat") == null)
                 {
                     throw new MissingReferenceException($"Required Bash material is missing: {materialName}");
+                }
+            }
+
+            foreach (string sharedTexturePath in new[]
+            {
+                ChargeHeavyDustTexturePath,
+                ChargeFineDustTexturePath,
+                ChargeGroundBurstTexturePath
+            })
+            {
+                if (AssetDatabase.LoadAssetAtPath<Texture>(sharedTexturePath) == null)
+                {
+                    throw new MissingReferenceException($"Shared Warrior environmental texture is missing: {sharedTexturePath}");
                 }
             }
 
@@ -283,12 +320,20 @@ namespace RPGClone.EditorTools
                 ["Dust"] = CreateMaterial("Bash_Dust", shader, "Bash_DustPuffAtlas.png", new Color(0.72f, 0.68f, 0.6f, 0.72f), false, 0.92f),
                 ["DustRing"] = CreateMaterial("Bash_DustRing", shader, "Bash_DustRing.png", new Color(0.72f, 0.68f, 0.6f, 0.72f), false, 0.9f),
                 ["Debris"] = CreateMaterial("Bash_Debris", shader, "Bash_ImpactBurstAtlas.png", new Color(0.42f, 0.34f, 0.25f, 0.9f), false, 0.72f),
+                ["EnvironmentalGroundBurst"] = CreateMaterialFromPath("Bash_EnvironmentalGroundBurst", shader, ChargeGroundBurstTexturePath, Color.white, false, 0.9f),
+                ["EnvironmentalHeavyDust"] = CreateMaterialFromPath("Bash_EnvironmentalHeavyDust", shader, ChargeHeavyDustTexturePath, Color.white, false, 0.92f),
+                ["EnvironmentalFineDust"] = CreateMaterialFromPath("Bash_EnvironmentalFineDust", shader, ChargeFineDustTexturePath, Color.white, false, 0.94f),
                 ["Sparks"] = CreateMaterial("Bash_Sparks", shader, "Bash_MetallicSpark.png", Color.white, true, 1.25f),
                 ["Stun"] = CreateMaterial("Bash_StunStars", shader, "Bash_StunStar.png", Color.white, true, 1.08f)
             };
         }
 
         private static Material CreateMaterial(string name, Shader shader, string textureName, Color tint, bool additive, float brightness)
+        {
+            return CreateMaterialFromPath(name, shader, $"{TextureFolder}/{textureName}", tint, additive, brightness);
+        }
+
+        private static Material CreateMaterialFromPath(string name, Shader shader, string texturePath, Color tint, bool additive, float brightness)
         {
             string path = $"{MaterialFolder}/{name}.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -302,10 +347,10 @@ namespace RPGClone.EditorTools
                 material.shader = shader;
             }
 
-            Texture texture = AssetDatabase.LoadAssetAtPath<Texture>($"{TextureFolder}/{textureName}");
+            Texture texture = AssetDatabase.LoadAssetAtPath<Texture>(texturePath);
             if (texture == null)
             {
-                throw new MissingReferenceException($"Bash material source texture is missing: {textureName}");
+                throw new MissingReferenceException($"Bash material source texture is missing: {texturePath}");
             }
 
             material.SetTexture("_BaseMap", texture);
@@ -342,6 +387,9 @@ namespace RPGClone.EditorTools
                 ParticleSystem dust = CreateDustBurst(groundRoot, materials["Dust"]);
                 ParticleSystem ring = CreateDustRing(groundRoot, materials["DustRing"]);
                 ParticleSystem debris = CreateGroundDebris(groundRoot, materials["Debris"]);
+                ParticleSystem environmentalGroundBurst = CreateEnvironmentalGroundBurst(groundRoot, materials["EnvironmentalGroundBurst"]);
+                ParticleSystem environmentalHeavyDust = CreateEnvironmentalHeavyDust(groundRoot, materials["EnvironmentalHeavyDust"]);
+                ParticleSystem environmentalFineDust = CreateEnvironmentalFineDust(groundRoot, materials["EnvironmentalFineDust"]);
                 ParticleSystem stars = CreateStunStars(stunRoot, materials["Stun"]);
 
                 controller.ConfigureAuthoring(
@@ -361,9 +409,12 @@ namespace RPGClone.EditorTools
                     dust,
                     ring,
                     debris,
+                    environmentalGroundBurst,
+                    environmentalHeavyDust,
+                    environmentalFineDust,
                     stars);
 
-                root.AddComponent<MMOAbilityVfxLifetime>().Configure(2.25f, true, true);
+                root.AddComponent<MMOAbilityVfxLifetime>().Configure(2.6f, true, true);
                 GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
                 if (prefab == null)
                 {
@@ -577,6 +628,94 @@ namespace RPGClone.EditorTools
             ConfigureAtlas(system, 2, 2);
             ConfigureFadeAndScale(system, 0.84f, 1f, 0.3f, 0f, 0.68f);
             return system;
+        }
+
+        private static ParticleSystem CreateEnvironmentalGroundBurst(Transform parent, Material material)
+        {
+            ParticleSystem system = CreateOneShot(
+                "Environmental Ground Burst",
+                parent,
+                material,
+                0.46f,
+                2.4f,
+                1.72f,
+                8,
+                Color.white,
+                4);
+            ParticleSystem.MainModule main = system.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.gravityModifier = 0.12f;
+            ParticleSystem.ShapeModule shape = system.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Hemisphere;
+            shape.radius = 0.14f;
+            shape.scale = new Vector3(1f, 0.22f, 1f);
+            ParticleSystem.RotationOverLifetimeModule rotation = system.rotationOverLifetime;
+            rotation.enabled = true;
+            rotation.z = new ParticleSystem.MinMaxCurve(-1.4f, 1.4f);
+            ConfigureAtlas(system, 4, 1);
+            ConfigureFadeAndScale(system, 0.48f, 1f, 0.58f, 0f, 0.52f);
+            return system;
+        }
+
+        private static ParticleSystem CreateEnvironmentalHeavyDust(Transform parent, Material material)
+        {
+            ParticleSystem system = CreateOneShot(
+                "Environmental Heavy Dust",
+                parent,
+                material,
+                1.65f,
+                1.15f,
+                0.9f,
+                18,
+                Color.white,
+                2);
+            ConfigureEnvironmentalDust(system, 4, 2, 0.3f, 0.12f, 0.62f);
+            return system;
+        }
+
+        private static ParticleSystem CreateEnvironmentalFineDust(Transform parent, Material material)
+        {
+            ParticleSystem system = CreateOneShot(
+                "Environmental Fine Dust",
+                parent,
+                material,
+                2.25f,
+                0.55f,
+                0.55f,
+                12,
+                Color.white,
+                3);
+            ConfigureEnvironmentalDust(system, 4, 2, 0.24f, 0.58f, 0.7f);
+            return system;
+        }
+
+        private static void ConfigureEnvironmentalDust(
+            ParticleSystem system,
+            int columns,
+            int rows,
+            float radius,
+            float riseSpeed,
+            float startScale)
+        {
+            ParticleSystem.MainModule main = system.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            ParticleSystem.ShapeModule shape = system.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Hemisphere;
+            shape.radius = radius;
+            shape.scale = new Vector3(1f, 0.24f, 1f);
+            ParticleSystem.VelocityOverLifetimeModule velocity = system.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.space = ParticleSystemSimulationSpace.World;
+            velocity.y = riseSpeed;
+            ParticleSystem.NoiseModule noise = system.noise;
+            noise.enabled = true;
+            noise.strength = 0.28f;
+            noise.frequency = 0.42f;
+            noise.scrollSpeed = 0.18f;
+            ConfigureAtlas(system, columns, rows);
+            ConfigureFadeAndScale(system, startScale, 1f, 1.2f, 0.012f, 0.62f);
         }
 
         private static ParticleSystem CreateStunStars(Transform parent, Material material)

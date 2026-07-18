@@ -29,6 +29,9 @@ namespace RPGClone.Vfx.Warrior
         [SerializeField] private ParticleSystem dustBurst;
         [SerializeField] private ParticleSystem radialDustRing;
         [SerializeField] private ParticleSystem groundDebris;
+        [SerializeField] private ParticleSystem environmentalGroundBurst;
+        [SerializeField] private ParticleSystem environmentalHeavyDust;
+        [SerializeField] private ParticleSystem environmentalFineDust;
 
         [Header("Stun Layer")]
         [SerializeField] private ParticleSystem stunStars;
@@ -75,9 +78,17 @@ namespace RPGClone.Vfx.Warrior
                 stunAccentRoot.Rotate(Vector3.up, profile.StunOrbitDegreesPerSecond * Time.deltaTime, Space.Self);
             }
 
+            float environmentalDuration = Mathf.Max(
+                profile.EnvironmentalBurstLifetime + profile.EnvironmentalDustDelay,
+                profile.EnvironmentalHeavyDustLifetime + profile.EnvironmentalDustDelay,
+                profile.EnvironmentalFineDustLifetime + profile.EnvironmentalDustDelay);
+            float groundDuration = Mathf.Max(
+                profile.DustDuration + profile.GroundReactionDelay,
+                profile.DustRingDuration + profile.GroundReactionDelay,
+                environmentalDuration);
             float totalDuration = stunPlaying
-                ? Mathf.Max(profile.DustDuration + profile.GroundReactionDelay, profile.StunDuration + profile.StunDelay)
-                : Mathf.Max(profile.DustDuration, profile.DustRingDuration);
+                ? Mathf.Max(groundDuration, profile.StunDuration + profile.StunDelay)
+                : groundDuration;
             if (elapsed >= totalDuration + 0.08f)
             {
                 CompletePlayback();
@@ -115,6 +126,9 @@ namespace RPGClone.Vfx.Warrior
             PlayOneShot(dustBurst);
             PlayOneShot(radialDustRing);
             PlayOneShot(groundDebris);
+            PlayOneShot(environmentalGroundBurst);
+            PlayOneShot(environmentalHeavyDust);
+            PlayOneShot(environmentalFineDust);
             if (stunPlaying)
             {
                 PlayOneShot(stunStars);
@@ -161,6 +175,9 @@ namespace RPGClone.Vfx.Warrior
             ParticleSystem newDustBurst,
             ParticleSystem newRadialDustRing,
             ParticleSystem newGroundDebris,
+            ParticleSystem newEnvironmentalGroundBurst,
+            ParticleSystem newEnvironmentalHeavyDust,
+            ParticleSystem newEnvironmentalFineDust,
             ParticleSystem newStunStars)
         {
             profile = newProfile;
@@ -179,6 +196,9 @@ namespace RPGClone.Vfx.Warrior
             dustBurst = newDustBurst;
             radialDustRing = newRadialDustRing;
             groundDebris = newGroundDebris;
+            environmentalGroundBurst = newEnvironmentalGroundBurst;
+            environmentalHeavyDust = newEnvironmentalHeavyDust;
+            environmentalFineDust = newEnvironmentalFineDust;
             stunStars = newStunStars;
             CacheParticles(true);
         }
@@ -207,6 +227,9 @@ namespace RPGClone.Vfx.Warrior
             Color secondary = ApplyMaster(profile.SecondaryImpactColor, 1f);
             Color dust = ApplyMaster(profile.DustColor, 1f);
             Color debris = ApplyMaster(profile.DebrisColor, 1f);
+            Color environmentalBurst = ApplyMaster(profile.EnvironmentalBurstColor, 1f);
+            Color environmentalHeavyDustColor = ApplyMaster(profile.EnvironmentalHeavyDustColor, 1f);
+            Color environmentalFineDustColor = ApplyMaster(profile.EnvironmentalFineDustColor, 1f);
             Color spark = ApplyMaster(profile.SparkColor, 1f);
             Color stun = ApplyMaster(profile.StunColor, 1f);
 
@@ -239,6 +262,30 @@ namespace RPGClone.Vfx.Warrior
             ConfigureOneShot(radialDustRing, 1, profile.DustRingDuration, 0f, profile.DustRingRadius, ringColor, profile.GroundReactionDelay);
             ConfigureScaleCurve(radialDustRing, profile.DustRingStartScale, 1f, 1.08f);
             ConfigureOneShot(groundDebris, profile.DebrisCount, profile.DustDuration * 0.9f, profile.DebrisSpeed, profile.DustSize * 0.34f, debris, profile.GroundReactionDelay);
+            ConfigureOneShot(
+                environmentalGroundBurst,
+                profile.EnvironmentalBurstAmount,
+                profile.EnvironmentalBurstLifetime,
+                2.4f,
+                profile.EnvironmentalBurstSize,
+                environmentalBurst,
+                profile.EnvironmentalDustDelay);
+            ConfigureOneShot(
+                environmentalHeavyDust,
+                profile.EnvironmentalHeavyDustAmount,
+                profile.EnvironmentalHeavyDustLifetime,
+                1.15f,
+                profile.EnvironmentalHeavyDustSize,
+                environmentalHeavyDustColor,
+                profile.EnvironmentalDustDelay);
+            ConfigureOneShot(
+                environmentalFineDust,
+                profile.EnvironmentalFineDustAmount,
+                profile.EnvironmentalFineDustLifetime,
+                0.55f,
+                profile.EnvironmentalFineDustSize,
+                environmentalFineDustColor,
+                profile.EnvironmentalDustDelay + 0.025f);
 
             ConfigureOneShot(stunStars, profile.StunStarCount, profile.StunDuration, 0f, profile.StunStarSize, stun, profile.StunDelay);
             if (stunStars != null)

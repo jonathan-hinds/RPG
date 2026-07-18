@@ -18,7 +18,8 @@ Do not infer or roll stun success inside the VFX. Reproduce the `stunApplied` pr
 
 ## Tuning and pooling
 
-- Edit `BashVFX_Default.asset` for overall scale, brightness/tint, flash intensity, burst size/count, dark backplate scale, secondary-impact delay/size, punch overshoot, momentum streaks, ground debris, dust amount/size, radial dust-ring radius/opacity/duration, spark count/speed, stun stars/duration/orbit, and swing-arc size.
+- Edit `BashVFX_Default.asset` for overall scale, brightness/tint, flash intensity, burst size/count, dark backplate scale, secondary-impact delay/size, punch overshoot, momentum streaks, ground debris, dust amount/size, radial dust-ring radius/opacity/duration, environmental burst/heavy/fine dust, spark count/speed, stun stars/duration/orbit, and swing-arc size.
 - Subscribe to `Completed` or poll `ReadyForPool` before returning a normally completed instance. Call `ResetForPool()` before reuse.
-- Impact layers finish in under half a second. The physical stack is deliberately staggered: dark backplate, contact flash, primary burst, orange secondary echo, forward streaks, then ground debris and dust. Only the optional stun accent remains longer.
-- The prefab is procedural, unlit, light-free, animator-free, and uses twelve bounded particle layers suitable for an elevated MMORPG camera.
+- The contact layers finish in under half a second. The physical stack is deliberately staggered: dark backplate, contact flash, primary burst, orange secondary echo, forward streaks, then ground debris and dust. The added environmental ground burst, rolling heavy dust, and fine recovery dust continue settling for up to 2.25 seconds.
+- The three environmental additions use `ParticleSystemSimulationSpace.World`. They remain planted at the hit point even though the Bash hit wrapper is parented to the target. Charge's hand-painted ground-burst and dust atlases are reused through Bash-specific materials, keeping the Warrior VFX family visually consistent without duplicating textures.
+- The prefab is procedural, unlit, light-free, animator-free, and uses fifteen bounded particle layers suitable for an elevated MMORPG camera.
