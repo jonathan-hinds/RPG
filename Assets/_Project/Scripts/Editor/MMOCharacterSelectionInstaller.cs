@@ -26,6 +26,8 @@ namespace RPGClone.EditorTools
         private const string ItemFolder = ConfigFolder + "/Items";
         private const string ProgressionFolder = ConfigFolder + "/Progression";
         private const string ArchetypeFolder = ConfigFolder + "/Archetypes";
+        private const string AppearanceFolder = "Assets/Resources/RPGClone";
+        private const string PlayerVisualPrefabPath = RootFolder + "/Prefabs/Player/PlayerCapsule.prefab";
         private const string SceneFolder = "Assets/Scenes";
         private const string CharacterSelectionScenePath = SceneFolder + "/CharacterSelection.unity";
         private const string CharacterSelectionSceneName = "CharacterSelection";
@@ -39,9 +41,12 @@ namespace RPGClone.EditorTools
             AbilitySet abilities = CreateAbilities();
             MMOAbilityCatalog abilityCatalog = CreateAbilityCatalog(abilities.All);
             ProgressionSet progression = CreateProgression();
+            MMOCharacterAppearanceCatalog appearanceCatalog = CreateAppearanceCatalog();
             MMOCharacterArchetypeCatalog catalog = CreateArchetypes(abilities, progression);
-            CreateCharacterSelectionScene(catalog);
-            ConfigureGameplayScene(catalog, abilityCatalog);
+            MMOItemCatalog itemCatalog = AssetDatabase.LoadAssetAtPath<MMOItemCatalog>($"{ItemFolder}/Starter_Item_Catalog.asset");
+            GameObject playerVisualPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerVisualPrefabPath);
+            CreateCharacterSelectionScene(catalog, itemCatalog, appearanceCatalog, playerVisualPrefab);
+            ConfigureGameplayScene(catalog, itemCatalog, abilityCatalog, appearanceCatalog);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("Built character selection scene, race/class archetypes, abilities, and gameplay persistence hooks.");
@@ -56,6 +61,7 @@ namespace RPGClone.EditorTools
             CreateFolderIfMissing(ItemFolder);
             CreateFolderIfMissing(ProgressionFolder);
             CreateFolderIfMissing(ArchetypeFolder);
+            CreateFolderIfMissing(AppearanceFolder);
             CreateFolderIfMissing(SceneFolder);
         }
 
@@ -363,7 +369,72 @@ namespace RPGClone.EditorTools
                 classAbility,
                 new[] { abilities.AutoAttack, racial, classAbility });
             EditorUtility.SetDirty(archetype);
+            archetype.ConfigureCreationPreview(CreateCreationPreviewEquipment(characterClass, archetype.StartingEquipment));
             return archetype;
+        }
+
+        private static IEnumerable<MMOItemDefinition> CreateCreationPreviewEquipment(
+            MMOPlayableClass characterClass,
+            IReadOnlyList<MMOItemDefinition> startingEquipment)
+        {
+            string weight = characterClass switch
+            {
+                MMOPlayableClass.Mage => "Cloth",
+                MMOPlayableClass.Shaman => "Leather",
+                _ => "Mail"
+            };
+            List<MMOItemDefinition> items = new();
+            AddPreviewItem(items, $"{ItemFolder}/Ashguard_Vest_{weight}.asset");
+            AddPreviewItem(items, $"{ItemFolder}/Razorcrag_Grips_{weight}.asset");
+            AddPreviewItem(items, $"{ItemFolder}/Valley_Watch_Leggings_{weight}.asset");
+            AddPreviewItem(items, $"{ItemFolder}/Trailbreaker's_Boots_{weight}.asset");
+            if (startingEquipment != null)
+            {
+                foreach (MMOItemDefinition item in startingEquipment)
+                {
+                    if (item != null && !items.Contains(item))
+                    {
+                        items.Add(item);
+                    }
+                }
+            }
+
+            return items;
+        }
+
+        private static void AddPreviewItem(List<MMOItemDefinition> items, string assetPath)
+        {
+            MMOItemDefinition item = AssetDatabase.LoadAssetAtPath<MMOItemDefinition>(assetPath);
+            if (item != null)
+            {
+                items.Add(item);
+            }
+        }
+
+        private static MMOCharacterAppearanceCatalog CreateAppearanceCatalog()
+        {
+            string path = $"{AppearanceFolder}/Character_Appearance_Catalog.asset";
+            MMOCharacterAppearanceCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOCharacterAppearanceCatalog>(path);
+            if (catalog == null)
+            {
+                catalog = ScriptableObject.CreateInstance<MMOCharacterAppearanceCatalog>();
+                AssetDatabase.CreateAsset(catalog, path);
+            }
+
+            List<MMOHairstyleDefinition> hairstyles = new();
+            for (int index = 1; index <= 3; index++)
+            {
+                MMOHairstyleDefinition hairstyle = new();
+                hairstyle.Configure(
+                    $"hair_{index}",
+                    $"Hairstyle {index}",
+                    AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/PlayerWeaponStow/HairStyle{index}.fbx"));
+                hairstyles.Add(hairstyle);
+            }
+
+            catalog.Configure(hairstyles);
+            EditorUtility.SetDirty(catalog);
+            return catalog;
         }
 
         private static MMOCharacterProfile CreateProfile(MMOPlayableRace race, MMOPlayableClass characterClass)
@@ -419,7 +490,11 @@ namespace RPGClone.EditorTools
             return Color.Lerp(baseColor, classColor, 0.28f);
         }
 
-        private static void CreateCharacterSelectionScene(MMOCharacterArchetypeCatalog catalog)
+        private static void CreateCharacterSelectionScene(
+            MMOCharacterArchetypeCatalog catalog,
+            MMOItemCatalog itemCatalog,
+            MMOCharacterAppearanceCatalog appearanceCatalog,
+            GameObject playerVisualPrefab)
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -441,14 +516,14 @@ namespace RPGClone.EditorTools
             lightObject.transform.rotation = Quaternion.Euler(42f, -28f, 0f);
 
             GameObject previewRoot = new("Character Preview Root");
-            previewRoot.transform.position = new Vector3(0f, 0.95f, 0f);
+            previewRoot.transform.position = Vector3.zero;
 
             Canvas canvas = CreateCanvas("Character Select Canvas", 100);
             EnsureEventSystem();
 
             GameObject controllerObject = new("Character Selection Controller");
             MMOCharacterSelectionController controller = controllerObject.AddComponent<MMOCharacterSelectionController>();
-            controller.Configure(catalog, GameplaySceneName);
+            controller.Configure(catalog, itemCatalog, appearanceCatalog, playerVisualPrefab, GameplaySceneName);
             SetObjectReference(controller, "previewRoot", previewRoot.transform);
             SetObjectReference(controller, "previewCamera", camera);
 
@@ -456,7 +531,11 @@ namespace RPGClone.EditorTools
             AddSceneToBuildSettings(CharacterSelectionScenePath, 0);
         }
 
-        private static void ConfigureGameplayScene(MMOCharacterArchetypeCatalog catalog, MMOAbilityCatalog abilityCatalog)
+        private static void ConfigureGameplayScene(
+            MMOCharacterArchetypeCatalog catalog,
+            MMOItemCatalog itemCatalog,
+            MMOAbilityCatalog abilityCatalog,
+            MMOCharacterAppearanceCatalog appearanceCatalog)
         {
             if (!File.Exists(AssetPathToFullPath(GameplayScenePath)))
             {
@@ -475,8 +554,9 @@ namespace RPGClone.EditorTools
                 }
 
                 persistence.SetArchetypeCatalog(catalog);
-                persistence.SetItemCatalog(AssetDatabase.LoadAssetAtPath<MMOItemCatalog>($"{ItemFolder}/Starter_Item_Catalog.asset"));
+                persistence.SetItemCatalog(itemCatalog);
                 persistence.SetAbilityCatalog(abilityCatalog);
+                persistence.SetAppearanceCatalog(appearanceCatalog);
                 EditorUtility.SetDirty(persistence);
 
                 Component redirector = EnsureComponentByTypeName(player, "RPGClone.CharacterSelection.MMOCharacterSelectionRedirector");

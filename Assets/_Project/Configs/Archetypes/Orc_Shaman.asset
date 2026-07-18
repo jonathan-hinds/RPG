@@ -33,3 +33,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 326308fea69a7ca41995a089a5bc5be7, type: 2}
   - {fileID: 11400000, guid: 25dace770860f3047852a681083c0626, type: 2}
   startingWeaponSkills: 010000000400000007000000
+  creationPreviewEquipment:
+  - {fileID: 11400000, guid: 3d377abd44eaf11448105138510afa0f, type: 2}
+  - {fileID: 11400000, guid: 1c7af54dbd8412e4dab49867c1eac580, type: 2}
+  - {fileID: 11400000, guid: 4d3f8739520be7747bdc30fb5f3f8513, type: 2}
+  - {fileID: 11400000, guid: e41139562aeb4034b8816b4663f76275, type: 2}
+  - {fileID: 11400000, guid: 326308fea69a7ca41995a089a5bc5be7, type: 2}
+  - {fileID: 11400000, guid: 25dace770860f3047852a681083c0626, type: 2}

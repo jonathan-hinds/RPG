@@ -179,6 +179,7 @@ namespace RPGClone.Multiplayer
                 hash = hash * 31 + StableHash(characterData.characterName);
                 hash = hash * 31 + (int)characterData.race;
                 hash = hash * 31 + (int)characterData.characterClass;
+                hash = hash * 31 + StableHash(characterData.hairstyleId);
                 hash = hash * 31 + characterData.level;
                 if (characterData.learnedAbilityIds != null)
                 {

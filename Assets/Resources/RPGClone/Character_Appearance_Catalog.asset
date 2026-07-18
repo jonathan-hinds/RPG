@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42e24b5b87603f64c8c99bc649434c81, type: 3}
+  m_Name: Character_Appearance_Catalog
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterAppearanceCatalog
+  hairstyles:
+  - hairstyleId: hair_1
+    displayName: Hairstyle 1
+    modelPrefab: {fileID: 919132149155446097, guid: 17491b5701bc95a4d9788ad39961c40b, type: 3}
+  - hairstyleId: hair_2
+    displayName: Hairstyle 2
+    modelPrefab: {fileID: 919132149155446097, guid: d349b1ce0fcd1744f8a2eb96c8f07389, type: 3}
+  - hairstyleId: hair_3
+    displayName: Hairstyle 3
+    modelPrefab: {fileID: 919132149155446097, guid: 739f3726c1a5df0459e1ac277d922014, type: 3}

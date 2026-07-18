@@ -24,6 +24,7 @@ namespace RPGClone.CharacterSelection
         public string normalizedCharacterName;
         public MMOPlayableRace race;
         public MMOPlayableClass characterClass;
+        public string hairstyleId = "hair_1";
         public int level = 1;
         public int currentExperience;
         public int totalExperienceEarned;

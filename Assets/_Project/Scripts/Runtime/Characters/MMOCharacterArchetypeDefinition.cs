@@ -23,6 +23,9 @@ namespace RPGClone.Characters
         [SerializeField] private List<MMOItemStack> startingInventoryItems = new();
         [SerializeField] private List<MMOItemDefinition> startingEquipment = new();
         [SerializeField] private List<MMOWeaponType> startingWeaponSkills = new();
+        [Header("Character Creation Preview")]
+        [Tooltip("Presentation-only equipment shown while choosing this archetype. These items are not granted to new characters.")]
+        [SerializeField] private List<MMOItemDefinition> creationPreviewEquipment = new();
 
         public MMOPlayableRace Race => race;
         public MMOPlayableClass CharacterClass => characterClass;
@@ -38,6 +41,7 @@ namespace RPGClone.Characters
         public IReadOnlyList<MMOItemStack> StartingInventoryItems => startingInventoryItems;
         public IReadOnlyList<MMOItemDefinition> StartingEquipment => startingEquipment;
         public IReadOnlyList<MMOWeaponType> StartingWeaponSkills => startingWeaponSkills;
+        public IReadOnlyList<MMOItemDefinition> CreationPreviewEquipment => creationPreviewEquipment;
 
         public void Configure(
             MMOPlayableRace newRace,
@@ -81,6 +85,13 @@ namespace RPGClone.Characters
             startingWeaponSkills = newStartingWeaponSkills != null
                 ? new List<MMOWeaponType>(newStartingWeaponSkills)
                 : new List<MMOWeaponType>();
+        }
+
+        public void ConfigureCreationPreview(IEnumerable<MMOItemDefinition> newCreationPreviewEquipment)
+        {
+            creationPreviewEquipment = newCreationPreviewEquipment != null
+                ? new List<MMOItemDefinition>(newCreationPreviewEquipment)
+                : new List<MMOItemDefinition>();
         }
     }
 }

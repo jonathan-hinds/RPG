@@ -24,6 +24,10 @@ namespace RPGClone.Player
         private MMOCombatant subscribedCombatant;
         private IMMOPlayerLocomotionSource locomotionSource;
         private int lastEquipmentSignature;
+        private bool hasAttachmentPresentationOverride;
+        private MMOEquipmentAttachmentPresentationState attachmentPresentationOverride;
+        private readonly Dictionary<MMOEquipmentVisualDefinition, MMOEquipmentAttachmentPresentationState>
+            attachmentPresentationOverridesByVisual = new();
 
         private void Awake()
         {
@@ -84,13 +88,45 @@ namespace RPGClone.Player
             equipment = newEquipment;
             combatant = GetComponent<MMOCombatant>();
             locomotionSource = GetComponent<MMOPlayerMotor>();
-            bodyPartSlots = newBodyPartSlots != null
-                ? new List<MMOBodyPartRendererSlot>(newBodyPartSlots)
-                : new List<MMOBodyPartRendererSlot>();
+            // A null collection means "keep the prefab's authored bindings". Preview
+            // actors only replace the equipment source; clearing these bindings makes
+            // the automatic fallback discover already-instantiated gear as body parts.
+            if (newBodyPartSlots != null)
+            {
+                bodyPartSlots = new List<MMOBodyPartRendererSlot>(newBodyPartSlots);
+            }
             EnsureBodyPartSlots();
             CacheOriginalMaterials();
             SubscribeToEquipment();
             SubscribeToCombatant();
+            RebuildEquipmentVisuals();
+        }
+
+        public void SetAttachmentPresentationOverride(MMOEquipmentAttachmentPresentationState? presentationState)
+        {
+            hasAttachmentPresentationOverride = presentationState.HasValue;
+            attachmentPresentationOverride = presentationState.GetValueOrDefault();
+            RebuildEquipmentVisuals();
+        }
+
+        public void SetAttachmentPresentationOverride(
+            MMOEquipmentVisualDefinition visualDefinition,
+            MMOEquipmentAttachmentPresentationState? presentationState)
+        {
+            if (visualDefinition == null)
+            {
+                return;
+            }
+
+            if (presentationState.HasValue)
+            {
+                attachmentPresentationOverridesByVisual[visualDefinition] = presentationState.Value;
+            }
+            else
+            {
+                attachmentPresentationOverridesByVisual.Remove(visualDefinition);
+            }
+
             RebuildEquipmentVisuals();
         }
 
@@ -176,7 +212,7 @@ namespace RPGClone.Player
 
             if (!PrepareSkinnedBodyPartVisual(instance, liveSkeleton, visualDefinition))
             {
-                Destroy(instance);
+                DestroyVisualObject(instance);
                 return;
             }
 
@@ -190,18 +226,11 @@ namespace RPGClone.Player
 
         private Dictionary<string, Transform> BuildLiveSkeletonLookup()
         {
-            Dictionary<string, Transform> transformsByName = new(StringComparer.Ordinal);
-            foreach (Transform candidate in GetComponentsInChildren<Transform>(true))
-            {
-                if (candidate == null || candidate.GetComponentInParent<MMOEquipmentVisualInstanceMarker>() != null)
-                {
-                    continue;
-                }
-
-                transformsByName.TryAdd(candidate.name, candidate);
-            }
-
-            return transformsByName;
+            return MMOSkinnedVisualBindingUtility.BuildSkeletonLookup(
+                transform,
+                candidate => candidate == null
+                    || candidate.GetComponentInParent<MMOEquipmentVisualInstanceMarker>() != null
+                    || candidate.GetComponentInParent<MMOAppearanceVisualInstanceMarker>() != null);
         }
 
         private bool PrepareSkinnedBodyPartVisual(
@@ -263,30 +292,7 @@ namespace RPGClone.Player
             IReadOnlyDictionary<string, Transform> liveSkeleton,
             MMOEquipmentVisualDefinition visualDefinition)
         {
-            Transform[] sourceBones = skinnedRenderer.bones;
-            if (sourceBones == null || sourceBones.Length == 0)
-            {
-                Debug.LogWarning(
-                    $"Skinned mesh '{skinnedRenderer.name}' on equipment visual '{visualDefinition.name}' has no bone bindings.",
-                    this);
-                return false;
-            }
-
-            Transform[] reboundBones = new Transform[sourceBones.Length];
-            List<string> missingBoneNames = new();
-            for (int i = 0; i < sourceBones.Length; i++)
-            {
-                string boneName = sourceBones[i] != null ? sourceBones[i].name : string.Empty;
-                if (string.IsNullOrEmpty(boneName) || !liveSkeleton.TryGetValue(boneName, out Transform liveBone))
-                {
-                    missingBoneNames.Add(string.IsNullOrEmpty(boneName) ? $"index {i}" : boneName);
-                    continue;
-                }
-
-                reboundBones[i] = liveBone;
-            }
-
-            if (missingBoneNames.Count > 0)
+            if (!MMOSkinnedVisualBindingUtility.TryRebind(skinnedRenderer, liveSkeleton, out List<string> missingBoneNames))
             {
                 Debug.LogWarning(
                     $"Equipment visual '{visualDefinition.name}' could not bind skinned mesh '{skinnedRenderer.name}'. " +
@@ -294,15 +300,6 @@ namespace RPGClone.Player
                     this);
                 return false;
             }
-
-            Transform reboundRootBone = null;
-            if (skinnedRenderer.rootBone != null)
-            {
-                liveSkeleton.TryGetValue(skinnedRenderer.rootBone.name, out reboundRootBone);
-            }
-
-            skinnedRenderer.bones = reboundBones;
-            skinnedRenderer.rootBone = reboundRootBone ?? reboundBones[0];
             return true;
         }
 
@@ -310,7 +307,7 @@ namespace RPGClone.Player
             MMOEquipmentVisualDefinition visualDefinition,
             IReadOnlyDictionary<string, Transform> liveSkeleton)
         {
-            MMOEquipmentAttachmentPresentationState presentationState = ResolveAttachmentPresentationState();
+            MMOEquipmentAttachmentPresentationState presentationState = ResolveAttachmentPresentationState(visualDefinition);
             GameObject modelPrefab = visualDefinition.GetAttachmentModelPrefab(presentationState);
             if (modelPrefab == null)
             {
@@ -359,7 +356,7 @@ namespace RPGClone.Player
                 Transform child = children[i];
                 if (child != null && child != instance.transform && child.CompareTag(EditorOnlyTag))
                 {
-                    Destroy(child.gameObject);
+                    DestroyVisualObject(child.gameObject);
                 }
             }
         }
@@ -486,7 +483,7 @@ namespace RPGClone.Player
                 GameObject instance = activeVisualInstances[i];
                 if (instance != null)
                 {
-                    Destroy(instance);
+                    DestroyVisualObject(instance);
                 }
             }
 
@@ -498,7 +495,7 @@ namespace RPGClone.Player
                 Material material = activeMaterialInstances[i];
                 if (material != null)
                 {
-                    Destroy(material);
+                    DestroyVisualObject(material);
                 }
             }
 
@@ -512,8 +509,25 @@ namespace RPGClone.Player
             {
                 if (markers[i] != null)
                 {
-                    Destroy(markers[i].gameObject);
+                    DestroyVisualObject(markers[i].gameObject);
                 }
+            }
+        }
+
+        private static void DestroyVisualObject(UnityEngine.Object visualObject)
+        {
+            if (visualObject == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(visualObject);
+            }
+            else
+            {
+                DestroyImmediate(visualObject);
             }
         }
 
@@ -770,6 +784,7 @@ namespace RPGClone.Player
 
                     hash = hash * 31 + (int)equippedItem.SlotType;
                     hash = hash * 31 + (equippedItem.Item != null ? equippedItem.Item.ItemId.GetHashCode() : 0);
+                    hash = hash * 31 + (int)ResolveAttachmentPresentationState(equippedItem.Item?.EquipmentVisual);
                 }
 
                 return hash;
@@ -781,8 +796,20 @@ namespace RPGClone.Player
             return combatant != null && combatant.IsInCombat;
         }
 
-        private MMOEquipmentAttachmentPresentationState ResolveAttachmentPresentationState()
+        private MMOEquipmentAttachmentPresentationState ResolveAttachmentPresentationState(
+            MMOEquipmentVisualDefinition visualDefinition = null)
         {
+            if (visualDefinition != null
+                && attachmentPresentationOverridesByVisual.TryGetValue(visualDefinition, out MMOEquipmentAttachmentPresentationState visualOverride))
+            {
+                return visualOverride;
+            }
+
+            if (hasAttachmentPresentationOverride)
+            {
+                return attachmentPresentationOverride;
+            }
+
             return MMOEquipmentAttachmentPresentationResolver.Resolve(
                 IsInCombat(),
                 locomotionSource != null && locomotionSource.IsAirborne,

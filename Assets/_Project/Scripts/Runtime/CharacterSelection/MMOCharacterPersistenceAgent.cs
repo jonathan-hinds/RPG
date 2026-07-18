@@ -24,6 +24,7 @@ namespace RPGClone.CharacterSelection
         [SerializeField] private MMOCharacterArchetypeCatalog archetypeCatalog;
         [SerializeField] private MMOItemCatalog itemCatalog;
         [SerializeField] private MMOAbilityCatalog abilityCatalog;
+        [SerializeField] private MMOCharacterAppearanceCatalog appearanceCatalog;
         private MMOCharacterIdentity identity;
         private MMOExperienceComponent experience;
         private MMOInventoryContainer inventory;
@@ -142,6 +143,11 @@ namespace RPGClone.CharacterSelection
             abilityCatalog = catalog;
         }
 
+        public void SetAppearanceCatalog(MMOCharacterAppearanceCatalog catalog)
+        {
+            appearanceCatalog = catalog;
+        }
+
         public void ApplySelectedCharacter()
         {
             if (isRemoteSessionReplica || appliedSession || !MMOCharacterSession.HasSelectedCharacter)
@@ -176,6 +182,7 @@ namespace RPGClone.CharacterSelection
             }
 
             ApplyCharacterVisuals(saveData.race, archetype);
+            ApplyCharacterAppearance(saveData);
             ApplyInventory(saveData);
             ApplyEquipment(saveData);
             ApplyWeaponSkills(saveData, archetype);
@@ -300,6 +307,7 @@ namespace RPGClone.CharacterSelection
             }
 
             ApplyCharacterVisuals(saveData.race, archetype);
+            ApplyCharacterAppearance(saveData);
             if (includeInventory)
             {
                 ApplyInventory(saveData);
@@ -336,6 +344,12 @@ namespace RPGClone.CharacterSelection
             {
                 saveData.race = customization.Race;
                 saveData.characterClass = customization.CharacterClass;
+            }
+
+            MMOCharacterAppearanceVisuals appearanceVisuals = GetComponent<MMOCharacterAppearanceVisuals>();
+            if (appearanceVisuals != null)
+            {
+                saveData.hairstyleId = appearanceVisuals.HairstyleId;
             }
 
             saveData.level = identity.Level;
@@ -380,6 +394,7 @@ namespace RPGClone.CharacterSelection
         {
             destination.race = source.race;
             destination.characterClass = source.characterClass;
+            destination.hairstyleId = source.hairstyleId;
             destination.level = source.level;
             destination.currentExperience = source.currentExperience;
             destination.totalExperienceEarned = source.totalExperienceEarned;
@@ -408,6 +423,7 @@ namespace RPGClone.CharacterSelection
 
             destination.characterId = source.characterId;
             destination.accountId = MMOSocialIdentityService.AccountId;
+            destination.hairstyleId = source.hairstyleId;
             if (MMOCharacterNameUtility.TryValidate(
                     source.characterName,
                     out string displayName,
@@ -878,6 +894,14 @@ namespace RPGClone.CharacterSelection
         private MMOItemDefinition ResolveItem(string itemId)
         {
             return itemCatalog != null ? itemCatalog.FindById(itemId) : null;
+        }
+
+        private void ApplyCharacterAppearance(MMOCharacterSaveData saveData)
+        {
+            appearanceCatalog ??= Resources.Load<MMOCharacterAppearanceCatalog>("RPGClone/Character_Appearance_Catalog");
+            MMOCharacterAppearanceVisuals appearanceVisuals = GetComponent<MMOCharacterAppearanceVisuals>()
+                ?? gameObject.AddComponent<MMOCharacterAppearanceVisuals>();
+            appearanceVisuals.Configure(appearanceCatalog, saveData != null ? saveData.hairstyleId : string.Empty);
         }
 
         private MMOAbilityDefinition ResolveAbility(string abilityId)

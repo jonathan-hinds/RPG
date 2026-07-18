@@ -32,3 +32,9 @@ MonoBehaviour:
   startingEquipment:
   - {fileID: 11400000, guid: 2938ced4f0a5e7943a6093fa9eac5894, type: 2}
   startingWeaponSkills: 0100000006000000
+  creationPreviewEquipment:
+  - {fileID: 11400000, guid: 59e3098987740d44c85edce444e450f8, type: 2}
+  - {fileID: 11400000, guid: a8e15ae34c4f78e4e953f7254b3e1737, type: 2}
+  - {fileID: 11400000, guid: 5ac5024d1d564144e9d2c50f56a2f337, type: 2}
+  - {fileID: 11400000, guid: 8da82982c13966840b66b02cc0b9ea83, type: 2}
+  - {fileID: 11400000, guid: 2938ced4f0a5e7943a6093fa9eac5894, type: 2}
