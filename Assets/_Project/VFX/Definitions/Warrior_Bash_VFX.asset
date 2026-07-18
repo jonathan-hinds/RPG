@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.MMOAbilityVfxDefinition
   castingPrefab: {fileID: 0}
   castPrefab: {fileID: 0}
-  hitPrefab: {fileID: 9213798051702445802, guid: 10568a275b224724d877c9d6cc70e51f, type: 3}
+  hitPrefab: {fileID: 4803807507071585627, guid: 9a63d24aa96075143bc732f0fb7f68b1, type: 3}
   attachCastingToCaster: 1
-  useHandCastingAnchors: 1
+  useHandCastingAnchors: 0
   attachHitToTarget: 1
   alignCastPrefabToTarget: 1
   castingLocalOffset: {x: 0, y: 1.15, z: 0.42}

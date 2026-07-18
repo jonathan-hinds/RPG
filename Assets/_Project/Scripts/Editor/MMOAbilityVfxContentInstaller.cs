@@ -18,6 +18,7 @@ namespace RPGClone.EditorTools
         private const string AbilityFolder = "Assets/_Project/Configs/Abilities";
         private const string HealingBeamPrefabPath = "Assets/_Project/VFX/HealingBeam/Prefabs/HealingBeamVFX.prefab";
         private const string HealingBeamChargePrefabPath = "Assets/_Project/VFX/HealingBeam/Prefabs/HealingBeamChargeVFX.prefab";
+        private const string BashPrefabPath = "Assets/_Project/VFX/Bash/Prefabs/BashVFX.prefab";
 
         [MenuItem("Tools/RPG Clone/VFX/Install Ability VFX Content")]
         public static void InstallAbilityVfxContent()
@@ -135,7 +136,13 @@ namespace RPGClone.EditorTools
                 ["shaman_earthquake"] = ConfigureDefinition("Shaman_Earthquake_VFX", null, null, prefabs.Earthquake, 0.02f, false, false),
                 ["warrior_thunderclap"] = ConfigureDefinition("Warrior_Thunderclap_VFX", null, null, prefabs.Thunderclap, 0.02f, false, false),
                 ["warrior_gouge"] = ConfigureDefinition("Warrior_Gouge_VFX", null, null, prefabs.PhysicalImpact, 0.04f, false),
-                ["warrior_bash"] = ConfigureDefinition("Warrior_Bash_VFX", null, null, prefabs.PhysicalImpact, 0.04f, false),
+                ["warrior_bash"] = ConfigureDefinition(
+                    "Warrior_Bash_VFX",
+                    null,
+                    null,
+                    AssetDatabase.LoadAssetAtPath<GameObject>(BashPrefabPath) ?? prefabs.PhysicalImpact,
+                    0.04f,
+                    false),
                 ["warrior_charge"] = ConfigureDefinition("Warrior_Charge_VFX", null, prefabs.ChargeDust, prefabs.PhysicalImpact, 0.02f, false),
                 ["warrior_berzerkitis"] = ConfigureDefinition("Warrior_Berzerkitis_VFX", null, null, prefabs.BloodFury, 0.02f, false),
                 ["orc_blood_fury"] = ConfigureDefinition("Orc_Blood_Fury_VFX", null, null, prefabs.BloodFury, 0.02f, false),

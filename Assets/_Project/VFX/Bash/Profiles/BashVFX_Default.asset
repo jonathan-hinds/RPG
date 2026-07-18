@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47c583247cc1b8c48a47342cbccca334, type: 3}
+  m_Name: BashVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.BashVFXProfile
+  overallScale: 1
+  overallBrightness: 1
+  colorTint: {r: 1, g: 1, b: 1, a: 1}
+  flashIntensity: 1.35
+  flashSize: 0.9
+  impactBurstSize: 1.35
+  burstPieceCount: 9
+  directionalForceDistance: 1.25
+  dustAmount: 8
+  dustSize: 0.52
+  dustRingRadius: 2.25
+  dustRingStartScale: 0.24
+  dustRingOpacity: 0.72
+  dustRingDuration: 0.42
+  sparkCount: 6
+  sparkSpeed: 5.8
+  sparkSize: 0.16
+  showStunAccentByDefault: 1
+  stunStarCount: 5
+  stunDuration: 1.15
+  stunStarSize: 0.2
+  stunHeight: 0.9
+  stunOrbitRadius: 0.38
+  stunOrbitDegreesPerSecond: 82
+  stunBobAmount: 0.055
+  stunBobSpeed: 3.6
+  swingArcSize: 1.15
+  swingDuration: 0.16
+  flashDuration: 0.12
+  impactDuration: 0.34
+  dustDuration: 0.48
+  flashColor: {r: 1.45, g: 1.28, b: 0.78, a: 1}
+  impactColor: {r: 1.1, g: 0.72, b: 0.24, a: 0.92}
+  dustColor: {r: 0.62, g: 0.58, b: 0.5, a: 0.7}
+  sparkColor: {r: 1.35, g: 1.08, b: 0.58, a: 1}
+  stunColor: {r: 1.2, g: 0.88, b: 0.26, a: 0.84}

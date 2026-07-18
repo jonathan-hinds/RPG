@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f19b6985de7578844a289965931ed701, type: 3}
   m_Name: Mage_Fireball_VFX
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.MMOAbilityVfxDefinition
-  castingPrefab: {fileID: 3045343665747141883, guid: bc793bc955bd26842bfa2dc855924a0e, type: 3}
-  castPrefab: {fileID: 5342568505041850917, guid: b5763e665cf541c4282046ff3b0696cd, type: 3}
-  hitPrefab: {fileID: 6321964207988828930, guid: 5125564005443344284685bc03768065, type: 3}
+  castingPrefab: {fileID: 5369330260976567712, guid: f69adac3974f8d8439cd52735aae4cd9, type: 3}
+  castPrefab: {fileID: 2844664924683594987, guid: 344f9500233fcbe408d176823366725e, type: 3}
+  hitPrefab: {fileID: 2013901662083440432, guid: 7b89b23e1bd9a014bbc272907542d781, type: 3}
   attachCastingToCaster: 1
   useHandCastingAnchors: 1
   attachHitToTarget: 1
