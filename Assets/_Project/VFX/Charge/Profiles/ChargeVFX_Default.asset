@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be1a90269e4afc24eb1368ccdd17d3c8, type: 3}
+  m_Name: ChargeVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ChargeVFXProfile
+  overallScale: 1
+  overallBrightness: 1.08
+  maximumTravelDuration: 6
+  launchDustAmount: 36
+  launchDirtAmount: 14
+  launchRockAmount: 8
+  launchDustSize: 1.42
+  dustEventSpawnRate: 26
+  heavyDustLifetime: 1.65
+  fineDustLifetime: 2.25
+  dirtChunkFrequency: 9
+  dirtChunkSize: 0.27
+  groundScrapeFrequency: 32
+  trailSpacing: 0.28
+  heavyDustSize: 0.9
+  fineDustSize: 0.54
+  dustRiseSpeed: 0.72
+  trailSpreadSpeed: 1.3
+  shockwaveSize: 5.9
+  shockwaveSpeed: 13.5
+  shockwaveLifetime: 0.5
+  speedStreakIntensity: 1.25
+  airCompressionFrequency: 12
+  armorGlintFrequency: 7
+  speedStreakLength: 1.85
+  collisionBurstSize: 2.5
+  collisionDustAmount: 52
+  collisionShardAmount: 22
+  collisionDebrisAmount: 24
+  collisionDustLifetime: 2.4
+  recoveryDuration: 3.8
+  recoveryDustAmount: 16
+  heavyDustColor: {r: 0.62, g: 0.48, b: 0.31, a: 0.72}
+  fineDustColor: {r: 0.82, g: 0.7, b: 0.5, a: 0.48}
+  dirtColor: {r: 0.34, g: 0.22, b: 0.13, a: 0.94}
+  rockColor: {r: 0.38, g: 0.37, b: 0.35, a: 0.96}
+  shockwaveColor: {r: 0.9, g: 0.78, b: 0.57, a: 0.58}
+  compressedAirColor: {r: 1, g: 0.93, b: 0.78, a: 0.3}
+  speedStreakColor: {r: 1, g: 0.9, b: 0.7, a: 0.48}
+  impactColor: {r: 1, g: 0.76, b: 0.38, a: 0.92}
+  metallicColor: {r: 1, g: 0.94, b: 0.76, a: 0.82}

@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: Warrior_Charge_VFX
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.MMOAbilityVfxDefinition
   castingPrefab: {fileID: 0}
-  castPrefab: {fileID: 1844348692701346095, guid: 7799ccbf7bb65124e85499d1bedd1bab, type: 3}
-  hitPrefab: {fileID: 9213798051702445802, guid: 10568a275b224724d877c9d6cc70e51f, type: 3}
+  castPrefab: {fileID: 2637542240035208233, guid: dddee4aac2e49f64eb7275431af1a364, type: 3}
+  hitPrefab: {fileID: 0}
   attachCastingToCaster: 1
-  useHandCastingAnchors: 1
-  attachHitToTarget: 1
+  useHandCastingAnchors: 0
+  attachHitToTarget: 0
   alignCastPrefabToTarget: 1
-  castingLocalOffset: {x: 0, y: 1.15, z: 0.42}
+  castingLocalOffset: {x: 0, y: 0.06, z: 0}
   handCastingLocalOffset: {x: 0, y: 0, z: 0}
-  castOriginLocalOffset: {x: 0, y: 1.18, z: 0.48}
-  hitLocalOffset: {x: 0, y: 0.85, z: 0}
-  hitDelaySeconds: 0.02
+  castOriginLocalOffset: {x: 0, y: 0.06, z: 0}
+  hitLocalOffset: {x: 0, y: 0, z: 0}
+  hitDelaySeconds: 0
   castPrefabControlsHitTiming: 0
