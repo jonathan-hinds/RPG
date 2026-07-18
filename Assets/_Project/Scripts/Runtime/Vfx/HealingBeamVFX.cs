@@ -32,6 +32,7 @@ namespace RPGClone.Vfx.Healing
         [SerializeField] private LineRenderer outerGlow;
         [SerializeField] private LineRenderer flowingRibbon;
         [SerializeField] private LineRenderer innerCore;
+        [SerializeField] private Renderer launchHeadGlow;
 
         [Header("Caster Effect")]
         [SerializeField] private Transform casterEffectRoot;
@@ -39,6 +40,7 @@ namespace RPGClone.Vfx.Healing
         [SerializeField] private ParticleSystem casterOriginFlash;
         [SerializeField] private ParticleSystem casterOrbitingStars;
         [SerializeField] private ParticleSystem casterInwardOrbs;
+        [SerializeField] private ParticleSystem casterLeaves;
 
         [Header("Target Effect")]
         [SerializeField] private Transform targetEffectRoot;
@@ -52,17 +54,37 @@ namespace RPGClone.Vfx.Healing
         [SerializeField] private Transform healTickEffectRoot;
         [SerializeField] private ParticleSystem targetBurst;
         [SerializeField] private ParticleSystem tickSparks;
+        [SerializeField] private ParticleSystem impactLeaves;
+        [SerializeField] private Transform impactHaloTransform;
+        [SerializeField] private Renderer impactHalo;
+
+        [Header("Target Impact Echo")]
+        [SerializeField] private Transform targetImpactEchoRoot;
+        [SerializeField] private Renderer targetImpactOrb;
+        [SerializeField] private Transform targetImpactInnerRingTransform;
+        [SerializeField] private Renderer targetImpactInnerRing;
+        [SerializeField] private Transform targetImpactOuterRingTransform;
+        [SerializeField] private Renderer targetImpactOuterRing;
+        [SerializeField] private ParticleSystem targetImpactSparkles;
+        [SerializeField] private ParticleSystem targetImpactDust;
 
         private MaterialPropertyBlock outerGlowProperties;
         private MaterialPropertyBlock ribbonProperties;
         private MaterialPropertyBlock coreProperties;
+        private MaterialPropertyBlock launchHeadProperties;
         private MaterialPropertyBlock casterGlowProperties;
         private MaterialPropertyBlock targetGlowProperties;
         private MaterialPropertyBlock groundRingProperties;
+        private MaterialPropertyBlock impactHaloProperties;
+        private MaterialPropertyBlock targetImpactOrbProperties;
+        private MaterialPropertyBlock targetImpactInnerRingProperties;
+        private MaterialPropertyBlock targetImpactOuterRingProperties;
 
         private Transform casterAttachment;
         private Transform targetAttachment;
         private ParticleSystem[] loopingParticles;
+        private ParticleSystem[] casterLoopingParticles;
+        private ParticleSystem[] targetLoopingParticles;
         private ParticleSystem[] allParticles;
         private Vector3[] beamPositions = Array.Empty<Vector3>();
         private PlaybackState state;
@@ -71,8 +93,12 @@ namespace RPGClone.Vfx.Healing
         private float stateStartOpacity;
         private float opacity;
         private float pulseStartedAt;
+        private float launchStartedAt;
+        private float impactStartedAt = float.NegativeInfinity;
         private float tickFlashStartedAt = float.NegativeInfinity;
         private bool pulseActive;
+        private bool impactPending;
+        private bool targetArrived;
         private Vector3 casterGlowBaseLocalScale = Vector3.one;
 
         public event Action<HealingBeamVFX> Completed;
@@ -147,9 +173,13 @@ namespace RPGClone.Vfx.Healing
             stateStartedAt = Time.time;
             state = PlaybackState.FadingIn;
             pulseActive = false;
+            impactPending = false;
+            targetArrived = false;
+            launchStartedAt = Time.time;
+            impactStartedAt = float.NegativeInfinity;
             tickFlashStartedAt = float.NegativeInfinity;
 
-            PlayLoopingParticles();
+            PlayLoopingParticles(casterLoopingParticles);
             PlayOneShot(casterOriginFlash);
             UpdateBeam();
             UpdatePersistentVisuals();
@@ -163,10 +193,8 @@ namespace RPGClone.Vfx.Healing
             }
 
             pulseStartedAt = Time.time;
-            tickFlashStartedAt = Time.time;
             pulseActive = true;
-            PlayOneShot(targetBurst);
-            PlayOneShot(tickSparks);
+            impactPending = true;
         }
 
         public void Stop()
@@ -201,11 +229,13 @@ namespace RPGClone.Vfx.Healing
             LineRenderer newOuterGlow,
             LineRenderer newFlowingRibbon,
             LineRenderer newInnerCore,
+            Renderer newLaunchHeadGlow,
             Transform newCasterEffectRoot,
             Renderer newCasterGlow,
             ParticleSystem newCasterOriginFlash,
             ParticleSystem newCasterOrbitingStars,
             ParticleSystem newCasterInwardOrbs,
+            ParticleSystem newCasterLeaves,
             Transform newTargetEffectRoot,
             Renderer newTargetGlow,
             Transform newGroundRingTransform,
@@ -214,18 +244,31 @@ namespace RPGClone.Vfx.Healing
             ParticleSystem newTargetSparkles,
             Transform newHealTickEffectRoot,
             ParticleSystem newTargetBurst,
-            ParticleSystem newTickSparks)
+            ParticleSystem newTickSparks,
+            ParticleSystem newImpactLeaves,
+            Transform newImpactHaloTransform,
+            Renderer newImpactHalo,
+            Transform newTargetImpactEchoRoot,
+            Renderer newTargetImpactOrb,
+            Transform newTargetImpactInnerRingTransform,
+            Renderer newTargetImpactInnerRing,
+            Transform newTargetImpactOuterRingTransform,
+            Renderer newTargetImpactOuterRing,
+            ParticleSystem newTargetImpactSparkles,
+            ParticleSystem newTargetImpactDust)
         {
             profile = newProfile;
             beamEffectRoot = newBeamEffectRoot;
             outerGlow = newOuterGlow;
             flowingRibbon = newFlowingRibbon;
             innerCore = newInnerCore;
+            launchHeadGlow = newLaunchHeadGlow;
             casterEffectRoot = newCasterEffectRoot;
             casterGlow = newCasterGlow;
             casterOriginFlash = newCasterOriginFlash;
             casterOrbitingStars = newCasterOrbitingStars;
             casterInwardOrbs = newCasterInwardOrbs;
+            casterLeaves = newCasterLeaves;
             targetEffectRoot = newTargetEffectRoot;
             targetGlow = newTargetGlow;
             groundRingTransform = newGroundRingTransform;
@@ -235,6 +278,17 @@ namespace RPGClone.Vfx.Healing
             healTickEffectRoot = newHealTickEffectRoot;
             targetBurst = newTargetBurst;
             tickSparks = newTickSparks;
+            impactLeaves = newImpactLeaves;
+            impactHaloTransform = newImpactHaloTransform;
+            impactHalo = newImpactHalo;
+            targetImpactEchoRoot = newTargetImpactEchoRoot;
+            targetImpactOrb = newTargetImpactOrb;
+            targetImpactInnerRingTransform = newTargetImpactInnerRingTransform;
+            targetImpactInnerRing = newTargetImpactInnerRing;
+            targetImpactOuterRingTransform = newTargetImpactOuterRingTransform;
+            targetImpactOuterRing = newTargetImpactOuterRing;
+            targetImpactSparkles = newTargetImpactSparkles;
+            targetImpactDust = newTargetImpactDust;
             CacheCasterGlowBaseScale();
             CacheParticleSystems();
         }
@@ -319,16 +373,14 @@ namespace RPGClone.Vfx.Healing
             Vector3 up = Vector3.Cross(direction, side).normalized;
 
             float phase = Time.time * profile.BeamSwaySpeed;
+            float launchProgress = Mathf.SmoothStep(
+                0f,
+                1f,
+                Mathf.Clamp01((Time.time - launchStartedAt) / profile.BeamLaunchDuration));
             for (int i = 0; i < segmentCount; i++)
             {
                 float t = i / (float)(segmentCount - 1);
-                float endpointEnvelope = Mathf.Sin(t * Mathf.PI);
-                float primaryWave = Mathf.Sin((t * Mathf.PI * 2.25f) + phase) * profile.BeamSway;
-                float secondaryWave = Mathf.Sin((t * Mathf.PI * 3.5f) - (phase * 0.73f)) * profile.BeamSway * 0.34f;
-                float arc = Mathf.Sin(t * Mathf.PI) * profile.BeamArcHeight;
-                beamPositions[i] = Vector3.LerpUnclamped(start, end, t)
-                    + side * primaryWave * endpointEnvelope
-                    + up * ((secondaryWave * endpointEnvelope) + arc);
+                beamPositions[i] = EvaluateBeamPoint(start, end, side, up, Mathf.Min(t, launchProgress), phase);
             }
 
             float width = profile.BeamWidth * profile.OverallIntensity;
@@ -341,6 +393,11 @@ namespace RPGClone.Vfx.Healing
             if (pulseActive)
             {
                 pulseProgress = (Time.time - pulseStartedAt) * profile.PulseSpeed;
+                if (impactPending && pulseProgress >= 1f)
+                {
+                    TriggerTargetImpact();
+                }
+
                 if (pulseProgress > 1f + profile.PulseWidth)
                 {
                     pulseActive = false;
@@ -351,6 +408,54 @@ namespace RPGClone.Vfx.Healing
             ApplyBeamProperties(outerGlow, outerGlowProperties, profile.OuterGlowColor, profile.GlowFlowSpeed, distanceTiling, pulseProgress, 0.35f);
             ApplyBeamProperties(flowingRibbon, ribbonProperties, profile.RibbonColor, profile.RibbonFlowSpeed, distanceTiling, pulseProgress, 0.7f);
             ApplyBeamProperties(innerCore, coreProperties, profile.CoreColor, profile.CoreFlowSpeed, distanceTiling, pulseProgress, 1f);
+
+            if (launchHeadGlow != null)
+            {
+                launchHeadGlow.transform.position = beamPositions[segmentCount - 1];
+                launchHeadGlow.transform.localScale = Vector3.one * profile.BeamWidth * Mathf.Lerp(3.8f, 5.4f, launchProgress);
+                float headOpacity = launchProgress < 1f ? opacity * Mathf.Lerp(0.65f, 1f, launchProgress) : 0f;
+                launchHeadGlow.enabled = headOpacity > 0.001f;
+                ApplySpriteProperties(
+                    launchHeadGlow,
+                    launchHeadProperties,
+                    new Color(0.78f, 1f, 0.58f, 0.8f),
+                    headOpacity * profile.OverallIntensity);
+            }
+        }
+
+        private Vector3 EvaluateBeamPoint(
+            Vector3 start,
+            Vector3 end,
+            Vector3 side,
+            Vector3 up,
+            float t,
+            float phase)
+        {
+            float endpointEnvelope = Mathf.Sin(t * Mathf.PI);
+            float primaryWave = Mathf.Sin((t * Mathf.PI * 2.25f) + phase) * profile.BeamSway;
+            float secondaryWave = Mathf.Sin((t * Mathf.PI * 3.5f) - (phase * 0.73f)) * profile.BeamSway * 0.34f;
+            float arc = Mathf.Sin(t * Mathf.PI) * profile.BeamArcHeight;
+            return Vector3.LerpUnclamped(start, end, t)
+                + side * primaryWave * endpointEnvelope
+                + up * ((secondaryWave * endpointEnvelope) + arc);
+        }
+
+        private void TriggerTargetImpact()
+        {
+            impactPending = false;
+            targetArrived = true;
+            impactStartedAt = Time.time;
+            tickFlashStartedAt = Time.time;
+
+            SetRendererEnabled(targetGlow, true);
+            SetRendererEnabled(groundRing, true);
+            SetRendererEnabled(impactHalo, true);
+            PlayLoopingParticles(targetLoopingParticles);
+            PlayOneShot(targetBurst);
+            PlayOneShot(tickSparks);
+            PlayOneShot(impactLeaves);
+            PlayOneShot(targetImpactSparkles);
+            PlayOneShot(targetImpactDust);
         }
 
         private void ApplyBeamProperties(LineRenderer line, MaterialPropertyBlock properties, Color tint, float flowSpeed, float tiling, float pulseProgress, float layerPulseScale)
@@ -382,10 +487,37 @@ namespace RPGClone.Vfx.Healing
             float ambientPulse = 0.92f + (Mathf.Sin(Time.time * 2.1f) * 0.08f);
             float targetPulse = ambientPulse + (tickFlash * 0.75f);
             float masterOpacity = opacity * profile.OverallIntensity;
+            float arrivalOpacity = targetArrived
+                ? Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.time - impactStartedAt) / profile.TargetArrivalFadeDuration))
+                : 0f;
 
             ApplySpriteProperties(casterGlow, casterGlowProperties, new Color(1f, 0.78f, 0.28f, 0.48f), masterOpacity * ambientPulse);
-            ApplySpriteProperties(targetGlow, targetGlowProperties, new Color(1f, 0.84f, 0.38f, 0.4f), masterOpacity * targetPulse);
-            ApplySpriteProperties(groundRing, groundRingProperties, new Color(1f, 0.72f, 0.2f, 0.34f), masterOpacity * targetPulse);
+            ApplySpriteProperties(targetGlow, targetGlowProperties, new Color(0.72f, 1f, 0.48f, 0.46f), masterOpacity * targetPulse * arrivalOpacity);
+            ApplySpriteProperties(groundRing, groundRingProperties, new Color(0.82f, 1f, 0.38f, 0.36f), masterOpacity * targetPulse * arrivalOpacity);
+
+            float impactT = Mathf.Clamp01((Time.time - impactStartedAt) / profile.ImpactHaloDuration);
+            if (targetArrived && impactT < 1f)
+            {
+                float easedImpact = 1f - Mathf.Pow(1f - impactT, 3f);
+                float haloOpacity = Mathf.Sin(impactT * Mathf.PI) * masterOpacity;
+                if (impactHaloTransform != null)
+                {
+                    float haloSize = Mathf.Lerp(profile.ImpactHaloStartSize, profile.ImpactHaloEndSize, easedImpact);
+                    impactHaloTransform.localScale = Vector3.one * haloSize;
+                }
+
+                ApplySpriteProperties(
+                    impactHalo,
+                    impactHaloProperties,
+                    new Color(0.7f, 1f, 0.4f, 0.82f),
+                    haloOpacity);
+            }
+            else if (impactHalo != null)
+            {
+                impactHalo.enabled = false;
+            }
+
+            UpdateTargetImpactEcho(masterOpacity);
 
             if (casterEffectRoot != null)
             {
@@ -416,6 +548,69 @@ namespace RPGClone.Vfx.Healing
             }
         }
 
+        private void UpdateTargetImpactEcho(float masterOpacity)
+        {
+            float impactT = Mathf.Clamp01((Time.time - impactStartedAt) / profile.TargetImpactEchoDuration);
+            bool echoVisible = targetArrived && impactT < 1f;
+            SetRendererEnabled(targetImpactOrb, echoVisible);
+            SetRendererEnabled(targetImpactInnerRing, echoVisible);
+            SetRendererEnabled(targetImpactOuterRing, echoVisible);
+            if (!echoVisible)
+            {
+                return;
+            }
+
+            float easedT = Mathf.SmoothStep(0f, 1f, impactT);
+            float flashEnvelope = Mathf.Pow(Mathf.Sin(impactT * Mathf.PI), 0.55f) * masterOpacity;
+            float cylinderHeight = profile.CasterBuildupCylinderHeight;
+            float groundOffset = profile.GroundRingVerticalOffset;
+            float baseRingSize = profile.CasterGroundRingSize * profile.TargetEffectScale;
+
+            if (targetImpactEchoRoot != null)
+            {
+                targetImpactEchoRoot.localScale = Vector3.one;
+            }
+
+            if (targetImpactOrb != null)
+            {
+                float orbExpansion = Mathf.Lerp(0.78f, 1.35f, Mathf.Sin(impactT * Mathf.PI));
+                targetImpactOrb.transform.localScale = casterGlowBaseLocalScale
+                    * profile.EndpointOrbSizeMultiplier
+                    * profile.TargetEffectScale
+                    * orbExpansion;
+            }
+
+            if (targetImpactInnerRingTransform != null)
+            {
+                targetImpactInnerRingTransform.localPosition = Vector3.up * (groundOffset + (easedT * cylinderHeight));
+                targetImpactInnerRingTransform.localScale = Vector3.one * baseRingSize * Mathf.Lerp(0.7f, 0.88f, easedT);
+                targetImpactInnerRingTransform.localRotation = Quaternion.Euler(90f, 0f, impactT * 150f);
+            }
+
+            if (targetImpactOuterRingTransform != null)
+            {
+                targetImpactOuterRingTransform.localPosition = Vector3.up * (groundOffset + (easedT * cylinderHeight * 0.82f));
+                targetImpactOuterRingTransform.localScale = Vector3.one * baseRingSize * Mathf.Lerp(0.88f, 1.06f, easedT);
+                targetImpactOuterRingTransform.localRotation = Quaternion.Euler(90f, 0f, impactT * -110f);
+            }
+
+            ApplySpriteProperties(
+                targetImpactOrb,
+                targetImpactOrbProperties,
+                new Color(1f, 0.82f, 0.3f, 0.96f),
+                flashEnvelope);
+            ApplySpriteProperties(
+                targetImpactInnerRing,
+                targetImpactInnerRingProperties,
+                new Color(0.68f, 1f, 0.38f, 0.96f),
+                flashEnvelope);
+            ApplySpriteProperties(
+                targetImpactOuterRing,
+                targetImpactOuterRingProperties,
+                new Color(1f, 0.8f, 0.28f, 0.92f),
+                flashEnvelope * 0.95f);
+        }
+
         private static void ApplySpriteProperties(Renderer targetRenderer, MaterialPropertyBlock properties, Color tint, float alpha)
         {
             if (targetRenderer == null)
@@ -444,6 +639,9 @@ namespace RPGClone.Vfx.Healing
 
             Billboard(casterGlow != null ? casterGlow.transform : null, cachedCamera.transform);
             Billboard(targetGlow != null ? targetGlow.transform : null, cachedCamera.transform);
+            Billboard(launchHeadGlow != null ? launchHeadGlow.transform : null, cachedCamera.transform);
+            Billboard(impactHalo != null ? impactHalo.transform : null, cachedCamera.transform);
+            Billboard(targetImpactOrb != null ? targetImpactOrb.transform : null, cachedCamera.transform);
         }
 
         private static void Billboard(Transform visual, Transform cameraTransform)
@@ -463,12 +661,48 @@ namespace RPGClone.Vfx.Healing
                 profile.CasterOrbitParticleCount,
                 profile.ParticleSize * profile.EndpointSparkleSizeMultiplier);
             ConfigureLoopParticle(casterInwardOrbs, profile.CasterInwardParticleCount, profile.ParticleSize * 0.72f);
+            ConfigureLoopParticle(casterLeaves, profile.CasterLeafParticleCount, profile.LeafParticleSize);
             ConfigureLoopParticle(targetRisingOrbs, profile.TargetRisingParticleCount, profile.ParticleSize * 0.72f);
             ConfigureLoopParticle(
                 targetSparkles,
                 profile.TargetSparkleCount,
                 profile.ParticleSize * profile.EndpointSparkleSizeMultiplier);
-            ConfigureBurstParticle(tickSparks, profile.TickSparkCount, profile.ParticleSize * 1.1f);
+            ConfigureBurstParticle(
+                targetBurst,
+                1,
+                profile.ParticleSize * 5.4f * profile.ImpactSparkSizeMultiplier);
+            ConfigureBurstParticle(
+                tickSparks,
+                profile.TickSparkCount,
+                profile.ParticleSize * 1.1f * profile.ImpactSparkSizeMultiplier);
+            ConfigureBurstParticle(impactLeaves, profile.ImpactLeafCount, profile.LeafParticleSize);
+            ConfigureBurstParticle(
+                targetImpactSparkles,
+                profile.CasterOrbitParticleCount + profile.TargetSparkleCount,
+                profile.ParticleSize * profile.EndpointSparkleSizeMultiplier);
+            ConfigureTargetImpactDust();
+        }
+
+        private void ConfigureTargetImpactDust()
+        {
+            if (targetImpactDust == null)
+            {
+                return;
+            }
+
+            ConfigureBurstParticle(
+                targetImpactDust,
+                profile.CasterDustParticleCount,
+                profile.CasterDustParticleSize);
+            ParticleSystem.MainModule main = targetImpactDust.main;
+            main.startLifetime = profile.TargetImpactEchoDuration;
+            ParticleSystem.ShapeModule shape = targetImpactDust.shape;
+            shape.radius = profile.CasterDustRingRadius;
+            shape.radiusThickness = 0.05f;
+            ParticleSystem.VelocityOverLifetimeModule velocity = targetImpactDust.velocityOverLifetime;
+            float impactRiseSpeed = profile.CasterBuildupCylinderHeight / profile.TargetImpactEchoDuration;
+            velocity.enabled = true;
+            velocity.y = new ParticleSystem.MinMaxCurve(impactRiseSpeed * 0.68f, impactRiseSpeed * 1.05f);
         }
 
         private static void ConfigureLoopParticle(ParticleSystem particleSystem, int count, float size)
@@ -502,8 +736,23 @@ namespace RPGClone.Vfx.Healing
 
         private void CacheParticleSystems()
         {
-            loopingParticles = new[] { casterOrbitingStars, casterInwardOrbs, targetRisingOrbs, targetSparkles };
-            allParticles = new[] { casterOriginFlash, casterOrbitingStars, casterInwardOrbs, targetRisingOrbs, targetSparkles, targetBurst, tickSparks };
+            casterLoopingParticles = new[] { casterOrbitingStars, casterInwardOrbs, casterLeaves };
+            targetLoopingParticles = new[] { targetRisingOrbs, targetSparkles };
+            loopingParticles = new[] { casterOrbitingStars, casterInwardOrbs, casterLeaves, targetRisingOrbs, targetSparkles };
+            allParticles = new[]
+            {
+                casterOriginFlash,
+                casterOrbitingStars,
+                casterInwardOrbs,
+                casterLeaves,
+                targetRisingOrbs,
+                targetSparkles,
+                targetBurst,
+                tickSparks,
+                impactLeaves,
+                targetImpactSparkles,
+                targetImpactDust
+            };
         }
 
         private void CacheCasterGlowBaseScale()
@@ -519,19 +768,24 @@ namespace RPGClone.Vfx.Healing
             outerGlowProperties ??= new MaterialPropertyBlock();
             ribbonProperties ??= new MaterialPropertyBlock();
             coreProperties ??= new MaterialPropertyBlock();
+            launchHeadProperties ??= new MaterialPropertyBlock();
             casterGlowProperties ??= new MaterialPropertyBlock();
             targetGlowProperties ??= new MaterialPropertyBlock();
             groundRingProperties ??= new MaterialPropertyBlock();
+            impactHaloProperties ??= new MaterialPropertyBlock();
+            targetImpactOrbProperties ??= new MaterialPropertyBlock();
+            targetImpactInnerRingProperties ??= new MaterialPropertyBlock();
+            targetImpactOuterRingProperties ??= new MaterialPropertyBlock();
         }
 
-        private void PlayLoopingParticles()
+        private static void PlayLoopingParticles(ParticleSystem[] particleSystems)
         {
-            if (loopingParticles == null)
+            if (particleSystems == null)
             {
                 return;
             }
 
-            foreach (ParticleSystem particleSystem in loopingParticles)
+            foreach (ParticleSystem particleSystem in particleSystems)
             {
                 if (particleSystem == null)
                 {
@@ -606,6 +860,8 @@ namespace RPGClone.Vfx.Healing
 
             opacity = 0f;
             pulseActive = false;
+            impactPending = false;
+            targetArrived = false;
             state = PlaybackState.Stopped;
             HidePersistentRenderers();
             SetVisualRootsActive(false);
@@ -637,8 +893,13 @@ namespace RPGClone.Vfx.Healing
             SetRendererEnabled(flowingRibbon, true);
             SetRendererEnabled(innerCore, true);
             SetRendererEnabled(casterGlow, true);
-            SetRendererEnabled(targetGlow, true);
-            SetRendererEnabled(groundRing, true);
+            SetRendererEnabled(launchHeadGlow, true);
+            SetRendererEnabled(targetGlow, false);
+            SetRendererEnabled(groundRing, false);
+            SetRendererEnabled(impactHalo, false);
+            SetRendererEnabled(targetImpactOrb, false);
+            SetRendererEnabled(targetImpactInnerRing, false);
+            SetRendererEnabled(targetImpactOuterRing, false);
         }
 
         private void HidePersistentRenderers()
@@ -647,8 +908,13 @@ namespace RPGClone.Vfx.Healing
             SetRendererEnabled(flowingRibbon, false);
             SetRendererEnabled(innerCore, false);
             SetRendererEnabled(casterGlow, false);
+            SetRendererEnabled(launchHeadGlow, false);
             SetRendererEnabled(targetGlow, false);
             SetRendererEnabled(groundRing, false);
+            SetRendererEnabled(impactHalo, false);
+            SetRendererEnabled(targetImpactOrb, false);
+            SetRendererEnabled(targetImpactInnerRing, false);
+            SetRendererEnabled(targetImpactOuterRing, false);
         }
 
         private static void SetRendererEnabled(Renderer targetRenderer, bool enabled)

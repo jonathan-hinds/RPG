@@ -30,12 +30,34 @@ MonoBehaviour:
   pulseWidth: 0.16
   pulseBrightness: 2.2
   tickFlashDuration: 0.3
+  chargeStartScale: 0.68
+  chargePulseAmount: 0.07
+  chargeOrbitSpeedMultiplier: 1.65
+  casterGroundRingSize: 3.6
+  casterGroundVerticalOffset: 0.04
+  casterGroundRingOpacity: 0.92
+  casterBuildupCylinderHeight: 1.9
+  casterRingRiseSpeed: 0.58
+  casterDustParticleCount: 40
+  casterDustParticleSize: 0.18
+  casterDustRingRadius: 1.55
+  casterDustRiseSpeed: 1.1
+  beamLaunchDuration: 0.3
+  targetArrivalFadeDuration: 0.12
+  impactHaloDuration: 0.52
+  impactHaloStartSize: 0.38
+  impactHaloEndSize: 2.35
+  impactSparkSizeMultiplier: 1.45
+  targetImpactEchoDuration: 0.58
   casterOrbitParticleCount: 7
   casterInwardParticleCount: 6
+  casterLeafParticleCount: 4
   targetRisingParticleCount: 9
   targetSparkleCount: 5
   tickSparkCount: 7
+  impactLeafCount: 7
   particleSize: 0.14
+  leafParticleSize: 0.22
   casterEffectScale: 1
   endpointOrbSizeMultiplier: 1.5
   endpointSparkleSizeMultiplier: 2

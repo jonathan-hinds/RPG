@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RPGClone.Abilities;
 using RPGClone.Vfx;
 using RPGClone.Vfx.Healing;
 using UnityEditor;
@@ -20,6 +21,7 @@ namespace RPGClone.EditorTools
         private const string PrefabPath = PrefabFolder + "/HealingBeamVFX.prefab";
         private const string CastingPrefabPath = PrefabFolder + "/HealingBeamChargeVFX.prefab";
         private const string SpellVfxDefinitionPath = "Assets/_Project/VFX/Definitions/Shaman_Healing_Beam_VFX.asset";
+        private const string SpellAbilityPath = "Assets/_Project/Configs/Abilities/Shaman_Healing_Beam.asset";
 
         [MenuItem("Tools/RPG Clone/VFX/Build Healing Beam VFX")]
         public static void Build()
@@ -29,6 +31,7 @@ namespace RPGClone.EditorTools
             ConfigureTextureImporters();
 
             HealingBeamVFXProfile profile = LoadOrCreateProfile();
+            UpgradeProfileDefaults(profile);
             EditorUtility.SetDirty(profile);
             Dictionary<string, Material> materials = CreateMaterials();
             GameObject castingPrefab = CreateCastingPrefab(profile, materials);
@@ -72,25 +75,27 @@ namespace RPGClone.EditorTools
                 throw new UnityException("Healing beam prefab must contain exactly three beam layers.");
             }
 
-            if (prefab.GetComponentsInChildren<ParticleSystem>(true).Length != 7)
+            if (prefab.GetComponentsInChildren<ParticleSystem>(true).Length != 11)
             {
-                throw new UnityException("Healing beam prefab must contain exactly seven lightweight particle systems.");
+                throw new UnityException("Healing beam prefab must contain exactly eleven lightweight particle systems, including its one-shot target-impact echo.");
             }
 
             GameObject castingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CastingPrefabPath);
             if (castingPrefab == null
                 || castingPrefab.GetComponent<HealingBeamChargeVFX>() == null
-                || castingPrefab.GetComponentsInChildren<ParticleSystem>(true).Length != 3
+                || castingPrefab.transform.Find("Caster Ground Buildup") == null
+                || castingPrefab.GetComponentsInChildren<ParticleSystem>(true).Length != 5
                 || castingPrefab.GetComponentsInChildren<LineRenderer>(true).Length != 0)
             {
-                throw new MissingReferenceException("Healing Beam's caster-only charge prefab is missing or contains beam/target visuals.");
+                throw new MissingReferenceException("Healing Beam's charge prefab is missing its caster-only orb, nature rings, or ground-dust buildup.");
             }
 
             ValidateShader($"{ShaderFolder}/HealingBeamUnlit.shader");
             ValidateShader($"{ShaderFolder}/HealingSpriteUnlit.shader");
             ValidateSpellWiring(prefab);
+            ValidateChargeLifecycle(castingPrefab);
             ValidateLifecycle(prefab);
-            Debug.Log("HealingBeamVFX validation passed: caster-only charge, post-cast beam wiring, assets, shaders, lifecycle hooks, and pooling reset are valid.", prefab);
+            Debug.Log("HealingBeamVFX validation passed: nature charge, caster ground buildup, launch timing, target impact, spell wiring, assets, shaders, lifecycle hooks, and pooling reset are valid.", prefab);
         }
 
         private static void ValidateShader(string path)
@@ -126,6 +131,111 @@ namespace RPGClone.EditorTools
             }
         }
 
+        private static void ValidateChargeLifecycle(GameObject prefab)
+        {
+            GameObject instance = null;
+            GameObject caster = null;
+            try
+            {
+                instance = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+                caster = new GameObject("HealingBeamChargeVFX Validation Caster") { hideFlags = HideFlags.HideAndDontSave };
+                instance.hideFlags = HideFlags.HideAndDontSave;
+                caster.transform.position = new Vector3(2f, 0f, -1f);
+
+                HealingBeamChargeVFX controller = instance.GetComponent<HealingBeamChargeVFX>();
+                MMOAbilityDefinition ability = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(SpellAbilityPath);
+                MMOAbilityVfxDefinition definition = AssetDatabase.LoadAssetAtPath<MMOAbilityVfxDefinition>(SpellVfxDefinitionPath);
+                if (controller == null || ability == null || definition == null)
+                {
+                    throw new MissingReferenceException("Healing Beam charge lifecycle dependencies are missing.");
+                }
+
+                System.Reflection.MethodInfo awake = typeof(HealingBeamChargeVFX).GetMethod(
+                    "Awake",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                awake?.Invoke(controller, null);
+                MMOAbilityVfxContext context = new(
+                    null,
+                    ability,
+                    definition,
+                    caster.transform,
+                    null,
+                    caster.transform.position,
+                    caster.transform.position,
+                    false,
+                    null);
+                controller.Initialize(context);
+
+                System.Reflection.BindingFlags privateInstance =
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                typeof(HealingBeamChargeVFX).GetField("chargeStartedAt", privateInstance)
+                    ?.SetValue(controller, Time.time - ability.CastTimeSeconds);
+                typeof(HealingBeamChargeVFX).GetField("transitionStartedAt", privateInstance)
+                    ?.SetValue(controller, Time.time - 1f);
+                typeof(HealingBeamChargeVFX).GetMethod("LateUpdate", privateInstance)
+                    ?.Invoke(controller, null);
+
+                Transform groundRoot = instance.transform.Find("Caster Ground Buildup");
+                Renderer innerRing = groundRoot != null
+                    ? groundRoot.Find("Inner Nature Ring")?.GetComponent<Renderer>()
+                    : null;
+                Renderer outerRing = groundRoot != null
+                    ? groundRoot.Find("Outer Nature Ring")?.GetComponent<Renderer>()
+                    : null;
+                ParticleSystem dust = groundRoot != null
+                    ? groundRoot.Find("Encircling Nature Dust")?.GetComponent<ParticleSystem>()
+                    : null;
+                MaterialPropertyBlock innerRingProperties = new();
+                MaterialPropertyBlock outerRingProperties = new();
+                innerRing?.GetPropertyBlock(innerRingProperties);
+                outerRing?.GetPropertyBlock(outerRingProperties);
+                float visibleRingOpacity = Mathf.Max(
+                    innerRingProperties.GetFloat("_Opacity"),
+                    outerRingProperties.GetFloat("_Opacity"));
+                Vector3 expectedGroundPosition = caster.transform.position + (Vector3.up * controller.Profile.CasterGroundVerticalOffset);
+                float ringVerticalSeparation = innerRing != null && outerRing != null
+                    ? Mathf.Abs(innerRing.transform.localPosition.y - outerRing.transform.localPosition.y)
+                    : 0f;
+                ParticleSystem.ShapeModule dustShape = dust != null ? dust.shape : default;
+                ParticleSystem.MainModule dustMain = dust != null ? dust.main : default;
+                ParticleSystemRenderer dustRenderer = dust != null ? dust.GetComponent<ParticleSystemRenderer>() : null;
+                Texture dustTexture = dustRenderer != null && dustRenderer.sharedMaterial != null
+                    ? dustRenderer.sharedMaterial.GetTexture("_BaseMap")
+                    : null;
+
+                if (groundRoot == null
+                    || !groundRoot.gameObject.activeSelf
+                    || innerRing == null
+                    || !innerRing.enabled
+                    || outerRing == null
+                    || !outerRing.enabled
+                    || visibleRingOpacity < 0.45f
+                    || ringVerticalSeparation < controller.Profile.CasterBuildupCylinderHeight * 0.4f
+                    || Vector3.Distance(groundRoot.position, expectedGroundPosition) > 0.01f
+                    || dust == null
+                    || !dust.isPlaying
+                    || dustMain.maxParticles != controller.Profile.CasterDustParticleCount
+                    || dustShape.radiusThickness > 0.06f
+                    || dustTexture == null
+                    || dustTexture.name != "HealingDust")
+                {
+                    throw new UnityException("Healing Beam caster buildup did not form its visible rising nature-and-dust cylinder.");
+                }
+            }
+            finally
+            {
+                if (instance != null)
+                {
+                    Object.DestroyImmediate(instance);
+                }
+
+                if (caster != null)
+                {
+                    Object.DestroyImmediate(caster);
+                }
+            }
+        }
+
         private static void ValidateLifecycle(GameObject prefab)
         {
             GameObject instance = null;
@@ -154,6 +264,14 @@ namespace RPGClone.EditorTools
                 System.Reflection.MethodInfo lateUpdate = typeof(HealingBeamVFX).GetMethod(
                     "LateUpdate",
                     System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                System.Reflection.FieldInfo launchStartedAt = typeof(HealingBeamVFX).GetField(
+                    "launchStartedAt",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                System.Reflection.FieldInfo stateStartedAt = typeof(HealingBeamVFX).GetField(
+                    "stateStartedAt",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                launchStartedAt?.SetValue(controller, Time.time - controller.Profile.BeamLaunchDuration - 0.01f);
+                stateStartedAt?.SetValue(controller, Time.time - controller.Profile.FadeInDuration - 0.01f);
                 lateUpdate?.Invoke(controller, null);
                 LineRenderer[] lines = instance.GetComponentsInChildren<LineRenderer>(true);
                 foreach (LineRenderer line in lines)
@@ -175,6 +293,43 @@ namespace RPGClone.EditorTools
                 }
 
                 controller.TriggerHealingTick();
+                System.Reflection.FieldInfo pulseStartedAt = typeof(HealingBeamVFX).GetField(
+                    "pulseStartedAt",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                pulseStartedAt?.SetValue(controller, Time.time - (1f / controller.Profile.PulseSpeed) - 0.01f);
+                lateUpdate?.Invoke(controller, null);
+                System.Reflection.FieldInfo impactStartedAt = typeof(HealingBeamVFX).GetField(
+                    "impactStartedAt",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                impactStartedAt?.SetValue(controller, Time.time - (controller.Profile.TargetImpactEchoDuration * 0.35f));
+                lateUpdate?.Invoke(controller, null);
+                Renderer impactHalo = instance.transform.Find("Heal-Tick Burst Effect/Expanding Nature Halo")?.GetComponent<Renderer>();
+                Transform targetImpactEcho = instance.transform.Find("Heal-Tick Burst Effect/Target Impact Echo");
+                Renderer impactOrb = targetImpactEcho?.Find("Impact Orb Flash")?.GetComponent<Renderer>();
+                Renderer impactInnerRing = targetImpactEcho?.Find("Impact Inner Nature Ring")?.GetComponent<Renderer>();
+                Renderer impactOuterRing = targetImpactEcho?.Find("Impact Outer Nature Ring")?.GetComponent<Renderer>();
+                ParticleSystem impactSparkles = targetImpactEcho?.Find("Impact Sparkle Flash")?.GetComponent<ParticleSystem>();
+                ParticleSystem impactDust = targetImpactEcho?.Find("Impact Dust Ring")?.GetComponent<ParticleSystem>();
+                MaterialPropertyBlock impactOrbProperties = new();
+                impactOrb?.GetPropertyBlock(impactOrbProperties);
+                if (impactHalo == null
+                    || !impactHalo.enabled
+                    || targetImpactEcho == null
+                    || impactOrb == null
+                    || !impactOrb.enabled
+                    || impactOrbProperties.GetFloat("_Opacity") < 0.7f
+                    || impactInnerRing == null
+                    || !impactInnerRing.enabled
+                    || impactOuterRing == null
+                    || !impactOuterRing.enabled
+                    || impactSparkles == null
+                    || !impactSparkles.isPlaying
+                    || impactDust == null
+                    || !impactDust.isPlaying)
+                {
+                    throw new UnityException("Healing Beam's synchronized orb, rings, sparkles, and dust impact did not trigger when the traveling pulse reached the target.");
+                }
+
                 controller.Stop();
                 if (controller.IsPlaying || controller.ReadyForPool)
                 {
@@ -235,6 +390,8 @@ namespace RPGClone.EditorTools
             ConfigureTexture("HealingOrb.png", TextureWrapMode.Clamp, 128, true, true);
             ConfigureTexture("HealingBurst.png", TextureWrapMode.Clamp, 256, true, true);
             ConfigureTexture("GroundRing.png", TextureWrapMode.Clamp, 256, true, true);
+            ConfigureTexture("HealingLeaf.png", TextureWrapMode.Clamp, 256, true, true);
+            ConfigureTexture("HealingDust.png", TextureWrapMode.Clamp, 256, true, true);
         }
 
         private static void ConfigureTexture(string fileName, TextureWrapMode wrapMode, int maxSize, bool hasAlpha, bool sRgb)
@@ -270,6 +427,41 @@ namespace RPGClone.EditorTools
             return profile;
         }
 
+        private static void UpgradeProfileDefaults(HealingBeamVFXProfile profile)
+        {
+            SerializedObject serializedProfile = new(profile);
+            UpgradeFloat(serializedProfile, "casterGroundRingSize", 3f, 3.6f);
+            UpgradeFloat(serializedProfile, "casterGroundRingOpacity", 0.48f, 0.78f);
+            UpgradeInt(serializedProfile, "casterDustParticleCount", 10, 16);
+            UpgradeFloat(serializedProfile, "casterDustParticleSize", 0.38f, 0.52f);
+            UpgradeFloat(serializedProfile, "casterDustRingRadius", 1.25f, 1.45f);
+            UpgradeInt(serializedProfile, "casterDustParticleCount", 16, 40);
+            UpgradeFloat(serializedProfile, "casterDustParticleSize", 0.52f, 0.18f);
+            UpgradeFloat(serializedProfile, "casterDustRingRadius", 1.45f, 1.55f);
+            UpgradeFloat(serializedProfile, "casterGroundRingOpacity", 0.78f, 0.92f);
+            UpgradeFloat(serializedProfile, "casterRingRiseSpeed", 0.42f, 0.58f);
+            UpgradeFloat(serializedProfile, "casterDustRiseSpeed", 0.84f, 1.1f);
+            serializedProfile.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void UpgradeFloat(SerializedObject serializedObject, string propertyName, float oldValue, float newValue)
+        {
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property != null && Mathf.Approximately(property.floatValue, oldValue))
+            {
+                property.floatValue = newValue;
+            }
+        }
+
+        private static void UpgradeInt(SerializedObject serializedObject, string propertyName, int oldValue, int newValue)
+        {
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property != null && property.intValue == oldValue)
+            {
+                property.intValue = newValue;
+            }
+        }
+
         private static Dictionary<string, Material> CreateMaterials()
         {
             Shader beamShader = AssetDatabase.LoadAssetAtPath<Shader>($"{ShaderFolder}/HealingBeamUnlit.shader");
@@ -286,6 +478,8 @@ namespace RPGClone.EditorTools
             Texture orb = LoadTexture("HealingOrb.png");
             Texture burst = LoadTexture("HealingBurst.png");
             Texture groundRing = LoadTexture("GroundRing.png");
+            Texture leaf = LoadTexture("HealingLeaf.png");
+            Texture dust = LoadTexture("HealingDust.png");
 
             return new Dictionary<string, Material>
             {
@@ -295,9 +489,12 @@ namespace RPGClone.EditorTools
                 ["CasterGlow"] = CreateSpriteMaterial("HealingBeam_CasterGlow", spriteShader, glow, new Color(1f, 0.78f, 0.25f, 0.5f), true),
                 ["TargetGlow"] = CreateSpriteMaterial("HealingBeam_TargetGlow", spriteShader, glow, new Color(1f, 0.84f, 0.38f, 0.45f), true),
                 ["GroundRing"] = CreateSpriteMaterial("HealingBeam_GroundRing", spriteShader, groundRing, new Color(1f, 0.72f, 0.2f, 0.38f), false),
+                ["CasterNatureRing"] = CreateSpriteMaterial("HealingBeam_CasterNatureRing", spriteShader, groundRing, new Color(0.72f, 1f, 0.32f, 0.72f), true),
                 ["Sparks"] = CreateSpriteMaterial("HealingBeam_Sparks", spriteShader, spark, new Color(1f, 0.88f, 0.48f, 0.9f), true),
                 ["Orbs"] = CreateSpriteMaterial("HealingBeam_Orbs", spriteShader, orb, new Color(0.82f, 1f, 0.72f, 0.76f), true),
-                ["HealBurst"] = CreateSpriteMaterial("HealingBeam_HealBurst", spriteShader, burst, new Color(1f, 0.88f, 0.45f, 0.8f), true)
+                ["HealBurst"] = CreateSpriteMaterial("HealingBeam_HealBurst", spriteShader, burst, new Color(1f, 0.88f, 0.45f, 0.8f), true),
+                ["Leaves"] = CreateSpriteMaterial("HealingBeam_Leaves", spriteShader, leaf, new Color(0.76f, 1f, 0.52f, 0.92f), true),
+                ["Dust"] = CreateSpriteMaterial("HealingBeam_Dust", spriteShader, dust, new Color(0.94f, 0.8f, 0.55f, 0.94f), false)
             };
         }
 
@@ -362,13 +559,21 @@ namespace RPGClone.EditorTools
             {
                 HealingBeamChargeVFX controller = root.AddComponent<HealingBeamChargeVFX>();
                 CasterEffectReferences caster = CreateCasterEffect(root.transform, materials);
+                CasterGroundEffectReferences ground = CreateCasterGroundEffect(root.transform, materials);
                 controller.ConfigureAuthoring(
                     profile,
                     caster.Root,
                     caster.Glow,
                     caster.OriginFlash,
                     caster.OrbitingStars,
-                    caster.InwardOrbs);
+                    caster.InwardOrbs,
+                    caster.GatheringLeaves,
+                    ground.Root,
+                    ground.InnerRing.transform,
+                    ground.InnerRing,
+                    ground.OuterRing.transform,
+                    ground.OuterRing,
+                    ground.Dust);
 
                 GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, CastingPrefabPath);
                 if (prefab == null)
@@ -396,6 +601,14 @@ namespace RPGClone.EditorTools
                 LineRenderer outerGlow = CreateLine("Outer Glow", beamRoot, materials["BeamGlow"], 0);
                 LineRenderer ribbon = CreateLine("Flowing Energy Ribbon", beamRoot, materials["MainBeam"], 1);
                 LineRenderer core = CreateLine("Bright Inner Core + Traveling Pulse", beamRoot, materials["BeamCore"], 2);
+                MeshRenderer launchHead = CreateQuad(
+                    "Mint Launch Head",
+                    beamRoot,
+                    materials["TargetGlow"],
+                    Vector3.zero,
+                    Vector3.one,
+                    Quaternion.identity,
+                    4);
 
                 CasterEffectReferences caster = CreateCasterEffect(root.transform, materials);
 
@@ -408,6 +621,16 @@ namespace RPGClone.EditorTools
                 Transform tickRoot = CreateSection("Heal-Tick Burst Effect", root.transform);
                 ParticleSystem burst = CreateHealBurst("Soft Petal Burst", tickRoot, materials["HealBurst"]);
                 ParticleSystem tickSparks = CreateTickSparks("Tick Sparks", tickRoot, materials["Sparks"]);
+                ParticleSystem impactLeaves = CreateImpactLeaves("Restorative Leaf Burst", tickRoot, materials["Leaves"]);
+                MeshRenderer impactHalo = CreateQuad(
+                    "Expanding Nature Halo",
+                    tickRoot,
+                    materials["HealBurst"],
+                    Vector3.zero,
+                    Vector3.one,
+                    Quaternion.identity,
+                    4);
+                TargetImpactEchoReferences targetImpactEcho = CreateTargetImpactEcho(tickRoot, materials);
 
                 controller.ConfigureAuthoring(
                     profile,
@@ -415,11 +638,13 @@ namespace RPGClone.EditorTools
                     outerGlow,
                     ribbon,
                     core,
+                    launchHead,
                     caster.Root,
                     caster.Glow,
                     caster.OriginFlash,
                     caster.OrbitingStars,
                     caster.InwardOrbs,
+                    caster.GatheringLeaves,
                     targetRoot,
                     targetGlow,
                     groundRing.transform,
@@ -428,7 +653,18 @@ namespace RPGClone.EditorTools
                     sparkles,
                     tickRoot,
                     burst,
-                    tickSparks);
+                    tickSparks,
+                    impactLeaves,
+                    impactHalo.transform,
+                    impactHalo,
+                    targetImpactEcho.Root,
+                    targetImpactEcho.Orb,
+                    targetImpactEcho.InnerRing.transform,
+                    targetImpactEcho.InnerRing,
+                    targetImpactEcho.OuterRing.transform,
+                    targetImpactEcho.OuterRing,
+                    targetImpactEcho.Sparkles,
+                    targetImpactEcho.Dust);
                 adapter.ConfigureAuthoring(controller);
 
                 GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
@@ -451,7 +687,68 @@ namespace RPGClone.EditorTools
             ParticleSystem originFlash = CreateFlash("Origin Flash", root, materials["CasterGlow"]);
             ParticleSystem orbitingStars = CreateOrbitStars("Orbiting Stars", root, materials["Sparks"]);
             ParticleSystem inwardOrbs = CreateInwardOrbs("Inward Spiral Orbs", root, materials["Orbs"]);
-            return new CasterEffectReferences(root, glow, originFlash, orbitingStars, inwardOrbs);
+            ParticleSystem gatheringLeaves = CreateGatheringLeaves("Gathering Leaves", root, materials["Leaves"]);
+            return new CasterEffectReferences(root, glow, originFlash, orbitingStars, inwardOrbs, gatheringLeaves);
+        }
+
+        private static CasterGroundEffectReferences CreateCasterGroundEffect(
+            Transform parent,
+            IReadOnlyDictionary<string, Material> materials)
+        {
+            Transform root = CreateSection("Caster Ground Buildup", parent);
+            MeshRenderer innerRing = CreateQuad(
+                "Inner Nature Ring",
+                root,
+                materials["CasterNatureRing"],
+                new Vector3(0f, 0.012f, 0f),
+                Vector3.one,
+                Quaternion.Euler(90f, 0f, 0f),
+                -2);
+            MeshRenderer outerRing = CreateQuad(
+                "Outer Nature Ring",
+                root,
+                materials["CasterNatureRing"],
+                new Vector3(0f, 0.006f, 0f),
+                Vector3.one,
+                Quaternion.Euler(90f, 0f, 0f),
+                -1);
+            ParticleSystem dust = CreateGroundDust("Encircling Nature Dust", root, materials["Dust"]);
+            return new CasterGroundEffectReferences(root, innerRing, outerRing, dust);
+        }
+
+        private static TargetImpactEchoReferences CreateTargetImpactEcho(
+            Transform parent,
+            IReadOnlyDictionary<string, Material> materials)
+        {
+            Transform root = CreateSection("Target Impact Echo", parent);
+            MeshRenderer orb = CreateQuad(
+                "Impact Orb Flash",
+                root,
+                materials["CasterGlow"],
+                Vector3.zero,
+                Vector3.one * 0.72f,
+                Quaternion.identity,
+                6);
+            MeshRenderer innerRing = CreateQuad(
+                "Impact Inner Nature Ring",
+                root,
+                materials["CasterNatureRing"],
+                new Vector3(0f, -1.05f, 0f),
+                Vector3.one,
+                Quaternion.Euler(90f, 0f, 0f),
+                4);
+            MeshRenderer outerRing = CreateQuad(
+                "Impact Outer Nature Ring",
+                root,
+                materials["CasterNatureRing"],
+                new Vector3(0f, -1.05f, 0f),
+                Vector3.one,
+                Quaternion.Euler(90f, 0f, 0f),
+                5);
+            ParticleSystem sparkles = CreateTargetImpactSparkles("Impact Sparkle Flash", root, materials["Sparks"]);
+            ParticleSystem dust = CreateTargetImpactDust("Impact Dust Ring", root, materials["Dust"]);
+            dust.transform.localPosition = new Vector3(0f, -1.05f, 0f);
+            return new TargetImpactEchoReferences(root, orb, innerRing, outerRing, sparkles, dust);
         }
 
         private static void WireIntoHealingSpell(GameObject castingPrefab, GameObject prefab)
@@ -583,6 +880,71 @@ namespace RPGClone.EditorTools
             return particleSystem;
         }
 
+        private static ParticleSystem CreateGatheringLeaves(string name, Transform parent, Material material)
+        {
+            ParticleSystem particleSystem = CreateParticleSystem(
+                name,
+                parent,
+                material,
+                true,
+                2f,
+                1.4f,
+                0f,
+                0.22f,
+                new Color(0.72f, 1f, 0.48f, 0.88f),
+                8);
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.rateOverTime = 2f;
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 0.42f;
+            ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.radial = -0.18f;
+            velocity.orbitalY = 0.85f;
+            ParticleSystem.RotationOverLifetimeModule rotation = particleSystem.rotationOverLifetime;
+            rotation.enabled = true;
+            rotation.z = 1.2f;
+            ConfigureFadeAndScale(particleSystem, 0.35f, 1f, 0.2f);
+            return particleSystem;
+        }
+
+        private static ParticleSystem CreateGroundDust(string name, Transform parent, Material material)
+        {
+            ParticleSystem particleSystem = CreateParticleSystem(
+                name,
+                parent,
+                material,
+                true,
+                2.5f,
+                2.25f,
+                0f,
+                0.18f,
+                new Color(0.8f, 0.7f, 0.48f, 0.9f),
+                40);
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.rateOverTime = 24f;
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 1.55f;
+            shape.radiusThickness = 0.05f;
+            shape.rotation = new Vector3(90f, 0f, 0f);
+            ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.y = new ParticleSystem.MinMaxCurve(0.69f, 0.99f);
+            velocity.orbitalY = 0.12f;
+            ParticleSystem.NoiseModule noise = particleSystem.noise;
+            noise.enabled = true;
+            noise.quality = ParticleSystemNoiseQuality.Low;
+            noise.strength = 0.1f;
+            noise.frequency = 0.35f;
+            noise.scrollSpeed = 0.12f;
+            ConfigureFadeAndScale(particleSystem, 0.24f, 1f, 0.38f);
+            return particleSystem;
+        }
+
         private static ParticleSystem CreateRisingOrbs(string name, Transform parent, Material material)
         {
             ParticleSystem particleSystem = CreateParticleSystem(name, parent, material, true, 2f, 1.65f, 0.12f, 0.12f, new Color(0.78f, 1f, 0.66f, 0.7f), 12);
@@ -610,6 +972,69 @@ namespace RPGClone.EditorTools
             shape.shapeType = ParticleSystemShapeType.Sphere;
             shape.radius = 0.5f;
             ConfigureFadeAndScale(particleSystem, 0.05f, 1f, 0.05f);
+            return particleSystem;
+        }
+
+        private static ParticleSystem CreateTargetImpactSparkles(string name, Transform parent, Material material)
+        {
+            ParticleSystem particleSystem = CreateParticleSystem(
+                name,
+                parent,
+                material,
+                false,
+                0.7f,
+                0.58f,
+                0.72f,
+                0.28f,
+                new Color(1f, 0.9f, 0.46f, 0.96f),
+                24);
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)12) });
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.52f;
+            ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.y = new ParticleSystem.MinMaxCurve(0.25f, 0.72f);
+            velocity.orbitalY = 0.35f;
+            ConfigureFadeAndScale(particleSystem, 0.12f, 1f, 0.08f);
+            return particleSystem;
+        }
+
+        private static ParticleSystem CreateTargetImpactDust(string name, Transform parent, Material material)
+        {
+            ParticleSystem particleSystem = CreateParticleSystem(
+                name,
+                parent,
+                material,
+                false,
+                0.7f,
+                0.58f,
+                0f,
+                0.18f,
+                new Color(0.82f, 0.71f, 0.48f, 0.9f),
+                40);
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)40) });
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 1.55f;
+            shape.radiusThickness = 0.05f;
+            shape.rotation = new Vector3(90f, 0f, 0f);
+            ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.y = new ParticleSystem.MinMaxCurve(2.25f, 3.45f);
+            velocity.orbitalY = 0.16f;
+            ParticleSystem.NoiseModule noise = particleSystem.noise;
+            noise.enabled = true;
+            noise.quality = ParticleSystemNoiseQuality.Low;
+            noise.strength = 0.1f;
+            noise.frequency = 0.35f;
+            ConfigureFadeAndScale(particleSystem, 0.2f, 1f, 0.28f);
             return particleSystem;
         }
 
@@ -641,6 +1066,37 @@ namespace RPGClone.EditorTools
             velocity.y = new ParticleSystem.MinMaxCurve(0.25f, 0.65f);
             velocity.orbitalY = 0.22f;
             ConfigureFadeAndScale(particleSystem, 0.15f, 1f, 0.15f);
+            return particleSystem;
+        }
+
+        private static ParticleSystem CreateImpactLeaves(string name, Transform parent, Material material)
+        {
+            ParticleSystem particleSystem = CreateParticleSystem(
+                name,
+                parent,
+                material,
+                false,
+                0.9f,
+                0.82f,
+                0.52f,
+                0.22f,
+                new Color(0.74f, 1f, 0.48f, 0.92f),
+                16);
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)7) });
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.3f;
+            ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.y = new ParticleSystem.MinMaxCurve(0.25f, 0.72f);
+            velocity.orbitalY = 0.3f;
+            ParticleSystem.RotationOverLifetimeModule rotation = particleSystem.rotationOverLifetime;
+            rotation.enabled = true;
+            rotation.z = 1.6f;
+            ConfigureFadeAndScale(particleSystem, 0.3f, 1f, 0.2f);
             return particleSystem;
         }
 
@@ -698,13 +1154,15 @@ namespace RPGClone.EditorTools
                 MeshRenderer glow,
                 ParticleSystem originFlash,
                 ParticleSystem orbitingStars,
-                ParticleSystem inwardOrbs)
+                ParticleSystem inwardOrbs,
+                ParticleSystem gatheringLeaves)
             {
                 Root = root;
                 Glow = glow;
                 OriginFlash = originFlash;
                 OrbitingStars = orbitingStars;
                 InwardOrbs = inwardOrbs;
+                GatheringLeaves = gatheringLeaves;
             }
 
             public Transform Root { get; }
@@ -712,6 +1170,53 @@ namespace RPGClone.EditorTools
             public ParticleSystem OriginFlash { get; }
             public ParticleSystem OrbitingStars { get; }
             public ParticleSystem InwardOrbs { get; }
+            public ParticleSystem GatheringLeaves { get; }
+        }
+
+        private readonly struct CasterGroundEffectReferences
+        {
+            public CasterGroundEffectReferences(
+                Transform root,
+                MeshRenderer innerRing,
+                MeshRenderer outerRing,
+                ParticleSystem dust)
+            {
+                Root = root;
+                InnerRing = innerRing;
+                OuterRing = outerRing;
+                Dust = dust;
+            }
+
+            public Transform Root { get; }
+            public MeshRenderer InnerRing { get; }
+            public MeshRenderer OuterRing { get; }
+            public ParticleSystem Dust { get; }
+        }
+
+        private readonly struct TargetImpactEchoReferences
+        {
+            public TargetImpactEchoReferences(
+                Transform root,
+                MeshRenderer orb,
+                MeshRenderer innerRing,
+                MeshRenderer outerRing,
+                ParticleSystem sparkles,
+                ParticleSystem dust)
+            {
+                Root = root;
+                Orb = orb;
+                InnerRing = innerRing;
+                OuterRing = outerRing;
+                Sparkles = sparkles;
+                Dust = dust;
+            }
+
+            public Transform Root { get; }
+            public MeshRenderer Orb { get; }
+            public MeshRenderer InnerRing { get; }
+            public MeshRenderer OuterRing { get; }
+            public ParticleSystem Sparkles { get; }
+            public ParticleSystem Dust { get; }
         }
     }
 }
