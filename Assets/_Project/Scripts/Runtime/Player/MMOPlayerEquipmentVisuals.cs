@@ -30,6 +30,7 @@ namespace RPGClone.Player
         private readonly Dictionary<MMOEquipmentVisualDefinition, MMOEquipmentAttachmentPresentationState>
             attachmentPresentationOverridesByVisual = new();
         private readonly HashSet<MMOCharacterBodyPart> equipmentHiddenBodyParts = new();
+        private readonly List<MMOEquipmentVisualDefinition> directVisualDefinitions = new();
 
         private void Awake()
         {
@@ -151,6 +152,28 @@ namespace RPGClone.Player
             RebuildEquipmentVisuals();
         }
 
+        /// <summary>
+        /// Supplies presentation-only equipment visuals without creating inventory items.
+        /// This keeps authored NPC outfits and other static character presentations on the
+        /// same renderer, skeleton-binding, and body-part visibility path as player equipment.
+        /// </summary>
+        public void SetDirectVisualDefinitions(IEnumerable<MMOEquipmentVisualDefinition> visualDefinitions)
+        {
+            directVisualDefinitions.Clear();
+            if (visualDefinitions != null)
+            {
+                foreach (MMOEquipmentVisualDefinition visualDefinition in visualDefinitions)
+                {
+                    if (visualDefinition != null && !directVisualDefinitions.Contains(visualDefinition))
+                    {
+                        directVisualDefinitions.Add(visualDefinition);
+                    }
+                }
+            }
+
+            RebuildEquipmentVisuals();
+        }
+
         private void OnEquipmentChanged(MMOCharacterEquipment changedEquipment)
         {
             if (changedEquipment == equipment)
@@ -177,18 +200,29 @@ namespace RPGClone.Player
             RestoreBaseBody();
             lastEquipmentSignature = CalculateEquipmentSignature();
 
-            if (equipment == null)
+            if (equipment == null && directVisualDefinitions.Count == 0)
             {
                 return;
             }
 
             Dictionary<string, Transform> liveSkeleton = BuildLiveSkeletonLookup();
-            foreach (MMOEquippedItemSlot equippedItem in equipment.EquippedItems)
+            if (equipment != null)
             {
-                MMOEquipmentVisualDefinition visualDefinition = equippedItem?.Item != null
-                    ? equippedItem.Item.EquipmentVisual
-                    : null;
-                if (visualDefinition != null && IsVisualCompatibleWithSlot(visualDefinition, equippedItem.SlotType))
+                foreach (MMOEquippedItemSlot equippedItem in equipment.EquippedItems)
+                {
+                    MMOEquipmentVisualDefinition visualDefinition = equippedItem?.Item != null
+                        ? equippedItem.Item.EquipmentVisual
+                        : null;
+                    if (visualDefinition != null && IsVisualCompatibleWithSlot(visualDefinition, equippedItem.SlotType))
+                    {
+                        ApplyVisualDefinition(visualDefinition, liveSkeleton);
+                    }
+                }
+            }
+
+            foreach (MMOEquipmentVisualDefinition visualDefinition in directVisualDefinitions)
+            {
+                if (visualDefinition != null)
                 {
                     ApplyVisualDefinition(visualDefinition, liveSkeleton);
                 }
@@ -376,6 +410,11 @@ namespace RPGClone.Player
             if (instance != null && instance.GetComponent<MMOEquipmentVisualInstanceMarker>() == null)
             {
                 instance.AddComponent<MMOEquipmentVisualInstanceMarker>();
+            }
+
+            if (instance != null && !Application.isPlaying)
+            {
+                instance.hideFlags |= HideFlags.DontSaveInEditor;
             }
         }
 
@@ -840,7 +879,7 @@ namespace RPGClone.Player
         {
             MMOEquipmentAttachmentPresentationState presentationState = ResolveAttachmentPresentationState();
             int combatState = (int)presentationState;
-            if (equipment == null)
+            if (equipment == null && directVisualDefinitions.Count == 0)
             {
                 return combatState;
             }
@@ -849,16 +888,24 @@ namespace RPGClone.Player
             {
                 int hash = 17;
                 hash = hash * 31 + combatState;
-                foreach (MMOEquippedItemSlot equippedItem in equipment.EquippedItems)
+                if (equipment != null)
                 {
-                    if (equippedItem == null)
+                    foreach (MMOEquippedItemSlot equippedItem in equipment.EquippedItems)
                     {
-                        continue;
-                    }
+                        if (equippedItem == null)
+                        {
+                            continue;
+                        }
 
-                    hash = hash * 31 + (int)equippedItem.SlotType;
-                    hash = hash * 31 + (equippedItem.Item != null ? equippedItem.Item.ItemId.GetHashCode() : 0);
-                    hash = hash * 31 + (int)ResolveAttachmentPresentationState(equippedItem.Item?.EquipmentVisual);
+                        hash = hash * 31 + (int)equippedItem.SlotType;
+                        hash = hash * 31 + (equippedItem.Item != null ? equippedItem.Item.ItemId.GetHashCode() : 0);
+                        hash = hash * 31 + (int)ResolveAttachmentPresentationState(equippedItem.Item?.EquipmentVisual);
+                    }
+                }
+
+                foreach (MMOEquipmentVisualDefinition visualDefinition in directVisualDefinitions)
+                {
+                    hash = hash * 31 + (visualDefinition != null ? visualDefinition.GetHashCode() : 0);
                 }
 
                 return hash;

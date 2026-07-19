@@ -153,6 +153,10 @@ namespace RPGClone.Characters
             instance.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             instance.transform.localScale = Vector3.one;
             instance.AddComponent<MMOAppearanceVisualInstanceMarker>();
+            if (!Application.isPlaying)
+            {
+                instance.hideFlags |= HideFlags.DontSaveInEditor;
+            }
 
             foreach (Animator importedAnimator in instance.GetComponentsInChildren<Animator>(true))
             {
