@@ -455,10 +455,10 @@ namespace RPGClone.EditorTests
             GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Player/PlayerCapsule.prefab");
             MMOItemDefinition[] startingArmor =
             {
-                AssetDatabase.LoadAssetAtPath<MMOItemDefinition>("Assets/_Project/Configs/Items/Threadbare_Cloth_Tunic.asset"),
-                AssetDatabase.LoadAssetAtPath<MMOItemDefinition>("Assets/_Project/Configs/Items/Threadbare_Cloth_Gloves.asset"),
-                AssetDatabase.LoadAssetAtPath<MMOItemDefinition>("Assets/_Project/Configs/Items/Threadbare_Cloth_Pants.asset"),
-                AssetDatabase.LoadAssetAtPath<MMOItemDefinition>("Assets/_Project/Configs/Items/Threadbare_Cloth_Shoes.asset")
+                AssetDatabase.LoadAssetAtPath<MMOItemDefinition>("Assets/_Project/Equipment/Armor/Cloth/Threadbare Tunic/Threadbare_Cloth_Tunic.asset"),
+                AssetDatabase.LoadAssetAtPath<MMOItemDefinition>("Assets/_Project/Equipment/Armor/Cloth/Threadbare Gloves/Threadbare_Cloth_Gloves.asset"),
+                AssetDatabase.LoadAssetAtPath<MMOItemDefinition>("Assets/_Project/Equipment/Armor/Cloth/Threadbare Pants/Threadbare_Cloth_Pants.asset"),
+                AssetDatabase.LoadAssetAtPath<MMOItemDefinition>("Assets/_Project/Equipment/Armor/Cloth/Threadbare Shoes/Threadbare_Cloth_Shoes.asset")
             };
             MMOCharacterAppearanceCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOCharacterAppearanceCatalog>(
                 "Assets/Resources/RPGClone/Character_Appearance_Catalog.asset");
@@ -518,9 +518,9 @@ namespace RPGClone.EditorTests
         {
             GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Player/PlayerCapsule.prefab");
             MMOItemDefinition sword = AssetDatabase.LoadAssetAtPath<MMOItemDefinition>(
-                "Assets/_Project/Configs/Items/Recruits_Shortsword.asset");
+                "Assets/_Project/Equipment/Weapons/One-Handed Swords/Recruit's Shortsword/Recruits_Shortsword.asset");
             MMOItemDefinition shield = AssetDatabase.LoadAssetAtPath<MMOItemDefinition>(
-                "Assets/_Project/Configs/Items/Recruits_Shield.asset");
+                "Assets/_Project/Equipment/Weapons/Shields/Recruit's Shield/Recruits_Shield.asset");
             Assert.That(playerPrefab, Is.Not.Null);
             Assert.That(sword, Is.Not.Null);
             Assert.That(shield, Is.Not.Null);
