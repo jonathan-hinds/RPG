@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WaterShield_WaterMist
+  m_Shader: {fileID: 4800000, guid: 7c6b2871081a2834ca969a30fcd5e265, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3000
+  stringTagMap:
+    RenderType: Transparent
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: 8043157c314561741b9872af6528ed9a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DistortionMap:
+        m_Texture: {fileID: 2800000, guid: 13d294579743b1d4d89c49fa9959acd3, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SecondaryMap:
+        m_Texture: {fileID: 2800000, guid: 8043157c314561741b9872af6528ed9a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Brightness: 0.72
+    - _Dissolve: 0
+    - _DistortionStrength: 0.025
+    - _DstBlend: 10
+    - _EdgeBrightness: 0.4
+    - _EdgePower: 2.2
+    - _EdgeSoftness: 0.08
+    - _Opacity: 0.48
+    - _PulseAmount: 0.08
+    - _PulseFrequency: 2
+    - _SecondaryMix: 0.1
+    - _SrcBlend: 5
+    - _WobbleAmount: 0.035
+    - _WobbleSpeed: 2.4
+    m_Colors:
+    - _DistortionScrollSpeed: {r: 0.08, g: 0.12, b: 0, a: 0}
+    - _ScrollSpeed: {r: 0.1, g: 0.05, b: 0, a: 0}
+    - _SecondaryScrollSpeed: {r: -0.06, g: 0.11, b: 0, a: 0}
+    - _SecondaryTint: {r: 0.72, g: 1.55, b: 1.8, a: 1}
+    - _Tint: {r: 0.55, g: 0.78, b: 0.9, a: 0.32}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

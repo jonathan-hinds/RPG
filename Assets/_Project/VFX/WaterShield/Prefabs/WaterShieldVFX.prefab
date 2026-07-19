@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3166396048117842213
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6615796570183407312}
+  - component: {fileID: 1816137684126701427}
+  m_Layer: 0
+  m_Name: WaterShieldVFX
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6615796570183407312
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3166396048117842213}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1343138551460261197}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1816137684126701427
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3166396048117842213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555e999e659d3a041b7ea265380390ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Water.WaterShieldVFX
+  profile: {fileID: 11400000, guid: 57f177c4d77af3f47818d3c0f24fc678, type: 2}
+  orbPrefab: {fileID: 7342420421642720934, guid: 88f71a6ff763010458317152b86d8cb1, type: 3}
+  activationPrefab: {fileID: 6700207283865232555, guid: 01b6684246f60ac4d8708cd312189158, type: 3}
+  absorbReactionPrefab: {fileID: 8711629188943048845, guid: d439186cde83103459abcdad0efd962e, type: 3}
+  manaRestorePrefab: {fileID: 7142686558604306617, guid: fd5cc0248b3f6894f8779e7696e2446f, type: 3}
+  expirationPrefab: {fileID: 81024008397034466, guid: 95d3afd15e0b719438975bf7a6d64bb3, type: 3}
+  destroyOnComplete: 1
+  formationRoot: {fileID: 1343138551460261197}
+--- !u!1 &3361384358107917137
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1343138551460261197}
+  m_Layer: 0
+  m_Name: Persistent Three Orb Formation
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1343138551460261197
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3361384358107917137}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6615796570183407312}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

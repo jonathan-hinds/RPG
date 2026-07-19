@@ -20,6 +20,10 @@ namespace RPGClone.EditorTools
         private const string HealingBeamChargePrefabPath = "Assets/_Project/VFX/HealingBeam/Prefabs/HealingBeamChargeVFX.prefab";
         private const string BashPrefabPath = "Assets/_Project/VFX/Bash/Prefabs/BashVFX.prefab";
         private const string BerzerkitisPrefabPath = "Assets/_Project/VFX/Berzerkitis/Prefabs/BerzerkitisVFX.prefab";
+        private const string WaterShieldPrefabPath = "Assets/_Project/VFX/WaterShield/Prefabs/WaterShieldVFX.prefab";
+        private const string LightningCastPrefabPath = "Assets/_Project/VFX/Lightning/Prefabs/LightningCastVFX.prefab";
+        private const string LightningBeamPrefabPath = "Assets/_Project/VFX/Lightning/Prefabs/LightningBeamVFX.prefab";
+        private const string LightningImpactPrefabPath = "Assets/_Project/VFX/Lightning/Prefabs/LightningImpactVFX.prefab";
 
         [MenuItem("Tools/RPG Clone/VFX/Install Ability VFX Content")]
         public static void InstallAbilityVfxContent()
@@ -86,11 +90,14 @@ namespace RPGClone.EditorTools
                 HealingBeam = AssetDatabase.LoadAssetAtPath<GameObject>(HealingBeamPrefabPath)
                     ?? CreateBeamPrefab("Healing_Beam", lineMaterials["Holy"], particleMaterials["Holy"], 0.48f, 9, 0.045f, 26f, true, 0.045f, 0.5f),
                 HealingImpact = CreateAuraBurstPrefab("Healing_Target_Aura", particleMaterials["Holy"], new Color(0.5f, 1f, 0.25f, 0.58f), new Color(1f, 0.92f, 0.18f, 0.52f), 0.46f, 112, 0.82f),
-                LightningBeam = CreateBeamPrefab("Lightning_Bolt_Beam", lineMaterials["Nature"], particleMaterials["Nature"], 0.36f, 10, 0.08f, 38f, true, 0.042f, 0.36f),
-                LightningImpact = CreateBurstPrefab("Lightning_Impact", particleMaterials["Nature"], new Color(0.5f, 1f, 0.22f, 0.82f), new Color(1f, 0.96f, 0.24f, 0.58f), 0.5f, 88, 0.46f, 0.062f),
+                LightningBeam = AssetDatabase.LoadAssetAtPath<GameObject>(LightningBeamPrefabPath)
+                    ?? CreateBeamPrefab("Lightning_Bolt_Beam", lineMaterials["Nature"], particleMaterials["Nature"], 0.36f, 10, 0.08f, 38f, true, 0.042f, 0.36f),
+                LightningImpact = AssetDatabase.LoadAssetAtPath<GameObject>(LightningImpactPrefabPath)
+                    ?? CreateBurstPrefab("Lightning_Impact", particleMaterials["Nature"], new Color(0.5f, 1f, 0.22f, 0.82f), new Color(1f, 0.96f, 0.24f, 0.58f), 0.5f, 88, 0.46f, 0.062f),
                 FrostShock = CreateBeamPrefab("Frost_Shock_Bolt", lineMaterials["Frost"], particleMaterials["Frost"], 0.22f, 7, 0.04f, 20f, true, 0.04f, 0.32f),
                 FrostImpact = CreateBurstPrefab("Frost_Impact", particleMaterials["Frost"], new Color(0.42f, 0.9f, 1f, 0.8f), new Color(0.9f, 1f, 1f, 0.52f), 0.48f, 82, 0.58f, 0.052f),
-                WaterShield = CreateAuraBurstPrefab("Water_Shield_Aura", particleMaterials["Water"], new Color(0.22f, 0.66f, 1f, 0.54f), new Color(0.78f, 1f, 1f, 0.32f), 0.52f, 96, 1.05f),
+                WaterShield = AssetDatabase.LoadAssetAtPath<GameObject>(WaterShieldPrefabPath)
+                    ?? CreateAuraBurstPrefab("Water_Shield_Aura", particleMaterials["Water"], new Color(0.22f, 0.66f, 1f, 0.54f), new Color(0.78f, 1f, 1f, 0.32f), 0.52f, 96, 1.05f),
 
                 ArcaneMissile = CreateBeamPrefab("Arcane_Missile_Channel", lineMaterials["Arcane"], particleMaterials["Arcane"], 5f, 9, 0.055f, 24f, false, 0.042f, 0.58f),
                 ArcaneImpact = CreateBurstPrefab("Arcane_Impact", particleMaterials["Arcane"], new Color(0.72f, 0.32f, 1f, 0.82f), new Color(0.32f, 0.82f, 1f, 0.5f), 0.44f, 76, 0.52f, 0.052f),
@@ -131,7 +138,15 @@ namespace RPGClone.EditorTools
                     false,
                     useHandCastingAnchors: false,
                     alignCastPrefabToTarget: false),
-                ["shaman_lightning_bolt"] = ConfigureDefinition("Shaman_Lightning_Bolt_VFX", prefabs.NatureCasting, prefabs.LightningBeam, prefabs.LightningImpact, 0.08f, true),
+                ["shaman_lightning_bolt"] = ConfigureDefinition(
+                    "Shaman_Lightning_Bolt_VFX",
+                    AssetDatabase.LoadAssetAtPath<GameObject>(LightningCastPrefabPath) ?? prefabs.NatureCasting,
+                    prefabs.LightningBeam,
+                    prefabs.LightningImpact,
+                    0f,
+                    true,
+                    useHandCastingAnchors: false,
+                    alignCastPrefabToTarget: false),
                 ["shaman_frost_shock"] = ConfigureDefinition("Shaman_Frost_Shock_VFX", null, prefabs.FrostShock, prefabs.FrostImpact, 0.04f, true),
                 ["shaman_water_shield"] = ConfigureDefinition("Shaman_Water_Shield_VFX", null, null, prefabs.WaterShield, 0.02f, false),
                 ["shaman_earthquake"] = ConfigureDefinition("Shaman_Earthquake_VFX", null, null, prefabs.Earthquake, 0.02f, false, false),

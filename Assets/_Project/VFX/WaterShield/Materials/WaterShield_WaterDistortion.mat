@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WaterShield_WaterDistortion
+  m_Shader: {fileID: 4800000, guid: f2a1e9e977fc5ee42a2e1d768f7deb0a, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3000
+  stringTagMap:
+    RenderType: Transparent
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: f7a858409c1f54442b9ca8a9e27d00c5, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DistortionMap:
+        m_Texture: {fileID: 2800000, guid: 13d294579743b1d4d89c49fa9959acd3, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Brightness: 1
+    - _Dissolve: 0
+    - _DistortionStrength: 0.025
+    - _Opacity: 0.28
+    - _PulseAmount: 0
+    - _WobbleAmount: 0.035
+    - _WobbleSpeed: 2.4
+    m_Colors:
+    - _DistortionScrollSpeed: {r: 0.09, g: 0.13, b: 0, a: 0}
+    - _ScrollSpeed: {r: 0.08, g: 0.11, b: 0, a: 0}
+    - _SecondaryScrollSpeed: {r: 0, g: 0, b: 0, a: 0}
+    - _SecondaryTint: {r: 1, g: 1, b: 1, a: 1}
+    - _Tint: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

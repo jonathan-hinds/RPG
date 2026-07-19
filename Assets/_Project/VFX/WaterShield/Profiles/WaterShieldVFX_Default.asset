@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e67979b44a8164a4ba2e98ea7a945499, type: 3}
+  m_Name: WaterShieldVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Water.WaterShieldVFXProfile
+  authoringVersion: 2
+  effectScale: 1
+  overallBrightness: 1.15
+  colors:
+    WhiteHighlight: {r: 1.8, g: 2, b: 2.1, a: 1}
+    PaleCyan: {r: 0.72, g: 1.55, b: 1.8, a: 1}
+    Aqua: {r: 0.12, g: 1.15, b: 1.65, a: 1}
+    ClearBlue: {r: 0.08, g: 0.62, b: 1.45, a: 1}
+    DeepBlue: {r: 0.025, g: 0.16, b: 0.72, a: 1}
+    Teal: {r: 0.04, g: 0.72, b: 0.8, a: 1}
+    ManaViolet: {r: 0.42, g: 0.34, b: 1.45, a: 1}
+    Mist: {r: 0.55, g: 0.78, b: 0.9, a: 0.32}
+  particleQuality: 2
+  expirationDuration: 0.8
+  activationDuration: 0.62
+  firstOrbDelay: 0
+  orbFormationInterval: 0.055
+  gatherDuration: 0.24
+  dropletsPerOrb: 30
+  collectionInnerRadius: 1.25
+  collectionOuterRadius: 2.85
+  collectionVerticalRange: 1.45
+  inwardSpiralStrength: 0.48
+  activationFlashBrightness: 2.65
+  activationRingSize: 2.35
+  activationSweepDegrees: 210
+  formationPopScale: 0.28
+  formationPopBrightness: 1.4
+  formationSplashAmount: 14
+  orbitRadius: 0.82
+  orbitHeight: 1.05
+  orbitTilt: 9
+  orbitSpeed: 58
+  clockwise: 1
+  formationRotationOffset: 28
+  verticalBobAmount: 0.08
+  verticalBobSpeed: 1.8
+  orbScale: 0.28
+  innerCoreScale: 0.58
+  innerCoreBrightness: 1.8
+  mainWaterOpacity: 0.72
+  outerShellOpacity: 0.42
+  waterDistortionStrength: 0.035
+  surfaceWobbleAmount: 0.07
+  surfaceWobbleSpeed: 2.4
+  highlightBrightness: 1.65
+  deepWaterIntensity: 0.72
+  manaEnergyIntensity: 0.62
+  mainTextureScrollSpeed: {x: 0.11, y: 0.06}
+  secondaryTextureScrollSpeed: {x: -0.07, y: 0.13}
+  surfaceHighlightSpeed: {x: 0.16, y: -0.08}
+  distortionScrollSpeed: {x: 0.09, y: 0.12}
+  internalRotationSpeed: 24
+  outerShellRotationSpeed: -31
+  trailLength: 0.48
+  trailWidth: 0.22
+  trailOpacity: 0.72
+  trailTextureSpeed: 0.85
+  highlightTrailWidth: 0.07
+  mistAmount: 7
+  trailDropletFrequency: 10
+  dropletSpawnRate: 8
+  dropletSize: 0.055
+  dropletSpeed: 0.28
+  splashFrequency: 1.2
+  splashSize: 0.16
+  fineSprayAmount: 7
+  waterMoteCount: 7
+  waterMoteBrightness: 1.2
+  absorbFlashIntensity: 2.3
+  absorbReactionScale: 1.15
+  orbCompressionAmount: 0.26
+  rippleStrength: 1
+  reactiveSplashAmount: 12
+  orbitDisturbanceAmount: 0.22
+  manaTransferBrightness: 2
+  manaTransferSpeed: 3.2
+  chestPulseIntensity: 1.6
+  persistentManaPulseInterval: 5

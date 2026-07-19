@@ -12,16 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f19b6985de7578844a289965931ed701, type: 3}
   m_Name: Shaman_Lightning_Bolt_VFX
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.MMOAbilityVfxDefinition
-  castingPrefab: {fileID: 1387596129098298224, guid: 4d5b6832ebf18f742806eaf5bdf4f0f2, type: 3}
-  castPrefab: {fileID: 2179115289055295057, guid: e9317aa068b337f4d930edd2dc7a8de6, type: 3}
-  hitPrefab: {fileID: 8360569626486200233, guid: 892cb05de72153d4aa3aa2f10bd25807, type: 3}
+  castingPrefab: {fileID: 7861348032332691891, guid: 1f52520cd680bd747b89cfd0ea639f97, type: 3}
+  castPrefab: {fileID: 4390822563080691255, guid: 79b1e4abd76d31a488c3959cdd11e4a3, type: 3}
+  hitPrefab: {fileID: 5877223352234556187, guid: f14eb9fe614a902408ce261666958455, type: 3}
   attachCastingToCaster: 1
-  useHandCastingAnchors: 1
+  useHandCastingAnchors: 0
   attachHitToTarget: 1
-  alignCastPrefabToTarget: 1
-  castingLocalOffset: {x: 0, y: 1.15, z: 0.42}
+  alignCastPrefabToTarget: 0
+  castingLocalOffset: {x: 0, y: 0, z: 0}
   handCastingLocalOffset: {x: 0, y: 0, z: 0}
   castOriginLocalOffset: {x: 0, y: 1.18, z: 0.48}
   hitLocalOffset: {x: 0, y: 0.85, z: 0}
-  hitDelaySeconds: 0.08
+  hitDelaySeconds: 0
   castPrefabControlsHitTiming: 1

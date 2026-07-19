@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8751bc80b8c69c045a66e8b6dff1885b, type: 3}
+  m_Name: LightningVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Shaman.LightningVFXProfile
+  presentationChargeDuration: 0.85
+  handArcCount: 5
+  handArcThickness: 0.075
+  handArcFlickerSpeed: 28
+  electricalCoreSize: 0.52
+  electricalCoreBrightness: 3.4
+  groundCrawlerFrequency: 9
+  groundCrawlerRange: 2.7
+  pressureFieldStrength: 0.8
+  dustRingRadius: 3.8
+  dustRingExpansionSpeed: 6.5
+  dustDensity: 24
+  inwardDustSpawnRadius: 4.1
+  inwardDustSpeed: 3.2
+  dustSpiralAmount: 0.75
+  dirtFragmentCount: 12
+  dirtFragmentSize: 0.16
+  releaseDustAmount: 44
+  beamDuration: 0.2
+  beamWidth: 0.72
+  coreWidth: 0.14
+  mainBodyWidth: 0.38
+  outerGlowWidth: 0.92
+  beamBrightness: 4.2
+  beamPathComplexity: 11
+  largeBendCount: 3
+  pathRefreshRate: 24
+  secondaryBoltCount: 4
+  branchCount: 8
+  branchLength: 1.25
+  beamParticleAmount: 54
+  distortionStrength: 0.55
+  contactFlashSize: 1.25
+  impactBoltCount: 8
+  targetBodyArcCount: 6
+  shockRingSize: 3.1
+  groundStrikeCount: 5
+  impactSparkCount: 58
+  impactDustAmount: 22
+  smokeAmount: 7
+  aftermathDuration: 0.44
+  overallScale: 1
+  overallBrightness: 1
+  whiteHotColor: {r: 1, g: 0.98, b: 0.82, a: 1}
+  cyanColor: {r: 0.2, g: 0.96, b: 1, a: 1}
+  electricBlueColor: {r: 0.08, g: 0.42, b: 1, a: 0.92}
+  violetColor: {r: 0.48, g: 0.18, b: 1, a: 0.62}
+  dustColor: {r: 0.62, g: 0.48, b: 0.31, a: 0.72}
+  particleQuality: 2

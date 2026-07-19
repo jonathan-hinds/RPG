@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3140112841680529133
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5327732341426767792}
+  - component: {fileID: 8170260860482190841}
+  m_Layer: 0
+  m_Name: LightningVFX
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5327732341426767792
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3140112841680529133}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8170260860482190841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3140112841680529133}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5c2d8a322d44be41b8d497afa221d96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Shaman.LightningVFX
+  profile: {fileID: 11400000, guid: 444697771fd9d6343b35a27df8d1871b, type: 2}
+  castPrefab: {fileID: 7861348032332691891, guid: 1f52520cd680bd747b89cfd0ea639f97, type: 3}
+  beamPrefab: {fileID: 4390822563080691255, guid: 79b1e4abd76d31a488c3959cdd11e4a3, type: 3}
+  impactPrefab: {fileID: 5877223352234556187, guid: f14eb9fe614a902408ce261666958455, type: 3}
+  aftermathPrefab: {fileID: 1962340325896338724, guid: b2aed8eec110b3f46a74190dd727c31b, type: 3}

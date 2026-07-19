@@ -19,6 +19,7 @@ namespace RPGClone.Buffs
 
         public event Action<MMOCharacterBuffController> BuffsChanged;
         public event Action<MMOCharacterBuffController> BuffsUpdated;
+        public event Action<MMOCharacterBuffController, int> DamageAbsorbedAsMana;
         public IReadOnlyList<MMOActiveBuff> ActiveBuffs => activeBuffs;
 
         private void Awake()
@@ -116,6 +117,7 @@ namespace RPGClone.Buffs
             }
 
             identity.Mana.SetCurrent(identity.Mana.CurrentValue + absorbed);
+            DamageAbsorbedAsMana?.Invoke(this, absorbed);
             return absorbed;
         }
 
