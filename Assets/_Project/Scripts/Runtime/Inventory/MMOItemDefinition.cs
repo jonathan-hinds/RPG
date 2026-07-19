@@ -149,6 +149,11 @@ namespace RPGClone.Inventory
             allowedClasses = new List<MMOPlayableClass>();
         }
 
+        public void SetEquipmentVisual(MMOEquipmentVisualDefinition newEquipmentVisual)
+        {
+            equipmentVisual = newEquipmentVisual;
+        }
+
         public void ConfigureWeapon(
             string newItemId,
             string newDisplayName,

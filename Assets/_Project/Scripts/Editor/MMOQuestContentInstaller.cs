@@ -58,6 +58,7 @@ namespace RPGClone.EditorTools
             CreateQuestCatalog(quests.All);
             UpdateLootTables(items, quests, enemies);
             InstallSceneObjects(items, quests, enemies, friendlyNpcProfile);
+            MMOLowLevelArmorContentInstaller.InstallIntoOpenStarterScene(false);
             MMOHudSceneInstaller.InstallIntoOpenScene(false);
 
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());

@@ -45219,6 +45219,212 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 5461320835613783329, guid: 1df135b3c4a71104783837233b44e908, type: 3}
+--- !u!1 &411690396
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 411690403}
+  - component: {fileID: 411690402}
+  - component: {fileID: 411690401}
+  - component: {fileID: 411690400}
+  - component: {fileID: 411690399}
+  - component: {fileID: 411690398}
+  - component: {fileID: 411690397}
+  m_Layer: 0
+  m_Name: Vendor - Blacksmith
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &411690397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 411690396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cf4eec85107c9d499482aaf2d2dfe3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vendors.MMOVendorNpc
+  vendorId: blacksmith_durgan
+  displayNameOverride: Blacksmith Durgan
+  title: Mail Armor Blacksmith
+  stock:
+  - item: {fileID: 11400000, guid: c8efe7aa1cb84d24ba6a12bea967fc5d, type: 2}
+    quantity: 1
+    priceCopper: 170
+  - item: {fileID: 11400000, guid: 239c8f8905941714d846803b2e164cf2, type: 2}
+    quantity: 1
+    priceCopper: 95
+  - item: {fileID: 11400000, guid: e24cc7d9695b0884ba2bcc270709c7ea, type: 2}
+    quantity: 1
+    priceCopper: 140
+  - item: {fileID: 11400000, guid: ce373415abca6df40977975c759b6648, type: 2}
+    quantity: 1
+    priceCopper: 95
+  buysTrash: 1
+  interactionDistance: 5
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  snapToGroundOnStart: 1
+--- !u!114 &411690398
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 411690396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 509862488}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 2
+  displayNameOverride: Blacksmith Durgan
+  titleOverride: Mail Armor Blacksmith
+  applyOnAwake: 1
+--- !u!114 &411690399
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 411690396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  displayName: Blacksmith Durgan
+  level: 4
+  portrait: {fileID: 0}
+  portraitTint: {r: 0.95, g: 0.66, b: 0.22, a: 1}
+  faction: 2
+  selectable: 1
+  stats:
+    stamina: 12
+    strength: 9
+    agility: 12
+    intellect: 11
+    spirit: 10
+    armor: 12
+    attackPower: 8
+    spellPower: 4
+    meleeMinDamage: 3
+    meleeMaxDamage: 6
+    meleeAttackSpeed: 2.2
+    meleeRange: 3
+  health:
+    currentValue: 240
+    maxValue: 240
+  mana:
+    currentValue: 255
+    maxValue: 255
+--- !u!23 &411690400
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 411690396}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!136 &411690401
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 411690396}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &411690402
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 411690396}
+  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &411690403
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 411690396}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -8, y: 2, z: -128}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &414391207
 GameObject:
   m_ObjectHideFlags: 0
@@ -49791,6 +49997,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 507280813}
   m_Mesh: {fileID: 4300000, guid: 024afe951c0d1944ab1e967b21207e44, type: 2}
+--- !u!115 &509862488
+MonoScript:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  serializedVersion: 7
+  m_DefaultReferences: {}
+  m_Icon: {fileID: 0}
+  m_Type: 0
+  m_ExecutionOrder: 0
+  m_ClassName: MMOStandardNpcIdentity
+  m_Namespace: RPGClone.Characters
+  m_AssemblyName: Assembly-CSharp
 --- !u!1 &510804631
 GameObject:
   m_ObjectHideFlags: 0
@@ -69246,6 +69467,212 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.010278251, y: 0.010279483, z: 0.011000003}
   m_Center: {x: 0.0000015303958, y: 0.0000017350544, z: 0.0055000014}
+--- !u!1 &760707819
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 760707826}
+  - component: {fileID: 760707825}
+  - component: {fileID: 760707824}
+  - component: {fileID: 760707823}
+  - component: {fileID: 760707822}
+  - component: {fileID: 760707821}
+  - component: {fileID: 760707820}
+  m_Layer: 0
+  m_Name: Vendor - Tailor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &760707820
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 760707819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 509862488}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 2
+  displayNameOverride: Tailor Velara
+  titleOverride: Cloth Armor Tailor
+  applyOnAwake: 1
+--- !u!114 &760707821
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 760707819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cf4eec85107c9d499482aaf2d2dfe3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vendors.MMOVendorNpc
+  vendorId: tailor_velara
+  displayNameOverride: Tailor Velara
+  title: Cloth Armor Tailor
+  stock:
+  - item: {fileID: 11400000, guid: 5e7f84e26b835784cb190bd9b5fcd222, type: 2}
+    quantity: 1
+    priceCopper: 140
+  - item: {fileID: 11400000, guid: c73a048828f49a34ca40ba71c8a9b65d, type: 2}
+    quantity: 1
+    priceCopper: 75
+  - item: {fileID: 11400000, guid: 36cced0670854bb44aa198cad06afdae, type: 2}
+    quantity: 1
+    priceCopper: 110
+  - item: {fileID: 11400000, guid: dd7de64b7a45ed9409efa4d3ac8a8afa, type: 2}
+    quantity: 1
+    priceCopper: 75
+  buysTrash: 1
+  interactionDistance: 5
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  snapToGroundOnStart: 1
+--- !u!114 &760707822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 760707819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  displayName: Tailor Velara
+  level: 4
+  portrait: {fileID: 0}
+  portraitTint: {r: 0.95, g: 0.66, b: 0.22, a: 1}
+  faction: 2
+  selectable: 1
+  stats:
+    stamina: 12
+    strength: 9
+    agility: 12
+    intellect: 11
+    spirit: 10
+    armor: 12
+    attackPower: 8
+    spellPower: 4
+    meleeMinDamage: 3
+    meleeMaxDamage: 6
+    meleeAttackSpeed: 2.2
+    meleeRange: 3
+  health:
+    currentValue: 240
+    maxValue: 240
+  mana:
+    currentValue: 255
+    maxValue: 255
+--- !u!23 &760707823
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 760707819}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!136 &760707824
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 760707819}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &760707825
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 760707819}
+  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &760707826
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 760707819}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -18, y: 2, z: -128}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &764712038
 GameObject:
   m_ObjectHideFlags: 0
@@ -177713,6 +178140,212 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: af979314eb4318e46958633122314f4c, type: 3}
+--- !u!1 &1965178288
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1965178295}
+  - component: {fileID: 1965178294}
+  - component: {fileID: 1965178293}
+  - component: {fileID: 1965178292}
+  - component: {fileID: 1965178291}
+  - component: {fileID: 1965178290}
+  - component: {fileID: 1965178289}
+  m_Layer: 0
+  m_Name: Vendor - Huntsman
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1965178289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1965178288}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cf4eec85107c9d499482aaf2d2dfe3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vendors.MMOVendorNpc
+  vendorId: huntsman_roka
+  displayNameOverride: Huntsman Roka
+  title: Leather Armor Huntsman
+  stock:
+  - item: {fileID: 11400000, guid: 76b6bf39a982ee649a574ec0a27beacb, type: 2}
+    quantity: 1
+    priceCopper: 155
+  - item: {fileID: 11400000, guid: b482c63bc842f424b82148037196c799, type: 2}
+    quantity: 1
+    priceCopper: 85
+  - item: {fileID: 11400000, guid: 92cabd76c624a3c449c77ab8196a8f20, type: 2}
+    quantity: 1
+    priceCopper: 125
+  - item: {fileID: 11400000, guid: 92b830867c449e74681130c3896decd2, type: 2}
+    quantity: 1
+    priceCopper: 85
+  buysTrash: 1
+  interactionDistance: 5
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  snapToGroundOnStart: 1
+--- !u!114 &1965178290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1965178288}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 509862488}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 2
+  displayNameOverride: Huntsman Roka
+  titleOverride: Leather Armor Huntsman
+  applyOnAwake: 1
+--- !u!114 &1965178291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1965178288}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  displayName: Huntsman Roka
+  level: 4
+  portrait: {fileID: 0}
+  portraitTint: {r: 0.95, g: 0.66, b: 0.22, a: 1}
+  faction: 2
+  selectable: 1
+  stats:
+    stamina: 12
+    strength: 9
+    agility: 12
+    intellect: 11
+    spirit: 10
+    armor: 12
+    attackPower: 8
+    spellPower: 4
+    meleeMinDamage: 3
+    meleeMaxDamage: 6
+    meleeAttackSpeed: 2.2
+    meleeRange: 3
+  health:
+    currentValue: 240
+    maxValue: 240
+  mana:
+    currentValue: 255
+    maxValue: 255
+--- !u!23 &1965178292
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1965178288}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!136 &1965178293
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1965178288}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &1965178294
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1965178288}
+  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &1965178295
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1965178288}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -13, y: 2, z: -134}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1965543783
 GameObject:
   m_ObjectHideFlags: 0
@@ -194382,3 +195015,6 @@ SceneRoots:
   - {fileID: 590157076}
   - {fileID: 1726372824}
   - {fileID: 526006818}
+  - {fileID: 760707826}
+  - {fileID: 1965178295}
+  - {fileID: 411690403}
