@@ -9,11 +9,14 @@ namespace RPGClone.Characters
     {
         private static readonly int BaseMapPropertyId = Shader.PropertyToID("_BaseMap");
         private static readonly int MainTexturePropertyId = Shader.PropertyToID("_MainTex");
+        private static readonly int BaseColorPropertyId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorPropertyId = Shader.PropertyToID("_Color");
 
         [SerializeField] private MMOCharacterAppearanceCatalog appearanceCatalog;
         [SerializeField] private string headStyleId = "head_1";
         [SerializeField] private string faceId = "face_1";
         [SerializeField] private string hairstyleId = "hair_1";
+        [SerializeField] private string hairColorId = "hair_black";
 
         private GameObject activeHeadStyle;
         private GameObject activeHairstyle;
@@ -33,6 +36,10 @@ namespace RPGClone.Characters
         public string HairstyleId => appearanceCatalog != null
             ? appearanceCatalog.NormalizeHairstyleId(hairstyleId)
             : hairstyleId;
+
+        public string HairColorId => appearanceCatalog != null
+            ? appearanceCatalog.NormalizeHairColorId(hairColorId)
+            : hairColorId;
 
         private void OnEnable()
         {
@@ -71,6 +78,21 @@ namespace RPGClone.Characters
             string newFaceId,
             string newHairstyleId)
         {
+            Configure(
+                newAppearanceCatalog,
+                newHeadStyleId,
+                newFaceId,
+                newHairstyleId,
+                newAppearanceCatalog?.DefaultHairColorId);
+        }
+
+        public void Configure(
+            MMOCharacterAppearanceCatalog newAppearanceCatalog,
+            string newHeadStyleId,
+            string newFaceId,
+            string newHairstyleId,
+            string newHairColorId)
+        {
             appearanceCatalog = newAppearanceCatalog;
             headStyleId = appearanceCatalog != null
                 ? appearanceCatalog.NormalizeHeadStyleId(newHeadStyleId)
@@ -81,6 +103,9 @@ namespace RPGClone.Characters
             hairstyleId = appearanceCatalog != null
                 ? appearanceCatalog.NormalizeHairstyleId(newHairstyleId)
                 : newHairstyleId;
+            hairColorId = appearanceCatalog != null
+                ? appearanceCatalog.NormalizeHairColorId(newHairColorId)
+                : newHairColorId;
             Rebuild();
         }
 
@@ -115,6 +140,7 @@ namespace RPGClone.Characters
                     headStyle.DisplayName,
                     liveSkeleton,
                     face?.AlbedoTexture,
+                    null,
                     out activeHeadStyle);
             }
 
@@ -123,13 +149,17 @@ namespace RPGClone.Characters
             MMOHairstyleDefinition hairstyle = appearanceCatalog != null
                 ? appearanceCatalog.FindHairstyle(hairstyleId)
                 : null;
+            MMOHairColorDefinition hairColor = appearanceCatalog != null
+                ? appearanceCatalog.FindHairColor(hairColorId)
+                : null;
             if (hairstyle?.ModelPrefab != null)
             {
                 TryCreateSkinnedVisual(
                     hairstyle.ModelPrefab,
                     hairstyle.DisplayName,
                     liveSkeleton,
-                    null,
+                    hairstyle.ColorMask,
+                    hairColor?.Color ?? Color.white,
                     out activeHairstyle);
             }
 
@@ -146,6 +176,7 @@ namespace RPGClone.Characters
             string displayName,
             IReadOnlyDictionary<string, Transform> liveSkeleton,
             Texture2D albedoOverride,
+            Color? colorOverride,
             out GameObject instance)
         {
             instance = Instantiate(modelPrefab, transform);
@@ -185,7 +216,7 @@ namespace RPGClone.Characters
                 if (MMOSkinnedVisualBindingUtility.TryRebind(skinnedRenderer, liveSkeleton, out List<string> missingBoneNames))
                 {
                     ApplyCharacterSurface(skinnedRenderer);
-                    ApplyAlbedoOverride(skinnedRenderer, albedoOverride);
+                    ApplySurfaceOverrides(skinnedRenderer, albedoOverride, colorOverride);
                     skinnedRenderer.enabled = true;
                     reboundAnyRenderer = true;
                 }
@@ -208,17 +239,30 @@ namespace RPGClone.Characters
             return reboundAnyRenderer;
         }
 
-        private static void ApplyAlbedoOverride(Renderer renderer, Texture2D albedoTexture)
+        private static void ApplySurfaceOverrides(
+            Renderer renderer,
+            Texture2D albedoTexture,
+            Color? colorOverride)
         {
-            if (renderer == null || albedoTexture == null)
+            if (renderer == null || (albedoTexture == null && !colorOverride.HasValue))
             {
                 return;
             }
 
             MaterialPropertyBlock propertyBlock = new();
             renderer.GetPropertyBlock(propertyBlock);
-            propertyBlock.SetTexture(BaseMapPropertyId, albedoTexture);
-            propertyBlock.SetTexture(MainTexturePropertyId, albedoTexture);
+            if (albedoTexture != null)
+            {
+                propertyBlock.SetTexture(BaseMapPropertyId, albedoTexture);
+                propertyBlock.SetTexture(MainTexturePropertyId, albedoTexture);
+            }
+
+            if (colorOverride.HasValue)
+            {
+                propertyBlock.SetColor(BaseColorPropertyId, colorOverride.Value);
+                propertyBlock.SetColor(ColorPropertyId, colorOverride.Value);
+            }
+
             renderer.SetPropertyBlock(propertyBlock);
         }
 

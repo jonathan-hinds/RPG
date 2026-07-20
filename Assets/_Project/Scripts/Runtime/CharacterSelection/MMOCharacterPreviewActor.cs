@@ -21,7 +21,8 @@ namespace RPGClone.CharacterSelection
             string headStyleId = null,
             string faceId = null,
             Camera previewCamera = null,
-            float scaleMultiplier = DefaultScaleMultiplier)
+            float scaleMultiplier = DefaultScaleMultiplier,
+            string hairColorId = null)
         {
             if (playerVisualPrefab == null || parent == null)
             {
@@ -85,7 +86,7 @@ namespace RPGClone.CharacterSelection
             MMOCharacterAppearanceVisuals appearanceVisuals = actor.GetComponent<MMOCharacterAppearanceVisuals>()
                 ?? actor.AddComponent<MMOCharacterAppearanceVisuals>();
             appearanceVisuals.enabled = true;
-            appearanceVisuals.Configure(appearanceCatalog, headStyleId, faceId, hairstyleId);
+            appearanceVisuals.Configure(appearanceCatalog, headStyleId, faceId, hairstyleId, hairColorId);
 
             foreach (Animator animator in actor.GetComponentsInChildren<Animator>(true))
             {

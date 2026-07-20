@@ -30,7 +30,15 @@ namespace RPGClone.EditorTests
                 first.Configure("hair_1", "Hairstyle 1", null);
                 MMOHairstyleDefinition second = new();
                 second.Configure("hair_2", "Hairstyle 2", null);
-                catalog.Configure(new[] { head }, new[] { firstFace, secondFace }, new[] { first, second });
+                MMOHairColorDefinition black = new();
+                black.Configure("hair_black", "Black", Color.black);
+                MMOHairColorDefinition brown = new();
+                brown.Configure("hair_brown", "Brown", new Color(0.4f, 0.2f, 0.1f));
+                catalog.Configure(
+                    new[] { head },
+                    new[] { firstFace, secondFace },
+                    new[] { first, second },
+                    new[] { black, brown });
 
                 Assert.That(catalog.NormalizeHeadStyleId(string.Empty), Is.EqualTo("head_1"));
                 Assert.That(catalog.NormalizeHeadStyleId("unknown"), Is.EqualTo("head_1"));
@@ -40,6 +48,9 @@ namespace RPGClone.EditorTests
                 Assert.That(catalog.NormalizeHairstyleId(string.Empty), Is.EqualTo("hair_1"));
                 Assert.That(catalog.NormalizeHairstyleId("unknown"), Is.EqualTo("hair_1"));
                 Assert.That(catalog.NormalizeHairstyleId("hair_2"), Is.EqualTo("hair_2"));
+                Assert.That(catalog.NormalizeHairColorId(string.Empty), Is.EqualTo("hair_black"));
+                Assert.That(catalog.NormalizeHairColorId("unknown"), Is.EqualTo("hair_black"));
+                Assert.That(catalog.NormalizeHairColorId("hair_brown"), Is.EqualTo("hair_brown"));
             }
             finally
             {
@@ -55,6 +66,7 @@ namespace RPGClone.EditorTests
             Assert.That(saveData.headStyleId, Is.EqualTo("head_1"));
             Assert.That(saveData.faceId, Is.EqualTo("face_1"));
             Assert.That(saveData.hairstyleId, Is.EqualTo("hair_1"));
+            Assert.That(saveData.hairColorId, Is.EqualTo("hair_black"));
         }
 
         [Test]
@@ -102,7 +114,8 @@ namespace RPGClone.EditorTests
             {
                 headStyleId = "head_custom",
                 faceId = "face_custom",
-                hairstyleId = "hair_custom"
+                hairstyleId = "hair_custom",
+                hairColorId = "hair_color_custom"
             };
             MethodInfo cloneMethod = typeof(MMOSharedSessionState).GetMethod(
                 "CloneCharacter",
@@ -115,6 +128,20 @@ namespace RPGClone.EditorTests
             Assert.That(clone.headStyleId, Is.EqualTo("head_custom"));
             Assert.That(clone.faceId, Is.EqualTo("face_custom"));
             Assert.That(clone.hairstyleId, Is.EqualTo("hair_custom"));
+            Assert.That(clone.hairColorId, Is.EqualTo("hair_color_custom"));
+        }
+
+        [Test]
+        public void ProductionAppearanceCatalog_ContainsMasksAndCuratedHairColors()
+        {
+            MMOCharacterAppearanceCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOCharacterAppearanceCatalog>(
+                "Assets/Resources/RPGClone/Character_Appearance_Catalog.asset");
+
+            Assert.That(catalog, Is.Not.Null);
+            Assert.That(catalog.Hairstyles, Has.Count.EqualTo(3));
+            Assert.That(catalog.HairColors, Has.Count.EqualTo(10));
+            Assert.That(catalog.Hairstyles, Has.All.Matches<MMOHairstyleDefinition>(style => style.ColorMask != null));
+            Assert.That(catalog.HairColors, Has.All.Matches<MMOHairColorDefinition>(color => !string.IsNullOrWhiteSpace(color.HairColorId)));
         }
 
         [Test]
@@ -169,6 +196,23 @@ namespace RPGClone.EditorTests
                     foreach (SkinnedMeshRenderer renderer in marker.GetComponentsInChildren<SkinnedMeshRenderer>(true))
                     {
                         hasEnabledSkinnedRenderer |= renderer.enabled;
+                        if (!renderer.enabled)
+                        {
+                            continue;
+                        }
+
+                        MaterialPropertyBlock propertyBlock = new();
+                        renderer.GetPropertyBlock(propertyBlock);
+                        Assert.That(
+                            propertyBlock.GetTexture(Shader.PropertyToID("_BaseMap")),
+                            Is.SameAs(hairstyle.ColorMask),
+                            $"{hairstyle.DisplayName} did not receive its grayscale color mask.");
+                        Assert.That(
+                            Vector4.Distance(
+                                propertyBlock.GetColor(Shader.PropertyToID("_BaseColor")),
+                                catalog.HairColors[0].Color),
+                            Is.LessThan(0.0001f),
+                            $"{hairstyle.DisplayName} did not receive the selected hair color.");
                     }
 
                     Assert.That(hasEnabledSkinnedRenderer, Is.True, $"{hairstyle.DisplayName} did not bind to the player skeleton.");

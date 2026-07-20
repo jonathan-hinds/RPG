@@ -17,6 +17,7 @@ namespace RPGClone.EditorTools
 
         private SerializedProperty appearanceCatalog;
         private SerializedProperty hairstyleId;
+        private SerializedProperty hairColorId;
         private SerializedProperty faceId;
         private SerializedProperty chestArmor;
         private SerializedProperty gloves;
@@ -27,6 +28,7 @@ namespace RPGClone.EditorTools
         {
             appearanceCatalog = serializedObject.FindProperty("appearanceCatalog");
             hairstyleId = serializedObject.FindProperty("hairstyleId");
+            hairColorId = serializedObject.FindProperty("hairColorId");
             faceId = serializedObject.FindProperty("faceId");
             chestArmor = serializedObject.FindProperty("chestArmor");
             gloves = serializedObject.FindProperty("gloves");
@@ -45,7 +47,7 @@ namespace RPGClone.EditorTools
             serializedObject.Update();
 
             EditorGUILayout.HelpBox(
-                "Choose the NPC's player-compatible appearance. Default Player Skin uses the first shared hair/face option and leaves that armor body part unequipped. NPC locomotion is locked to Idle.",
+                "Choose the NPC's player-compatible appearance. Hair styles and colors use the shared player catalog. Default Player Skin uses the first shared option and leaves that armor body part unequipped. NPC locomotion is locked to Idle.",
                 MessageType.Info);
 
             if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -70,6 +72,7 @@ namespace RPGClone.EditorTools
                     MMOCharacterAppearanceCatalog catalog =
                         appearanceCatalog.objectReferenceValue as MMOCharacterAppearanceCatalog;
                     DrawHairstylePopup(catalog);
+                    DrawHairColorPopup(catalog);
                     DrawFacePopup(catalog);
                 }
 
@@ -148,6 +151,30 @@ namespace RPGClone.EditorTools
                 ? string.Empty
                 : catalog.Faces[selectedIndex - 1]?.FaceId ?? string.Empty;
             MMONpcVisualPopupAssignment.SetStringIfChanged(faceId, selectionChanged, selectedId);
+            EditorGUI.showMixedValue = previousMixedValue;
+        }
+
+        private void DrawHairColorPopup(MMOCharacterAppearanceCatalog catalog)
+        {
+            if (catalog == null || catalog.HairColors.Count == 0)
+            {
+                EditorGUILayout.PropertyField(hairColorId, new GUIContent("Hair Color ID"));
+                return;
+            }
+
+            string[] labels = new[] { "Default Player Color" }
+                .Concat(catalog.HairColors.Select(option => option?.DisplayName ?? "Missing Hair Color"))
+                .ToArray();
+            int currentIndex = FindHairColorIndex(catalog, hairColorId.stringValue) + 1;
+            bool previousMixedValue = EditorGUI.showMixedValue;
+            EditorGUI.showMixedValue = hairColorId.hasMultipleDifferentValues;
+            EditorGUI.BeginChangeCheck();
+            int selectedIndex = EditorGUILayout.Popup("Hair Color", currentIndex, labels);
+            bool selectionChanged = EditorGUI.EndChangeCheck();
+            string selectedId = selectedIndex <= 0
+                ? string.Empty
+                : catalog.HairColors[selectedIndex - 1]?.HairColorId ?? string.Empty;
+            MMONpcVisualPopupAssignment.SetStringIfChanged(hairColorId, selectionChanged, selectedId);
             EditorGUI.showMixedValue = previousMixedValue;
         }
 
@@ -240,6 +267,25 @@ namespace RPGClone.EditorTools
             {
                 if (catalog.Faces[i] != null
                     && string.Equals(catalog.Faces[i].FaceId, id, StringComparison.Ordinal))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private static int FindHairColorIndex(MMOCharacterAppearanceCatalog catalog, string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < catalog.HairColors.Count; i++)
+            {
+                if (catalog.HairColors[i] != null
+                    && string.Equals(catalog.HairColors[i].HairColorId, id, StringComparison.Ordinal))
                 {
                     return i;
                 }

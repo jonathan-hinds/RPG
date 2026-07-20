@@ -34,6 +34,7 @@ namespace RPGClone.CharacterSelection
         private string selectedHeadStyleId = "head_1";
         private string selectedFaceId = "face_1";
         private string selectedHairstyleId = "hair_1";
+        private string selectedHairColorId = "hair_black";
         private GameObject previewModel;
         private RectTransform root;
         private RectTransform characterListPanel;
@@ -111,6 +112,9 @@ namespace RPGClone.CharacterSelection
             selectedHairstyleId = appearanceCatalog != null
                 ? appearanceCatalog.DefaultHairstyleId
                 : selectedHairstyleId;
+            selectedHairColorId = appearanceCatalog != null
+                ? appearanceCatalog.DefaultHairColorId
+                : selectedHairColorId;
         }
 
         private MMOCharacterRosterRepository CreateRepository()
@@ -630,6 +634,9 @@ namespace RPGClone.CharacterSelection
             MMOHairstyleDefinition hairstyle = appearanceCatalog != null
                 ? appearanceCatalog.FindHairstyle(selectedHairstyleId)
                 : null;
+            MMOHairColorDefinition hairColor = appearanceCatalog != null
+                ? appearanceCatalog.FindHairColor(selectedHairColorId)
+                : null;
             CreateAppearanceSelector(
                 "Face",
                 face != null ? face.DisplayName : "Face",
@@ -642,6 +649,12 @@ namespace RPGClone.CharacterSelection
                 104f,
                 CyclePreviousHairstyle,
                 CycleNextHairstyle);
+            CreateAppearanceSelector(
+                "Hair Color",
+                hairColor != null ? hairColor.DisplayName : "Hair Color",
+                50f,
+                CyclePreviousHairColor,
+                CycleNextHairColor);
 
             Text appearanceHint = MMOUiFactory.CreateText("Appearance Hint", infoPanel, 13, FontStyle.Italic, TextAnchor.MiddleCenter);
             appearanceHint.text = "This choice is permanent after creation.";
@@ -649,7 +662,7 @@ namespace RPGClone.CharacterSelection
             appearanceHint.rectTransform.anchorMin = new Vector2(0.5f, 0f);
             appearanceHint.rectTransform.anchorMax = new Vector2(0.5f, 0f);
             appearanceHint.rectTransform.pivot = new Vector2(0.5f, 0f);
-            appearanceHint.rectTransform.anchoredPosition = new Vector2(0f, 62f);
+            appearanceHint.rectTransform.anchoredPosition = new Vector2(0f, 10f);
             appearanceHint.rectTransform.sizeDelta = new Vector2(330f, 34f);
         }
 
@@ -705,6 +718,9 @@ namespace RPGClone.CharacterSelection
             string hairstyleId = creatingCharacter
                 ? selectedHairstyleId
                 : selectedCharacter?.hairstyleId;
+            string hairColorId = creatingCharacter
+                ? selectedHairColorId
+                : selectedCharacter?.hairColorId;
             string headStyleId = creatingCharacter
                 ? selectedHeadStyleId
                 : selectedCharacter?.headStyleId;
@@ -722,7 +738,8 @@ namespace RPGClone.CharacterSelection
                 headStyleId,
                 faceId,
                 previewCamera,
-                previewScaleMultiplier);
+                previewScaleMultiplier,
+                hairColorId);
         }
 
         private IEnumerable<MMOItemDefinition> ResolveSavedEquipment(MMOCharacterSaveData character)
@@ -779,6 +796,9 @@ namespace RPGClone.CharacterSelection
                 hairstyleId = appearanceCatalog != null
                     ? appearanceCatalog.NormalizeHairstyleId(selectedHairstyleId)
                     : selectedHairstyleId,
+                hairColorId = appearanceCatalog != null
+                    ? appearanceCatalog.NormalizeHairColorId(selectedHairColorId)
+                    : selectedHairColorId,
                 level = 1,
                 sceneName = gameplaySceneName,
                 position = new Vector3SaveData(Vector3.zero),
@@ -881,6 +901,11 @@ namespace RPGClone.CharacterSelection
             CycleHairstyle(-1);
         }
 
+        private void CyclePreviousHairColor()
+        {
+            CycleHairColor(-1);
+        }
+
         private void CyclePreviousFace()
         {
             CycleFace(-1);
@@ -913,6 +938,11 @@ namespace RPGClone.CharacterSelection
             CycleHairstyle(1);
         }
 
+        private void CycleNextHairColor()
+        {
+            CycleHairColor(1);
+        }
+
         private void CycleHairstyle(int direction)
         {
             if (appearanceCatalog == null || appearanceCatalog.Hairstyles.Count == 0)
@@ -926,6 +956,24 @@ namespace RPGClone.CharacterSelection
             if (hairstyle != null)
             {
                 selectedHairstyleId = hairstyle.HairstyleId;
+                Refresh();
+            }
+        }
+
+        private void CycleHairColor(int direction)
+        {
+            if (appearanceCatalog == null || appearanceCatalog.HairColors.Count == 0)
+            {
+                return;
+            }
+
+            int currentIndex = appearanceCatalog.IndexOfHairColor(selectedHairColorId);
+            int nextIndex = (currentIndex + direction + appearanceCatalog.HairColors.Count)
+                % appearanceCatalog.HairColors.Count;
+            MMOHairColorDefinition hairColor = appearanceCatalog.HairColors[nextIndex];
+            if (hairColor != null)
+            {
+                selectedHairColorId = hairColor.HairColorId;
                 Refresh();
             }
         }
@@ -945,6 +993,9 @@ namespace RPGClone.CharacterSelection
                 selectedHairstyleId = appearanceCatalog != null
                     ? appearanceCatalog.DefaultHairstyleId
                     : "hair_1";
+                selectedHairColorId = appearanceCatalog != null
+                    ? appearanceCatalog.DefaultHairColorId
+                    : "hair_black";
             }
 
             Refresh();
@@ -1061,6 +1112,7 @@ namespace RPGClone.CharacterSelection
                 string previousHeadStyleId = character.headStyleId;
                 string previousFaceId = character.faceId;
                 string previousHairstyleId = character.hairstyleId;
+                string previousHairColorId = character.hairColorId;
                 MMOCharacterNameUtility.EnsureCharacterData(character);
                 character.headStyleId = appearanceCatalog != null
                     ? appearanceCatalog.NormalizeHeadStyleId(character.headStyleId)
@@ -1071,6 +1123,9 @@ namespace RPGClone.CharacterSelection
                 character.hairstyleId = appearanceCatalog != null
                     ? appearanceCatalog.NormalizeHairstyleId(character.hairstyleId)
                     : string.IsNullOrWhiteSpace(character.hairstyleId) ? "hair_1" : character.hairstyleId;
+                character.hairColorId = appearanceCatalog != null
+                    ? appearanceCatalog.NormalizeHairColorId(character.hairColorId)
+                    : string.IsNullOrWhiteSpace(character.hairColorId) ? "hair_black" : character.hairColorId;
                 while (!usedNames.Add(character.normalizedCharacterName))
                 {
                     character.characterName = MMOCharacterNameUtility.CreateFallbackName($"{character.race}{character.characterClass}", character.characterId + usedNames.Count);
@@ -1083,7 +1138,8 @@ namespace RPGClone.CharacterSelection
                     || previousNormalized != character.normalizedCharacterName
                     || previousHeadStyleId != character.headStyleId
                     || previousFaceId != character.faceId
-                    || previousHairstyleId != character.hairstyleId;
+                    || previousHairstyleId != character.hairstyleId
+                    || previousHairColorId != character.hairColorId;
             }
 
             return changed;

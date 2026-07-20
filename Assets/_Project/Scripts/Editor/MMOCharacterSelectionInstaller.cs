@@ -438,9 +438,24 @@ namespace RPGClone.EditorTools
                 hairstyle.Configure(
                     $"hair_{index}",
                     $"Hairstyle {index}",
-                    AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/PlayerWeaponStow/HairStyle{index}.fbx"));
+                    AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/PlayerWeaponStow/HairStyle{index}.fbx"),
+                    AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/PlayerWeaponStow/HairStyle{index}_ColorMask.png"));
                 hairstyles.Add(hairstyle);
             }
+
+            List<MMOHairColorDefinition> hairColors = new()
+            {
+                CreateHairColor("hair_raven_black", "Raven Black", "#2B2423"),
+                CreateHairColor("hair_soft_black", "Soft Black", "#473D39"),
+                CreateHairColor("hair_dark_brown", "Dark Brown", "#5A3A2A"),
+                CreateHairColor("hair_chestnut", "Chestnut Brown", "#835136"),
+                CreateHairColor("hair_auburn", "Auburn", "#8E3B2D"),
+                CreateHairColor("hair_copper", "Copper", "#B65E3D"),
+                CreateHairColor("hair_honey_brown", "Honey Brown", "#B98550"),
+                CreateHairColor("hair_golden_blonde", "Golden Blonde", "#E0B866"),
+                CreateHairColor("hair_ash_blonde", "Ash Blonde", "#C9BEA7"),
+                CreateHairColor("hair_silver_gray", "Silver Gray", "#B9B7B5")
+            };
 
             List<MMOFaceDefinition> faces = new();
             for (int index = 1; index <= 3; index++)
@@ -459,9 +474,21 @@ namespace RPGClone.EditorTools
                 "head_1",
                 "Default Head",
                 AssetDatabase.LoadAssetAtPath<GameObject>("Assets/PlayerWeaponStow/StyledHead.fbx"));
-            catalog.Configure(new[] { defaultHeadStyle }, faces, hairstyles);
+            catalog.Configure(new[] { defaultHeadStyle }, faces, hairstyles, hairColors);
             EditorUtility.SetDirty(catalog);
             return catalog;
+        }
+
+        private static MMOHairColorDefinition CreateHairColor(string id, string displayName, string htmlColor)
+        {
+            if (!ColorUtility.TryParseHtmlString(htmlColor, out Color color))
+            {
+                color = Color.white;
+            }
+
+            MMOHairColorDefinition definition = new();
+            definition.Configure(id, displayName, color);
+            return definition;
         }
 
         private static MMOCharacterProfile CreateProfile(MMOPlayableRace race, MMOPlayableClass characterClass)

@@ -27,6 +27,7 @@ namespace RPGClone.CharacterSelection
         public string headStyleId = "head_1";
         public string faceId = "face_1";
         public string hairstyleId = "hair_1";
+        public string hairColorId = "hair_black";
         public int level = 1;
         public int currentExperience;
         public int totalExperienceEarned;

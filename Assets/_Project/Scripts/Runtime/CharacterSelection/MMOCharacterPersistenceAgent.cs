@@ -352,6 +352,7 @@ namespace RPGClone.CharacterSelection
                 saveData.headStyleId = appearanceVisuals.HeadStyleId;
                 saveData.faceId = appearanceVisuals.FaceId;
                 saveData.hairstyleId = appearanceVisuals.HairstyleId;
+                saveData.hairColorId = appearanceVisuals.HairColorId;
             }
 
             saveData.level = identity.Level;
@@ -399,6 +400,7 @@ namespace RPGClone.CharacterSelection
             destination.headStyleId = source.headStyleId;
             destination.faceId = source.faceId;
             destination.hairstyleId = source.hairstyleId;
+            destination.hairColorId = source.hairColorId;
             destination.level = source.level;
             destination.currentExperience = source.currentExperience;
             destination.totalExperienceEarned = source.totalExperienceEarned;
@@ -430,6 +432,7 @@ namespace RPGClone.CharacterSelection
             destination.headStyleId = source.headStyleId;
             destination.faceId = source.faceId;
             destination.hairstyleId = source.hairstyleId;
+            destination.hairColorId = source.hairColorId;
             if (MMOCharacterNameUtility.TryValidate(
                     source.characterName,
                     out string displayName,
@@ -911,7 +914,8 @@ namespace RPGClone.CharacterSelection
                 appearanceCatalog,
                 saveData != null ? saveData.headStyleId : string.Empty,
                 saveData != null ? saveData.faceId : string.Empty,
-                saveData != null ? saveData.hairstyleId : string.Empty);
+                saveData != null ? saveData.hairstyleId : string.Empty,
+                saveData != null ? saveData.hairColorId : string.Empty);
         }
 
         private MMOAbilityDefinition ResolveAbility(string abilityId)

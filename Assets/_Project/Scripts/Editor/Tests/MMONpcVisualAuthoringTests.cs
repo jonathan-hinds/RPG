@@ -38,6 +38,7 @@ namespace RPGClone.EditorTests
             authoring.Configure(catalog, string.Empty, string.Empty, null, null, null, null);
 
             Assert.That(authoring.HairstyleId, Is.EqualTo("hair_default"));
+            Assert.That(authoring.HairColorId, Is.EqualTo("hair_black"));
             Assert.That(authoring.FaceId, Is.EqualTo("face_default"));
             Assert.That(authoring.ChestArmor, Is.Null);
             Assert.That(authoring.Gloves, Is.Null);
@@ -56,7 +57,15 @@ namespace RPGClone.EditorTests
             GameObject npc = Track(new GameObject("NPC"));
             MMONpcVisualAuthoring authoring = npc.AddComponent<MMONpcVisualAuthoring>();
 
-            authoring.Configure(catalog, "hair_alt", "face_alt", chest, gloves, pants, boots);
+            authoring.Configure(
+                catalog,
+                "hair_alt",
+                "hair_auburn",
+                "face_alt",
+                chest,
+                gloves,
+                pants,
+                boots);
 
             MMOPlayerEquipmentVisuals renderer = npc.GetComponent<MMOPlayerEquipmentVisuals>();
             FieldInfo directVisualsField = typeof(MMOPlayerEquipmentVisuals).GetField(
@@ -66,6 +75,7 @@ namespace RPGClone.EditorTests
                 directVisualsField?.GetValue(renderer) as List<MMOEquipmentVisualDefinition>;
 
             Assert.That(authoring.HairstyleId, Is.EqualTo("hair_alt"));
+            Assert.That(authoring.HairColorId, Is.EqualTo("hair_auburn"));
             Assert.That(authoring.FaceId, Is.EqualTo("face_alt"));
             Assert.That(directVisuals, Is.EquivalentTo(new[] { chest, gloves, pants, boots }));
         }
@@ -99,21 +109,26 @@ namespace RPGClone.EditorTests
             GameObject secondNpc = Track(new GameObject("Mail NPC"));
             MMONpcVisualAuthoring first = firstNpc.AddComponent<MMONpcVisualAuthoring>();
             MMONpcVisualAuthoring second = secondNpc.AddComponent<MMONpcVisualAuthoring>();
-            first.Configure(catalog, "hair_alt", "face_alt", leather, null, null, null);
+            first.Configure(catalog, "hair_alt", "hair_auburn", "face_alt", leather, null, null, null);
             second.Configure(catalog, string.Empty, string.Empty, mail, null, null, null);
 
             SerializedObject mixedSelection = new(new Object[] { first, second });
             SerializedProperty hair = mixedSelection.FindProperty("hairstyleId");
+            SerializedProperty hairColor = mixedSelection.FindProperty("hairColorId");
             SerializedProperty chest = mixedSelection.FindProperty("chestArmor");
             Assert.That(hair.hasMultipleDifferentValues, Is.True);
+            Assert.That(hairColor.hasMultipleDifferentValues, Is.True);
             Assert.That(chest.hasMultipleDifferentValues, Is.True);
 
             MMONpcVisualPopupAssignment.SetStringIfChanged(hair, false, string.Empty);
+            MMONpcVisualPopupAssignment.SetStringIfChanged(hairColor, false, string.Empty);
             MMONpcVisualPopupAssignment.SetObjectIfChanged(chest, false, null);
             mixedSelection.ApplyModifiedProperties();
 
             Assert.That(first.HairstyleId, Is.EqualTo("hair_alt"));
             Assert.That(second.HairstyleId, Is.EqualTo("hair_default"));
+            Assert.That(first.HairColorId, Is.EqualTo("hair_auburn"));
+            Assert.That(second.HairColorId, Is.EqualTo("hair_black"));
             Assert.That(first.ChestArmor, Is.SameAs(leather));
             Assert.That(second.ChestArmor, Is.SameAs(mail));
         }
@@ -132,10 +147,15 @@ namespace RPGClone.EditorTests
             defaultHair.Configure("hair_default", "Default Hair", null);
             MMOHairstyleDefinition alternateHair = new();
             alternateHair.Configure("hair_alt", "Alternate Hair", null);
+            MMOHairColorDefinition black = new();
+            black.Configure("hair_black", "Black", Color.black);
+            MMOHairColorDefinition auburn = new();
+            auburn.Configure("hair_auburn", "Auburn", new Color(0.55f, 0.23f, 0.18f));
             catalog.Configure(
                 new[] { head },
                 new[] { defaultFace, alternateFace },
-                new[] { defaultHair, alternateHair });
+                new[] { defaultHair, alternateHair },
+                new[] { black, auburn });
             return catalog;
         }
 

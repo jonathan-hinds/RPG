@@ -15,6 +15,7 @@ namespace RPGClone.Characters
         [Header("Shared Player Appearance")]
         [SerializeField] private MMOCharacterAppearanceCatalog appearanceCatalog;
         [SerializeField] private string hairstyleId;
+        [SerializeField] private string hairColorId;
         [SerializeField] private string faceId;
 
         [Header("Armor (None Uses Default Player Skin)")]
@@ -33,6 +34,9 @@ namespace RPGClone.Characters
         public string HairstyleId => string.IsNullOrWhiteSpace(hairstyleId)
             ? appearanceCatalog?.DefaultHairstyleId
             : appearanceCatalog?.NormalizeHairstyleId(hairstyleId) ?? hairstyleId;
+        public string HairColorId => string.IsNullOrWhiteSpace(hairColorId)
+            ? appearanceCatalog?.DefaultHairColorId
+            : appearanceCatalog?.NormalizeHairColorId(hairColorId) ?? hairColorId;
         public string FaceId => string.IsNullOrWhiteSpace(faceId)
             ? appearanceCatalog?.DefaultFaceId
             : appearanceCatalog?.NormalizeFaceId(faceId) ?? faceId;
@@ -91,8 +95,30 @@ namespace RPGClone.Characters
             MMOEquipmentVisualDefinition newPants,
             MMOEquipmentVisualDefinition newBoots)
         {
+            Configure(
+                newAppearanceCatalog,
+                newHairstyleId,
+                newAppearanceCatalog?.DefaultHairColorId,
+                newFaceId,
+                newChestArmor,
+                newGloves,
+                newPants,
+                newBoots);
+        }
+
+        public void Configure(
+            MMOCharacterAppearanceCatalog newAppearanceCatalog,
+            string newHairstyleId,
+            string newHairColorId,
+            string newFaceId,
+            MMOEquipmentVisualDefinition newChestArmor,
+            MMOEquipmentVisualDefinition newGloves,
+            MMOEquipmentVisualDefinition newPants,
+            MMOEquipmentVisualDefinition newBoots)
+        {
             appearanceCatalog = newAppearanceCatalog;
             hairstyleId = NormalizeOptionalId(newHairstyleId, appearanceCatalog?.FindHairstyle(newHairstyleId) != null);
+            hairColorId = NormalizeOptionalId(newHairColorId, appearanceCatalog?.FindHairColor(newHairColorId) != null);
             faceId = NormalizeOptionalId(newFaceId, appearanceCatalog?.FindFace(newFaceId) != null);
             chestArmor = ValidateArmorSlot(newChestArmor, MMOEquipmentSlotType.Chest);
             gloves = ValidateArmorSlot(newGloves, MMOEquipmentSlotType.Hands);
@@ -111,7 +137,8 @@ namespace RPGClone.Characters
                     appearanceCatalog,
                     appearanceCatalog?.DefaultHeadStyleId,
                     FaceId,
-                    HairstyleId);
+                    HairstyleId,
+                    HairColorId);
             }
 
             if (equipmentVisuals != null)

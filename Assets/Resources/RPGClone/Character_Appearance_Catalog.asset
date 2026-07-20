@@ -30,9 +30,43 @@ MonoBehaviour:
   - hairstyleId: hair_1
     displayName: Hairstyle 1
     modelPrefab: {fileID: 919132149155446097, guid: 17491b5701bc95a4d9788ad39961c40b, type: 3}
+    colorMask: {fileID: 2800000, guid: 27194312107c9104aadcfecc6ca60e79, type: 3}
   - hairstyleId: hair_2
     displayName: Hairstyle 2
     modelPrefab: {fileID: 919132149155446097, guid: d349b1ce0fcd1744f8a2eb96c8f07389, type: 3}
+    colorMask: {fileID: 2800000, guid: 7fc82bdefa6123144b82fae6595f79fc, type: 3}
   - hairstyleId: hair_3
     displayName: Hairstyle 3
     modelPrefab: {fileID: 919132149155446097, guid: 739f3726c1a5df0459e1ac277d922014, type: 3}
+    colorMask: {fileID: 2800000, guid: f3cff95a037a0b74abdaa1f5755f561d, type: 3}
+  hairColors:
+  - hairColorId: hair_raven_black
+    displayName: Raven Black
+    color: {r: 0.16862746, g: 0.14117648, b: 0.13725491, a: 1}
+  - hairColorId: hair_soft_black
+    displayName: Soft Black
+    color: {r: 0.2784314, g: 0.23921569, b: 0.22352941, a: 1}
+  - hairColorId: hair_dark_brown
+    displayName: Dark Brown
+    color: {r: 0.3529412, g: 0.22745098, b: 0.16470589, a: 1}
+  - hairColorId: hair_chestnut
+    displayName: Chestnut Brown
+    color: {r: 0.5137255, g: 0.31764707, b: 0.21176471, a: 1}
+  - hairColorId: hair_auburn
+    displayName: Auburn
+    color: {r: 0.5568628, g: 0.23137255, b: 0.1764706, a: 1}
+  - hairColorId: hair_copper
+    displayName: Copper
+    color: {r: 0.7137255, g: 0.36862746, b: 0.23921569, a: 1}
+  - hairColorId: hair_honey_brown
+    displayName: Honey Brown
+    color: {r: 0.7254902, g: 0.52156866, b: 0.3137255, a: 1}
+  - hairColorId: hair_golden_blonde
+    displayName: Golden Blonde
+    color: {r: 0.8784314, g: 0.72156864, b: 0.4, a: 1}
+  - hairColorId: hair_ash_blonde
+    displayName: Ash Blonde
+    color: {r: 0.7882353, g: 0.74509805, b: 0.654902, a: 1}
+  - hairColorId: hair_silver_gray
+    displayName: Silver Gray
+    color: {r: 0.7254902, g: 0.7176471, b: 0.70980394, a: 1}

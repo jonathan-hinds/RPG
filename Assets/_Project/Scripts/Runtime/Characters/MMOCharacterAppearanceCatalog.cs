@@ -48,16 +48,47 @@ namespace RPGClone.Characters
         [SerializeField] private string hairstyleId = "hair_1";
         [SerializeField] private string displayName = "Hairstyle 1";
         [SerializeField] private GameObject modelPrefab;
+        [SerializeField] private Texture2D colorMask;
 
         public string HairstyleId => hairstyleId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? hairstyleId : displayName;
         public GameObject ModelPrefab => modelPrefab;
+        public Texture2D ColorMask => colorMask;
 
         public void Configure(string newHairstyleId, string newDisplayName, GameObject newModelPrefab)
+        {
+            Configure(newHairstyleId, newDisplayName, newModelPrefab, null);
+        }
+
+        public void Configure(
+            string newHairstyleId,
+            string newDisplayName,
+            GameObject newModelPrefab,
+            Texture2D newColorMask)
         {
             hairstyleId = string.IsNullOrWhiteSpace(newHairstyleId) ? "hair_1" : newHairstyleId.Trim();
             displayName = string.IsNullOrWhiteSpace(newDisplayName) ? hairstyleId : newDisplayName.Trim();
             modelPrefab = newModelPrefab;
+            colorMask = newColorMask;
+        }
+    }
+
+    [Serializable]
+    public sealed class MMOHairColorDefinition
+    {
+        [SerializeField] private string hairColorId = "hair_black";
+        [SerializeField] private string displayName = "Black";
+        [SerializeField] private Color color = Color.white;
+
+        public string HairColorId => hairColorId;
+        public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? hairColorId : displayName;
+        public Color Color => color;
+
+        public void Configure(string newHairColorId, string newDisplayName, Color newColor)
+        {
+            hairColorId = string.IsNullOrWhiteSpace(newHairColorId) ? "hair_black" : newHairColorId.Trim();
+            displayName = string.IsNullOrWhiteSpace(newDisplayName) ? hairColorId : newDisplayName.Trim();
+            color = newColor;
         }
     }
 
@@ -67,10 +98,12 @@ namespace RPGClone.Characters
         [SerializeField] private List<MMOHeadStyleDefinition> headStyles = new();
         [SerializeField] private List<MMOFaceDefinition> faces = new();
         [SerializeField] private List<MMOHairstyleDefinition> hairstyles = new();
+        [SerializeField] private List<MMOHairColorDefinition> hairColors = new();
 
         public IReadOnlyList<MMOHeadStyleDefinition> HeadStyles => headStyles;
         public IReadOnlyList<MMOFaceDefinition> Faces => faces;
         public IReadOnlyList<MMOHairstyleDefinition> Hairstyles => hairstyles;
+        public IReadOnlyList<MMOHairColorDefinition> HairColors => hairColors;
         public string DefaultHeadStyleId => headStyles.Count > 0 && headStyles[0] != null
             ? headStyles[0].HeadStyleId
             : "head_1";
@@ -80,6 +113,9 @@ namespace RPGClone.Characters
         public string DefaultHairstyleId => hairstyles.Count > 0 && hairstyles[0] != null
             ? hairstyles[0].HairstyleId
             : "hair_1";
+        public string DefaultHairColorId => hairColors.Count > 0 && hairColors[0] != null
+            ? hairColors[0].HairColorId
+            : "hair_black";
 
         public MMOHeadStyleDefinition FindHeadStyle(string headStyleId)
         {
@@ -166,6 +202,45 @@ namespace RPGClone.Characters
             return hairstyles.Count > 0 ? 0 : -1;
         }
 
+        public MMOHairColorDefinition FindHairColor(string hairColorId)
+        {
+            if (string.IsNullOrWhiteSpace(hairColorId))
+            {
+                return null;
+            }
+
+            foreach (MMOHairColorDefinition hairColor in hairColors)
+            {
+                if (hairColor != null
+                    && string.Equals(hairColor.HairColorId, hairColorId, StringComparison.Ordinal))
+                {
+                    return hairColor;
+                }
+            }
+
+            return null;
+        }
+
+        public string NormalizeHairColorId(string hairColorId)
+        {
+            MMOHairColorDefinition hairColor = FindHairColor(hairColorId);
+            return hairColor != null ? hairColor.HairColorId : DefaultHairColorId;
+        }
+
+        public int IndexOfHairColor(string hairColorId)
+        {
+            for (int i = 0; i < hairColors.Count; i++)
+            {
+                if (hairColors[i] != null
+                    && string.Equals(hairColors[i].HairColorId, hairColorId, StringComparison.Ordinal))
+                {
+                    return i;
+                }
+            }
+
+            return hairColors.Count > 0 ? 0 : -1;
+        }
+
         public int IndexOfFace(string faceId)
         {
             for (int i = 0; i < faces.Count; i++)
@@ -184,6 +259,15 @@ namespace RPGClone.Characters
             IEnumerable<MMOFaceDefinition> newFaces,
             IEnumerable<MMOHairstyleDefinition> newHairstyles)
         {
+            Configure(newHeadStyles, newFaces, newHairstyles, hairColors);
+        }
+
+        public void Configure(
+            IEnumerable<MMOHeadStyleDefinition> newHeadStyles,
+            IEnumerable<MMOFaceDefinition> newFaces,
+            IEnumerable<MMOHairstyleDefinition> newHairstyles,
+            IEnumerable<MMOHairColorDefinition> newHairColors)
+        {
             headStyles = newHeadStyles != null
                 ? new List<MMOHeadStyleDefinition>(newHeadStyles)
                 : new List<MMOHeadStyleDefinition>();
@@ -193,6 +277,9 @@ namespace RPGClone.Characters
             hairstyles = newHairstyles != null
                 ? new List<MMOHairstyleDefinition>(newHairstyles)
                 : new List<MMOHairstyleDefinition>();
+            hairColors = newHairColors != null
+                ? new List<MMOHairColorDefinition>(newHairColors)
+                : new List<MMOHairColorDefinition>();
         }
 
         public void Configure(
