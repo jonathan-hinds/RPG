@@ -19,7 +19,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3c1aade4e9bf68c4c9c6ac4e85e35f96, type: 2}
   aggroRadius: 0
   leashRadius: 12
+  leashGraceSeconds: 15
   aggroScanInterval: 0.25
+  leashReturnSpeedMultiplier: 1.5
+  leashReturnArrivalDistance: 0.35
   canRoam: 0
   roamRadius: 0
   minRoamIdleSeconds: 2.5
@@ -33,4 +36,3 @@ MonoBehaviour:
   emptyCorpseDespawnSeconds: 1
   unlootedCorpseDespawnSeconds: 1
   respawnSeconds: 10
-

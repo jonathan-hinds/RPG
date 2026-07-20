@@ -651,7 +651,7 @@ namespace RPGClone.EditorTools
                 2f,
                 5f,
                 1.65f,
-                5.1f,
+                MMOClassicEnemyPursuitDefaults.FastBeastChaseSpeed,
                 2.2f,
                 50,
                 lootTable);
@@ -721,7 +721,7 @@ namespace RPGClone.EditorTools
                 2f,
                 5f,
                 1.5f,
-                4.4f,
+                MMOClassicEnemyPursuitDefaults.StandardChaseSpeed,
                 2.4f,
                 85,
                 lootTable);

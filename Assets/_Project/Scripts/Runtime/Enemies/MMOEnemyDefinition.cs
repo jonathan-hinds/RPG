@@ -20,6 +20,7 @@ namespace RPGClone.Enemies
         [Header("Aggro")]
         [SerializeField, Min(0f)] private float aggroRadius = 12f;
         [SerializeField, Min(1f)] private float leashRadius = 28f;
+        [SerializeField, Min(0f)] private float leashGraceSeconds = MMOClassicEnemyPursuitDefaults.StandardLeashGraceSeconds;
         [SerializeField, Min(0.1f)] private float aggroScanInterval = 0.25f;
         [SerializeField, Min(1f)] private float leashReturnSpeedMultiplier = 1.5f;
         [SerializeField, Min(0.05f)] private float leashReturnArrivalDistance = 0.35f;
@@ -30,7 +31,7 @@ namespace RPGClone.Enemies
         [SerializeField, Min(0f)] private float minRoamIdleSeconds = 2.5f;
         [SerializeField, Min(0f)] private float maxRoamIdleSeconds = 6f;
         [SerializeField, Min(0.1f)] private float walkSpeed = 1.4f;
-        [SerializeField, Min(0.1f)] private float chaseSpeed = 4.2f;
+        [SerializeField, Min(0.1f)] private float chaseSpeed = MMOClassicEnemyPursuitDefaults.StandardChaseSpeed;
         [SerializeField, Min(0f)] private float stoppingDistance = 2.4f;
 
         [Header("Rewards")]
@@ -49,6 +50,7 @@ namespace RPGClone.Enemies
         public IReadOnlyList<MMOAbilityDefinition> Abilities => abilities;
         public float AggroRadius => aggroRadius;
         public float LeashRadius => leashRadius;
+        public float LeashGraceSeconds => Mathf.Max(0f, leashGraceSeconds);
         public float AggroScanInterval => aggroScanInterval;
         public float LeashReturnSpeedMultiplier => Mathf.Max(1f, leashReturnSpeedMultiplier);
         public float LeashReturnArrivalDistance => Mathf.Max(0.05f, leashReturnArrivalDistance);
@@ -87,7 +89,8 @@ namespace RPGClone.Enemies
             float newLootedCorpseDespawnSeconds = 2.5f,
             float newEmptyCorpseDespawnSeconds = 6f,
             float newUnlootedCorpseDespawnSeconds = 120f,
-            float newRespawnSeconds = 30f)
+            float newRespawnSeconds = 30f,
+            float newLeashGraceSeconds = MMOClassicEnemyPursuitDefaults.StandardLeashGraceSeconds)
         {
             characterProfile = newCharacterProfile;
             disposition = newDisposition;
@@ -95,6 +98,7 @@ namespace RPGClone.Enemies
             abilities = newAbilities != null ? new List<MMOAbilityDefinition>(newAbilities) : new List<MMOAbilityDefinition>();
             aggroRadius = Mathf.Max(0f, newAggroRadius);
             leashRadius = Mathf.Max(1f, newLeashRadius);
+            leashGraceSeconds = Mathf.Max(0f, newLeashGraceSeconds);
             aggroScanInterval = Mathf.Max(0.1f, newAggroScanInterval);
             canRoam = newCanRoam;
             roamRadius = Mathf.Max(0f, newRoamRadius);

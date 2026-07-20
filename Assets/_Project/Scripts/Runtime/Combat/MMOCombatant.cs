@@ -25,6 +25,7 @@ namespace RPGClone.Combat
         public static event Action<MMOCombatant> CombatantEnabled;
         public static event Action<MMOCombatant> CombatantDisabled;
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> Damaged;
+        public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> DamageDealt;
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> CriticallyDamaged;
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> CriticalDamageDealt;
         public event Action<MMOCombatant, MMOCombatant, MMOAbilityDefinition, int> Healed;
@@ -117,6 +118,11 @@ namespace RPGClone.Combat
             source?.RegisterCombatActivity(this);
             RegisterCombatActivity(source);
             Damaged?.Invoke(source, this, ability, appliedAmount);
+            if (appliedAmount > 0)
+            {
+                source?.DamageDealt?.Invoke(source, this, ability, appliedAmount);
+            }
+
             if (isCritical && appliedAmount > 0)
             {
                 CriticallyDamaged?.Invoke(source, this, ability, appliedAmount);
@@ -150,6 +156,11 @@ namespace RPGClone.Combat
             source?.RegisterCombatActivity(this);
             RegisterCombatActivity(source);
             Damaged?.Invoke(source, this, ability, appliedAmount);
+            if (appliedAmount > 0)
+            {
+                source?.DamageDealt?.Invoke(source, this, ability, appliedAmount);
+            }
+
             if (isCritical && appliedAmount > 0)
             {
                 CriticallyDamaged?.Invoke(source, this, ability, appliedAmount);

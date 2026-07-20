@@ -347,7 +347,11 @@ namespace RPGClone.Enemies
                 return;
             }
 
-            if (leashState.IsBeyondLeash(transform.position, definition.LeashRadius))
+            if (leashState.ShouldReturnHome(
+                    currentTarget.transform.position,
+                    definition.LeashRadius,
+                    definition.LeashGraceSeconds,
+                    Time.time))
             {
                 BeginReturnHome();
                 return;
@@ -543,7 +547,7 @@ namespace RPGClone.Enemies
 
         private void EnterCombat(MMOCharacterIdentity target)
         {
-            if (!IsValidTarget(target) || !leashState.BeginEngagement(transform.position))
+            if (!IsValidTarget(target) || !leashState.BeginEngagement(transform.position, Time.time))
             {
                 return;
             }
@@ -647,13 +651,17 @@ namespace RPGClone.Enemies
 
             lastDamageSource = source;
             EnterCombat(source.Identity);
+            if (amount > 0 && IsAuthorityOwner && CanReceiveHostileActions)
+            {
+                leashState.RecordCombatActivity(transform.position, Time.time);
+            }
         }
 
-        private void OnCombatActivity(MMOCombatant activeCombatant)
+        private void OnDamageDealt(MMOCombatant source, MMOCombatant target, MMOAbilityDefinition ability, int amount)
         {
-            if (activeCombatant == combatant && IsAuthorityOwner && CanReceiveHostileActions)
+            if (source == combatant && amount > 0 && IsAuthorityOwner && CanReceiveHostileActions)
             {
-                leashState.RecordCombatActivity(transform.position);
+                leashState.RecordCombatActivity(transform.position, Time.time);
             }
         }
 
@@ -1031,13 +1039,13 @@ namespace RPGClone.Enemies
             }
 
             combatant.Damaged -= OnDamaged;
+            combatant.DamageDealt -= OnDamageDealt;
             combatant.Died -= OnDied;
-            combatant.CombatActivity -= OnCombatActivity;
             if (subscribe)
             {
                 combatant.Damaged += OnDamaged;
+                combatant.DamageDealt += OnDamageDealt;
                 combatant.Died += OnDied;
-                combatant.CombatActivity += OnCombatActivity;
             }
 
             authorityEventsSubscribed = subscribe;

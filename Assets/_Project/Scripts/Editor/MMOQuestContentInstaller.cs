@@ -214,7 +214,7 @@ namespace RPGClone.EditorTools
                 AssetDatabase.CreateAsset(definition, path);
             }
 
-            definition.Configure(profile, MMOEnemyDisposition.Aggressive, autoAttack, new[] { autoAttack }, 15f, 36f, 0.25f, true, 7f, 2.5f, 5.5f, 1.5f, 4.4f, 2.4f, 65, lootTable);
+            definition.Configure(profile, MMOEnemyDisposition.Aggressive, autoAttack, new[] { autoAttack }, 15f, 36f, 0.25f, true, 7f, 2.5f, 5.5f, 1.5f, MMOClassicEnemyPursuitDefaults.StandardChaseSpeed, 2.4f, 65, lootTable);
             EditorUtility.SetDirty(definition);
             return definition;
         }

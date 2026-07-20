@@ -17,15 +17,17 @@ namespace RPGClone.Enemies
     {
         public MMOEnemyLeashPhase Phase { get; private set; }
         public Vector3 AnchorPosition { get; private set; }
+        public float LastCombatActivityTime { get; private set; }
         public bool IsReturningHome => Phase == MMOEnemyLeashPhase.ReturningHome;
 
         public void Reset(Vector3 homePosition)
         {
             Phase = MMOEnemyLeashPhase.Idle;
             AnchorPosition = homePosition;
+            LastCombatActivityTime = float.NegativeInfinity;
         }
 
-        public bool BeginEngagement(Vector3 position)
+        public bool BeginEngagement(Vector3 position, float currentTime)
         {
             if (IsReturningHome)
             {
@@ -35,13 +37,14 @@ namespace RPGClone.Enemies
             if (Phase == MMOEnemyLeashPhase.Idle)
             {
                 AnchorPosition = position;
+                LastCombatActivityTime = currentTime;
             }
 
             Phase = MMOEnemyLeashPhase.Engaged;
             return true;
         }
 
-        public bool RecordCombatActivity(Vector3 position)
+        public bool RecordCombatActivity(Vector3 position, float currentTime)
         {
             if (IsReturningHome)
             {
@@ -50,17 +53,23 @@ namespace RPGClone.Enemies
 
             AnchorPosition = position;
             Phase = MMOEnemyLeashPhase.Engaged;
+            LastCombatActivityTime = currentTime;
             return true;
         }
 
-        public bool IsBeyondLeash(Vector3 position, float leashRadius)
+        public bool ShouldReturnHome(Vector3 targetPosition, float leashRadius, float graceSeconds, float currentTime)
         {
             if (Phase != MMOEnemyLeashPhase.Engaged)
             {
                 return false;
             }
 
-            Vector3 offset = position - AnchorPosition;
+            if (currentTime < LastCombatActivityTime + Mathf.Max(0f, graceSeconds))
+            {
+                return false;
+            }
+
+            Vector3 offset = targetPosition - AnchorPosition;
             offset.y = 0f;
             float radius = Mathf.Max(0f, leashRadius);
             return offset.sqrMagnitude > radius * radius;
@@ -96,6 +105,7 @@ namespace RPGClone.Enemies
             if (Phase == MMOEnemyLeashPhase.Idle)
             {
                 AnchorPosition = homePosition;
+                LastCombatActivityTime = float.NegativeInfinity;
             }
         }
     }

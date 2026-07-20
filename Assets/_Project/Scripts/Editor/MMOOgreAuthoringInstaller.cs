@@ -242,7 +242,7 @@ namespace RPGClone.EditorTools
                 3f,
                 6f,
                 1.25f,
-                3.8f,
+                MMOClassicEnemyPursuitDefaults.StandardChaseSpeed,
                 2.8f,
                 90,
                 lootTable,

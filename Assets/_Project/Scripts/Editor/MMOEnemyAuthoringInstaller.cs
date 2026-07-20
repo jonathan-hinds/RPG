@@ -64,7 +64,7 @@ namespace RPGClone.EditorTools
                 true,
                 6f,
                 1.45f,
-                4.25f,
+                MMOClassicEnemyPursuitDefaults.StandardChaseSpeed,
                 2.4f,
                 55,
                 bristlebackLootTable);
@@ -78,7 +78,7 @@ namespace RPGClone.EditorTools
                 true,
                 5f,
                 1.25f,
-                4f,
+                MMOClassicEnemyPursuitDefaults.StandardChaseSpeed,
                 2.4f,
                 45,
                 bristlebackLootTable);

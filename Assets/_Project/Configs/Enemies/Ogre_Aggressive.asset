@@ -19,13 +19,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3c1aade4e9bf68c4c9c6ac4e85e35f96, type: 2}
   aggroRadius: 14
   leashRadius: 38
+  leashGraceSeconds: 15
   aggroScanInterval: 0.25
+  leashReturnSpeedMultiplier: 1.5
+  leashReturnArrivalDistance: 0.35
   canRoam: 1
   roamRadius: 5
   minRoamIdleSeconds: 3
   maxRoamIdleSeconds: 6
   walkSpeed: 1.25
-  chaseSpeed: 3.8
+  chaseSpeed: 8.285714
   stoppingDistance: 2.8
   experienceReward: 90
   lootTable: {fileID: 11400000, guid: fa83427d831d6a74687c1dc9f73407ea, type: 2}
