@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef9cbaebe9e6cd745b058ba7d1d900d7, type: 3}
   m_Name: CharacterTest_PlayerLocomotion
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Player.MMOPlayerLocomotionAnimationSet
-  baseController: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+  baseController: {fileID: 9100000, guid: ac1f833f1f49a144d8b4bec449338227, type: 2}
   idle: {fileID: 7400000, guid: 028def45a350fae43bca21223ca45ee4, type: 2}
   walkBackwards: {fileID: 7400000, guid: c3a979066e25fdc488dbf82f5eee9e52, type: 2}
   walk: {fileID: 7400000, guid: bb867cc553ab11848ab9ac10038c50d1, type: 2}

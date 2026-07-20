@@ -21,6 +21,8 @@ namespace RPGClone.Enemies
         [SerializeField, Min(0f)] private float aggroRadius = 12f;
         [SerializeField, Min(1f)] private float leashRadius = 28f;
         [SerializeField, Min(0.1f)] private float aggroScanInterval = 0.25f;
+        [SerializeField, Min(1f)] private float leashReturnSpeedMultiplier = 1.5f;
+        [SerializeField, Min(0.05f)] private float leashReturnArrivalDistance = 0.35f;
 
         [Header("Movement")]
         [SerializeField] private bool canRoam = true;
@@ -48,6 +50,8 @@ namespace RPGClone.Enemies
         public float AggroRadius => aggroRadius;
         public float LeashRadius => leashRadius;
         public float AggroScanInterval => aggroScanInterval;
+        public float LeashReturnSpeedMultiplier => Mathf.Max(1f, leashReturnSpeedMultiplier);
+        public float LeashReturnArrivalDistance => Mathf.Max(0.05f, leashReturnArrivalDistance);
         public bool CanRoam => canRoam;
         public float RoamRadius => roamRadius;
         public float MinRoamIdleSeconds => minRoamIdleSeconds;

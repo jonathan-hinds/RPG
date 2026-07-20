@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7be62599e92490e46baca1994a8fdda7, type: 3}
   m_Name: AshGeneral_AnimationSet
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureAnimationSet
-  baseController: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+  baseController: {fileID: 9100000, guid: b624332601f4d6a43bbbc83f6170351d, type: 2}
   idle: {fileID: 7400000, guid: 91a24111a21d134498448437447f6448, type: 2}
   walk: {fileID: 7400000, guid: 067429a6fe59ab64f9f57c48e223bd18, type: 2}
   run: {fileID: 7400000, guid: 85cb05d1555257445afee052a368d386, type: 2}
@@ -23,8 +23,11 @@ MonoBehaviour:
   attack2: {fileID: 7400000, guid: efaa7918ab792a5428c6747c82623398, type: 2}
   damage: {fileID: 7400000, guid: b242ecff43ac1c94db11e5d7ffd1a6a6, type: 2}
   death: {fileID: 7400000, guid: 8059f2c8fe0d23542bc7aec64432d3ab, type: 2}
+  casting: {fileID: 0}
+  cast: {fileID: 0}
   alternateAttacks: 1
   attackPrioritySeconds: 0.9
   damageReactionCooldownSeconds: 0.45
+  stationarySpeedThreshold: 0.08
   applyRootMotion: 0
   modelYawOffsetDegrees: 0

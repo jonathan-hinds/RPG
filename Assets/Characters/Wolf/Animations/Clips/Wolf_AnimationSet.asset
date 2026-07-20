@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7be62599e92490e46baca1994a8fdda7, type: 3}
   m_Name: Wolf_AnimationSet
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureAnimationSet
-  baseController: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+  baseController: {fileID: 9100000, guid: 1d4cade5cd1172c49baad29239e4ba64, type: 2}
   idle: {fileID: 7400000, guid: cba3369601d90af47a0bc926c2e0f6b8, type: 2}
   walk: {fileID: 7400000, guid: 6c6425a044d30b3498f0eecfde4c4b58, type: 2}
   run: {fileID: 7400000, guid: ee26137c0316abd4092c204aaa2e699e, type: 2}
@@ -23,8 +23,11 @@ MonoBehaviour:
   attack2: {fileID: 7400000, guid: b3ac2de2d9b32034f80806db9c794be2, type: 2}
   damage: {fileID: 7400000, guid: 7bc749caad538ff45b24621e7dbc1788, type: 2}
   death: {fileID: 7400000, guid: af7fbdb615307ff4296f9ad83e8f5b88, type: 2}
+  casting: {fileID: 0}
+  cast: {fileID: 0}
   alternateAttacks: 1
   attackPrioritySeconds: 0.75
   damageReactionCooldownSeconds: 0.35
+  stationarySpeedThreshold: 0.08
   applyRootMotion: 0
   modelYawOffsetDegrees: 0

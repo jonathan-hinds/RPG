@@ -35,7 +35,7 @@ namespace RPGClone.EditorTools
         private const string LootTablePath = "Assets/_Project/Configs/Loot/Trog_Trash_Loot.asset";
         private const string AutoAttackPath = "Assets/_Project/Configs/Abilities/Auto_Attack.asset";
         private const string SharedLightningVfxPath = "Assets/_Project/VFX/Definitions/Shaman_Lightning_Bolt_VFX.asset";
-        private const string BaseControllerPath = "Assets/_Project/Animations/Creatures/MMOCreatureBase.controller";
+        private const string BaseControllerPath = MMOLayeredAnimationInstaller.TrogControllerPath;
         private const string ScenePath = "Assets/Scenes/OrcishStarterValley.unity";
         private const string SpawnParentName = "Placeholder Creature Spawns";
         private const string SpawnName = "Trog Caster 01";

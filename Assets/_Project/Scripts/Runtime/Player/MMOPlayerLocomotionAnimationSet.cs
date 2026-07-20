@@ -199,5 +199,10 @@ namespace RPGClone.Player
             movingLandingHoldSeconds = Mathf.Max(0f, newMovingLandingHoldSeconds);
             movingLandingTransitionSeconds = Mathf.Max(0f, newMovingLandingTransitionSeconds);
         }
+
+        public void ConfigureBaseController(RuntimeAnimatorController newBaseController)
+        {
+            baseController = newBaseController;
+        }
     }
 }

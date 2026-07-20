@@ -9,7 +9,7 @@ namespace RPGClone.Player
     {
         public const string InCombatParameter = "InCombat";
         public const string ActionSpeedParameter = "ActionSpeed";
-        public const string UpperBodyLayerName = "Upper Body";
+        public const string UpperBodyLayerName = MMOLayeredActionPlayer.UpperBodyLayerName;
 
         public const string CombatIdlePlaceholderName = "MMO_CombatIdle";
         public const string OneHandAttackPlaceholderName = "MMO_Attack1H";
@@ -29,6 +29,12 @@ namespace RPGClone.Player
         public const string CastStatePath = "Base Layer.Cast";
         public const string UpperBodyEmptyStatePath = UpperBodyLayerName + ".Empty";
         public const string UpperBodyDamageStatePath = UpperBodyLayerName + ".Damage";
+        public const string UpperBodyOneHandAttackStatePath = UpperBodyLayerName + ".Attack1H";
+        public const string UpperBodyTwoHandAttackStatePath = UpperBodyLayerName + ".Attack2H";
+        public const string UpperBodyUnarmedAttackStatePath = UpperBodyLayerName + ".AttackUnarmed";
+        public const string UpperBodyCombatDamageStatePath = UpperBodyLayerName + ".CombatDamage";
+        public const string UpperBodyCastingStatePath = UpperBodyLayerName + ".Casting";
+        public const string UpperBodyCastStatePath = UpperBodyLayerName + ".Cast";
 
         [Header("Controller")]
         [SerializeField] private RuntimeAnimatorController baseController;
@@ -200,6 +206,11 @@ namespace RPGClone.Player
             casting = newCasting;
             cast = newCast;
             attackImpactNormalizedTime = Mathf.Clamp(newAttackImpactNormalizedTime, 0.05f, 0.95f);
+        }
+
+        public void ConfigureBaseController(RuntimeAnimatorController newBaseController)
+        {
+            baseController = newBaseController;
         }
 
         private static bool IsTwoHanded(MMOWeaponType weaponType)

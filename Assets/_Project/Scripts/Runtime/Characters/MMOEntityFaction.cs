@@ -1,5 +1,10 @@
 namespace RPGClone.Characters
 {
+    public interface IMMOHostileActionReceiver
+    {
+        bool CanReceiveHostileActions { get; }
+    }
+
     public enum MMOEntityFaction
     {
         Neutral = 0,
@@ -13,6 +18,12 @@ namespace RPGClone.Characters
         public static bool CanDamage(MMOCharacterIdentity source, MMOCharacterIdentity target)
         {
             if (source == null || target == null || source == target)
+            {
+                return false;
+            }
+
+            IMMOHostileActionReceiver receiver = target.GetComponent<IMMOHostileActionReceiver>();
+            if (receiver != null && !receiver.CanReceiveHostileActions)
             {
                 return false;
             }

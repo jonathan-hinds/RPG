@@ -7,16 +7,16 @@ AvatarMask:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: CharacterTest_UpperBody
-  m_Mask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+  m_Mask: 00000000010000000100000000000000000000000100000001000000010000000100000000000000000000000000000000000000
   m_Elements:
   - m_Path: 
     m_Weight: 0
   - m_Path: Feet
     m_Weight: 0
   - m_Path: Hands.001
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Head.001
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Legs.001
     m_Weight: 0
   - m_Path: root
@@ -30,9 +30,9 @@ AvatarMask:
   - m_Path: root/root.x/spine_01.x/spine_02.x
     m_Weight: 1
   - m_Path: root/root.x/spine_01.x/spine_02.x/cc_back.x
-    m_Weight: 0
+    m_Weight: 1
   - m_Path: root/root.x/spine_01.x/spine_02.x/cc_back_center.x
-    m_Weight: 0
+    m_Weight: 1
   - m_Path: root/root.x/spine_01.x/spine_02.x/neck.x
     m_Weight: 1
   - m_Path: root/root.x/spine_01.x/spine_02.x/neck.x/head.x
@@ -50,7 +50,7 @@ AvatarMask:
   - m_Path: root/root.x/spine_01.x/spine_02.x/shoulder.l/arm_stretch.l/forearm_stretch.l/hand.l
     m_Weight: 1
   - m_Path: root/root.x/spine_01.x/spine_02.x/shoulder.l/arm_stretch.l/forearm_stretch.l/hand.l/cc_shield.l
-    m_Weight: 0
+    m_Weight: 1
   - m_Path: root/root.x/spine_01.x/spine_02.x/shoulder.r
     m_Weight: 1
   - m_Path: root/root.x/spine_01.x/spine_02.x/shoulder.r/arm_stretch.r
@@ -64,7 +64,7 @@ AvatarMask:
   - m_Path: root/root.x/spine_01.x/spine_02.x/shoulder.r/arm_stretch.r/forearm_stretch.r/hand.r
     m_Weight: 1
   - m_Path: root/root.x/spine_01.x/spine_02.x/shoulder.r/arm_stretch.r/forearm_stretch.r/hand.r/cc_weapon.r
-    m_Weight: 0
+    m_Weight: 1
   - m_Path: root/root.x/thigh_stretch.l
     m_Weight: 0
   - m_Path: root/root.x/thigh_stretch.l/leg_stretch.l

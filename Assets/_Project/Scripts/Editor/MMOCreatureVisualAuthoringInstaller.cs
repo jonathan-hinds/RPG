@@ -24,6 +24,9 @@ namespace RPGClone.EditorTools
         private const string RootFolder = "Assets/_Project";
         private const string AutoAttackPath = RootFolder + "/Configs/Abilities/Auto_Attack.asset";
         private const string BaseControllerPath = RootFolder + "/Animations/Creatures/MMOCreatureBase.controller";
+        private const string AshCanyonControllerPath = MMOLayeredAnimationInstaller.AshCanyonControllerPath;
+        private const string AshGeneralControllerPath = MMOLayeredAnimationInstaller.AshGeneralControllerPath;
+        private const string WolfControllerPath = MMOLayeredAnimationInstaller.WolfControllerPath;
         private const string SharedAnimationSetPath = "Assets/Characters/Shared/CreatureCombatAnimations/Clips/StandardCreature_AnimationSet.asset";
         private const string AshCanyonAnimationSourceFolder = "Assets/Characters/AshCanyonCreature/Animations/Source";
         private const string AshCanyonAnimationClipFolder = "Assets/Characters/AshCanyonCreature/Animations/Clips";
@@ -447,7 +450,7 @@ namespace RPGClone.EditorTools
             AnimationClip attack2 = ExtractAnimationClip("AshCanyonCreature_attack2.fbx", "AshCanyonCreature_Attack2", false);
             AnimationClip damage = ExtractAnimationClip("AshCanyonCreature_damage.fbx", "AshCanyonCreature_Damage", false);
             AnimationClip death = ExtractAnimationClip("AshCanyonCreature_death.fbx", "AshCanyonCreature_Death", false);
-            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(BaseControllerPath);
+            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(AshCanyonControllerPath);
 
             MMOCreatureAnimationSet animationSet = AssetDatabase.LoadAssetAtPath<MMOCreatureAnimationSet>(AshCanyonAnimationSetPath);
             if (animationSet == null)
@@ -489,7 +492,7 @@ namespace RPGClone.EditorTools
             AnimationClip attack2 = ExtractAnimationClip(WolfModelPath, "Attack2Final", "Wolf_Attack2", false);
             AnimationClip damage = ExtractAnimationClip(WolfModelPath, "DamageFinal", "Wolf_Damage", false);
             AnimationClip death = ExtractAnimationClip(WolfModelPath, "DeathFinal", "Wolf_Death", false);
-            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(BaseControllerPath);
+            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(WolfControllerPath);
 
             MMOCreatureAnimationSet animationSet = AssetDatabase.LoadAssetAtPath<MMOCreatureAnimationSet>(WolfAnimationSetPath);
             if (animationSet == null)
@@ -565,7 +568,7 @@ namespace RPGClone.EditorTools
                 AshGeneralAnimationClipFolder + "/AshGeneral_Death.anim",
                 "AshGeneral_Death",
                 false);
-            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(BaseControllerPath);
+            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(AshGeneralControllerPath);
 
             MMOCreatureAnimationSet animationSet = AssetDatabase.LoadAssetAtPath<MMOCreatureAnimationSet>(AshGeneralAnimationSetPath);
             if (animationSet == null)

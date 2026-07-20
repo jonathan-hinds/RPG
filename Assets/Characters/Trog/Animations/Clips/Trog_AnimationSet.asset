@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7be62599e92490e46baca1994a8fdda7, type: 3}
   m_Name: Trog_AnimationSet
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureAnimationSet
-  baseController: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+  baseController: {fileID: 9100000, guid: be4d0986a2d04b34c8b0dc82b9289714, type: 2}
   idle: {fileID: 7400000, guid: a477b2abf5c37b14cad6f8add38c39a4, type: 2}
   walk: {fileID: 7400000, guid: 4c7689e69991ca849b439aead321b06a, type: 2}
   run: {fileID: 7400000, guid: 8e70d5dc18568b64ebd1bfb3c9f0c262, type: 2}
@@ -28,5 +28,6 @@ MonoBehaviour:
   alternateAttacks: 1
   attackPrioritySeconds: 0.75
   damageReactionCooldownSeconds: 0.4
+  stationarySpeedThreshold: 0.08
   applyRootMotion: 0
   modelYawOffsetDegrees: 0

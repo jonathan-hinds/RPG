@@ -20,6 +20,7 @@ namespace RPGClone.EditorTools
         private const string PlayerModelFolder = "Assets/Player/Models";
         private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Player/PlayerCapsule.prefab";
         private const string BaseControllerPath = "Assets/_Project/Animations/Creatures/MMOCreatureBase.controller";
+        private const string LayeredControllerPath = MMOLayeredAnimationInstaller.PlayerControllerPath;
         private const string AnimationClipFolder = "Assets/Player/Animations/Clips";
         private const string AnimationSetPath = AnimationClipFolder + "/CharacterTest_PlayerLocomotion.asset";
         private const string CombatAnimationSetPath = AnimationClipFolder + "/CharacterTest_PlayerCombat.asset";
@@ -243,7 +244,7 @@ namespace RPGClone.EditorTools
                 Debug.LogWarning("CharacterTest run clip was not found. The run slot is temporarily using the idle clip.");
             }
 
-            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(BaseControllerPath);
+            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(LayeredControllerPath);
             MMOPlayerLocomotionAnimationSet animationSet = AssetDatabase.LoadAssetAtPath<MMOPlayerLocomotionAnimationSet>(AnimationSetPath);
             if (animationSet == null)
             {
@@ -325,7 +326,7 @@ namespace RPGClone.EditorTools
                 false,
                 0);
 
-            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(BaseControllerPath);
+            RuntimeAnimatorController baseController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(LayeredControllerPath);
             MMOPlayerCombatAnimationSet combatAnimationSet = AssetDatabase.LoadAssetAtPath<MMOPlayerCombatAnimationSet>(CombatAnimationSetPath);
             if (combatAnimationSet == null)
             {

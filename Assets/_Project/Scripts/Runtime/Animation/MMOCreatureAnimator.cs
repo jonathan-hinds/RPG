@@ -17,9 +17,17 @@ namespace RPGClone.Animation
         private static readonly int DeathHash = Animator.StringToHash(MMOCreatureAnimationSet.DeathParameter);
         private static readonly int DeadHash = Animator.StringToHash(MMOCreatureAnimationSet.DeadParameter);
         private static readonly int ActionSpeedHash = Animator.StringToHash(MMOCreatureAnimationSet.ActionSpeedParameter);
-        private static readonly int LocomotionHash = Animator.StringToHash("Base Layer.Locomotion");
-        private static readonly int CastingStateHash = Animator.StringToHash("Base Layer.Casting");
-        private static readonly int CastStateHash = Animator.StringToHash("Base Layer.Cast");
+        private static readonly int LocomotionHash = Animator.StringToHash(MMOCreatureAnimationSet.BaseLocomotionStatePath);
+        private static readonly int Attack1StateHash = Animator.StringToHash(MMOCreatureAnimationSet.BaseAttack1StatePath);
+        private static readonly int Attack2StateHash = Animator.StringToHash(MMOCreatureAnimationSet.BaseAttack2StatePath);
+        private static readonly int DamageStateHash = Animator.StringToHash(MMOCreatureAnimationSet.BaseDamageStatePath);
+        private static readonly int CastingStateHash = Animator.StringToHash(MMOCreatureAnimationSet.BaseCastingStatePath);
+        private static readonly int CastStateHash = Animator.StringToHash(MMOCreatureAnimationSet.BaseCastStatePath);
+        private static readonly int UpperBodyAttack1StateHash = Animator.StringToHash(MMOCreatureAnimationSet.UpperBodyAttack1StatePath);
+        private static readonly int UpperBodyAttack2StateHash = Animator.StringToHash(MMOCreatureAnimationSet.UpperBodyAttack2StatePath);
+        private static readonly int UpperBodyDamageStateHash = Animator.StringToHash(MMOCreatureAnimationSet.UpperBodyDamageStatePath);
+        private static readonly int UpperBodyCastingStateHash = Animator.StringToHash(MMOCreatureAnimationSet.UpperBodyCastingStatePath);
+        private static readonly int UpperBodyCastStateHash = Animator.StringToHash(MMOCreatureAnimationSet.UpperBodyCastStatePath);
 
         [SerializeField] private MMOCreatureAnimationSet animationSet;
         [SerializeField] private Animator animator;
@@ -31,6 +39,7 @@ namespace RPGClone.Animation
         [SerializeField] private float visualYawOffsetDegrees;
 
         private readonly List<KeyValuePair<AnimationClip, AnimationClip>> clipOverrides = new();
+        private readonly MMOLayeredActionPlayer layeredActionPlayer = new();
         private AnimatorOverrideController overrideController;
         private IMMOCreatureLocomotionSource locomotionSource;
         private Vector3 lastPosition;
@@ -45,6 +54,7 @@ namespace RPGClone.Animation
             EnsureReferences();
             ApplyCreatureSurfacePolicy();
             ApplyAnimationSet();
+            layeredActionPlayer.Configure(animator, LocomotionHash);
             lastPosition = transform.position;
         }
 
@@ -52,6 +62,7 @@ namespace RPGClone.Animation
         {
             EnsureReferences();
             ApplyCreatureSurfacePolicy();
+            layeredActionPlayer.Configure(animator, LocomotionHash);
             if (abilitySystem != null)
             {
                 abilitySystem.AbilityUsed -= OnAbilityUsed;
@@ -75,6 +86,7 @@ namespace RPGClone.Animation
 
         private void OnDisable()
         {
+            layeredActionPlayer.Reset();
             if (abilitySystem != null)
             {
                 abilitySystem.AbilityUsed -= OnAbilityUsed;
@@ -105,10 +117,7 @@ namespace RPGClone.Animation
             if (!dead && castReturnTime > 0f && Time.time >= castReturnTime)
             {
                 castReturnTime = 0f;
-                if (animator.HasState(0, LocomotionHash))
-                {
-                    animator.CrossFadeInFixedTime(LocomotionHash, 0.08f, 0, 0f);
-                }
+                layeredActionPlayer.Stop(0.08f);
             }
 
             float worldSpeed = dead ? 0f : GetWorldSpeed();
@@ -117,6 +126,7 @@ namespace RPGClone.Animation
                 animationSet.NormalizeMoveSpeed(worldSpeed),
                 animationSet.MovementDampSeconds,
                 Time.deltaTime);
+            layeredActionPlayer.PromoteToUpperBodyIfMoving(IsMovingForLayeredAction(worldSpeed));
             lastPosition = transform.position;
         }
 
@@ -133,6 +143,7 @@ namespace RPGClone.Animation
             visualYawOffsetDegrees = newVisualYawOffsetDegrees;
             ApplyCreatureSurfacePolicy();
             ApplyAnimationSet();
+            layeredActionPlayer.Configure(animator, LocomotionHash);
         }
 
         private void ApplyCreatureSurfacePolicy()
@@ -164,6 +175,7 @@ namespace RPGClone.Animation
                 animator.ResetTrigger(Attack1Hash);
                 animator.ResetTrigger(Attack2Hash);
                 animator.ResetTrigger(DamageHash);
+                layeredActionPlayer.Reset();
                 animator.SetBool(DeadHash, true);
                 animator.SetTrigger(DeathHash);
                 return;
@@ -212,6 +224,7 @@ namespace RPGClone.Animation
             overrideController.ApplyOverrides(clipOverrides);
             animator.runtimeAnimatorController = overrideController;
             animator.applyRootMotion = animationSet.ApplyRootMotion;
+            layeredActionPlayer.Configure(animator, LocomotionHash);
             animator.SetBool(DeadHash, dead);
             animator.SetFloat(ActionSpeedHash, 1f);
 
@@ -289,8 +302,22 @@ namespace RPGClone.Animation
             nextAttackIndex++;
 
             animator.ResetTrigger(DamageHash);
-            animator.SetTrigger(useSecondAttack ? Attack2Hash : Attack1Hash);
+            int baseStateHash = useSecondAttack ? Attack2StateHash : Attack1StateHash;
+            int upperBodyStateHash = useSecondAttack ? UpperBodyAttack2StateHash : UpperBodyAttack1StateHash;
+            if (!layeredActionPlayer.Play(
+                    baseStateHash,
+                    upperBodyStateHash,
+                    IsMovingForLayeredAction(GetWorldSpeed()),
+                    0.05f))
+            {
+                return;
+            }
+
             attackPriorityUntil = Time.time + animationSet.AttackPrioritySeconds;
+            AnimationClip attackClip = useSecondAttack ? animationSet.Attack2 : animationSet.Attack1;
+            castReturnTime = Time.time + Mathf.Max(
+                0.1f,
+                (attackClip != null ? attackClip.length : animationSet.AttackPrioritySeconds) * 0.9f);
         }
 
         private void OnCastStarted(MMOAbilitySystem source, MMOAbilityDefinition ability, MMOCharacterIdentity target, float duration)
@@ -303,8 +330,17 @@ namespace RPGClone.Animation
             animator.ResetTrigger(Attack1Hash);
             animator.ResetTrigger(Attack2Hash);
             animator.SetFloat(ActionSpeedHash, 1f);
-            animator.CrossFadeInFixedTime(CastingStateHash, 0.08f, 0, 0f);
+            if (!layeredActionPlayer.Play(
+                    CastingStateHash,
+                    UpperBodyCastingStateHash,
+                    IsMovingForLayeredAction(GetWorldSpeed()),
+                    0.08f))
+            {
+                return;
+            }
+
             attackPriorityUntil = Time.time + Mathf.Max(0.1f, duration);
+            castReturnTime = 0f;
         }
 
         private void OnCastInterrupted(MMOAbilitySystem source, MMOAbilityDefinition ability, MMOCharacterIdentity target, string reason)
@@ -316,10 +352,7 @@ namespace RPGClone.Animation
 
             attackPriorityUntil = 0f;
             castReturnTime = 0f;
-            if (animator.HasState(0, LocomotionHash))
-            {
-                animator.CrossFadeInFixedTime(LocomotionHash, 0.08f, 0, 0f);
-            }
+            layeredActionPlayer.Stop(0.08f);
         }
 
         private void OnCastCompleted(MMOAbilitySystem source, MMOAbilityDefinition ability, MMOCharacterIdentity target)
@@ -330,7 +363,15 @@ namespace RPGClone.Animation
             }
 
             animator.SetFloat(ActionSpeedHash, 1f);
-            animator.CrossFadeInFixedTime(CastStateHash, 0.04f, 0, 0f);
+            if (!layeredActionPlayer.Play(
+                    CastStateHash,
+                    UpperBodyCastStateHash,
+                    IsMovingForLayeredAction(GetWorldSpeed()),
+                    0.04f))
+            {
+                return;
+            }
+
             attackPriorityUntil = Time.time + Mathf.Max(0.2f, animationSet.AttackPrioritySeconds);
             castReturnTime = Time.time + Mathf.Max(0.1f, animationSet.Cast.length * 0.9f);
         }
@@ -347,8 +388,19 @@ namespace RPGClone.Animation
                 return;
             }
 
-            animator.SetTrigger(DamageHash);
+            if (!layeredActionPlayer.Play(
+                    DamageStateHash,
+                    UpperBodyDamageStateHash,
+                    IsMovingForLayeredAction(GetWorldSpeed()),
+                    0.04f))
+            {
+                return;
+            }
+
             nextDamageReactionTime = Time.time + animationSet.DamageReactionCooldownSeconds;
+            castReturnTime = Time.time + Mathf.Max(
+                0.1f,
+                (animationSet.Damage != null ? animationSet.Damage.length : 0.45f) * 0.9f);
         }
 
         private bool IsAttackTakingPriority()
@@ -363,13 +415,17 @@ namespace RPGClone.Animation
                 return false;
             }
 
-            AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
+            int actionLayerIndex = layeredActionPlayer.UsingUpperBodyLayer
+                ? layeredActionPlayer.UpperBodyLayerIndex
+                : 0;
+            AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(actionLayerIndex);
             if (currentState.IsTag("Attack") && currentState.normalizedTime < 0.9f)
             {
                 return true;
             }
 
-            return animator.IsInTransition(0) && animator.GetNextAnimatorStateInfo(0).IsTag("Attack");
+            return animator.IsInTransition(actionLayerIndex)
+                && animator.GetNextAnimatorStateInfo(actionLayerIndex).IsTag("Attack");
         }
 
         private void OnDied(MMOCombatant deadCombatant)
@@ -400,6 +456,7 @@ namespace RPGClone.Animation
             animator.ResetTrigger(Attack2Hash);
             animator.ResetTrigger(DamageHash);
             animator.ResetTrigger(DeathHash);
+            layeredActionPlayer.Reset();
             animator.SetBool(DeadHash, false);
             animator.SetFloat(MoveSpeedHash, 0f);
             animator.SetFloat(ActionSpeedHash, 1f);
@@ -466,6 +523,13 @@ namespace RPGClone.Animation
             }
 
             return null;
+        }
+
+        private bool IsMovingForLayeredAction(float worldSpeed)
+        {
+            return !dead
+                && animationSet != null
+                && worldSpeed > animationSet.StationarySpeedThreshold;
         }
 
         private void OnValidate()

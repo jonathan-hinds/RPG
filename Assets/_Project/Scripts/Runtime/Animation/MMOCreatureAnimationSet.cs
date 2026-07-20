@@ -13,6 +13,18 @@ namespace RPGClone.Animation
         public const string DeadParameter = "Dead";
         public const string ActionSpeedParameter = "ActionSpeed";
 
+        public const string BaseLocomotionStatePath = "Base Layer.Locomotion";
+        public const string BaseAttack1StatePath = "Base Layer.Attack1";
+        public const string BaseAttack2StatePath = "Base Layer.Attack2";
+        public const string BaseDamageStatePath = "Base Layer.Damage";
+        public const string BaseCastingStatePath = "Base Layer.Casting";
+        public const string BaseCastStatePath = "Base Layer.Cast";
+        public const string UpperBodyAttack1StatePath = MMOLayeredActionPlayer.UpperBodyLayerName + ".Attack1";
+        public const string UpperBodyAttack2StatePath = MMOLayeredActionPlayer.UpperBodyLayerName + ".Attack2";
+        public const string UpperBodyDamageStatePath = MMOLayeredActionPlayer.UpperBodyLayerName + ".Damage";
+        public const string UpperBodyCastingStatePath = MMOLayeredActionPlayer.UpperBodyLayerName + ".Casting";
+        public const string UpperBodyCastStatePath = MMOLayeredActionPlayer.UpperBodyLayerName + ".Cast";
+
         public const string IdlePlaceholderName = "MMO_Idle";
         public const string WalkBackwardsPlaceholderName = "MMO_WalkBackwards";
         public const string WalkPlaceholderName = "MMO_Walk";
@@ -45,6 +57,7 @@ namespace RPGClone.Animation
         [SerializeField] private bool alternateAttacks = true;
         [SerializeField, Min(0f)] private float attackPrioritySeconds = 0.8f;
         [SerializeField, Min(0f)] private float damageReactionCooldownSeconds = 0.45f;
+        [SerializeField, Min(0f)] private float stationarySpeedThreshold = 0.08f;
 
         [Header("Presentation")]
         [SerializeField] private bool applyRootMotion;
@@ -63,6 +76,7 @@ namespace RPGClone.Animation
         public bool AlternateAttacks => alternateAttacks;
         public float AttackPrioritySeconds => attackPrioritySeconds;
         public float DamageReactionCooldownSeconds => damageReactionCooldownSeconds;
+        public float StationarySpeedThreshold => Mathf.Max(0.03f, stationarySpeedThreshold);
         public float MovementDampSeconds => movementDampSeconds;
         public bool ApplyRootMotion => applyRootMotion;
         public float ModelYawOffsetDegrees => modelYawOffsetDegrees;
@@ -123,6 +137,11 @@ namespace RPGClone.Animation
         {
             casting = newCasting;
             cast = newCast;
+        }
+
+        public void ConfigureBaseController(RuntimeAnimatorController newBaseController)
+        {
+            baseController = newBaseController;
         }
     }
 }

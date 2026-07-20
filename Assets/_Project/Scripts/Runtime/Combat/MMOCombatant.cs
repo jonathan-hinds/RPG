@@ -99,7 +99,7 @@ namespace RPGClone.Combat
 
         public void ApplyDamage(MMOCombatant source, MMOAbilityDefinition ability, int amount, bool isCritical = false, bool publishToCombatEventStream = true)
         {
-            if (!IsAlive || amount <= 0)
+            if (!IsAlive || amount <= 0 || !CanReceiveHostileActions())
             {
                 return;
             }
@@ -141,7 +141,7 @@ namespace RPGClone.Combat
 
         public void ApplyResolvedDamage(MMOCombatant source, MMOAbilityDefinition ability, int appliedAmount, bool isCritical = false, bool publishToCombatEventStream = true)
         {
-            if (!IsAlive || appliedAmount < 0)
+            if (!IsAlive || appliedAmount < 0 || !CanReceiveHostileActions())
             {
                 return;
             }
@@ -174,6 +174,11 @@ namespace RPGClone.Combat
 
         public void NotifyMiss(MMOCombatant source, MMOAbilityDefinition ability, bool publishToCombatEventStream = true)
         {
+            if (!CanReceiveHostileActions())
+            {
+                return;
+            }
+
             source?.RegisterCombatActivity(this);
             RegisterCombatActivity(source);
             Missed?.Invoke(source, this, ability);
@@ -186,11 +191,13 @@ namespace RPGClone.Combat
 
         public void NotifyBlock(MMOCombatant source, MMOAbilityDefinition ability, int blockedAmount, bool publishToCombatEventStream = true)
         {
-            if (blockedAmount <= 0)
+            if (blockedAmount <= 0 || !CanReceiveHostileActions())
             {
                 return;
             }
 
+            source?.RegisterCombatActivity(this);
+            RegisterCombatActivity(source);
             Blocked?.Invoke(source, this, ability, blockedAmount);
             if (publishToCombatEventStream)
             {
@@ -258,6 +265,11 @@ namespace RPGClone.Combat
             opponent.lastCombatActivityTime = Time.time;
         }
 
+        public void DisengageFromAllCombat()
+        {
+            ForceLeaveCombat();
+        }
+
         private void AddCombatOpponent(MMOCombatant opponent)
         {
             if (opponent == null || opponent == this || !opponent.IsAlive)
@@ -282,6 +294,10 @@ namespace RPGClone.Combat
                     if (opponent != null)
                     {
                         opponent.combatOpponents.Remove(this);
+                        if (opponent.combatOpponents.Count == 0)
+                        {
+                            opponent.SetInCombat(false);
+                        }
                     }
                 }
 
@@ -420,6 +436,12 @@ namespace RPGClone.Combat
             {
                 identity = GetComponent<MMOCharacterIdentity>();
             }
+        }
+
+        private bool CanReceiveHostileActions()
+        {
+            IMMOHostileActionReceiver receiver = GetComponent<IMMOHostileActionReceiver>();
+            return receiver == null || receiver.CanReceiveHostileActions;
         }
     }
 }

@@ -706,6 +706,7 @@ namespace RPGClone.Multiplayer
             writer.WriteValueSafe(snapshot.currentTargetCharacterId ?? string.Empty, true);
             writer.WriteValueSafe(snapshot.inCombat);
             writer.WriteValueSafe(snapshot.leashing);
+            writer.WriteValueSafe(snapshot.leashAnchorPosition.ToVector3());
             writer.WriteValueSafe(snapshot.castAbilityId ?? string.Empty, true);
             writer.WriteValueSafe(snapshot.castTargetCharacterId ?? string.Empty, true);
             writer.WriteValueSafe(snapshot.castDurationSeconds);
@@ -734,6 +735,7 @@ namespace RPGClone.Multiplayer
                 reader.ReadValueSafe(out string currentTargetCharacterId, true);
                 reader.ReadValueSafe(out bool inCombat);
                 reader.ReadValueSafe(out bool leashing);
+                reader.ReadValueSafe(out Vector3 leashAnchorPosition);
                 reader.ReadValueSafe(out string castAbilityId, true);
                 reader.ReadValueSafe(out string castTargetCharacterId, true);
                 reader.ReadValueSafe(out float castDurationSeconds);
@@ -757,6 +759,7 @@ namespace RPGClone.Multiplayer
                     currentTargetCharacterId = currentTargetCharacterId,
                     inCombat = inCombat,
                     leashing = leashing,
+                    leashAnchorPosition = new Vector3SaveData(leashAnchorPosition),
                     castAbilityId = castAbilityId,
                     castTargetCharacterId = castTargetCharacterId,
                     castDurationSeconds = castDurationSeconds,
@@ -795,6 +798,7 @@ namespace RPGClone.Multiplayer
 
             return IsFinite(snapshot.position.ToVector3())
                 && IsFinite(snapshot.rotationEuler.ToVector3())
+                && IsFinite(snapshot.leashAnchorPosition.ToVector3())
                 && IsFinite(snapshot.worldSpeed)
                 && IsFinite(snapshot.castDurationSeconds)
                 && IsFinite(snapshot.castNormalizedProgress)

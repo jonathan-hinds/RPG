@@ -27,7 +27,7 @@ namespace RPGClone.EditorTools
         private const string ProfilePath = "Assets/_Project/Configs/Characters/Ogre.asset";
         private const string LootPath = "Assets/_Project/Configs/Loot/Ogre_Trash_Loot.asset";
         private const string EnemyDefinitionPath = "Assets/_Project/Configs/Enemies/Ogre_Aggressive.asset";
-        private const string BaseControllerPath = "Assets/_Project/Animations/Creatures/MMOCreatureBase.controller";
+        private const string BaseControllerPath = MMOLayeredAnimationInstaller.OgreControllerPath;
         private const string AutoAttackPath = "Assets/_Project/Configs/Abilities/Auto_Attack.asset";
         private const string SpawnParentPath = "Starter World/Placeholder Creature Spawns";
         private const string SceneInstanceName = "Ogre 01";

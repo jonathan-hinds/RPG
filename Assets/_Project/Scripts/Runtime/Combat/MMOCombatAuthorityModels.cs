@@ -194,6 +194,7 @@ namespace RPGClone.Combat
         public string currentTargetCharacterId;
         public bool inCombat;
         public bool leashing;
+        public Vector3SaveData leashAnchorPosition;
         public string castAbilityId;
         public string castTargetCharacterId;
         public float castDurationSeconds;

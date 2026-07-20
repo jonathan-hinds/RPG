@@ -2071,6 +2071,7 @@ namespace RPGClone.Multiplayer
             destination.currentTargetCharacterId = source.currentTargetCharacterId;
             destination.inCombat = source.inCombat;
             destination.leashing = source.leashing;
+            destination.leashAnchorPosition = source.leashAnchorPosition;
             destination.castAbilityId = source.castAbilityId;
             destination.castTargetCharacterId = source.castTargetCharacterId;
             destination.castDurationSeconds = source.castDurationSeconds;

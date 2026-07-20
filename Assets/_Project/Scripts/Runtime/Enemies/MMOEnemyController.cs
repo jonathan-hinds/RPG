@@ -20,7 +20,7 @@ namespace RPGClone.Enemies
     [RequireComponent(typeof(MMOAbilitySystem))]
     [RequireComponent(typeof(MMOAutoAttackController))]
     [RequireComponent(typeof(NavMeshAgent))]
-    public sealed class MMOEnemyController : MonoBehaviour, IEnemySessionAuthority, IEnemyStateReplicator, IMMOCreatureLocomotionSource
+    public sealed class MMOEnemyController : MonoBehaviour, IEnemySessionAuthority, IEnemyStateReplicator, IMMOCreatureLocomotionSource, IMMOHostileActionReceiver
     {
         private const int DetectionBufferSize = 16;
         private static readonly Dictionary<string, MMOEnemyController> ActiveEnemiesBySpawnId = new();
@@ -38,6 +38,7 @@ namespace RPGClone.Enemies
         [SerializeField] private MMORewardEligibilitySettings rewardEligibility = new();
 
         private readonly Collider[] detectionBuffer = new Collider[DetectionBufferSize];
+        private readonly MMOEnemyLeashStateMachine leashState = new();
         private MMOCharacterIdentity identity;
         private MMOCombatant combatant;
         private MMOAbilitySystem abilitySystem;
@@ -54,6 +55,7 @@ namespace RPGClone.Enemies
         private bool configured;
         private bool corpseActive;
         private float nextChaseRepathTime;
+        private float nextReturnRepathTime;
         private Vector3 lastChaseDestination;
         private Coroutine despawnRoutine;
         private MMOCombatant lastDamageSource;
@@ -83,6 +85,12 @@ namespace RPGClone.Enemies
 
         public MMOCharacterIdentity CurrentTarget => currentTarget;
         public bool IsInCombat => currentTarget != null && !corpseActive;
+        public bool IsReturningHome => leashState.IsReturningHome;
+        public bool CanReceiveHostileActions => !corpseActive
+            && !respawning
+            && combatant != null
+            && combatant.IsAlive
+            && !leashState.IsReturningHome;
         public bool IsAuthorityOwner => MMOGameplaySessionService.IsHostAuthority;
         public float CurrentWorldSpeed => IsAuthorityOwner ? GetAuthoritativeWorldSpeed() : proxyWorldSpeed;
 
@@ -105,6 +113,7 @@ namespace RPGClone.Enemies
             EnsureSpawnId();
             homePosition = transform.position;
             homeRotation = transform.rotation;
+            leashState.Reset(homePosition);
             CachePresentationComponents();
             ConfigureFromDefinition(true);
         }
@@ -140,6 +149,18 @@ namespace RPGClone.Enemies
             }
 
             EnsureAgentOnNavMesh();
+
+            if (leashState.IsReturningHome)
+            {
+                UpdateReturnHome();
+                return;
+            }
+
+            if (leashState.Phase == MMOEnemyLeashPhase.Engaged && currentTarget == null)
+            {
+                BeginReturnHome();
+                return;
+            }
 
             if (currentTarget != null)
             {
@@ -206,7 +227,8 @@ namespace RPGClone.Enemies
                 worldSpeed = runtimeState == EnemyRuntimeState.Alive ? GetAuthoritativeWorldSpeed() : 0f,
                 currentTargetCharacterId = currentTargetCharacterId,
                 inCombat = IsInCombat,
-                leashing = currentTarget == null && CanMoveOnNavMesh() && agent.hasPath,
+                leashing = leashState.IsReturningHome,
+                leashAnchorPosition = new Vector3SaveData(leashState.AnchorPosition),
                 castAbilityId = castAbility != null ? castAbility.AbilityId : string.Empty,
                 castTargetCharacterId = castTargetCharacterId,
                 castDurationSeconds = abilitySystem != null ? abilitySystem.CurrentCastDuration : 0f,
@@ -238,6 +260,11 @@ namespace RPGClone.Enemies
             corpseActive = snapshot.runtimeState == EnemyRuntimeState.Corpse;
             respawning = snapshot.runtimeState == EnemyRuntimeState.Respawning;
             currentTarget = ResolveSnapshotTarget(snapshot);
+            leashState.ApplyReplicatedState(
+                snapshot.inCombat,
+                snapshot.leashing,
+                snapshot.leashAnchorPosition.ToVector3(),
+                homePosition);
             creatureAnimator?.SetDeadState(snapshot.runtimeState != EnemyRuntimeState.Alive);
             bool shouldSnap = !proxyHasSnapshot
                 || wasRespawning != respawning
@@ -316,14 +343,13 @@ namespace RPGClone.Enemies
         {
             if (!IsValidTarget(currentTarget))
             {
-                ClearCombat(false);
+                BeginReturnHome();
                 return;
             }
 
-            float distanceFromHome = Vector3.Distance(transform.position, homePosition);
-            if (distanceFromHome > definition.LeashRadius)
+            if (leashState.IsBeyondLeash(transform.position, definition.LeashRadius))
             {
-                ClearCombat(true);
+                BeginReturnHome();
                 return;
             }
 
@@ -517,7 +543,7 @@ namespace RPGClone.Enemies
 
         private void EnterCombat(MMOCharacterIdentity target)
         {
-            if (!IsValidTarget(target))
+            if (!IsValidTarget(target) || !leashState.BeginEngagement(transform.position))
             {
                 return;
             }
@@ -534,28 +560,82 @@ namespace RPGClone.Enemies
             }
         }
 
-        private void ClearCombat(bool leashReset)
+        private void BeginReturnHome()
         {
-            abilitySystem.CancelActiveCast(leashReset ? "Casting interrupted by leashing." : "Casting interrupted.");
-            MMOCombatant targetCombatant = currentTarget != null ? currentTarget.GetComponent<MMOCombatant>() : null;
+            if (leashState.IsReturningHome)
+            {
+                return;
+            }
+
+            leashState.BeginReturnHome();
+            ClearCombat(true);
+            waitingAtRoamPoint = false;
+            nextChaseRepathTime = 0f;
+            nextReturnRepathTime = 0f;
+            SetReturnDestination();
+        }
+
+        private void ClearCombat(bool evading)
+        {
+            abilitySystem.CancelActiveCast(evading ? "Casting interrupted by evading." : "Casting interrupted.");
             currentTarget = null;
             autoAttackController.StopAutoAttack();
-            combatant.DisengageCombatWith(targetCombatant);
+            combatant.DisengageFromAllCombat();
 
-            if (resetResourcesOnLeash && leashReset)
+            if (!evading)
             {
-                identity.RestoreResources();
+                leashState.Reset(homePosition);
+            }
+        }
+
+        private void UpdateReturnHome()
+        {
+            if (!CanMoveOnNavMesh())
+            {
+                return;
             }
 
-            if (CanMoveOnNavMesh())
+            if (leashState.IsAtHome(transform.position, homePosition, definition.LeashReturnArrivalDistance))
             {
+                agent.isStopped = true;
+                agent.ResetPath();
+                transform.rotation = homeRotation;
+                leashState.CompleteReturnHome(homePosition);
+                if (resetResourcesOnLeash)
+                {
+                    identity.RestoreResources();
+                }
+
+                nextAggroScanTime = Time.time + definition.AggroScanInterval;
                 waitingAtRoamPoint = false;
-                nextChaseRepathTime = 0f;
-                agent.speed = definition.WalkSpeed * GetMovementSpeedMultiplier();
-                agent.stoppingDistance = 0.15f;
-                agent.isStopped = false;
-                agent.SetDestination(homePosition);
+                return;
             }
+
+            agent.speed = definition.ChaseSpeed
+                * definition.LeashReturnSpeedMultiplier
+                * GetMovementSpeedMultiplier();
+            agent.stoppingDistance = definition.LeashReturnArrivalDistance;
+            agent.isStopped = false;
+            if (!agent.pathPending && (!agent.hasPath || Time.time >= nextReturnRepathTime))
+            {
+                SetReturnDestination();
+            }
+        }
+
+        private void SetReturnDestination()
+        {
+            if (!CanMoveOnNavMesh())
+            {
+                return;
+            }
+
+            agent.speed = definition.ChaseSpeed
+                * definition.LeashReturnSpeedMultiplier
+                * GetMovementSpeedMultiplier();
+            agent.stoppingDistance = definition.LeashReturnArrivalDistance;
+            agent.isStopped = false;
+            agent.SetDestination(homePosition);
+            nextReturnRepathTime = Time.time + chaseRepathInterval;
         }
 
         private void OnDamaged(MMOCombatant source, MMOCombatant target, MMOAbilityDefinition ability, int amount)
@@ -567,6 +647,14 @@ namespace RPGClone.Enemies
 
             lastDamageSource = source;
             EnterCombat(source.Identity);
+        }
+
+        private void OnCombatActivity(MMOCombatant activeCombatant)
+        {
+            if (activeCombatant == combatant && IsAuthorityOwner && CanReceiveHostileActions)
+            {
+                leashState.RecordCombatActivity(transform.position);
+            }
         }
 
         private void OnDied(MMOCombatant deadCombatant)
@@ -700,6 +788,7 @@ namespace RPGClone.Enemies
             respawnEndTime = 0f;
             lastDamageSource = null;
             currentTarget = null;
+            leashState.Reset(homePosition);
             waitingAtRoamPoint = false;
             nextRoamDecisionTime = 0f;
             transform.SetPositionAndRotation(homePosition, homeRotation);
@@ -943,10 +1032,12 @@ namespace RPGClone.Enemies
 
             combatant.Damaged -= OnDamaged;
             combatant.Died -= OnDied;
+            combatant.CombatActivity -= OnCombatActivity;
             if (subscribe)
             {
                 combatant.Damaged += OnDamaged;
                 combatant.Died += OnDied;
+                combatant.CombatActivity += OnCombatActivity;
             }
 
             authorityEventsSubscribed = subscribe;
@@ -1045,6 +1136,11 @@ namespace RPGClone.Enemies
             Gizmos.DrawWireSphere(transform.position, definition.AggroRadius);
             Gizmos.color = Color.cyan;
             Gizmos.DrawWireSphere(origin, definition.LeashRadius);
+            if (Application.isPlaying && leashState.Phase == MMOEnemyLeashPhase.Engaged)
+            {
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawWireSphere(leashState.AnchorPosition, definition.LeashRadius);
+            }
         }
     }
 }

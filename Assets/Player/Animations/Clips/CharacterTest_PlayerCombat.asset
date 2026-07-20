@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dece5dc9d0f551c448163e111ef17818, type: 3}
   m_Name: CharacterTest_PlayerCombat
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Player.MMOPlayerCombatAnimationSet
-  baseController: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+  baseController: {fileID: 9100000, guid: ac1f833f1f49a144d8b4bec449338227, type: 2}
   combatIdle: {fileID: 7400000, guid: a50e88802e3391c4b8f32531a3c0255f, type: 2}
   twoHandCombatIdle: {fileID: 7400000, guid: bcd7316fb6fcdce4a83223288f3c9590, type: 2}
   idleEnterTransitionSeconds: 0.16

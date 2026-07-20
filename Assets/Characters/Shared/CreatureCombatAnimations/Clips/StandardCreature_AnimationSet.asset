@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7be62599e92490e46baca1994a8fdda7, type: 3}
   m_Name: Bristleback_AnimationSet
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureAnimationSet
-  baseController: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+  baseController: {fileID: 9100000, guid: f25b35abbd1c0c046888d3f787d67783, type: 2}
   idle: {fileID: 7400000, guid: 9174a84e70518844d9e0ba8bc30243e5, type: 2}
   walk: {fileID: 7400000, guid: b9810468a8cd03e45a5a92254d1e3b2c, type: 2}
   run: {fileID: 7400000, guid: de0977ee31d0d5f479c91358edaee5bb, type: 2}
@@ -23,8 +23,11 @@ MonoBehaviour:
   attack2: {fileID: 7400000, guid: 9f7d28a58508ef742af9c6cd29f4aeea, type: 2}
   damage: {fileID: 7400000, guid: 9edb90207d1b98b41b6e3b9b4c13f093, type: 2}
   death: {fileID: 7400000, guid: 63b8dc741ec889943ba4abfc06236ee8, type: 2}
+  casting: {fileID: 0}
+  cast: {fileID: 0}
   alternateAttacks: 1
   attackPrioritySeconds: 0.85
   damageReactionCooldownSeconds: 0.45
+  stationarySpeedThreshold: 0.08
   applyRootMotion: 0
   modelYawOffsetDegrees: 0

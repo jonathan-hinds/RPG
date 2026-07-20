@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7be62599e92490e46baca1994a8fdda7, type: 3}
   m_Name: Ogre_AnimationSet
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureAnimationSet
-  baseController: {fileID: 9100000, guid: 720c4059834e8cd46a22302e63fd7e52, type: 2}
+  baseController: {fileID: 9100000, guid: 2132ee663d505a949ba7ea4c3b51244d, type: 2}
   idle: {fileID: 7400000, guid: 007c0c029a62f1049885fe6b9b7bd63b, type: 2}
   walk: {fileID: 7400000, guid: b19fa8d793359be479199ee180ad88e0, type: 2}
   run: {fileID: 7400000, guid: 06717bf8621446247abbd12d075be462, type: 2}
@@ -23,8 +23,11 @@ MonoBehaviour:
   attack2: {fileID: 7400000, guid: a43ec6611b7b9224a97f35d6bfcced81, type: 2}
   damage: {fileID: 7400000, guid: a2d037aeac270df4982f2259582a559a, type: 2}
   death: {fileID: 7400000, guid: 5d006340898e9ea4f81f71f199e3425e, type: 2}
+  casting: {fileID: 0}
+  cast: {fileID: 0}
   alternateAttacks: 1
   attackPrioritySeconds: 0.95
   damageReactionCooldownSeconds: 0.5
+  stationarySpeedThreshold: 0.08
   applyRootMotion: 0
   modelYawOffsetDegrees: 0

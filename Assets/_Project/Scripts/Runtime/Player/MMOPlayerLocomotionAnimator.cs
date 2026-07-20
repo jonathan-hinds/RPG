@@ -152,6 +152,10 @@ namespace RPGClone.Player
         private float currentVisualYaw;
         private float movingLandingReturnTime = float.PositiveInfinity;
 
+        public float CurrentPlanarSpeed => locomotionSource != null
+            ? Mathf.Max(0f, locomotionSource.CurrentPlanarSpeed)
+            : motor != null ? Mathf.Max(0f, motor.CurrentPlanarSpeed) : 0f;
+
         private void Awake()
         {
             EnsureReferences();
