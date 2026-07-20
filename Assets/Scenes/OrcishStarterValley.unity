@@ -21447,7 +21447,6 @@ GameObject:
   - component: {fileID: 173841621}
   - component: {fileID: 173841620}
   - component: {fileID: 173841619}
-  - component: {fileID: 173841618}
   - component: {fileID: 173841617}
   - component: {fileID: 173841616}
   - component: {fileID: 173841627}
@@ -21458,6 +21457,7 @@ GameObject:
   - component: {fileID: 173841630}
   - component: {fileID: 173841629}
   - component: {fileID: 173841628}
+  - component: {fileID: 173841632}
   m_Layer: 0
   m_Name: Quest Giver - Millwright
   m_TagString: Untagged
@@ -21501,44 +21501,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   snapToGroundOnStart: 1
---- !u!114 &173841618
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 173841615}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
 --- !u!114 &173841619
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21830,6 +21792,23 @@ MonoBehaviour:
   faceId: face_5
   hairstyleId: hair_5
   hairColorId: hair_silver_gray
+--- !u!114 &173841632
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 173841615}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 1
+  displayNameOverride: Millwright Torga
+  titleOverride: 
+  applyOnAwake: 1
 --- !u!1 &175282004
 GameObject:
   m_ObjectHideFlags: 0
@@ -45800,9 +45779,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 411690396}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 509862488}
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 2
+  displayNameOverride: Blacksmith Durgan
+  titleOverride: Mail Armor Blacksmith
+  applyOnAwake: 1
 --- !u!114 &411690399
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -48885,13 +48869,12 @@ GameObject:
   - component: {fileID: 471857126}
   - component: {fileID: 471857125}
   - component: {fileID: 471857124}
-  - component: {fileID: 471857134}
   - component: {fileID: 471857133}
-  - component: {fileID: 471857135}
   - component: {fileID: 471857139}
   - component: {fileID: 471857138}
   - component: {fileID: 471857137}
   - component: {fileID: 471857136}
+  - component: {fileID: 471857140}
   m_Layer: 0
   m_Name: Quest Giver - Canyon Scout
   m_TagString: Untagged
@@ -49112,82 +49095,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Buffs.MMOCharacterBuffController
   stationarySpeedThreshold: 0.05
---- !u!114 &471857134
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 471857123}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 0}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
---- !u!114 &471857135
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 471857123}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 0}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
 --- !u!114 &471857136
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -49288,6 +49195,23 @@ MonoBehaviour:
   faceId: face_1
   hairstyleId: hair_6
   hairColorId: hair_chestnut
+--- !u!114 &471857140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 471857123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 1
+  displayNameOverride: Canyon Scout Rakka
+  titleOverride: 
+  applyOnAwake: 1
 --- !u!1001 &472535208
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -50714,21 +50638,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 507280813}
   m_Mesh: {fileID: 4300000, guid: 024afe951c0d1944ab1e967b21207e44, type: 2}
---- !u!115 &509862488
-MonoScript:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 7
-  m_DefaultReferences: {}
-  m_Icon: {fileID: 0}
-  m_Type: 0
-  m_ExecutionOrder: 0
-  m_ClassName: MMOStandardNpcIdentity
-  m_Namespace: RPGClone.Characters
-  m_AssemblyName: Assembly-CSharp
 --- !u!1 &510804631
 GameObject:
   m_ObjectHideFlags: 0
@@ -58112,21 +58021,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4405635880329512546, guid: ec49a5914f42b0a42b6639aa0680f613, type: 3}
   m_PrefabInstance: {fileID: 579203195}
   m_PrefabAsset: {fileID: 0}
---- !u!115 &580285473
-MonoScript:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 7
-  m_DefaultReferences: {}
-  m_Icon: {fileID: 0}
-  m_Type: 0
-  m_ExecutionOrder: 0
-  m_ClassName: MMOQuestProgressPopupPresenter
-  m_Namespace: RPGClone.UI
-  m_AssemblyName: Assembly-CSharp
 --- !u!1001 &580449739
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -70416,7 +70310,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 760707819}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 509862488}
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
   profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
@@ -71693,13 +71587,12 @@ GameObject:
   - component: {fileID: 782548374}
   - component: {fileID: 782548373}
   - component: {fileID: 782548372}
-  - component: {fileID: 782548382}
   - component: {fileID: 782548381}
-  - component: {fileID: 782548383}
   - component: {fileID: 782548387}
   - component: {fileID: 782548386}
   - component: {fileID: 782548385}
   - component: {fileID: 782548384}
+  - component: {fileID: 782548388}
   m_Layer: 0
   m_Name: Quest Giver - Seer
   m_TagString: Untagged
@@ -71921,82 +71814,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Buffs.MMOCharacterBuffController
   stationarySpeedThreshold: 0.05
---- !u!114 &782548382
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 782548371}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 0}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
---- !u!114 &782548383
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 782548371}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
 --- !u!114 &782548384
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -72097,6 +71914,23 @@ MonoBehaviour:
   faceId: face_3
   hairstyleId: hair_3
   hairColorId: hair_ash_blonde
+--- !u!114 &782548388
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 782548371}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 1
+  displayNameOverride: Seer Mahka
+  titleOverride: 
+  applyOnAwake: 1
 --- !u!1 &786966003 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: bcf55ea6ce81a4341bb02f3cdb576f94, type: 3}
@@ -78317,6 +78151,58 @@ CapsuleCollider:
   m_Height: 8.991107
   m_Direction: 1
   m_Center: {x: 0, y: 4.4955535, z: 0}
+--- !u!1 &820152720
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 820152721}
+  - component: {fileID: 820152722}
+  m_Layer: 0
+  m_Name: Quest Progress Popups
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &820152721
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 820152720}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1402151222}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.66}
+  m_AnchorMax: {x: 0.5, y: 0.66}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 560, y: 150}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &820152722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 820152720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55a64375782166b4d93be62a5dfcc27d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.UI.MMOQuestProgressPopupPresenter
+  questLog: {fileID: 0}
+  visibleSeconds: 2.1
+  fadeSeconds: 0.45
+  rowSpacing: 28
 --- !u!1 &823273750
 GameObject:
   m_ObjectHideFlags: 0
@@ -116431,35 +116317,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1172036779}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
   profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
+  role: 1
+  displayNameOverride: Shieldguard Roka
+  titleOverride: 
+  applyOnAwake: 1
 --- !u!114 &1172036783
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -119288,7 +119153,6 @@ GameObject:
   - component: {fileID: 1221247884}
   - component: {fileID: 1221247883}
   - component: {fileID: 1221247882}
-  - component: {fileID: 1221247881}
   - component: {fileID: 1221247880}
   - component: {fileID: 1221247891}
   - component: {fileID: 1221247890}
@@ -119298,6 +119162,7 @@ GameObject:
   - component: {fileID: 1221247894}
   - component: {fileID: 1221247893}
   - component: {fileID: 1221247892}
+  - component: {fileID: 1221247896}
   m_Layer: 0
   m_Name: Quest Giver - Huntmaster
   m_TagString: Untagged
@@ -119320,44 +119185,6 @@ MonoBehaviour:
   weaponSkills: []
   minimumSkillUpChance: 0.05
   maximumSkillUpChance: 1
---- !u!114 &1221247881
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1221247879}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
 --- !u!114 &1221247882
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -119670,6 +119497,23 @@ MonoBehaviour:
   faceId: face_5
   hairstyleId: hair_3
   hairColorId: hair_chestnut
+--- !u!114 &1221247896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1221247879}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 1
+  displayNameOverride: Huntmaster Krul
+  titleOverride: 
+  applyOnAwake: 1
 --- !u!1 &1228394962
 GameObject:
   m_ObjectHideFlags: 0
@@ -120945,13 +120789,12 @@ GameObject:
   - component: {fileID: 1262285184}
   - component: {fileID: 1262285186}
   - component: {fileID: 1262285187}
-  - component: {fileID: 1262285189}
   - component: {fileID: 1262285188}
-  - component: {fileID: 1262285190}
   - component: {fileID: 1262285194}
   - component: {fileID: 1262285193}
   - component: {fileID: 1262285192}
   - component: {fileID: 1262285191}
+  - component: {fileID: 1262285195}
   m_Layer: 0
   m_Name: Quest Giver - Scout
   m_TagString: Untagged
@@ -121173,82 +121016,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Buffs.MMOCharacterBuffController
   stationarySpeedThreshold: 0.05
---- !u!114 &1262285189
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1262285178}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 0}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
---- !u!114 &1262285190
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1262285178}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
 --- !u!114 &1262285191
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -121349,6 +121116,23 @@ MonoBehaviour:
   faceId: face_2
   hairstyleId: hair_2
   hairColorId: hair_ash_blonde
+--- !u!114 &1262285195
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1262285178}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 1
+  displayNameOverride: Scout Gorrek
+  titleOverride: 
+  applyOnAwake: 1
 --- !u!1001 &1263391559
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -123643,17 +123427,16 @@ GameObject:
   - component: {fileID: 1319998257}
   - component: {fileID: 1319998256}
   - component: {fileID: 1319998255}
-  - component: {fileID: 1319998254}
   - component: {fileID: 1319998253}
   - component: {fileID: 1319998252}
   - component: {fileID: 1319998251}
   - component: {fileID: 1319998250}
   - component: {fileID: 1319998249}
-  - component: {fileID: 1319998260}
   - component: {fileID: 1319998264}
   - component: {fileID: 1319998263}
   - component: {fileID: 1319998262}
   - component: {fileID: 1319998261}
+  - component: {fileID: 1319998265}
   m_Layer: 0
   m_Name: Trainer - Shaman
   m_TagString: Untagged
@@ -123747,44 +123530,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   snapToGroundOnStart: 1
---- !u!114 &1319998254
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1319998248}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 0}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
 --- !u!114 &1319998255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -123919,44 +123664,6 @@ Transform:
   - {fileID: 1134350685}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1319998260
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1319998248}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
 --- !u!114 &1319998261
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -124057,6 +123764,23 @@ MonoBehaviour:
   faceId: face_1
   hairstyleId: hair_5
   hairColorId: hair_honey_brown
+--- !u!114 &1319998265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1319998248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 3
+  displayNameOverride: Mahru Raincaller
+  titleOverride: Shaman Trainer
+  applyOnAwake: 1
 --- !u!1 &1325050434
 GameObject:
   m_ObjectHideFlags: 0
@@ -131150,58 +130874,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5319319bdd7f71e49a311ae3deb88162, type: 3}
---- !u!1 &1397739262
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1397739263}
-  - component: {fileID: 1397739264}
-  m_Layer: 0
-  m_Name: Quest Progress Popups
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1397739263
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1397739262}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1402151222}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.66}
-  m_AnchorMax: {x: 0.5, y: 0.66}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 560, y: 150}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1397739264
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1397739262}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 580285473}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.UI.MMOQuestProgressPopupPresenter
-  questLog: {fileID: 0}
-  visibleSeconds: 2.1
-  fadeSeconds: 0.45
-  rowSpacing: 28
 --- !u!1 &1398257680
 GameObject:
   m_ObjectHideFlags: 0
@@ -131648,10 +131320,10 @@ RectTransform:
   - {fileID: 1973171101}
   - {fileID: 798153598}
   - {fileID: 1612683779}
-  - {fileID: 1397739263}
   - {fileID: 1878498470}
   - {fileID: 823273751}
   - {fileID: 911090045}
+  - {fileID: 820152721}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -132877,16 +132549,15 @@ GameObject:
   - component: {fileID: 1427268692}
   - component: {fileID: 1427268691}
   - component: {fileID: 1427268696}
-  - component: {fileID: 1427268701}
   - component: {fileID: 1427268700}
   - component: {fileID: 1427268699}
   - component: {fileID: 1427268698}
   - component: {fileID: 1427268697}
-  - component: {fileID: 1427268702}
   - component: {fileID: 1427268706}
   - component: {fileID: 1427268705}
   - component: {fileID: 1427268704}
   - component: {fileID: 1427268703}
+  - component: {fileID: 1427268707}
   m_Layer: 0
   m_Name: Vendor - Quartermaster
   m_TagString: Untagged
@@ -133163,82 +132834,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Combat.MMOCombatant
   combatDropDelaySeconds: 5
---- !u!114 &1427268701
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1427268690}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 0}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
---- !u!114 &1427268702
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1427268690}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
 --- !u!114 &1427268703
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -133339,6 +132934,23 @@ MonoBehaviour:
   faceId: face_6
   hairstyleId: hair_1
   hairColorId: hair_golden_blonde
+--- !u!114 &1427268707
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1427268690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 2
+  displayNameOverride: Quartermaster Grakka
+  titleOverride: General Goods Merchant
+  applyOnAwake: 1
 --- !u!1 &1428373195
 GameObject:
   m_ObjectHideFlags: 0
@@ -144840,17 +144452,16 @@ GameObject:
   - component: {fileID: 1563030970}
   - component: {fileID: 1563030969}
   - component: {fileID: 1563030968}
-  - component: {fileID: 1563030967}
   - component: {fileID: 1563030966}
   - component: {fileID: 1563030965}
   - component: {fileID: 1563030964}
   - component: {fileID: 1563030963}
   - component: {fileID: 1563030962}
-  - component: {fileID: 1563030973}
   - component: {fileID: 1563030977}
   - component: {fileID: 1563030976}
   - component: {fileID: 1563030975}
   - component: {fileID: 1563030974}
+  - component: {fileID: 1563030978}
   m_Layer: 0
   m_Name: Trainer - Warrior
   m_TagString: Untagged
@@ -144944,44 +144555,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   snapToGroundOnStart: 1
---- !u!114 &1563030967
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1563030961}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 0}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
 --- !u!114 &1563030968
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -145116,44 +144689,6 @@ Transform:
   - {fileID: 1088262257}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1563030973
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1563030961}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
 --- !u!114 &1563030974
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -145254,6 +144789,23 @@ MonoBehaviour:
   faceId: face_1
   hairstyleId: hair_1
   hairColorId: hair_chestnut
+--- !u!114 &1563030978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1563030961}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 3
+  displayNameOverride: Gorvak Steelarm
+  titleOverride: Warrior Trainer
+  applyOnAwake: 1
 --- !u!1 &1564459100
 GameObject:
   m_ObjectHideFlags: 0
@@ -158151,7 +157703,6 @@ GameObject:
   - component: {fileID: 1755460412}
   - component: {fileID: 1755460411}
   - component: {fileID: 1755460410}
-  - component: {fileID: 1755460409}
   - component: {fileID: 1755460408}
   - component: {fileID: 1755460407}
   - component: {fileID: 1755460406}
@@ -158161,6 +157712,7 @@ GameObject:
   - component: {fileID: 1755460417}
   - component: {fileID: 1755460416}
   - component: {fileID: 1755460415}
+  - component: {fileID: 1755460419}
   m_Layer: 0
   m_Name: Trainer - Mage
   m_TagString: Untagged
@@ -158254,44 +157806,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   snapToGroundOnStart: 1
---- !u!114 &1755460409
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1755460403}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
 --- !u!114 &1755460410
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -158526,6 +158040,23 @@ MonoBehaviour:
   faceId: face_2
   hairstyleId: hair_2
   hairColorId: hair_honey_brown
+--- !u!114 &1755460419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1755460403}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 3
+  displayNameOverride: Zunari Embermind
+  titleOverride: Mage Trainer
+  applyOnAwake: 1
 --- !u!1 &1755596434 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 5319319bdd7f71e49a311ae3deb88162, type: 3}
@@ -168421,12 +167952,12 @@ GameObject:
   - component: {fileID: 1883545810}
   - component: {fileID: 1883545812}
   - component: {fileID: 1883545813}
-  - component: {fileID: 1883545815}
   - component: {fileID: 1883545814}
   - component: {fileID: 1883545819}
   - component: {fileID: 1883545818}
   - component: {fileID: 1883545817}
   - component: {fileID: 1883545816}
+  - component: {fileID: 1883545820}
   m_Layer: 0
   m_Name: Quest Giver - Warchief
   m_TagString: Untagged
@@ -168649,44 +168180,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Buffs.MMOCharacterBuffController
   stationarySpeedThreshold: 0.05
---- !u!114 &1883545815
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1883545804}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 128e16bc98014ea4ca60ac815afc53e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
-  displayName: Adventurer
-  level: 1
-  portrait: {fileID: 0}
-  portraitTint: {r: 1, g: 1, b: 1, a: 1}
-  faction: 0
-  selectable: 1
-  stats:
-    stamina: 10
-    strength: 10
-    agility: 10
-    intellect: 10
-    spirit: 10
-    armor: 0
-    attackPower: 8
-    spellPower: 0
-    meleeMinDamage: 4
-    meleeMaxDamage: 7
-    meleeAttackSpeed: 2
-    meleeRange: 3
-  health:
-    currentValue: 100
-    maxValue: 100
-  mana:
-    currentValue: 100
-    maxValue: 100
 --- !u!114 &1883545816
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -168787,6 +168280,23 @@ MonoBehaviour:
   faceId: face_4
   hairstyleId: hair_4
   hairColorId: hair_copper
+--- !u!114 &1883545820
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1883545804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 1
+  displayNameOverride: Warchief Korga
+  titleOverride: 
+  applyOnAwake: 1
 --- !u!1 &1884720173
 GameObject:
   m_ObjectHideFlags: 0
@@ -182284,12 +181794,12 @@ GameObject:
   - component: {fileID: 1965178293}
   - component: {fileID: 1965178292}
   - component: {fileID: 1965178291}
-  - component: {fileID: 1965178290}
   - component: {fileID: 1965178289}
   - component: {fileID: 1965178299}
   - component: {fileID: 1965178298}
   - component: {fileID: 1965178297}
   - component: {fileID: 1965178296}
+  - component: {fileID: 1965178300}
   m_Layer: 0
   m_Name: Vendor - Huntsman
   m_TagString: Untagged
@@ -182331,23 +181841,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   snapToGroundOnStart: 1
---- !u!114 &1965178290
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1965178288}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 509862488}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
-  role: 2
-  displayNameOverride: Huntsman Roka
-  titleOverride: Leather Armor Huntsman
-  applyOnAwake: 1
 --- !u!114 &1965178291
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -182582,6 +182075,23 @@ MonoBehaviour:
   faceId: face_1
   hairstyleId: hair_1
   hairColorId: hair_copper
+--- !u!114 &1965178300
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1965178288}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b06316c5eacf0ef45bdc4670084b493e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
+  profile: {fileID: 11400000, guid: d54405f190e226943bc7ca24759ddb06, type: 2}
+  role: 2
+  displayNameOverride: Huntsman Roka
+  titleOverride: Leather Armor Huntsman
+  applyOnAwake: 1
 --- !u!1 &1965543783
 GameObject:
   m_ObjectHideFlags: 0

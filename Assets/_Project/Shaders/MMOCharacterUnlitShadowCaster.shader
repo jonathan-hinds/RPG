@@ -41,10 +41,37 @@ Shader "RPG Clone/Characters/Unlit Shadow Caster"
         ZWrite [_ZWrite]
         Cull [_Cull]
 
-        // Reuse Unity's maintained URP Unlit rendering passes. Only shadow
-        // casting is added locally because the stock Unlit shader omits it.
-        UsePass "Universal Render Pipeline/Unlit/Unlit"
-        UsePass "Universal Render Pipeline/Unlit/GBuffer"
+        // Compile the visible pass into this shader so player pass stripping
+        // cannot detach it from the runtime-created character materials.
+        // URP continues to own the maintained implementation through includes.
+        Pass
+        {
+            Name "Unlit"
+            AlphaToMask [_AlphaToMask]
+
+            HLSLPROGRAM
+            #pragma target 2.0
+            #pragma vertex UnlitPassVertex
+            #pragma fragment UnlitPassFragment
+
+            #pragma shader_feature_local_fragment _SURFACE_TYPE_TRANSPARENT
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _ALPHAMODULATE_ON
+
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
+            #pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
+            #pragma multi_compile _ DEBUG_DISPLAY
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Fog.hlsl"
+
+            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/UnlitInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/UnlitForwardPass.hlsl"
+            ENDHLSL
+        }
 
         Pass
         {
@@ -70,12 +97,6 @@ Shader "RPG Clone/Characters/Unlit Shadow Caster"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
             ENDHLSL
         }
-
-        UsePass "Universal Render Pipeline/Unlit/DepthOnly"
-        UsePass "Universal Render Pipeline/Unlit/DepthNormalsOnly"
-        UsePass "Universal Render Pipeline/Unlit/Meta"
-        UsePass "Universal Render Pipeline/Unlit/MotionVectors"
-        UsePass "Universal Render Pipeline/Unlit/XRMotionVectors"
     }
 
     FallBack "Hidden/Universal Render Pipeline/FallbackError"
