@@ -138,7 +138,7 @@ namespace RPGClone.EditorTests
                 "Assets/Resources/RPGClone/Character_Appearance_Catalog.asset");
 
             Assert.That(catalog, Is.Not.Null);
-            Assert.That(catalog.Hairstyles, Has.Count.EqualTo(3));
+            Assert.That(catalog.Hairstyles, Has.Count.EqualTo(6));
             Assert.That(catalog.HairColors, Has.Count.EqualTo(10));
             Assert.That(catalog.Hairstyles, Has.All.Matches<MMOHairstyleDefinition>(style => style.ColorMask != null));
             Assert.That(catalog.HairColors, Has.All.Matches<MMOHairColorDefinition>(color => !string.IsNullOrWhiteSpace(color.HairColorId)));
@@ -171,7 +171,7 @@ namespace RPGClone.EditorTests
             Assert.That(playerPrefab, Is.Not.Null);
             Assert.That(catalog, Is.Not.Null);
             Assert.That(catalog.HeadStyles, Has.Count.EqualTo(1));
-            Assert.That(catalog.Hairstyles, Has.Count.EqualTo(3));
+            Assert.That(catalog.Hairstyles, Has.Count.EqualTo(6));
 
             GameObject root = new("Character Preview Test Root");
             try
@@ -339,7 +339,17 @@ namespace RPGClone.EditorTests
                 "Assets/Resources/RPGClone/Character_Appearance_Catalog.asset");
             Assert.That(playerPrefab, Is.Not.Null);
             Assert.That(catalog, Is.Not.Null);
-            Assert.That(catalog.Faces, Has.Count.EqualTo(3));
+            Assert.That(catalog.Faces, Has.Count.EqualTo(6));
+
+            string[] expectedFacePaths =
+            {
+                "Assets/PlayerWeaponStow/styledhead.png",
+                "Assets/PlayerWeaponStow/styledhead2.png",
+                "Assets/PlayerWeaponStow/styledhead3.png",
+                "Assets/_Project/New Equipment/Faces/Head4.png",
+                "Assets/_Project/New Equipment/Faces/Head5.png",
+                "Assets/_Project/New Equipment/Faces/Head6.png"
+            };
 
             GameObject root = new("Face Texture Preview Test Root");
             try
@@ -349,10 +359,9 @@ namespace RPGClone.EditorTests
                     MMOFaceDefinition face = catalog.Faces[index];
                     Assert.That(face, Is.Not.Null);
                     Assert.That(face.AlbedoTexture, Is.Not.Null, face.DisplayName);
-                    string expectedSuffix = index == 0 ? string.Empty : (index + 1).ToString();
                     Assert.That(
                         AssetDatabase.GetAssetPath(face.AlbedoTexture),
-                        Is.EqualTo($"Assets/PlayerWeaponStow/styledhead{expectedSuffix}.png"));
+                        Is.EqualTo(expectedFacePaths[index]));
 
                     GameObject actor = MMOCharacterPreviewActor.Create(
                         playerPrefab,

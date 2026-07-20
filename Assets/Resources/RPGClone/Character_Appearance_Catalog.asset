@@ -26,6 +26,15 @@ MonoBehaviour:
   - faceId: face_3
     displayName: Face 3
     albedoTexture: {fileID: 2800000, guid: 8fb3fcf46e8ec06478394c5370ee0601, type: 3}
+  - faceId: face_4
+    displayName: Face 4
+    albedoTexture: {fileID: 2800000, guid: f7ca4ae03b1255e4ea86ddf4f6caf113, type: 3}
+  - faceId: face_5
+    displayName: Face 5
+    albedoTexture: {fileID: 2800000, guid: 81a0118d5b9ae2d4b986e9d4ce8f5813, type: 3}
+  - faceId: face_6
+    displayName: Face 6
+    albedoTexture: {fileID: 2800000, guid: 8248b2f802149134aae95d4826f9857d, type: 3}
   hairstyles:
   - hairstyleId: hair_1
     displayName: Hairstyle 1
@@ -39,6 +48,18 @@ MonoBehaviour:
     displayName: Hairstyle 3
     modelPrefab: {fileID: 919132149155446097, guid: 739f3726c1a5df0459e1ac277d922014, type: 3}
     colorMask: {fileID: 2800000, guid: f3cff95a037a0b74abdaa1f5755f561d, type: 3}
+  - hairstyleId: hair_4
+    displayName: Hairstyle 4
+    modelPrefab: {fileID: 919132149155446097, guid: e6f19848edaedf947ad26e154c8999bc, type: 3}
+    colorMask: {fileID: 2800000, guid: c6d7f7a9855cbf34f8cd0c25db975ffe, type: 3}
+  - hairstyleId: hair_5
+    displayName: Hairstyle 5
+    modelPrefab: {fileID: 919132149155446097, guid: c22638dca74ccc84b847e276f437c037, type: 3}
+    colorMask: {fileID: 2800000, guid: a324ff9a49a0db54f962d67dea53c8f5, type: 3}
+  - hairstyleId: hair_6
+    displayName: Hairstyle 6
+    modelPrefab: {fileID: 919132149155446097, guid: 991cf5e67949c7445934a026fa2f37d2, type: 3}
+    colorMask: {fileID: 2800000, guid: ef6d042d8a245654d9a10a826d0e16a6, type: 3}
   hairColors:
   - hairColorId: hair_raven_black
     displayName: Raven Black

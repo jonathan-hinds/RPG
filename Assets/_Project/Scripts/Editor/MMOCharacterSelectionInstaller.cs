@@ -431,15 +431,35 @@ namespace RPGClone.EditorTools
                 AssetDatabase.CreateAsset(catalog, path);
             }
 
-            List<MMOHairstyleDefinition> hairstyles = new();
-            for (int index = 1; index <= 3; index++)
+            string[] hairstyleModelPaths =
             {
+                "Assets/PlayerWeaponStow/HairStyle1.fbx",
+                "Assets/PlayerWeaponStow/HairStyle2.fbx",
+                "Assets/PlayerWeaponStow/HairStyle3.fbx",
+                "Assets/_Project/New Equipment/Hair/Hairestyle4.fbx",
+                "Assets/_Project/New Equipment/Hair/Hairestyle5.fbx",
+                "Assets/_Project/New Equipment/Hair/Hairestyle6.fbx"
+            };
+            string[] hairstyleMaskPaths =
+            {
+                "Assets/PlayerWeaponStow/HairStyle1_ColorMask.png",
+                "Assets/PlayerWeaponStow/HairStyle2_ColorMask.png",
+                "Assets/PlayerWeaponStow/HairStyle3_ColorMask.png",
+                "Assets/_Project/New Equipment/Hair/HairStyle4_ColorMask.png",
+                "Assets/_Project/New Equipment/Hair/HairStyle5_ColorMask.png",
+                "Assets/_Project/New Equipment/Hair/HairStyle6_ColorMask.png"
+            };
+
+            List<MMOHairstyleDefinition> hairstyles = new();
+            for (int index = 0; index < hairstyleModelPaths.Length; index++)
+            {
+                int styleNumber = index + 1;
                 MMOHairstyleDefinition hairstyle = new();
                 hairstyle.Configure(
-                    $"hair_{index}",
-                    $"Hairstyle {index}",
-                    AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/PlayerWeaponStow/HairStyle{index}.fbx"),
-                    AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/PlayerWeaponStow/HairStyle{index}_ColorMask.png"));
+                    $"hair_{styleNumber}",
+                    $"Hairstyle {styleNumber}",
+                    AssetDatabase.LoadAssetAtPath<GameObject>(hairstyleModelPaths[index]),
+                    AssetDatabase.LoadAssetAtPath<Texture2D>(hairstyleMaskPaths[index]));
                 hairstyles.Add(hairstyle);
             }
 
@@ -457,15 +477,25 @@ namespace RPGClone.EditorTools
                 CreateHairColor("hair_silver_gray", "Silver Gray", "#B9B7B5")
             };
 
-            List<MMOFaceDefinition> faces = new();
-            for (int index = 1; index <= 3; index++)
+            string[] faceTexturePaths =
             {
-                string textureSuffix = index == 1 ? string.Empty : index.ToString();
+                "Assets/PlayerWeaponStow/styledhead.png",
+                "Assets/PlayerWeaponStow/styledhead2.png",
+                "Assets/PlayerWeaponStow/styledhead3.png",
+                "Assets/_Project/New Equipment/Faces/Head4.png",
+                "Assets/_Project/New Equipment/Faces/Head5.png",
+                "Assets/_Project/New Equipment/Faces/Head6.png"
+            };
+
+            List<MMOFaceDefinition> faces = new();
+            for (int index = 0; index < faceTexturePaths.Length; index++)
+            {
+                int faceNumber = index + 1;
                 MMOFaceDefinition face = new();
                 face.Configure(
-                    $"face_{index}",
-                    $"Face {index}",
-                    AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/PlayerWeaponStow/styledhead{textureSuffix}.png"));
+                    $"face_{faceNumber}",
+                    $"Face {faceNumber}",
+                    AssetDatabase.LoadAssetAtPath<Texture2D>(faceTexturePaths[index]));
                 faces.Add(face);
             }
 

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba80646583ded7a449dbe6b87c7538f7, type: 3}
+  m_Name: EV_Bloodbanner_Legguards
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOEquipmentVisualDefinition
+  bindingMode: 0
+  equipmentSlot: 10
+  bodyPart: 3
+  hideBaseBodyPart: 1
+  modelPrefab: {fileID: 919132149155446097, guid: 661c023b0f9f5244bbc308733a03e5da, type: 3}
+  stowedModelPrefab: {fileID: 0}
+  combatMovementModelPrefab: {fileID: 0}
+  materialOverride: {fileID: 2100000, guid: 72ff9b19b02c475428d15768b3b18093, type: 2}
+  useColorOverride: 0
+  colorOverride: {r: 1, g: 1, b: 1, a: 1}
+  diffuseTexture: {fileID: 2800000, guid: 723712d066ec2a641b8a42517fd0e8e1, type: 3}
+  normalTexture: {fileID: 0}
+  socketName: cc_weapon_r
+  stowedSocketName: cc_hip.l
+  combatMovementSocketName: 
+  localPosition: {x: 0, y: 0, z: 0}
+  localEulerAngles: {x: 0, y: 0, z: 0}
+  localScale: {x: 1, y: 1, z: 1}

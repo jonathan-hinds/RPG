@@ -21767,12 +21767,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
-  hairstyleId: 
-  faceId: 
-  chestArmor: {fileID: 0}
-  gloves: {fileID: 0}
-  pants: {fileID: 0}
-  boots: {fileID: 0}
+  hairstyleId: hair_5
+  hairColorId: hair_silver_gray
+  faceId: face_5
+  chestArmor: {fileID: 11400000, guid: bfe607f30b2503c44ab04dea0ee82d48, type: 2}
+  gloves: {fileID: 11400000, guid: 2aa6747e9c8517f44af77843347174b8, type: 2}
+  pants: {fileID: 11400000, guid: af62aefd9c943ae4899ba7aad56cdb5d, type: 2}
+  boots: {fileID: 11400000, guid: 0992916feaf08964a9e7dad49cb98d0c, type: 2}
   appearanceVisuals: {fileID: 173841631}
   equipmentVisuals: {fileID: 173841630}
   locomotionAnimator: {fileID: 173841628}
@@ -21826,8 +21827,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterAppearanceVisuals
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   headStyleId: head_1
-  faceId: face_1
-  hairstyleId: hair_1
+  faceId: face_5
+  hairstyleId: hair_5
+  hairColorId: hair_silver_gray
 --- !u!1 &175282004
 GameObject:
   m_ObjectHideFlags: 0
@@ -26590,6 +26592,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -26610,6 +26616,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -26622,12 +26632,20 @@ PrefabInstance:
       value: Character Visual
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
@@ -45785,11 +45803,6 @@ MonoBehaviour:
   m_Script: {fileID: 509862488}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOStandardNpcIdentity
-  profile: {fileID: 0}
-  role: 0
-  displayNameOverride: 
-  titleOverride: 
-  applyOnAwake: 1
 --- !u!114 &411690399
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -45962,6 +45975,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   hairstyleId: hair_1
+  hairColorId: 
   faceId: face_3
   chestArmor: {fileID: 11400000, guid: fa6d4687180742241990fbf62175bc39, type: 2}
   gloves: {fileID: 11400000, guid: 95fbcf92c103c5a4b98c24516b1f3f74, type: 2}
@@ -46022,6 +46036,7 @@ MonoBehaviour:
   headStyleId: head_1
   faceId: face_3
   hairstyleId: hair_1
+  hairColorId: hair_raven_black
 --- !u!1 &414391207
 GameObject:
   m_ObjectHideFlags: 0
@@ -49075,7 +49090,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 471857123}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0.7062868, z: -0, w: 0.7079259}
   m_LocalPosition: {x: 124.22, y: 5.406574, z: 150.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -49083,7 +49098,7 @@ Transform:
   - {fileID: 1441044012}
   - {fileID: 1203712311}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -89.867, z: 0}
 --- !u!114 &471857133
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -49210,12 +49225,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
-  hairstyleId: 
-  faceId: 
-  chestArmor: {fileID: 0}
-  gloves: {fileID: 0}
-  pants: {fileID: 0}
-  boots: {fileID: 0}
+  hairstyleId: hair_6
+  hairColorId: hair_chestnut
+  faceId: face_1
+  chestArmor: {fileID: 11400000, guid: 12d9b2aa3fbeb2148bd3259dc010d03d, type: 2}
+  gloves: {fileID: 11400000, guid: 42cfe0d7f30fabb4c85687205d18d107, type: 2}
+  pants: {fileID: 11400000, guid: dd7aaa1cfd21a0844b0a9b61205ecd4c, type: 2}
+  boots: {fileID: 11400000, guid: 34bde5f3b42410d4da79c4ef41e57118, type: 2}
   appearanceVisuals: {fileID: 471857139}
   equipmentVisuals: {fileID: 471857138}
   locomotionAnimator: {fileID: 471857136}
@@ -49270,7 +49286,8 @@ MonoBehaviour:
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   headStyleId: head_1
   faceId: face_1
-  hairstyleId: hair_1
+  hairstyleId: hair_6
+  hairColorId: hair_chestnut
 --- !u!1001 &472535208
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -70613,6 +70630,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   hairstyleId: hair_3
+  hairColorId: hair_golden_blonde
   faceId: face_1
   chestArmor: {fileID: 11400000, guid: af22db45ac7a1de46a574b3379331f66, type: 2}
   gloves: {fileID: 11400000, guid: 12e880a39c483f94a858084f45f0a2ac, type: 2}
@@ -70673,6 +70691,7 @@ MonoBehaviour:
   headStyleId: head_1
   faceId: face_1
   hairstyleId: hair_3
+  hairColorId: hair_golden_blonde
 --- !u!1 &764712038
 GameObject:
   m_ObjectHideFlags: 0
@@ -72015,12 +72034,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
-  hairstyleId: 
-  faceId: 
-  chestArmor: {fileID: 0}
-  gloves: {fileID: 0}
-  pants: {fileID: 0}
-  boots: {fileID: 0}
+  hairstyleId: hair_3
+  hairColorId: hair_ash_blonde
+  faceId: face_3
+  chestArmor: {fileID: 11400000, guid: d2fe19303f16f3546a61f78f4be330cd, type: 2}
+  gloves: {fileID: 11400000, guid: 7627c17b8712526409e14263777e0877, type: 2}
+  pants: {fileID: 11400000, guid: 41f8ea8ff1c21c64a82df594c3e4dc60, type: 2}
+  boots: {fileID: 11400000, guid: c69fa003a748d48479b3fc3d134f188d, type: 2}
   appearanceVisuals: {fileID: 782548387}
   equipmentVisuals: {fileID: 782548386}
   locomotionAnimator: {fileID: 782548384}
@@ -72074,8 +72094,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterAppearanceVisuals
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   headStyleId: head_1
-  faceId: face_1
-  hairstyleId: hair_1
+  faceId: face_3
+  hairstyleId: hair_3
+  hairColorId: hair_ash_blonde
 --- !u!1 &786966003 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: bcf55ea6ce81a4341bb02f3cdb576f94, type: 3}
@@ -115099,6 +115120,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -115119,6 +115144,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -115131,12 +115160,20 @@ PrefabInstance:
       value: Character Visual
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
@@ -116549,7 +116586,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1172036779}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: 0.5586127, z: -0, w: 0.8294287}
   m_LocalPosition: {x: 0.84, y: 4.1776195, z: 129.89}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -116557,7 +116594,7 @@ Transform:
   - {fileID: 1117156147}
   - {fileID: 1447169868}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 67.92, z: 0}
 --- !u!114 &1172036788
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -116651,12 +116688,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
-  hairstyleId: 
-  faceId: 
-  chestArmor: {fileID: 0}
-  gloves: {fileID: 0}
-  pants: {fileID: 0}
-  boots: {fileID: 0}
+  hairstyleId: hair_1
+  hairColorId: hair_golden_blonde
+  faceId: face_2
+  chestArmor: {fileID: 11400000, guid: 37d1fabdc2cca224f993b12d93b4dde7, type: 2}
+  gloves: {fileID: 11400000, guid: 662429d3f0d9eed42a6a59509194ec36, type: 2}
+  pants: {fileID: 11400000, guid: f795a14dbd03bf549b4a426d5accf609, type: 2}
+  boots: {fileID: 11400000, guid: 49f46bae0b0eff043bdaa10911d722dd, type: 2}
   appearanceVisuals: {fileID: 1172036795}
   equipmentVisuals: {fileID: 1172036794}
   locomotionAnimator: {fileID: 1172036792}
@@ -116710,8 +116748,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterAppearanceVisuals
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   headStyleId: head_1
-  faceId: face_1
+  faceId: face_2
   hairstyleId: hair_1
+  hairColorId: hair_golden_blonde
 --- !u!1 &1173245927
 GameObject:
   m_ObjectHideFlags: 0
@@ -118125,6 +118164,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -118145,6 +118188,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -118157,12 +118204,20 @@ PrefabInstance:
       value: Character Visual
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
@@ -119450,7 +119505,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1221247879}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: 0.980583, z: -0, w: 0.19610468}
   m_LocalPosition: {x: 117.32, y: 4.23, z: 216.75}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -119458,7 +119513,7 @@ Transform:
   - {fileID: 968107600}
   - {fileID: 1657720023}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 157.382, z: 0}
 --- !u!114 &1221247888
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -119552,12 +119607,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
-  hairstyleId: 
-  faceId: 
-  chestArmor: {fileID: 0}
-  gloves: {fileID: 0}
-  pants: {fileID: 0}
-  boots: {fileID: 0}
+  hairstyleId: hair_3
+  hairColorId: hair_chestnut
+  faceId: face_5
+  chestArmor: {fileID: 11400000, guid: e1c17b9c982057c40bfb907323f3f515, type: 2}
+  gloves: {fileID: 11400000, guid: 662429d3f0d9eed42a6a59509194ec36, type: 2}
+  pants: {fileID: 11400000, guid: d38935bb53a1ec84280007ee05bdad18, type: 2}
+  boots: {fileID: 11400000, guid: 45048db571968eb4da39089d73986289, type: 2}
   appearanceVisuals: {fileID: 1221247895}
   equipmentVisuals: {fileID: 1221247894}
   locomotionAnimator: {fileID: 1221247892}
@@ -119611,8 +119667,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterAppearanceVisuals
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   headStyleId: head_1
-  faceId: face_1
-  hairstyleId: hair_1
+  faceId: face_5
+  hairstyleId: hair_3
+  hairColorId: hair_chestnut
 --- !u!1 &1228394962
 GameObject:
   m_ObjectHideFlags: 0
@@ -121230,6 +121287,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   hairstyleId: hair_2
+  hairColorId: hair_ash_blonde
   faceId: face_2
   chestArmor: {fileID: 11400000, guid: 316c66270c41feb448f6f607e884d580, type: 2}
   gloves: {fileID: 11400000, guid: 85b680d2df4668e44864abc8775f9bb2, type: 2}
@@ -121290,6 +121348,7 @@ MonoBehaviour:
   headStyleId: head_1
   faceId: face_2
   hairstyleId: hair_2
+  hairColorId: hair_ash_blonde
 --- !u!1001 &1263391559
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -123935,12 +123994,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
-  hairstyleId: 
+  hairstyleId: hair_5
+  hairColorId: hair_honey_brown
   faceId: 
-  chestArmor: {fileID: 0}
-  gloves: {fileID: 0}
-  pants: {fileID: 0}
-  boots: {fileID: 0}
+  chestArmor: {fileID: 11400000, guid: 6acf00950624ea4489d6a03253fd3327, type: 2}
+  gloves: {fileID: 11400000, guid: e3300aa67b4fac640a891b7b7ddd1452, type: 2}
+  pants: {fileID: 11400000, guid: 0fdadb2b796ec47429ea052a2d3cd44c, type: 2}
+  boots: {fileID: 11400000, guid: c42f44c6724e68147a5d384e4b3fee6b, type: 2}
   appearanceVisuals: {fileID: 1319998264}
   equipmentVisuals: {fileID: 1319998263}
   locomotionAnimator: {fileID: 1319998261}
@@ -123995,7 +124055,8 @@ MonoBehaviour:
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   headStyleId: head_1
   faceId: face_1
-  hairstyleId: hair_1
+  hairstyleId: hair_5
+  hairColorId: hair_honey_brown
 --- !u!1 &1325050434
 GameObject:
   m_ObjectHideFlags: 0
@@ -133000,14 +133061,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1427268690}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: 0.99369216, z: -0, w: -0.11214273}
   m_LocalPosition: {x: -26.88, y: 14.87, z: -83.71}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1653344779}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 192.878, z: 0}
 --- !u!114 &1427268696
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -133215,12 +133276,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
-  hairstyleId: 
-  faceId: 
-  chestArmor: {fileID: 0}
-  gloves: {fileID: 0}
-  pants: {fileID: 0}
-  boots: {fileID: 0}
+  hairstyleId: hair_1
+  hairColorId: hair_golden_blonde
+  faceId: face_6
+  chestArmor: {fileID: 11400000, guid: 37517efd9f3e2a147ad0124a4ced035e, type: 2}
+  gloves: {fileID: 11400000, guid: e3300aa67b4fac640a891b7b7ddd1452, type: 2}
+  pants: {fileID: 11400000, guid: 55f552d98a8d46b42a05e2d0ebdc1577, type: 2}
+  boots: {fileID: 11400000, guid: f770fe4a41ba89a4796cefe9e10a65a1, type: 2}
   appearanceVisuals: {fileID: 1427268706}
   equipmentVisuals: {fileID: 1427268705}
   locomotionAnimator: {fileID: 1427268703}
@@ -133274,8 +133336,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterAppearanceVisuals
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   headStyleId: head_1
-  faceId: face_1
+  faceId: face_6
   hairstyleId: hair_1
+  hairColorId: hair_golden_blonde
 --- !u!1 &1428373195
 GameObject:
   m_ObjectHideFlags: 0
@@ -134277,6 +134340,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -134297,6 +134364,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -134309,12 +134380,20 @@ PrefabInstance:
       value: Character Visual
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
@@ -141150,6 +141229,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -141170,6 +141253,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -141182,12 +141269,20 @@ PrefabInstance:
       value: Character Visual
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
@@ -142600,6 +142695,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -142620,6 +142719,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -142632,12 +142735,20 @@ PrefabInstance:
       value: Character Visual
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
@@ -145081,6 +145192,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   hairstyleId: hair_1
+  hairColorId: hair_chestnut
   faceId: face_1
   chestArmor: {fileID: 11400000, guid: 8acd0373d7542f44293b17d533699b05, type: 2}
   gloves: {fileID: 11400000, guid: c865d006a21851a4fb97a2b2bd59afee, type: 2}
@@ -145141,6 +145253,7 @@ MonoBehaviour:
   headStyleId: head_1
   faceId: face_1
   hairstyleId: hair_1
+  hairColorId: hair_chestnut
 --- !u!1 &1564459100
 GameObject:
   m_ObjectHideFlags: 0
@@ -148891,6 +149004,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -148911,6 +149028,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -148923,12 +149044,20 @@ PrefabInstance:
       value: Character Visual
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
@@ -149144,6 +149273,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7033322453554612219, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -149164,6 +149297,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -984706881368107513, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
@@ -149176,12 +149313,20 @@ PrefabInstance:
       value: Character Visual
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4351411106470829699, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5323622383052655734, guid: a1cc853df0d7c91479b12f576b1c7729, type: 3}
       propertyPath: m_ReceiveShadows
@@ -158319,6 +158464,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   hairstyleId: hair_2
+  hairColorId: hair_honey_brown
   faceId: face_2
   chestArmor: {fileID: 11400000, guid: e1c17b9c982057c40bfb907323f3f515, type: 2}
   gloves: {fileID: 11400000, guid: a07e245acefc30642806e452e1dafe7e, type: 2}
@@ -158379,6 +158525,7 @@ MonoBehaviour:
   headStyleId: head_1
   faceId: face_2
   hairstyleId: hair_2
+  hairColorId: hair_honey_brown
 --- !u!1 &1755596434 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 5319319bdd7f71e49a311ae3deb88162, type: 3}
@@ -168577,12 +168724,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
-  hairstyleId: 
-  faceId: 
-  chestArmor: {fileID: 0}
-  gloves: {fileID: 0}
-  pants: {fileID: 0}
-  boots: {fileID: 0}
+  hairstyleId: hair_4
+  hairColorId: hair_copper
+  faceId: face_4
+  chestArmor: {fileID: 11400000, guid: e782ace2cb3a9964dbdfae6e21dc0e4b, type: 2}
+  gloves: {fileID: 11400000, guid: ee0c0aaf66ffe654aa24e31baa5b4521, type: 2}
+  pants: {fileID: 11400000, guid: accb67926d5d780498186c3c55ca53aa, type: 2}
+  boots: {fileID: 11400000, guid: 45048db571968eb4da39089d73986289, type: 2}
   appearanceVisuals: {fileID: 1883545819}
   equipmentVisuals: {fileID: 1883545818}
   locomotionAnimator: {fileID: 1883545816}
@@ -168636,8 +168784,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMOCharacterAppearanceVisuals
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   headStyleId: head_1
-  faceId: face_1
-  hairstyleId: hair_1
+  faceId: face_4
+  hairstyleId: hair_4
+  hairColorId: hair_copper
 --- !u!1 &1884720173
 GameObject:
   m_ObjectHideFlags: 0
@@ -182371,6 +182520,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Characters.MMONpcVisualAuthoring
   appearanceCatalog: {fileID: 11400000, guid: c55c5046912efdc45a2e06d91e2d6451, type: 2}
   hairstyleId: hair_1
+  hairColorId: hair_copper
   faceId: face_1
   chestArmor: {fileID: 11400000, guid: bfe607f30b2503c44ab04dea0ee82d48, type: 2}
   gloves: {fileID: 11400000, guid: 2aa6747e9c8517f44af77843347174b8, type: 2}
@@ -182431,6 +182581,7 @@ MonoBehaviour:
   headStyleId: head_1
   faceId: face_1
   hairstyleId: hair_1
+  hairColorId: hair_copper
 --- !u!1 &1965543783
 GameObject:
   m_ObjectHideFlags: 0
