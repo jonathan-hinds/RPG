@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e67979b44a8164a4ba2e98ea7a945499, type: 3}
   m_Name: WaterShieldVFX_Default
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Water.WaterShieldVFXProfile
-  authoringVersion: 2
+  authoringVersion: 3
   effectScale: 1
   overallBrightness: 1.15
   colors:
@@ -87,6 +87,8 @@ MonoBehaviour:
   rippleStrength: 1
   reactiveSplashAmount: 12
   orbitDisturbanceAmount: 0.22
+  orbitReactionDuration: 0.48
+  orbitReactionSpinDegrees: 360
   manaTransferBrightness: 2
   manaTransferSpeed: 3.2
   chestPulseIntensity: 1.6

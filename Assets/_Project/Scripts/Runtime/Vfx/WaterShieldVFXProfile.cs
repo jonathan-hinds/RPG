@@ -107,6 +107,8 @@ namespace RPGClone.Vfx.Water
         [SerializeField, Range(0f, 2f)] private float rippleStrength = 1f;
         [SerializeField, Range(0, 32)] private int reactiveSplashAmount = 12;
         [SerializeField, Range(0f, 1f)] private float orbitDisturbanceAmount = 0.22f;
+        [SerializeField, Min(0.05f)] private float orbitReactionDuration = 0.48f;
+        [SerializeField, Min(0f)] private float orbitReactionSpinDegrees = 360f;
         [SerializeField, Range(0f, 6f)] private float manaTransferBrightness = 2f;
         [SerializeField, Min(0.1f)] private float manaTransferSpeed = 3.2f;
         [SerializeField, Range(0f, 6f)] private float chestPulseIntensity = 1.6f;
@@ -177,6 +179,8 @@ namespace RPGClone.Vfx.Water
         public float RippleStrength => rippleStrength;
         public int ReactiveSplashAmount => ScaledCount(reactiveSplashAmount);
         public float OrbitDisturbanceAmount => orbitDisturbanceAmount;
+        public float OrbitReactionDuration => Mathf.Max(0.05f, orbitReactionDuration);
+        public float OrbitReactionSpinDegrees => Mathf.Max(0f, orbitReactionSpinDegrees);
         public float ManaTransferBrightness => manaTransferBrightness;
         public float ManaTransferSpeed => manaTransferSpeed;
         public float ChestPulseIntensity => chestPulseIntensity;

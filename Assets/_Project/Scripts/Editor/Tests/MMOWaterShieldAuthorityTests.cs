@@ -4,6 +4,7 @@ using RPGClone.Abilities;
 using RPGClone.Buffs;
 using RPGClone.Characters;
 using RPGClone.Combat;
+using RPGClone.Vfx.Water;
 using UnityEditor;
 using UnityEngine;
 
@@ -108,6 +109,25 @@ namespace RPGClone.EditorTests
                 Object.DestroyImmediate(controlObject);
                 Object.DestroyImmediate(targetObject);
             }
+        }
+
+        [Test]
+        public void WaterShieldReactionSpin_IsFixedAndIndependentOfBuffLifetime()
+        {
+            const float duration = 0.48f;
+            const float configuredSpin = 360f;
+
+            float firstTriggerSpin = WaterShieldVFXMath.EvaluateReactionSpinDegrees(0.24f, duration, configuredSpin);
+            float laterTriggerSpin = WaterShieldVFXMath.EvaluateReactionSpinDegrees(0.24f, duration, configuredSpin);
+
+            Assert.That(laterTriggerSpin, Is.EqualTo(firstTriggerSpin).Within(0.001f));
+            Assert.That(
+                WaterShieldVFXMath.EvaluateReactionSpinDegrees(duration, duration, configuredSpin),
+                Is.EqualTo(configuredSpin).Within(0.001f));
+            Assert.That(
+                WaterShieldVFXMath.EvaluateReactionSpinDegrees(duration * 10f, duration, configuredSpin),
+                Is.EqualTo(configuredSpin).Within(0.001f),
+                "A reaction must never accumulate extra rotations from the shield's lifetime.");
         }
     }
 }

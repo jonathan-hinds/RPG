@@ -249,7 +249,12 @@ namespace RPGClone.Vfx.Water
                 : profile.ActivationSweepDegrees;
             float persistentElapsed = Mathf.Max(0f, elapsed - profile.ActivationDuration);
             float disturbance = EvaluateDisturbance();
-            float orbitAngle = activationSweep + persistentElapsed * profile.OrbitSpeed * (1f + disturbance * 0.55f);
+            float reactionElapsed = Time.time - orbitDisturbanceStartedAt;
+            float reactionSpin = WaterShieldVFXMath.EvaluateReactionSpinDegrees(
+                reactionElapsed,
+                profile.OrbitReactionDuration,
+                profile.OrbitReactionSpinDegrees) * Mathf.Sign(profile.OrbitSpeed);
+            float orbitAngle = activationSweep + persistentElapsed * profile.OrbitSpeed + reactionSpin;
             Quaternion tilt = Quaternion.Euler(profile.OrbitTilt, 0f, profile.OrbitTilt * 0.35f);
 
             for (int i = 0; i < OrbCount; i++)
@@ -429,7 +434,7 @@ namespace RPGClone.Vfx.Water
 
         private float EvaluateDisturbance()
         {
-            float t = (Time.time - orbitDisturbanceStartedAt) / 0.48f;
+            float t = (Time.time - orbitDisturbanceStartedAt) / profile.OrbitReactionDuration;
             return t is >= 0f and < 1f ? Mathf.Sin(t * Mathf.PI) : 0f;
         }
 
@@ -498,6 +503,21 @@ namespace RPGClone.Vfx.Water
         {
             value = Mathf.Clamp01(value);
             return value * value * (3f - 2f * value);
+        }
+    }
+
+    public static class WaterShieldVFXMath
+    {
+        public static float EvaluateReactionSpinDegrees(float elapsed, float duration, float spinDegrees)
+        {
+            if (elapsed < 0f || duration <= 0f || spinDegrees == 0f)
+            {
+                return 0f;
+            }
+
+            float progress = Mathf.Clamp01(elapsed / duration);
+            float easedProgress = progress * progress * (3f - 2f * progress);
+            return spinDegrees * easedProgress;
         }
     }
 }

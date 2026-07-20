@@ -48,8 +48,7 @@ namespace RPGClone.Characters
 
         private void OnDisable()
         {
-            ClearActiveVisual(ref activeHeadStyle);
-            ClearActiveVisual(ref activeHairstyle);
+            ClearGeneratedVisuals();
             headStyleBound = false;
             RefreshBaseHeadVisibility();
             RestoreProductionAnimatorCulling();
@@ -111,8 +110,7 @@ namespace RPGClone.Characters
 
         private void Rebuild()
         {
-            ClearActiveVisual(ref activeHeadStyle);
-            ClearActiveVisual(ref activeHairstyle);
+            ClearGeneratedVisuals();
             headStyleBound = false;
 
             if (!isActiveAndEnabled)
@@ -341,6 +339,7 @@ namespace RPGClone.Characters
         {
             if (activeVisual != null)
             {
+                activeVisual.SetActive(false);
                 if (Application.isPlaying)
                 {
                     Destroy(activeVisual);
@@ -352,6 +351,36 @@ namespace RPGClone.Characters
 
                 activeVisual = null;
             }
+        }
+
+        private void ClearGeneratedVisuals()
+        {
+            // Remote avatars are cloned from the live local player, so generated
+            // children can be inherited without their non-serialized owner fields.
+            // Markers form the ownership boundary and make rebuilding idempotent.
+            MMOAppearanceVisualInstanceMarker[] generatedVisuals =
+                GetComponentsInChildren<MMOAppearanceVisualInstanceMarker>(true);
+            foreach (MMOAppearanceVisualInstanceMarker generatedVisual in generatedVisuals)
+            {
+                if (generatedVisual == null || generatedVisual.transform == transform)
+                {
+                    continue;
+                }
+
+                GameObject visualObject = generatedVisual.gameObject;
+                visualObject.SetActive(false);
+                if (Application.isPlaying)
+                {
+                    Destroy(visualObject);
+                }
+                else
+                {
+                    DestroyImmediate(visualObject);
+                }
+            }
+
+            activeHeadStyle = null;
+            activeHairstyle = null;
         }
     }
 

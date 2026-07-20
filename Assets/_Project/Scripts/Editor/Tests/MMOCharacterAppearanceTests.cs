@@ -132,6 +132,30 @@ namespace RPGClone.EditorTests
         }
 
         [Test]
+        public void AppearanceRebuild_RemovesUntrackedGeneratedVisualsInheritedByRuntimeClone()
+        {
+            GameObject actor = new("Runtime Appearance Clone Test");
+            try
+            {
+                MMOCharacterAppearanceVisuals appearance = actor.AddComponent<MMOCharacterAppearanceVisuals>();
+                GameObject inheritedHairstyle = new("Inherited Local Hairstyle");
+                inheritedHairstyle.transform.SetParent(actor.transform, false);
+                inheritedHairstyle.AddComponent<MMOAppearanceVisualInstanceMarker>();
+
+                appearance.Configure(null, "head_remote", "face_remote", "hair_remote", "hair_color_remote");
+
+                Assert.That(
+                    actor.GetComponentsInChildren<MMOAppearanceVisualInstanceMarker>(true),
+                    Is.Empty,
+                    "A remote clone must not retain generated appearance instances inherited from the local player.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(actor);
+            }
+        }
+
+        [Test]
         public void ProductionAppearanceCatalog_ContainsMasksAndCuratedHairColors()
         {
             MMOCharacterAppearanceCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOCharacterAppearanceCatalog>(

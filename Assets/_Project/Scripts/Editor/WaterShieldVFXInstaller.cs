@@ -13,7 +13,7 @@ namespace RPGClone.EditorTools
 {
     public static class WaterShieldVFXInstaller
     {
-        private const int CurrentProfileAuthoringVersion = 2;
+        private const int CurrentProfileAuthoringVersion = 3;
         private const string RootFolder = "Assets/_Project/VFX/WaterShield";
         private const string TextureFolder = RootFolder + "/Textures";
         private const string SourceFolder = TextureFolder + "/Sources";
@@ -262,6 +262,8 @@ namespace RPGClone.EditorTools
             serialized.FindProperty("formationPopBrightness").floatValue = 1.4f;
             serialized.FindProperty("formationSplashAmount").intValue = 14;
             serialized.FindProperty("orbitHeight").floatValue = 1.05f;
+            serialized.FindProperty("orbitReactionDuration").floatValue = 0.48f;
+            serialized.FindProperty("orbitReactionSpinDegrees").floatValue = 360f;
             version.intValue = CurrentProfileAuthoringVersion;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
