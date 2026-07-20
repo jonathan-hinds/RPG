@@ -233,6 +233,13 @@ namespace RPGClone.Abilities
                         resolvedTarget,
                         resolvedTarget != null ? resolvedTarget.transform.position : transform.position,
                         false);
+                    activeCast.AuthorityRouted = TrySubmitHostAuthorityRequest(
+                        ability,
+                        resolvedTarget,
+                        resolvedTarget != null ? resolvedTarget.transform.position : transform.position,
+                        false,
+                        out _,
+                        CombatActionRequestKind.ChannelStart);
                 }
 
                 CastStarted?.Invoke(this, ability, resolvedTarget, ability.CastTimeSeconds);
@@ -261,6 +268,13 @@ namespace RPGClone.Abilities
                     StartCooldown(ability);
                     AbilityUsed?.Invoke(this, ability, null);
                     AbilityReleased?.Invoke(this, ability, null, targetPosition, true);
+                    activeCast.AuthorityRouted = TrySubmitHostAuthorityRequest(
+                        ability,
+                        null,
+                        targetPosition,
+                        true,
+                        out _,
+                        CombatActionRequestKind.ChannelStart);
                 }
 
                 CastStarted?.Invoke(this, ability, null, ability.CastTimeSeconds);
@@ -542,14 +556,49 @@ namespace RPGClone.Abilities
                 return;
             }
 
-            if (ability.CastTimeSeconds > 0f)
-            {
-                replicatedCast = null;
-                CastCompleted?.Invoke(this, ability, target);
-            }
-
             AbilityReleased?.Invoke(this, ability, target, targetPosition, hasGroundTarget);
             AbilityUsed?.Invoke(this, ability, target);
+        }
+
+        public void PlayReplicatedCastCompleted(MMOAbilityDefinition ability, MMOCharacterIdentity target)
+        {
+            if (ability == null)
+            {
+                return;
+            }
+
+            replicatedCast = null;
+            CastCompleted?.Invoke(this, ability, target);
+        }
+
+        public void PlayReplicatedChargeStarted(MMOAbilityDefinition ability, MMOCharacterIdentity target)
+        {
+            if (ability == null)
+            {
+                return;
+            }
+
+            ChargeStarted?.Invoke(this, ability, target);
+            AbilityUsed?.Invoke(this, ability, target);
+        }
+
+        public void PlayReplicatedChargeImpactStarted(
+            MMOAbilityDefinition ability,
+            MMOCharacterIdentity target,
+            float impactDelaySeconds)
+        {
+            if (ability != null)
+            {
+                ChargeImpactStarted?.Invoke(this, ability, target, Mathf.Max(0f, impactDelaySeconds));
+            }
+        }
+
+        public void PlayReplicatedChargeCompleted(MMOAbilityDefinition ability, MMOCharacterIdentity target)
+        {
+            if (ability != null)
+            {
+                ChargeCompleted?.Invoke(this, ability, target);
+            }
         }
 
         public MMOAbilityDefinition FindKnownAbilityById(string abilityId)
@@ -582,12 +631,33 @@ namespace RPGClone.Abilities
                 return false;
             }
 
+            if (request.requestKind == CombatActionRequestKind.ChannelCancel)
+            {
+                if (activeCast != null && activeCast.Ability == ability && activeCast.IsChanneled)
+                {
+                    InterruptCast("Channel canceled by the casting player.");
+                }
+
+                return true;
+            }
+
             if (request.hasGroundTarget)
             {
                 Vector3 groundTarget = request.requestedTargetPosition.ToVector3();
                 if (!TryPrepareGroundAbility(ability, groundTarget, out failureReason))
                 {
                     return false;
+                }
+
+                if (request.requestKind == CombatActionRequestKind.ChannelStart)
+                {
+                    if (!ability.IsChanneled)
+                    {
+                        failureReason = $"{ability.DisplayName} is not a channeled ability.";
+                        return false;
+                    }
+
+                    return StartOrExecuteGroundAbility(ability, groundTarget, out failureReason);
                 }
 
                 ExecutePreparedGroundAbility(ability, groundTarget);
@@ -602,6 +672,43 @@ namespace RPGClone.Abilities
 
             if (!TryPrepareAbility(ability, resolvedTarget, out failureReason, out MMOCombatant targetCombatant))
             {
+                return false;
+            }
+
+            if (request.requestKind == CombatActionRequestKind.ChannelStart)
+            {
+                if (!ability.IsChanneled)
+                {
+                    failureReason = $"{ability.DisplayName} is not a channeled ability.";
+                    return false;
+                }
+
+                return StartOrExecuteAbility(ability, resolvedTarget, targetCombatant, out failureReason);
+            }
+
+            if (request.requestKind == CombatActionRequestKind.ChargeImpact)
+            {
+                if (!TryGetChargeEffect(ability, out MMOAbilityEffectDefinition chargeEffect))
+                {
+                    failureReason = $"{ability.DisplayName} has no charge impact effect.";
+                    return false;
+                }
+
+                if (!IsInRange(resolvedTarget, chargeEffect.ChargeStopDistance + 0.75f))
+                {
+                    failureReason = "Charge impact target is out of range.";
+                    return false;
+                }
+
+                SpendResourceCost(ability);
+                StartCooldown(ability);
+                targetCombatant.ApplyDamage(combatant, ability, chargeEffect.CalculateAmount(identity));
+                return true;
+            }
+
+            if (ability.IsChanneled || TryGetChargeEffect(ability, out _))
+            {
+                failureReason = $"{ability.DisplayName} requires a specialized authority request.";
                 return false;
             }
 
@@ -649,17 +756,22 @@ namespace RPGClone.Abilities
 
         private void ApplyEffects(MMOAbilityDefinition ability, MMOCombatant target)
         {
+            bool appliedTemporaryModifiers = false;
             foreach (MMOAbilityEffectDefinition effect in ability.Effects)
             {
                 if (effect.EffectType == MMOAbilityEffectType.TemporaryStatModifier)
                 {
-                    MMOCharacterBuffController buffController = target.GetComponent<MMOCharacterBuffController>();
-                    if (buffController == null)
+                    if (!appliedTemporaryModifiers)
                     {
-                        buffController = target.gameObject.AddComponent<MMOCharacterBuffController>();
+                        MMOCharacterBuffController buffController = target.GetComponent<MMOCharacterBuffController>();
+                        if (buffController == null)
+                        {
+                            buffController = target.gameObject.AddComponent<MMOCharacterBuffController>();
+                        }
+
+                        appliedTemporaryModifiers = buffController.ApplyTemporaryModifiers(ability, combatant);
                     }
 
-                    buffController.ApplyBuff(MMOBuffApplication.FromAbility(ability, effect, combatant));
                     continue;
                 }
 
@@ -694,6 +806,27 @@ namespace RPGClone.Abilities
                     target.ApplyDamage(combatant, ability, amount);
                 }
             }
+
+            if (appliedTemporaryModifiers)
+            {
+                PublishBuffAppliedEvent(ability, target);
+            }
+        }
+
+        private void PublishBuffAppliedEvent(MMOAbilityDefinition ability, MMOCombatant target)
+        {
+            if (!MMOGameplaySessionService.IsHostAuthority || ability == null || target == null)
+            {
+                return;
+            }
+
+            CombatEventRecord record = CombatEventRecord.Create(CombatEventType.BuffApplied);
+            record.sessionId = MMOGameplaySessionService.SessionId ?? string.Empty;
+            record.abilityId = ability.AbilityId;
+            record.targetPosition = new Vector3SaveData(target.transform.position);
+            PopulateCombatEndpoint(record, combatant, true);
+            PopulateCombatEndpoint(record, target, false);
+            MMOCombatEventStream.PublishCombatEvent(record, combatant, target, ability);
         }
 
         private void ApplyAreaEffects(MMOAbilityDefinition ability, Vector3 center)
@@ -866,7 +999,13 @@ namespace RPGClone.Abilities
                 if (activeCharge == charge && charge.TargetCombatant != null && charge.TargetCombatant.IsAlive)
                 {
                     int amount = charge.Effect.CalculateAmount(identity);
-                    if (!TrySubmitHostAuthorityRequest(charge.Ability, charge.Target, charge.Target.transform.position, false, out _))
+                    if (!TrySubmitHostAuthorityRequest(
+                            charge.Ability,
+                            charge.Target,
+                            charge.Target.transform.position,
+                            false,
+                            out _,
+                            CombatActionRequestKind.ChargeImpact))
                     {
                         charge.TargetCombatant.ApplyDamage(combatant, charge.Ability, amount);
                     }
@@ -939,6 +1078,7 @@ namespace RPGClone.Abilities
                 MMOCharacterIdentity channelTarget = activeCast.Target;
                 activeCast = null;
                 CastCompleted?.Invoke(this, completedChannel, channelTarget);
+                PublishAuthorityEnemyCastEvent(CombatEventType.CastCompleted, completedChannel, channelTarget, 0f);
                 return;
             }
 
@@ -964,6 +1104,7 @@ namespace RPGClone.Abilities
 
                 ExecutePreparedGroundAbility(ability, groundTargetPosition);
                 CastCompleted?.Invoke(this, ability, null);
+                PublishAuthorityEnemyCastEvent(CombatEventType.CastCompleted, ability, null, 0f);
                 return;
             }
 
@@ -975,6 +1116,7 @@ namespace RPGClone.Abilities
 
             ExecutePreparedAbility(ability, target, targetCombatant);
             CastCompleted?.Invoke(this, ability, target);
+            PublishAuthorityEnemyCastEvent(CombatEventType.CastCompleted, ability, target, 0f);
         }
 
         private void UpdateReplicatedCastPresentation()
@@ -1024,6 +1166,11 @@ namespace RPGClone.Abilities
 
         private void TickChanneledEffects(ActiveCast channel)
         {
+            if (channel.AuthorityRouted)
+            {
+                return;
+            }
+
             for (int i = 0; i < channel.Ability.Effects.Count; i++)
             {
                 MMOAbilityEffectDefinition effect = channel.Ability.Effects[i];
@@ -1101,11 +1248,13 @@ namespace RPGClone.Abilities
             MMOCharacterIdentity target,
             Vector3 targetPosition,
             bool hasGroundTarget,
-            out string failureReason)
+            out string failureReason,
+            CombatActionRequestKind? requestKindOverride = null)
         {
-            CombatActionRequestKind requestKind = ability != null && ability.IsAutoAttack
-                ? CombatActionRequestKind.AutoAttack
-                : CombatActionRequestKind.Ability;
+            CombatActionRequestKind requestKind = requestKindOverride
+                ?? (ability != null && ability.IsAutoAttack
+                    ? CombatActionRequestKind.AutoAttack
+                    : CombatActionRequestKind.Ability);
             if (!MMOSessionCombatAuthority.ShouldRouteThroughHost(combatant, ability, target))
             {
                 failureReason = string.Empty;
@@ -1252,9 +1401,21 @@ namespace RPGClone.Abilities
                 return;
             }
 
-            MMOAbilityDefinition ability = activeCast.Ability;
-            MMOCharacterIdentity target = activeCast.Target;
+            ActiveCast interruptedCast = activeCast;
+            MMOAbilityDefinition ability = interruptedCast.Ability;
+            MMOCharacterIdentity target = interruptedCast.Target;
             activeCast = null;
+            if (interruptedCast.AuthorityRouted)
+            {
+                TrySubmitHostAuthorityRequest(
+                    ability,
+                    target,
+                    interruptedCast.HasGroundTarget ? interruptedCast.GroundTargetPosition : target != null ? target.transform.position : transform.position,
+                    interruptedCast.HasGroundTarget,
+                    out _,
+                    CombatActionRequestKind.ChannelCancel);
+            }
+
             NotifyCastInterrupted(ability, target, reason);
             AbilityFailed?.Invoke(this, ability, target, reason);
         }
@@ -1307,6 +1468,7 @@ namespace RPGClone.Abilities
             public readonly int[] AppliedChannelAmounts;
             public float StartTime;
             public float AppliedKnockbackSeconds;
+            public bool AuthorityRouted;
 
             public ActiveCast(MMOAbilityDefinition ability, MMOCharacterIdentity target, Vector3 startPosition, float startTime, float duration)
                 : this(ability, target, null, startPosition, startTime, duration, false, Vector3.zero, false)

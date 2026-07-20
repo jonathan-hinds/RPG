@@ -125,7 +125,7 @@ namespace RPGClone.Combat
 
             if (publishToCombatEventStream)
             {
-                PublishDamageEvent(source, ability, appliedAmount, isCritical, identity.Health.CurrentValue <= 0);
+                PublishDamageEvent(source, ability, appliedAmount, absorbedAmount, isCritical, identity.Health.CurrentValue <= 0);
             }
 
             if (identity.Health.CurrentValue <= 0)
@@ -141,7 +141,7 @@ namespace RPGClone.Combat
 
         public void ApplyResolvedDamage(MMOCombatant source, MMOAbilityDefinition ability, int appliedAmount, bool isCritical = false, bool publishToCombatEventStream = true)
         {
-            if (!IsAlive || appliedAmount <= 0)
+            if (!IsAlive || appliedAmount < 0)
             {
                 return;
             }
@@ -150,7 +150,7 @@ namespace RPGClone.Combat
             source?.RegisterCombatActivity(this);
             RegisterCombatActivity(source);
             Damaged?.Invoke(source, this, ability, appliedAmount);
-            if (isCritical)
+            if (isCritical && appliedAmount > 0)
             {
                 CriticallyDamaged?.Invoke(source, this, ability, appliedAmount);
                 source?.CriticalDamageDealt?.Invoke(source, this, ability, appliedAmount);
@@ -158,7 +158,7 @@ namespace RPGClone.Combat
 
             if (publishToCombatEventStream)
             {
-                PublishDamageEvent(source, ability, appliedAmount, isCritical, identity.Health.CurrentValue <= 0);
+                PublishDamageEvent(source, ability, appliedAmount, 0, isCritical, identity.Health.CurrentValue <= 0);
             }
 
             if (identity.Health.CurrentValue <= 0)
@@ -315,15 +315,22 @@ namespace RPGClone.Combat
             return Mathf.Max(1, Mathf.RoundToInt(amount * (1f - Mathf.Clamp01(reduction))));
         }
 
-        private void PublishDamageEvent(MMOCombatant source, MMOAbilityDefinition ability, int appliedAmount, bool isCritical, bool killedTarget)
+        private void PublishDamageEvent(
+            MMOCombatant source,
+            MMOAbilityDefinition ability,
+            int appliedAmount,
+            int absorbedAsManaAmount,
+            bool isCritical,
+            bool killedTarget)
         {
-            if (appliedAmount <= 0)
+            if (appliedAmount <= 0 && absorbedAsManaAmount <= 0)
             {
                 return;
             }
 
             CombatEventRecord record = CreateCombatEvent(CombatEventType.DamageResolved, source, ability);
             record.damageAmount = appliedAmount;
+            record.absorbedAsManaAmount = absorbedAsManaAmount;
             record.isCritical = isCritical;
             record.killedTarget = killedTarget;
             MMOCombatEventStream.PublishCombatEvent(record, source, this, ability);

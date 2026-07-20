@@ -39,7 +39,10 @@ namespace RPGClone.Combat
     public enum CombatActionRequestKind
     {
         Ability,
-        AutoAttack
+        AutoAttack,
+        ChannelStart,
+        ChannelCancel,
+        ChargeImpact
     }
 
     public enum CombatEventType
@@ -51,7 +54,9 @@ namespace RPGClone.Combat
         HealResolved,
         Missed,
         Blocked,
-        Death
+        Death,
+        CastCompleted,
+        BuffApplied
     }
 
     public enum EnemyRuntimeState
@@ -140,6 +145,7 @@ namespace RPGClone.Combat
         public int damageAmount;
         public int healAmount;
         public int blockedAmount;
+        public int absorbedAsManaAmount;
         public bool hasTargetResourceSnapshot;
         public int targetCurrentHealth;
         public int targetMaxHealth;

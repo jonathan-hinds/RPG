@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RPGClone.Abilities;
 using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Player;
@@ -70,6 +71,28 @@ namespace RPGClone.Buffs
             return buff;
         }
 
+        public bool ApplyTemporaryModifiers(MMOAbilityDefinition ability, MMOCombatant source)
+        {
+            if (ability == null)
+            {
+                return false;
+            }
+
+            bool applied = false;
+            foreach (MMOAbilityEffectDefinition effect in ability.Effects)
+            {
+                if (effect == null || effect.EffectType != MMOAbilityEffectType.TemporaryStatModifier)
+                {
+                    continue;
+                }
+
+                ApplyBuff(MMOBuffApplication.FromAbility(ability, effect, source));
+                applied = true;
+            }
+
+            return applied;
+        }
+
         public void RemoveBuff(string buffId)
         {
             if (RemoveBuff(buffId, true))
@@ -119,6 +142,14 @@ namespace RPGClone.Buffs
             identity.Mana.SetCurrent(identity.Mana.CurrentValue + absorbed);
             DamageAbsorbedAsMana?.Invoke(this, absorbed);
             return absorbed;
+        }
+
+        public void NotifyReplicatedDamageAbsorbedAsMana(int absorbedAmount)
+        {
+            if (absorbedAmount > 0)
+            {
+                DamageAbsorbedAsMana?.Invoke(this, absorbedAmount);
+            }
         }
 
         private bool RemoveBuff(string buffId, bool stopAfterFirst)

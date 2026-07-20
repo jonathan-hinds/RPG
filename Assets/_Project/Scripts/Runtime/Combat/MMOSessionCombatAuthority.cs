@@ -18,8 +18,7 @@ namespace RPGClone.Combat
                 return false;
             }
 
-            return IsHostileCombatAbility(ability)
-                && (ability.RequiresGroundTarget || target == null || target.GetComponent<MMOEnemyController>() != null);
+            return RequiresHostResolution(ability);
         }
 
         public static bool TrySubmitRequest(
@@ -103,6 +102,47 @@ namespace RPGClone.Combat
                 if (effect.EffectType == MMOAbilityEffectType.Damage
                     || effect.EffectType == MMOAbilityEffectType.PeriodicDamage
                     || effect.EffectType == MMOAbilityEffectType.Charge)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool RequiresHostResolution(MMOAbilityDefinition ability)
+        {
+            if (IsHostileCombatAbility(ability) || HasTemporaryStatModifier(ability))
+            {
+                return true;
+            }
+
+            if (ability == null)
+            {
+                return false;
+            }
+
+            foreach (MMOAbilityEffectDefinition effect in ability.Effects)
+            {
+                if (effect != null && effect.EffectType == MMOAbilityEffectType.Heal)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool HasTemporaryStatModifier(MMOAbilityDefinition ability)
+        {
+            if (ability == null)
+            {
+                return false;
+            }
+
+            foreach (MMOAbilityEffectDefinition effect in ability.Effects)
+            {
+                if (effect != null && effect.EffectType == MMOAbilityEffectType.TemporaryStatModifier)
                 {
                     return true;
                 }

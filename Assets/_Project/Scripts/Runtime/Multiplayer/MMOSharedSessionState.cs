@@ -46,7 +46,12 @@ namespace RPGClone.Multiplayer
     public static class MMOSharedAbilityEventTypes
     {
         public const string CastStarted = "cast_started";
+        public const string CastInterrupted = "cast_interrupted";
+        public const string CastCompleted = "cast_completed";
         public const string AbilityReleased = "ability_released";
+        public const string ChargeStarted = "charge_started";
+        public const string ChargeImpactStarted = "charge_impact_started";
+        public const string ChargeCompleted = "charge_completed";
         public const string AutoAttackWindup = "auto_attack_windup";
         public const string HealResolved = "heal_resolved";
     }
@@ -329,6 +334,126 @@ namespace RPGClone.Multiplayer
                 targetPosition,
                 hasGroundTarget,
                 0f,
+                initiallyAppliedCharacterId);
+        }
+
+        public static void PublishCastInterruptedEvent(
+            string sessionId,
+            string casterCharacterId,
+            string targetCharacterId,
+            string abilityId,
+            string initiallyAppliedCharacterId,
+            string targetEnemySpawnId = "")
+        {
+            PublishAbilityLifecycleEvent(
+                sessionId,
+                MMOSharedAbilityEventTypes.CastInterrupted,
+                casterCharacterId,
+                targetCharacterId,
+                targetEnemySpawnId,
+                abilityId,
+                0f,
+                initiallyAppliedCharacterId);
+        }
+
+        public static void PublishCastCompletedEvent(
+            string sessionId,
+            string casterCharacterId,
+            string targetCharacterId,
+            string abilityId,
+            string initiallyAppliedCharacterId,
+            string targetEnemySpawnId = "")
+        {
+            PublishAbilityLifecycleEvent(
+                sessionId,
+                MMOSharedAbilityEventTypes.CastCompleted,
+                casterCharacterId,
+                targetCharacterId,
+                targetEnemySpawnId,
+                abilityId,
+                0f,
+                initiallyAppliedCharacterId);
+        }
+
+        public static void PublishChargeStartedEvent(
+            string sessionId,
+            string casterCharacterId,
+            string targetCharacterId,
+            string abilityId,
+            string initiallyAppliedCharacterId,
+            string targetEnemySpawnId = "")
+        {
+            PublishAbilityLifecycleEvent(
+                sessionId,
+                MMOSharedAbilityEventTypes.ChargeStarted,
+                casterCharacterId,
+                targetCharacterId,
+                targetEnemySpawnId,
+                abilityId,
+                0f,
+                initiallyAppliedCharacterId);
+        }
+
+        public static void PublishChargeImpactStartedEvent(
+            string sessionId,
+            string casterCharacterId,
+            string targetCharacterId,
+            string abilityId,
+            float impactDelaySeconds,
+            string initiallyAppliedCharacterId,
+            string targetEnemySpawnId = "")
+        {
+            PublishAbilityLifecycleEvent(
+                sessionId,
+                MMOSharedAbilityEventTypes.ChargeImpactStarted,
+                casterCharacterId,
+                targetCharacterId,
+                targetEnemySpawnId,
+                abilityId,
+                impactDelaySeconds,
+                initiallyAppliedCharacterId);
+        }
+
+        public static void PublishChargeCompletedEvent(
+            string sessionId,
+            string casterCharacterId,
+            string targetCharacterId,
+            string abilityId,
+            string initiallyAppliedCharacterId,
+            string targetEnemySpawnId = "")
+        {
+            PublishAbilityLifecycleEvent(
+                sessionId,
+                MMOSharedAbilityEventTypes.ChargeCompleted,
+                casterCharacterId,
+                targetCharacterId,
+                targetEnemySpawnId,
+                abilityId,
+                0f,
+                initiallyAppliedCharacterId);
+        }
+
+        private static void PublishAbilityLifecycleEvent(
+            string sessionId,
+            string eventType,
+            string casterCharacterId,
+            string targetCharacterId,
+            string targetEnemySpawnId,
+            string abilityId,
+            float phaseDurationSeconds,
+            string initiallyAppliedCharacterId)
+        {
+            PublishAbilityEvent(
+                sessionId,
+                eventType,
+                casterCharacterId,
+                targetCharacterId,
+                targetEnemySpawnId,
+                abilityId,
+                0,
+                Vector3.zero,
+                false,
+                phaseDurationSeconds,
                 initiallyAppliedCharacterId);
         }
 
@@ -1848,6 +1973,7 @@ namespace RPGClone.Multiplayer
                     damageAmount = source.damageAmount,
                     healAmount = source.healAmount,
                     blockedAmount = source.blockedAmount,
+                    absorbedAsManaAmount = source.absorbedAsManaAmount,
                     hasTargetResourceSnapshot = source.hasTargetResourceSnapshot,
                     targetCurrentHealth = source.targetCurrentHealth,
                     targetMaxHealth = source.targetMaxHealth,
