@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e88a189d178c0947801ee03502676ec, type: 3}
+  m_Name: FlamestrikeVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Fire.FlamestrikeVFXProfile
+  targetRadius: 5
+  ringWidth: 0.045
+  ringBrightness: 0.8
+  runeRotationSpeed: 22
+  groundTintOpacity: 0.34
+  targetingEmberRate: 0
+  centerMarkerSize: 0.55
+  validTargetColor: {r: 0.08, g: 0.46, b: 1.35, a: 1}
+  invalidTargetColor: {r: 1.15, g: 0.035, b: 0.02, a: 1}
+  castDuration: 2
+  handFlameScale: 0.52
+  fireCoreScale: 0.7
+  fireCoreBrightness: 1.55
+  handConductionAmount: 1
+  casterRibbonCount: 3
+  casterRibbonSpeed: 1.8
+  castEmberAmount: 18
+  targetBuildupIntensity: 1.1
+  centralFlashSize: 4.2
+  centralFlashBrightness: 2.4
+  mainColumnHeight: 9
+  mainColumnWidth: 3.2
+  secondaryPillarCount: 6
+  secondaryPillarSize: 2.4
+  shockwaveRadius: 5
+  shockwaveSpeed: 13
+  radialFlameBladeCount: 12
+  impactEmberCount: 72
+  impactDebrisCount: 24
+  smokeCrownAmount: 18
+  distortionStrength: 0.075
+  areaRadius: 5
+  mainFlamePatchCount: 11
+  smallFlameCount: 16
+  flameHeightRange: {x: 1.2, y: 2.8}
+  centralVentIntensity: 1.15
+  crackBrightness: 1.4
+  crackDensity: 1
+  scorchedGroundOpacity: 0.72
+  perimeterFlameDensity: 0.85
+  emberRate: 24
+  smokeAmount: 13
+  ashAmount: 10
+  heatDistortionAmount: 0.65
+  pulseDuration: 0.42
+  pulseBrightness: 1.65
+  flameSurgeScale: 1.28
+  localEruptionCount: 6
+  circularPulseSpeed: 15
+  pulseEmberAmount: 32
+  crackBrighteningStrength: 2
+  finalPulseMultiplier: 1.3
+  initialHitFlashScale: 1.2
+  initialTargetFlameHeight: 1.8
+  tickReactionBrightness: 1.25
+  tickSparkAmount: 6
+  tickSmokeAmount: 2
+  burnDuration: 8
+  flameFadeDuration: 0.9
+  crackCoolingDuration: 1.15
+  finalSmokeAmount: 22
+  scorchedGroundFadeDuration: 1.4
+  overallEffectScale: 1
+  overallBrightness: 1.1
+  hotColor: {r: 1.65, g: 1.22, b: 0.48, a: 1}
+  flameColor: {r: 1.45, g: 0.38, b: 0.025, a: 0.96}
+  outerColor: {r: 0.78, g: 0.07, b: 0.008, a: 0.72}
+  smokeColor: {r: 0.18, g: 0.075, b: 0.045, a: 0.52}
+  distortionQuality: 1
+  particleQualityLevel: 1
+  distantReductionStart: 35
+  cullDistance: 75

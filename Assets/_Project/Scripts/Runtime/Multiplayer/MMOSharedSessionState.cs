@@ -297,6 +297,8 @@ namespace RPGClone.Multiplayer
             string targetCharacterId,
             string abilityId,
             float castDurationSeconds,
+            Vector3 targetPosition,
+            bool hasGroundTarget,
             string initiallyAppliedCharacterId,
             string targetEnemySpawnId = "")
         {
@@ -308,8 +310,8 @@ namespace RPGClone.Multiplayer
                 targetEnemySpawnId,
                 abilityId,
                 0,
-                Vector3.zero,
-                false,
+                targetPosition,
+                hasGroundTarget,
                 castDurationSeconds,
                 initiallyAppliedCharacterId);
         }

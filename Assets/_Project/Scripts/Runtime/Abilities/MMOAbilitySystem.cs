@@ -45,6 +45,12 @@ namespace RPGClone.Abilities
         public bool IsCasting => activeCast != null || activeCharge != null || replicatedCast != null;
         public MMOAbilityDefinition CurrentCastAbility => activeCast != null ? activeCast.Ability : replicatedCast?.Ability;
         public MMOCharacterIdentity CurrentCastTarget => activeCast != null ? activeCast.Target : replicatedCast?.Target;
+        public bool CurrentCastHasGroundTarget => activeCast != null ? activeCast.HasGroundTarget : replicatedCast != null && replicatedCast.HasGroundTarget;
+        public Vector3 CurrentCastGroundTargetPosition => activeCast != null && activeCast.HasGroundTarget
+            ? activeCast.GroundTargetPosition
+            : replicatedCast != null && replicatedCast.HasGroundTarget
+                ? replicatedCast.GroundTargetPosition
+                : transform.position;
         public float CurrentCastDuration => activeCast != null ? activeCast.Duration : replicatedCast != null ? replicatedCast.Duration : 0f;
         public float CurrentCastNormalized => activeCast != null
             ? Mathf.Clamp01((Time.time - activeCast.StartTime) / activeCast.Duration)
@@ -481,7 +487,12 @@ namespace RPGClone.Abilities
             }
         }
 
-        public void PlayReplicatedCastStarted(MMOAbilityDefinition ability, MMOCharacterIdentity target, float durationSeconds)
+        public void PlayReplicatedCastStarted(
+            MMOAbilityDefinition ability,
+            MMOCharacterIdentity target,
+            float durationSeconds,
+            Vector3 groundTargetPosition = default,
+            bool hasGroundTarget = false)
         {
             if (ability == null)
             {
@@ -493,10 +504,12 @@ namespace RPGClone.Abilities
             {
                 replicatedCast.Target = target;
                 replicatedCast.Duration = duration;
+                replicatedCast.GroundTargetPosition = groundTargetPosition;
+                replicatedCast.HasGroundTarget = hasGroundTarget;
                 return;
             }
 
-            replicatedCast = new ReplicatedCastPresentation(ability, target, Time.time, duration);
+            replicatedCast = new ReplicatedCastPresentation(ability, target, Time.time, duration, groundTargetPosition, hasGroundTarget);
             CastStarted?.Invoke(this, ability, target, Mathf.Max(0.01f, durationSeconds));
         }
 
@@ -526,7 +539,7 @@ namespace RPGClone.Abilities
                 return;
             }
 
-            replicatedCast = new ReplicatedCastPresentation(ability, target, synchronizedStartTime, duration);
+            replicatedCast = new ReplicatedCastPresentation(ability, target, synchronizedStartTime, duration, Vector3.zero, false);
             CastStarted?.Invoke(this, ability, target, duration);
             CastProgressed?.Invoke(this, ability, target, normalizedProgress);
         }
@@ -1321,6 +1334,8 @@ namespace RPGClone.Abilities
             record.sessionId = MMOGameplaySessionService.SessionId ?? string.Empty;
             record.abilityId = ability.AbilityId;
             record.castDurationSeconds = Mathf.Max(0f, durationSeconds);
+            record.targetPosition = new Vector3SaveData(CurrentCastGroundTargetPosition);
+            record.hasGroundTarget = CurrentCastHasGroundTarget;
             PopulateCombatEndpoint(record, combatant, true);
             PopulateCombatEndpoint(record, targetCombatant, false);
             MMOCombatEventStream.PublishCombatEvent(record, combatant, targetCombatant, ability);
@@ -1542,17 +1557,23 @@ namespace RPGClone.Abilities
             public MMOCharacterIdentity Target;
             public float StartTime;
             public float Duration;
+            public Vector3 GroundTargetPosition;
+            public bool HasGroundTarget;
 
             public ReplicatedCastPresentation(
                 MMOAbilityDefinition ability,
                 MMOCharacterIdentity target,
                 float startTime,
-                float duration)
+                float duration,
+                Vector3 groundTargetPosition,
+                bool hasGroundTarget)
             {
                 Ability = ability;
                 Target = target;
                 StartTime = startTime;
                 Duration = Mathf.Max(0.01f, duration);
+                GroundTargetPosition = groundTargetPosition;
+                HasGroundTarget = hasGroundTarget;
             }
         }
     }

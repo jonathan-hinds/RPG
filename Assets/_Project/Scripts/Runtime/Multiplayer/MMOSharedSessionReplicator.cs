@@ -754,7 +754,9 @@ namespace RPGClone.Multiplayer
                     castingAbilitySystem.PlayReplicatedCastStarted(
                         ability,
                         targetCombatant != null ? targetCombatant.Identity : null,
-                        combatEvent.castDurationSeconds);
+                        combatEvent.castDurationSeconds,
+                        combatEvent.targetPosition.ToVector3(),
+                        combatEvent.hasGroundTarget);
                     return true;
 
                 case CombatEventType.CastInterrupted:
@@ -985,7 +987,12 @@ namespace RPGClone.Multiplayer
                         return false;
                     }
 
-                    casterAbilitySystem.PlayReplicatedCastStarted(ability, targetIdentity, sharedEvent.castDurationSeconds);
+                    casterAbilitySystem.PlayReplicatedCastStarted(
+                        ability,
+                        targetIdentity,
+                        sharedEvent.castDurationSeconds,
+                        sharedEvent.targetPosition.ToVector3(),
+                        sharedEvent.hasGroundTarget);
                     return true;
 
                 case MMOSharedAbilityEventTypes.CastInterrupted:
@@ -1240,6 +1247,8 @@ namespace RPGClone.Multiplayer
                 targetCharacterId,
                 ability.AbilityId,
                 duration,
+                source.CurrentCastGroundTargetPosition,
+                source.CurrentCastHasGroundTarget,
                 sourceParticipant.CharacterId,
                 targetEnemySpawnId);
         }

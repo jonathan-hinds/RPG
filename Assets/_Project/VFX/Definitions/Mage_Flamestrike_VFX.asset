@@ -12,16 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f19b6985de7578844a289965931ed701, type: 3}
   m_Name: Mage_Flamestrike_VFX
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.MMOAbilityVfxDefinition
-  castingPrefab: {fileID: 3045343665747141883, guid: bc793bc955bd26842bfa2dc855924a0e, type: 3}
+  targetingPrefab: {fileID: 4139970015542364358, guid: f7792a8a8af559141afec12641e9777a, type: 3}
+  castingPrefab: {fileID: 9013699671646758760, guid: a69995b9179ca9942a69ddaccc46be95, type: 3}
   castPrefab: {fileID: 0}
-  hitPrefab: {fileID: 5292271159684091996, guid: ac8401dbb64897a41a0cb252e7e8cd9e, type: 3}
-  attachCastingToCaster: 1
-  useHandCastingAnchors: 1
+  hitPrefab: {fileID: 6343960335089332344, guid: 51e9f8c2b8936a2408e205f593306bb1, type: 3}
+  attachCastingToCaster: 0
+  useHandCastingAnchors: 0
   attachHitToTarget: 0
-  alignCastPrefabToTarget: 1
-  castingLocalOffset: {x: 0, y: 1.15, z: 0.42}
+  alignCastPrefabToTarget: 0
+  castingLocalOffset: {x: 0, y: 1.1, z: 0}
   handCastingLocalOffset: {x: 0, y: 0, z: 0}
-  castOriginLocalOffset: {x: 0, y: 1.18, z: 0.48}
-  hitLocalOffset: {x: 0, y: 0.85, z: 0}
-  hitDelaySeconds: 0.05
+  castOriginLocalOffset: {x: 0, y: 1.2, z: 0.4}
+  hitLocalOffset: {x: 0, y: 0, z: 0}
+  hitDelaySeconds: 0
   castPrefabControlsHitTiming: 0

@@ -318,7 +318,11 @@ namespace RPGClone.Vfx
         {
             GameObject instance = Instantiate(definition.CastingPrefab, position, transform.rotation, parent);
             activeCastingInstances.Add(instance);
-            InitializeInstance(instance, ability, definition, target, position, ResolveTargetPosition(target, position, false), false, null);
+            bool hasGroundTarget = abilitySystem != null && abilitySystem.CurrentCastHasGroundTarget;
+            Vector3 targetPosition = hasGroundTarget
+                ? abilitySystem.CurrentCastGroundTargetPosition
+                : ResolveTargetPosition(target, position, false);
+            InitializeInstance(instance, ability, definition, target, position, targetPosition, hasGroundTarget, null);
         }
 
         private void StopCastingVfx(bool immediate)

@@ -1,5 +1,6 @@
 using RPGClone.Abilities;
 using RPGClone.Services;
+using RPGClone.Vfx;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.EventSystems;
@@ -21,6 +22,8 @@ namespace RPGClone.Targeting
         private MMOAbilitySystem abilitySystem;
         private MMOAbilityDefinition ability;
         private GameObject indicatorRoot;
+        private GameObject customIndicatorRoot;
+        private IMMOGroundTargetingVfx customIndicator;
         private MeshRenderer diskRenderer;
         private LineRenderer ringRenderer;
         private Material diskMaterial;
@@ -28,6 +31,7 @@ namespace RPGClone.Targeting
         private Vector3 currentPosition;
         private bool hasCurrentPosition;
         private bool currentPositionInRange;
+        private Vector3 currentNormal = Vector3.up;
 
         public static bool IsAnyTargeting { get; private set; }
         public bool IsTargeting => abilitySystem != null && ability != null;
@@ -49,6 +53,11 @@ namespace RPGClone.Targeting
             if (indicatorRoot != null)
             {
                 Destroy(indicatorRoot);
+            }
+
+            if (customIndicatorRoot != null)
+            {
+                Destroy(customIndicatorRoot);
             }
 
             if (diskMaterial != null)
@@ -112,6 +121,7 @@ namespace RPGClone.Targeting
             ability = newAbility;
             IsAnyTargeting = true;
             CreateIndicatorIfNeeded();
+            CreateCustomIndicatorIfNeeded();
             SetIndicatorVisible(true);
             UpdateIndicator();
         }
@@ -144,8 +154,10 @@ namespace RPGClone.Targeting
 
             SetIndicatorVisible(true);
             indicatorRoot.transform.position = currentPosition + Vector3.up * IndicatorLift;
+            indicatorRoot.transform.rotation = Quaternion.FromToRotation(Vector3.up, currentNormal);
             float radius = Mathf.Max(0.1f, ability.AreaRadius);
             indicatorRoot.transform.localScale = new Vector3(radius, 1f, radius);
+            customIndicator?.UpdatePreview(currentPosition, currentNormal, radius, currentPositionInRange);
         }
 
         private bool TryResolvePointerPosition(out Vector3 position)
@@ -160,6 +172,7 @@ namespace RPGClone.Targeting
             Ray ray = targetingCamera.ScreenPointToRay(mouse.position.ReadValue());
             if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, groundMask, QueryTriggerInteraction.Ignore))
             {
+                currentNormal = hit.normal.sqrMagnitude > 0.001f ? hit.normal.normalized : Vector3.up;
                 position = ProjectToGround(hit.point);
                 return true;
             }
@@ -171,7 +184,36 @@ namespace RPGClone.Targeting
             }
 
             position = ProjectToGround(ray.GetPoint(distance));
+            currentNormal = Vector3.up;
             return true;
+        }
+
+        private void CreateCustomIndicatorIfNeeded()
+        {
+            if (customIndicatorRoot != null)
+            {
+                Destroy(customIndicatorRoot);
+                customIndicatorRoot = null;
+                customIndicator = null;
+            }
+
+            GameObject prefab = ability != null && ability.VisualEffects != null
+                ? ability.VisualEffects.TargetingPrefab
+                : null;
+            if (prefab == null)
+            {
+                return;
+            }
+
+            customIndicatorRoot = Instantiate(prefab);
+            customIndicatorRoot.name = $"{prefab.name} (Preview)";
+            customIndicatorRoot.hideFlags = HideFlags.DontSave;
+            customIndicator = customIndicatorRoot.GetComponentInChildren<IMMOGroundTargetingVfx>(true);
+            if (customIndicator == null)
+            {
+                Destroy(customIndicatorRoot);
+                customIndicatorRoot = null;
+            }
         }
 
         private Vector3 ProjectToGround(Vector3 candidate)
@@ -278,7 +320,12 @@ namespace RPGClone.Targeting
         {
             if (indicatorRoot != null)
             {
-                indicatorRoot.SetActive(visible);
+                indicatorRoot.SetActive(visible && customIndicatorRoot == null);
+            }
+
+            if (customIndicatorRoot != null)
+            {
+                customIndicatorRoot.SetActive(visible);
             }
         }
     }

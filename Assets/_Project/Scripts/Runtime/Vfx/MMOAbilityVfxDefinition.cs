@@ -6,6 +6,7 @@ namespace RPGClone.Vfx
     public sealed class MMOAbilityVfxDefinition : ScriptableObject
     {
         [Header("Prefabs")]
+        [SerializeField] private GameObject targetingPrefab;
         [SerializeField] private GameObject castingPrefab;
         [SerializeField] private GameObject castPrefab;
         [SerializeField] private GameObject hitPrefab;
@@ -26,6 +27,7 @@ namespace RPGClone.Vfx
         [SerializeField, Min(0f)] private float hitDelaySeconds = 0.05f;
         [SerializeField] private bool castPrefabControlsHitTiming;
 
+        public GameObject TargetingPrefab => targetingPrefab;
         public GameObject CastingPrefab => castingPrefab;
         public GameObject CastPrefab => castPrefab;
         public GameObject HitPrefab => hitPrefab;
@@ -68,6 +70,11 @@ namespace RPGClone.Vfx
             hitLocalOffset = newHitLocalOffset;
             hitDelaySeconds = Mathf.Max(0f, newHitDelaySeconds);
             castPrefabControlsHitTiming = newCastPrefabControlsHitTiming;
+        }
+
+        public void ConfigureTargetingPrefab(GameObject newTargetingPrefab)
+        {
+            targetingPrefab = newTargetingPrefab;
         }
     }
 }
