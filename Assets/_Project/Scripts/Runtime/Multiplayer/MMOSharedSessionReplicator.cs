@@ -266,7 +266,7 @@ namespace RPGClone.Multiplayer
                 sawRemote = true;
                 if (remoteAvatarsByCharacterId.TryGetValue(snapshot.characterId, out MMORemotePlayerAvatar avatar) && avatar != null)
                 {
-                    avatar.ApplyRuntimeSnapshot(snapshot);
+                    avatar.ApplyRuntimeSnapshot(snapshot, !MMOGameplaySessionService.IsHostAuthority);
                 }
             }
 
@@ -681,7 +681,10 @@ namespace RPGClone.Multiplayer
                         enemyDefinition = enemy.Definition;
                     }
 
-                    questLog.RecordCreatureKilled(enemyDefinition, rewardEvent.creatureId);
+                    questLog.RecordCreatureKilled(
+                        enemyDefinition,
+                        rewardEvent.creatureId,
+                        rewardEvent.isPartyCredit);
                     return true;
 
                 default:

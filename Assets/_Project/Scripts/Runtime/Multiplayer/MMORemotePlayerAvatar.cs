@@ -22,6 +22,7 @@ namespace RPGClone.Multiplayer
         private bool nameplateReady;
         private Camera cachedCamera;
         private int appliedPresentationSignature;
+        private bool hasAppliedSnapshot;
 
         public string ParticipantId { get; private set; }
         public string CharacterId { get; private set; }
@@ -49,6 +50,9 @@ namespace RPGClone.Multiplayer
             }
 
             PrepareAsRemoteReplica();
+            bool preserveAuthoritativeResources = MMOGameplaySessionService.IsHostAuthority && hasAppliedSnapshot;
+            int authoritativeHealth = identity != null ? identity.Health.CurrentValue : 0;
+            int authoritativeMana = identity != null ? identity.Mana.CurrentValue : 0;
             int presentationSignature = CalculatePresentationSignature(snapshot.characterData);
             if (appliedPresentationSignature != presentationSignature)
             {
@@ -57,11 +61,18 @@ namespace RPGClone.Multiplayer
                 appliedPresentationSignature = presentationSignature;
             }
 
-            ApplyDynamicState(snapshot);
+            ApplyDynamicState(snapshot, !preserveAuthoritativeResources);
+            if (preserveAuthoritativeResources)
+            {
+                identity.Health.SetCurrent(authoritativeHealth);
+                identity.Mana.SetCurrent(authoritativeMana);
+            }
+
+            hasAppliedSnapshot = true;
             RefreshNameplate();
         }
 
-        public void ApplyRuntimeSnapshot(MMOSessionParticipantRuntimeSnapshot snapshot)
+        public void ApplyRuntimeSnapshot(MMOSessionParticipantRuntimeSnapshot snapshot, bool applyResources = true)
         {
             if (snapshot == null || snapshot.characterId != CharacterId)
             {
@@ -74,8 +85,12 @@ namespace RPGClone.Multiplayer
                 return;
             }
 
-            identity.Health.SetCurrent(snapshot.currentHealth);
-            identity.Mana.SetCurrent(snapshot.currentMana);
+            if (applyResources)
+            {
+                identity.Health.SetCurrent(snapshot.currentHealth);
+                identity.Mana.SetCurrent(snapshot.currentMana);
+            }
+
             locomotionSource.ApplySnapshot(
                 snapshot.position.ToVector3(),
                 Quaternion.Euler(snapshot.rotationEuler.ToVector3()),
@@ -150,15 +165,18 @@ namespace RPGClone.Multiplayer
             }
         }
 
-        private void ApplyDynamicState(MMOSessionParticipantSnapshot snapshot)
+        private void ApplyDynamicState(MMOSessionParticipantSnapshot snapshot, bool applyResources)
         {
             if (identity == null || snapshot?.characterData == null)
             {
                 return;
             }
 
-            identity.Health.SetCurrent(snapshot.characterData.currentHealth);
-            identity.Mana.SetCurrent(snapshot.characterData.currentMana);
+            if (applyResources)
+            {
+                identity.Health.SetCurrent(snapshot.characterData.currentHealth);
+                identity.Mana.SetCurrent(snapshot.characterData.currentMana);
+            }
 
             Vector3 position = snapshot.characterData.position.ToVector3();
             Quaternion rotation = Quaternion.Euler(snapshot.characterData.rotationEuler.ToVector3());

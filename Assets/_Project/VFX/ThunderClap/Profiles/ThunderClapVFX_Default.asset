@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ca940bcc00ac8545b93970b9653b1e5, type: 3}
+  m_Name: ThunderClapVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapVFXProfile
+  anticipationDuration: 0.14
+  expansionDuration: 0.42
+  aftermathDuration: 1.65
+  flashBrightness: 3.2
+  earthExplosionSize: 1.25
+  heavyDustAmount: 34
+  fineDustAmount: 48
+  dirtChunkCount: 22
+  rockCount: 12
+  debrisVelocity: 5.4
+  ringRadius: 6
+  expansionSpeed: 14.3
+  dustWallHeight: 1.15
+  pressureIntensity: 0.75
+  dirtWakeDensity: 42
+  ringBrightness: 2.4
+  ringThickness: 0.16
+  branchCount: 6
+  branchLength: 1.35
+  groundCrawlerDensity: 8
+  sparkAmount: 72
+  flashIntensity: 2.8
+  bodyArcCount: 5
+  arcLifetime: 0.38
+  debuffRingSize: 1.35
+  debuffRingBrightness: 1.35
+  overallScale: 1
+  overallBrightness: 1
+  earthColor: {r: 0.52, g: 0.34, b: 0.18, a: 0.86}
+  warmDustColor: {r: 0.76, g: 0.58, b: 0.35, a: 0.68}
+  stoneColor: {r: 0.42, g: 0.43, b: 0.46, a: 0.92}
+  lightningColor: {r: 0.25, g: 0.9, b: 1, a: 0.95}
+  lightningCoreColor: {r: 1, g: 0.98, b: 0.82, a: 1}
+  lightningVioletColor: {r: 0.52, g: 0.28, b: 1, a: 0.62}
+  particleQuality: 2

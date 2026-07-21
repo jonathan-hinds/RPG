@@ -253,7 +253,11 @@ namespace RPGClone.Services
                     continue;
                 }
 
-                recipient.GameObject.GetComponent<MMOExperienceComponent>()?.AddExperience(adjustedExperience);
+                if (recipient.IsLocal)
+                {
+                    recipient.GameObject.GetComponent<MMOExperienceComponent>()?.AddExperience(adjustedExperience);
+                }
+
                 RPGClone.Multiplayer.MMOSharedSessionState.PublishExperienceRewardEvent(
                     MMOGameplaySessionService.SessionId,
                     recipient.CharacterId,
@@ -292,25 +296,32 @@ namespace RPGClone.Services
             Vector3 eventPosition,
             float range)
         {
+            if (!MMOGameplaySessionService.IsHostAuthority)
+            {
+                return;
+            }
+
             List<MMOPlayerParticipant> recipients = MMORewardEligibilityService.GetEligiblePartyMembers(sourceParticipant, eventPosition, range);
             foreach (MMOPlayerParticipant recipient in recipients)
             {
-                MMOQuestLog questLog = recipient.GameObject != null ? recipient.GameObject.GetComponent<MMOQuestLog>() : null;
-                if (questLog == null || !questLog.HasIncompleteKillObjective(enemyDefinition, creatureId))
+                bool isPartyCredit = recipient.CharacterId != sourceParticipant.CharacterId;
+                if (recipient.IsLocal)
                 {
-                    continue;
+                    MMOQuestLog questLog = recipient.GameObject != null ? recipient.GameObject.GetComponent<MMOQuestLog>() : null;
+                    if (questLog == null || !questLog.RecordCreatureKilled(enemyDefinition, creatureId, isPartyCredit))
+                    {
+                        continue;
+                    }
                 }
 
-                if (questLog.RecordCreatureKilled(enemyDefinition, creatureId))
-                {
-                    RPGClone.Multiplayer.MMOSharedSessionState.PublishQuestKillCreditEvent(
-                        MMOGameplaySessionService.SessionId,
-                        recipient.CharacterId,
-                        enemySpawnId,
-                        enemyDefinition != null ? enemyDefinition.name : string.Empty,
-                        creatureId,
-                        recipient.IsLocal ? recipient.CharacterId : string.Empty);
-                }
+                RPGClone.Multiplayer.MMOSharedSessionState.PublishQuestKillCreditEvent(
+                    MMOGameplaySessionService.SessionId,
+                    recipient.CharacterId,
+                    enemySpawnId,
+                    enemyDefinition != null ? enemyDefinition.name : string.Empty,
+                    creatureId,
+                    isPartyCredit,
+                    recipient.IsLocal ? recipient.CharacterId : string.Empty);
             }
         }
     }

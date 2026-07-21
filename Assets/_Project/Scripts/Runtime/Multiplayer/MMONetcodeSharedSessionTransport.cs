@@ -4,6 +4,7 @@ using System.Text;
 using RPGClone.CharacterSelection;
 using RPGClone.Combat;
 using RPGClone.Enemies;
+using RPGClone.Loot;
 using RPGClone.Services;
 using Unity.Collections;
 using Unity.Netcode;
@@ -20,6 +21,7 @@ namespace RPGClone.Multiplayer
         private const int MaximumRuntimeIdentifierLength = 64;
         private const int MaximumEnemySpawnIdentifierLength = 512;
         private const int MaximumAbilityIdentifierLength = 128;
+        private const int MaximumJsonPayloadBytes = 2 * 1024 * 1024;
         private const int RuntimeSnapshotWriterCapacity = (MaximumRuntimeIdentifierLength * 2) + 64;
         private const NetworkDelivery SharedSessionDelivery = NetworkDelivery.ReliableFragmentedSequenced;
         private const NetworkDelivery RuntimeSnapshotDelivery = NetworkDelivery.UnreliableSequenced;
@@ -280,6 +282,12 @@ namespace RPGClone.Multiplayer
             }
 
             MMOSharedSessionNetworkOperation operation = JsonUtility.FromJson<MMOSharedSessionNetworkOperation>(json);
+            if (!manager.IsHost && senderClientId != NetworkManager.ServerClientId)
+            {
+                Debug.LogWarning($"Rejected shared session operation from non-host client {senderClientId}.");
+                return;
+            }
+
             if (manager.IsHost
                 && operation != null
                 && operation.kind == MMOSharedSessionNetworkOperationKind.RequestSnapshot)
@@ -292,6 +300,35 @@ namespace RPGClone.Multiplayer
             {
                 Debug.LogWarning($"Rejected shared session operation '{operation?.kind}' from client {senderClientId}.");
                 return;
+            }
+
+            if (manager.IsHost)
+            {
+                NormalizeOperationTimestampsForReceiver(operation, true);
+                if (operation != null
+                    && operation.kind == MMOSharedSessionNetworkOperationKind.UpsertCorpseLootSnapshot)
+                {
+                    if (!HostCharacterIdsByClientId.TryGetValue(senderClientId, out string characterId)
+                        || !MMOSharedSessionState.TryApplyPersonalLootUpdate(
+                            operation.corpseLootSnapshot,
+                            characterId,
+                            out MMOCorpseLootState authoritativeSnapshot))
+                    {
+                        Debug.LogWarning($"Rejected invalid corpse loot update from client {senderClientId}.");
+                        return;
+                    }
+
+                    operation.corpseLootSnapshot = authoritativeSnapshot;
+                    BroadcastOperationJsonIfHost(JsonUtility.ToJson(operation, false));
+                    return;
+                }
+
+                json = JsonUtility.ToJson(operation, false);
+            }
+            else
+            {
+                NormalizeOperationTimestampsForReceiver(operation, false);
+                json = JsonUtility.ToJson(operation, false);
             }
 
             try
@@ -332,12 +369,13 @@ namespace RPGClone.Multiplayer
             if (manager.IsHost)
             {
                 if (senderClientId == manager.LocalClientId
-                    || !IsSenderParticipant(senderClientId, snapshot.characterId))
+                    || !IsRegisteredSenderParticipant(senderClientId, snapshot.characterId))
                 {
                     Debug.LogWarning($"Rejected participant runtime snapshot from client {senderClientId}.");
                     return;
                 }
 
+                ApplyAuthoritativeParticipantResources(snapshot);
                 ApplyParticipantRuntimeSnapshot(snapshot);
                 HostCharacterIdsByClientId[senderClientId] = snapshot.characterId;
                 BroadcastParticipantRuntimeIfHost(snapshot, senderClientId);
@@ -375,6 +413,14 @@ namespace RPGClone.Multiplayer
 
         private static void OnClientDisconnected(ulong clientId)
         {
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager != null
+                && manager.IsHost
+                && HostCharacterIdsByClientId.TryGetValue(clientId, out string characterId))
+            {
+                MMOSharedSessionState.RemoveParticipant(MMOGameplaySessionService.SessionId, characterId);
+            }
+
             HostCharacterIdsByClientId.Remove(clientId);
         }
 
@@ -396,19 +442,21 @@ namespace RPGClone.Multiplayer
                 MMOSharedSessionNetworkOperationKind.UpsertParticipant
                     => IsSenderParticipant(senderClientId, operation.participant?.characterId),
                 MMOSharedSessionNetworkOperationKind.RemoveParticipant
-                    => IsSenderParticipant(senderClientId, operation.characterId),
+                    => IsRegisteredSenderParticipant(senderClientId, operation.characterId),
                 MMOSharedSessionNetworkOperationKind.PublishAbilityEvent
-                    => IsSenderParticipant(senderClientId, operation.abilityEvent?.casterCharacterId),
+                    => IsRegisteredSenderParticipant(senderClientId, operation.abilityEvent?.casterCharacterId),
                 MMOSharedSessionNetworkOperationKind.MarkAbilityEventApplied
-                    => IsSenderParticipant(senderClientId, operation.characterId),
+                    => IsRegisteredSenderParticipant(senderClientId, operation.characterId),
                 MMOSharedSessionNetworkOperationKind.PublishCombatRequest
-                    => IsSenderParticipant(senderClientId, operation.combatRequest?.casterCharacterId),
+                    => IsRegisteredSenderParticipant(senderClientId, operation.combatRequest?.casterCharacterId),
                 MMOSharedSessionNetworkOperationKind.MarkCombatEventApplied
-                    => IsSenderParticipant(senderClientId, operation.characterId),
+                    => IsRegisteredSenderParticipant(senderClientId, operation.characterId),
                 MMOSharedSessionNetworkOperationKind.MarkRewardEventApplied
-                    => IsSenderParticipant(senderClientId, operation.characterId),
+                    => IsRegisteredSenderParticipant(senderClientId, operation.characterId),
+                MMOSharedSessionNetworkOperationKind.UpsertCorpseLootSnapshot
+                    => IsSenderCorpseLootParticipant(senderClientId, operation.corpseLootSnapshot),
                 MMOSharedSessionNetworkOperationKind.PublishWorldObjectInteractionRequest
-                    => IsSenderParticipant(senderClientId, operation.worldObjectInteractionRequest?.actorCharacterId),
+                    => IsRegisteredSenderParticipant(senderClientId, operation.worldObjectInteractionRequest?.actorCharacterId),
                 _ => false
             };
         }
@@ -422,6 +470,108 @@ namespace RPGClone.Multiplayer
 
             return !HostCharacterIdsByClientId.TryGetValue(senderClientId, out string knownCharacterId)
                 || string.Equals(knownCharacterId, characterId, StringComparison.Ordinal);
+        }
+
+        private static bool IsRegisteredSenderParticipant(ulong senderClientId, string characterId)
+        {
+            return !string.IsNullOrWhiteSpace(characterId)
+                && HostCharacterIdsByClientId.TryGetValue(senderClientId, out string knownCharacterId)
+                && string.Equals(knownCharacterId, characterId, StringComparison.Ordinal);
+        }
+
+        private static bool IsSenderCorpseLootParticipant(ulong senderClientId, MMOCorpseLootState snapshot)
+        {
+            if (snapshot?.personalLoot == null
+                || !HostCharacterIdsByClientId.TryGetValue(senderClientId, out string characterId))
+            {
+                return false;
+            }
+
+            return snapshot.personalLoot.Exists(candidate =>
+                candidate != null && string.Equals(candidate.characterId, characterId, StringComparison.Ordinal));
+        }
+
+        private static void NormalizeOperationTimestampsForReceiver(
+            MMOSharedSessionNetworkOperation operation,
+            bool normalizeClientAuthoredState)
+        {
+            if (operation == null)
+            {
+                return;
+            }
+
+            long receivedUtcTicks = DateTime.UtcNow.Ticks;
+            if (normalizeClientAuthoredState
+                && operation.participant?.characterData != null
+                && MMOGameplaySessionService.Players.TryGetParticipantByCharacterId(
+                    operation.participant.characterId,
+                    out MMOPlayerParticipant participant)
+                && participant.Identity != null)
+            {
+                operation.participant.characterData.currentHealth = participant.Identity.Health.CurrentValue;
+                operation.participant.characterData.currentMana = participant.Identity.Mana.CurrentValue;
+            }
+
+            if (operation.abilityEvent != null)
+            {
+                operation.abilityEvent.createdUtcTicks = receivedUtcTicks;
+            }
+
+            if (operation.combatRequest != null)
+            {
+                operation.combatRequest.requestedUtcTicks = receivedUtcTicks;
+            }
+
+            if (operation.combatEvent != null)
+            {
+                operation.combatEvent.createdUtcTicks = receivedUtcTicks;
+            }
+
+            if (operation.rewardEvent != null)
+            {
+                operation.rewardEvent.createdUtcTicks = receivedUtcTicks;
+            }
+
+            if (operation.worldObjectInteractionRequest != null)
+            {
+                operation.worldObjectInteractionRequest.requestedUtcTicks = receivedUtcTicks;
+            }
+
+            if (operation.worldObjectSnapshot != null)
+            {
+                operation.worldObjectSnapshot.updatedUtcTicks = receivedUtcTicks;
+            }
+
+            if (operation.worldObjectSnapshots != null)
+            {
+                foreach (RPGClone.Quests.MMOSharedWorldObjectSnapshot snapshot in operation.worldObjectSnapshots)
+                {
+                    if (snapshot != null)
+                    {
+                        snapshot.updatedUtcTicks = receivedUtcTicks;
+                    }
+                }
+            }
+
+            if (operation.corpseLootSnapshot != null)
+            {
+                operation.corpseLootSnapshot.updatedUtcTicks = receivedUtcTicks;
+            }
+        }
+
+        private static void ApplyAuthoritativeParticipantResources(MMOSessionParticipantRuntimeSnapshot snapshot)
+        {
+            if (snapshot == null
+                || !MMOGameplaySessionService.Players.TryGetParticipantByCharacterId(
+                    snapshot.characterId,
+                    out MMOPlayerParticipant participant)
+                || participant.Identity == null)
+            {
+                return;
+            }
+
+            snapshot.currentHealth = participant.Identity.Health.CurrentValue;
+            snapshot.currentMana = participant.Identity.Mana.CurrentValue;
         }
 
         private static void TrackClientParticipant(ulong senderClientId, MMOSharedSessionNetworkOperation operation)
@@ -445,6 +595,12 @@ namespace RPGClone.Multiplayer
 
         private static void OnSnapshotMessage(ulong senderClientId, FastBufferReader reader)
         {
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager == null || manager.IsHost || senderClientId != NetworkManager.ServerClientId)
+            {
+                return;
+            }
+
             string json = ReadJson(reader);
             if (string.IsNullOrWhiteSpace(json))
             {
@@ -470,6 +626,11 @@ namespace RPGClone.Multiplayer
         {
             NetworkManager manager = NetworkManager.Singleton;
             if (manager?.CustomMessagingManager == null)
+            {
+                return;
+            }
+
+            if (!IsValidJsonPayloadSize(json))
             {
                 return;
             }
@@ -502,6 +663,11 @@ namespace RPGClone.Multiplayer
         {
             NetworkManager manager = NetworkManager.Singleton;
             if (manager?.CustomMessagingManager == null)
+            {
+                return;
+            }
+
+            if (!IsValidJsonPayloadSize(json))
             {
                 return;
             }
@@ -858,17 +1024,40 @@ namespace RPGClone.Multiplayer
             return writer;
         }
 
-        private static string ReadJson(FastBufferReader reader)
+        private static bool IsValidJsonPayloadSize(string json)
         {
-            reader.ReadValueSafe(out int byteCount);
-            if (byteCount <= 0)
+            int byteCount = Encoding.UTF8.GetByteCount(json ?? string.Empty);
+            if (byteCount <= MaximumJsonPayloadBytes)
             {
-                return string.Empty;
+                return true;
             }
 
-            byte[] bytes = new byte[byteCount];
-            reader.ReadBytesSafe(ref bytes, byteCount);
-            return Encoding.UTF8.GetString(bytes);
+            Debug.LogError($"Shared-session payload exceeded the {MaximumJsonPayloadBytes}-byte safety limit.");
+            return false;
+        }
+
+        private static string ReadJson(FastBufferReader reader)
+        {
+            try
+            {
+                reader.ReadValueSafe(out int byteCount);
+                if (byteCount <= 0
+                    || byteCount > MaximumJsonPayloadBytes
+                    || byteCount > reader.Length - reader.Position)
+                {
+                    Debug.LogWarning($"Rejected malformed shared-session JSON payload length {byteCount}.");
+                    return string.Empty;
+                }
+
+                byte[] bytes = new byte[byteCount];
+                reader.ReadBytesSafe(ref bytes, byteCount);
+                return Encoding.UTF8.GetString(bytes);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Rejected malformed shared-session JSON payload. {exception.Message}");
+                return string.Empty;
+            }
         }
     }
 }

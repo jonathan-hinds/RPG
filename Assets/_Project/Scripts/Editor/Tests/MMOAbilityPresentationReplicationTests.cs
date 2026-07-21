@@ -4,6 +4,8 @@ using NUnit.Framework;
 using RPGClone.Abilities;
 using RPGClone.Buffs;
 using RPGClone.Characters;
+using RPGClone.Combat;
+using RPGClone.Loot;
 using RPGClone.Multiplayer;
 using UnityEngine;
 
@@ -163,6 +165,157 @@ namespace RPGClone.EditorTests
             {
                 Object.DestroyImmediate(targetObject);
             }
+        }
+
+        [Test]
+        public void ClientOperationTimestamps_AreNormalizedToHostReceiptTime()
+        {
+            System.Reflection.MethodInfo normalizeMethod = typeof(MMONetcodeSharedSessionTransport).GetMethod(
+                "NormalizeOperationTimestampsForReceiver",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            CombatActionRequest request = new()
+            {
+                requestedUtcTicks = 1
+            };
+            MMOSharedSessionNetworkOperation operation = new()
+            {
+                combatRequest = request
+            };
+            long before = System.DateTime.UtcNow.Ticks;
+
+            normalizeMethod?.Invoke(null, new object[] { operation, true });
+
+            long after = System.DateTime.UtcNow.Ticks;
+            Assert.That(normalizeMethod, Is.Not.Null);
+            Assert.That(request.requestedUtcTicks, Is.InRange(before, after));
+        }
+
+        [Test]
+        public void PersonalLootUpdate_CanOnlyDepleteRequestingCharactersLoot()
+        {
+            const string sessionId = "loot-authority-test";
+            const string spawnId = "enemy-1";
+            MMOSharedSessionState.Reset();
+            try
+            {
+                MMOCorpseLootState authoritative = new()
+                {
+                    sessionId = sessionId,
+                    corpseId = spawnId,
+                    enemySpawnId = spawnId,
+                    updatedUtcTicks = System.DateTime.UtcNow.Ticks,
+                    personalLoot = new List<MMOPersonalLootState>
+                    {
+                        CreatePersonalLoot("host", "host-item", 1),
+                        CreatePersonalLoot("client", "client-item", 2)
+                    }
+                };
+                MMOSharedSessionState.UpsertCorpseLootSnapshot(authoritative);
+                MMOCorpseLootState proposed = new()
+                {
+                    sessionId = sessionId,
+                    corpseId = spawnId,
+                    enemySpawnId = spawnId,
+                    personalLoot = new List<MMOPersonalLootState>
+                    {
+                        new() { characterId = "host", looted = true },
+                        new() { characterId = "client", looted = true }
+                    }
+                };
+
+                bool accepted = MMOSharedSessionState.TryApplyPersonalLootUpdate(
+                    proposed,
+                    "client",
+                    out MMOCorpseLootState merged);
+
+                Assert.That(accepted, Is.True);
+                Assert.That(merged.personalLoot.Find(state => state.characterId == "client").HasLoot, Is.False);
+                Assert.That(merged.personalLoot.Find(state => state.characterId == "host").HasLoot, Is.True);
+            }
+            finally
+            {
+                MMOSharedSessionState.Reset();
+            }
+        }
+
+        [Test]
+        public void QuestKillReward_PreservesPartyCreditSemantics()
+        {
+            const string sessionId = "quest-credit-test";
+            const string targetCharacterId = "target";
+            MMOSharedSessionState.Reset();
+            try
+            {
+                MMOSharedSessionState.PublishQuestKillCreditEvent(
+                    sessionId,
+                    targetCharacterId,
+                    "enemy-1",
+                    "wolf",
+                    "wolf",
+                    true,
+                    "source");
+
+                IReadOnlyList<MMOSharedRewardEvent> rewards =
+                    MMOSharedSessionState.GetPendingRewardEvents(sessionId, targetCharacterId);
+
+                Assert.That(rewards, Has.Count.EqualTo(1));
+                Assert.That(rewards[0].isPartyCredit, Is.True);
+            }
+            finally
+            {
+                MMOSharedSessionState.Reset();
+            }
+        }
+
+        [Test]
+        public void PendingLootClaim_BlocksStaleSnapshotFromRehydratingItems()
+        {
+            GameObject corpseObject = new("Loot Race Corpse");
+            try
+            {
+                MMOLootableCorpse corpse = corpseObject.AddComponent<MMOLootableCorpse>();
+                MMOCorpseLootState staleSnapshot = new()
+                {
+                    sessionId = "loot-race-test",
+                    corpseId = "enemy-1",
+                    enemySpawnId = "enemy-1",
+                    personalLoot = new List<MMOPersonalLootState>
+                    {
+                        CreatePersonalLoot("client", "client-item", 1)
+                    }
+                };
+                System.Reflection.FieldInfo pendingField = typeof(MMOLootableCorpse).GetField(
+                    "pendingLocalLootUpdate",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                pendingField?.SetValue(corpse, new MMOPersonalLootState
+                {
+                    characterId = "client",
+                    looted = true
+                });
+
+                corpse.ApplyPersonalLootSnapshot(staleSnapshot);
+
+                MMOCorpseLootState applied = corpse.CreatePersonalLootSnapshot();
+                Assert.That(pendingField, Is.Not.Null);
+                Assert.That(applied.personalLoot.Find(state => state.characterId == "client").HasLoot, Is.False);
+                Assert.That(pendingField.GetValue(corpse), Is.Not.Null);
+            }
+            finally
+            {
+                Object.DestroyImmediate(corpseObject);
+            }
+        }
+
+        private static MMOPersonalLootState CreatePersonalLoot(string characterId, string itemId, int quantity)
+        {
+            return new MMOPersonalLootState
+            {
+                characterId = characterId,
+                items = new List<MMOPersonalLootItemState>
+                {
+                    new() { itemId = itemId, quantity = quantity }
+                }
+            };
         }
     }
 }

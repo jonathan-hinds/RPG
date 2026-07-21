@@ -19,6 +19,7 @@ namespace RPGClone.Loot
 
         private ParticleSystem sparkle;
         private MMOCorpseLootState corpseLootState;
+        private MMOPersonalLootState pendingLocalLootUpdate;
 
         public event Action<MMOLootableCorpse> LootEmptied;
         public event Action<MMOLootableCorpse> AllPersonalLootEmptied;
@@ -54,6 +55,7 @@ namespace RPGClone.Loot
 
         public void SetLoot(IEnumerable<MMOItemStack> newLoot)
         {
+            pendingLocalLootUpdate = null;
             string localCharacterId = ResolveLocalCharacterId();
             corpseLootState = new MMOCorpseLootState
             {
@@ -93,7 +95,9 @@ namespace RPGClone.Loot
         public void ApplyPersonalLootSnapshot(MMOCorpseLootState snapshot)
         {
             bool hadAnyLoot = HasAnyPersonalLoot();
-            SetPersonalLoot(snapshot);
+            MMOCorpseLootState snapshotToApply = Clone(snapshot);
+            ReconcilePendingLocalLoot(snapshotToApply);
+            SetPersonalLoot(snapshotToApply);
             if (hadAnyLoot && !HasAnyPersonalLoot())
             {
                 AllPersonalLootEmptied?.Invoke(this);
@@ -125,6 +129,7 @@ namespace RPGClone.Loot
         {
             loot.Clear();
             corpseLootState = null;
+            pendingLocalLootUpdate = null;
             RefreshSparkle();
         }
 
@@ -190,6 +195,11 @@ namespace RPGClone.Loot
             MMOCorpseLootState snapshot = CreatePersonalLootSnapshot();
             if (snapshot != null)
             {
+                if (!MMOGameplaySessionService.IsHostAuthority)
+                {
+                    pendingLocalLootUpdate = Clone(GetLocalPersonalLootState());
+                }
+
                 MMOPersonalLootService.PublishCorpseLoot(snapshot);
             }
 
@@ -282,6 +292,73 @@ namespace RPGClone.Loot
             }
 
             return null;
+        }
+
+        private void ReconcilePendingLocalLoot(MMOCorpseLootState incomingSnapshot)
+        {
+            if (incomingSnapshot?.personalLoot == null || pendingLocalLootUpdate == null)
+            {
+                return;
+            }
+
+            int incomingIndex = incomingSnapshot.personalLoot.FindIndex(candidate =>
+                candidate != null && candidate.characterId == pendingLocalLootUpdate.characterId);
+            if (incomingIndex < 0)
+            {
+                return;
+            }
+
+            MMOPersonalLootState incomingPersonalLoot = incomingSnapshot.personalLoot[incomingIndex];
+            if (HasNoMoreLootThan(incomingPersonalLoot, pendingLocalLootUpdate))
+            {
+                pendingLocalLootUpdate = null;
+                return;
+            }
+
+            incomingSnapshot.personalLoot[incomingIndex] = Clone(pendingLocalLootUpdate);
+        }
+
+        private static bool HasNoMoreLootThan(MMOPersonalLootState candidate, MMOPersonalLootState baseline)
+        {
+            if (candidate == null || baseline == null)
+            {
+                return candidate == null;
+            }
+
+            Dictionary<string, int> baselineQuantities = GetLootQuantities(baseline);
+            Dictionary<string, int> candidateQuantities = GetLootQuantities(candidate);
+            foreach (KeyValuePair<string, int> pair in candidateQuantities)
+            {
+                if (!baselineQuantities.TryGetValue(pair.Key, out int baselineQuantity)
+                    || pair.Value > baselineQuantity)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static Dictionary<string, int> GetLootQuantities(MMOPersonalLootState state)
+        {
+            Dictionary<string, int> quantities = new(StringComparer.Ordinal);
+            if (state?.items == null)
+            {
+                return quantities;
+            }
+
+            foreach (MMOPersonalLootItemState item in state.items)
+            {
+                if (item == null || string.IsNullOrWhiteSpace(item.itemId) || item.quantity <= 0)
+                {
+                    continue;
+                }
+
+                quantities.TryGetValue(item.itemId, out int quantity);
+                quantities[item.itemId] = quantity + item.quantity;
+            }
+
+            return quantities;
         }
 
         private static string ResolveLocalCharacterId()

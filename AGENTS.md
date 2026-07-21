@@ -18,6 +18,8 @@ This Unity project treats Git as the source of truth. Follow these rules for all
 
 ## Multiplayer Parity
 
+- Before changing networking, combat replication, progression, quests, world state, or loot, read and follow `MULTIPLAYER_REMOTE_PARITY.md`.
+
 - The editor and player builds must exercise the same gameplay and networking code paths. Do not add editor-only multiplayer behavior, simulated peers, fake transports, local-only networking substitutes, or test shims that make Play Mode pass while builds behave differently.
 - This game is true multiplayer only. Treat solo play as a one-player network session, not a separate single-player mode. A player should always be in a real gameplay session, even when alone.
 - Do not introduce "single player OR multiplayer" branching for gameplay systems. Shared state, combat authority, presence, world object state, loot, rewards, and player replication should route through the same session-aware runtime paths used by online play.

@@ -1,0 +1,1364 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5942840679861964972
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7670467076615744421}
+  m_Layer: 0
+  m_Name: Pooled Target Reactions
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7670467076615744421
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5942840679861964972}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1886986105785645563}
+  - {fileID: 8255041246004564172}
+  - {fileID: 2783377433589178625}
+  - {fileID: 6329109843649736237}
+  - {fileID: 6042684871649380128}
+  - {fileID: 4455011213167411226}
+  - {fileID: 7290063823326614397}
+  - {fileID: 3717859142776023067}
+  - {fileID: 6138873904901699129}
+  - {fileID: 3512592976574872156}
+  - {fileID: 3409066980766057638}
+  - {fileID: 8911192852560757199}
+  m_Father: {fileID: 1089080596167355075}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7313511811256741163
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1089080596167355075}
+  - component: {fileID: 2431859788758908734}
+  - component: {fileID: 176774906109255720}
+  m_Layer: 0
+  m_Name: ThunderClapVFX
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1089080596167355075
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7313511811256741163}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4215744934698636474}
+  - {fileID: 5133937912189797412}
+  - {fileID: 5385645538302220031}
+  - {fileID: 8609081597046098283}
+  - {fileID: 7670467076615744421}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2431859788758908734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7313511811256741163}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 209c3eb1a0e8a03459f883b0bee72255, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapVFX
+  profile: {fileID: 11400000, guid: 1aa1ab227365d0f438b81fce5df6fcca, type: 2}
+  castVfx: {fileID: 7984840637857379067}
+  impactVfx: {fileID: 6198562164747938439}
+  shockwaveVfx: {fileID: 4900337005823824299}
+  aftermathVfx: {fileID: 466710764544560232}
+  targetReactionPool:
+  - {fileID: 2128684172215989693}
+  - {fileID: 8442768683600813194}
+  - {fileID: 2379583006440860999}
+  - {fileID: 5796399879332225643}
+  - {fileID: 6088476113771989862}
+  - {fileID: 4212572352940379228}
+  - {fileID: 7101881153574035259}
+  - {fileID: 3764178149404255325}
+  - {fileID: 5950618978749119103}
+  - {fileID: 3970571335668315674}
+  - {fileID: 2948170551116318944}
+  - {fileID: 8939534810775227785}
+--- !u!114 &176774906109255720
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7313511811256741163}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ef0bc658a7b4694f888372766700241, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapVFXPackage
+  profile: {fileID: 11400000, guid: 1aa1ab227365d0f438b81fce5df6fcca, type: 2}
+  castPrefab: {fileID: 6077953089319342706, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+  impactPrefab: {fileID: 603068457504257608, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+  shockwavePrefab: {fileID: 1800981272755116226, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+  targetReactionPrefab: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  aftermathPrefab: {fileID: 3114420745230101655, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+  completePrefab: {fileID: 7313511811256741163}
+--- !u!1001 &102028685882281047
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7670467076615744421}
+    m_Modifications:
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_Name
+      value: Target Reaction 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+--- !u!114 &2948170551116318944 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2990526438838863031, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 102028685882281047}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd772863c0b1aa4483438eddc888d79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapTargetReactionVFX
+--- !u!4 &3409066980766057638 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 102028685882281047}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &614039657143937520
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7670467076615744421}
+    m_Modifications:
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_Name
+      value: Target Reaction 03
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+--- !u!114 &2379583006440860999 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2990526438838863031, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 614039657143937520}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd772863c0b1aa4483438eddc888d79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapTargetReactionVFX
+--- !u!4 &2783377433589178625 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 614039657143937520}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1438455671044638955
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7670467076615744421}
+    m_Modifications:
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_Name
+      value: Target Reaction 06
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+--- !u!114 &4212572352940379228 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2990526438838863031, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 1438455671044638955}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd772863c0b1aa4483438eddc888d79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapTargetReactionVFX
+--- !u!4 &4455011213167411226 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 1438455671044638955}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1510893871469317388
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1089080596167355075}
+    m_Modifications:
+    - target: {fileID: 1800981272755116226, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+      propertyPath: m_Name
+      value: Expanding Shockwave
+      objectReference: {fileID: 0}
+    - target: {fileID: 1800981272755116226, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6794363855646858227, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6794363855646858227, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6794363855646858227, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6794363855646858227, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6794363855646858227, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6794363855646858227, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6794363855646858227, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6794363855646858227, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6794363855646858227, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6794363855646858227, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+--- !u!114 &4900337005823824299 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5834056473019866279, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+  m_PrefabInstance: {fileID: 1510893871469317388}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4161bfb591907224886250f490e2e77a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapShockwaveVFX
+--- !u!4 &5385645538302220031 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6794363855646858227, guid: 4bde164818f63744aab1081aed647b36, type: 3}
+  m_PrefabInstance: {fileID: 1510893871469317388}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2143000830727463146
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7670467076615744421}
+    m_Modifications:
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_Name
+      value: Target Reaction 08
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+--- !u!4 &3717859142776023067 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 2143000830727463146}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3764178149404255325 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2990526438838863031, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 2143000830727463146}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd772863c0b1aa4483438eddc888d79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapTargetReactionVFX
+--- !u!1001 &2205134772282077869
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7670467076615744421}
+    m_Modifications:
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_Name
+      value: Target Reaction 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+--- !u!4 &3512592976574872156 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 2205134772282077869}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3970571335668315674 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2990526438838863031, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 2205134772282077869}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd772863c0b1aa4483438eddc888d79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapTargetReactionVFX
+--- !u!1001 &3750057074643022090
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7670467076615744421}
+    m_Modifications:
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_Name
+      value: Target Reaction 01
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+--- !u!4 &1886986105785645563 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 3750057074643022090}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2128684172215989693 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2990526438838863031, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 3750057074643022090}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd772863c0b1aa4483438eddc888d79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapTargetReactionVFX
+--- !u!1001 &4914019040743060637
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1089080596167355075}
+    m_Modifications:
+    - target: {fileID: 3114420745230101655, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+      propertyPath: m_Name
+      value: Battlefield Aftermath
+      objectReference: {fileID: 0}
+    - target: {fileID: 3114420745230101655, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3696189007466069494, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3696189007466069494, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3696189007466069494, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3696189007466069494, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3696189007466069494, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3696189007466069494, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3696189007466069494, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3696189007466069494, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3696189007466069494, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3696189007466069494, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+--- !u!114 &466710764544560232 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4776081421913127157, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+  m_PrefabInstance: {fileID: 4914019040743060637}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd9ba9fac469740498f0cb48aad4d8f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapAftermathVFX
+--- !u!4 &8609081597046098283 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3696189007466069494, guid: c060c6039425ba54e8e8e79196e399e7, type: 3}
+  m_PrefabInstance: {fileID: 4914019040743060637}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4936749591667329155
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1089080596167355075}
+    m_Modifications:
+    - target: {fileID: 269568143810694311, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 269568143810694311, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 269568143810694311, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 269568143810694311, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 269568143810694311, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 269568143810694311, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 269568143810694311, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 269568143810694311, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 269568143810694311, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 269568143810694311, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 603068457504257608, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+      propertyPath: m_Name
+      value: Ground Impact
+      objectReference: {fileID: 0}
+    - target: {fileID: 603068457504257608, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+--- !u!4 &5133937912189797412 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 269568143810694311, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+  m_PrefabInstance: {fileID: 4936749591667329155}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6198562164747938439 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1335155568823296516, guid: 7fdbfd3e09474fd49a521b23e9aaca33, type: 3}
+  m_PrefabInstance: {fileID: 4936749591667329155}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75d1bcc9fa53e4443b4d932ef017844d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapImpactVFX
+--- !u!1001 &5408410542441618316
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7670467076615744421}
+    m_Modifications:
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_Name
+      value: Target Reaction 07
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+--- !u!114 &7101881153574035259 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2990526438838863031, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 5408410542441618316}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd772863c0b1aa4483438eddc888d79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapTargetReactionVFX
+--- !u!4 &7290063823326614397 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 5408410542441618316}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6165393222690965822
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7670467076615744421}
+    m_Modifications:
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_Name
+      value: Target Reaction 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+--- !u!4 &8911192852560757199 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 6165393222690965822}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8939534810775227785 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2990526438838863031, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 6165393222690965822}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd772863c0b1aa4483438eddc888d79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapTargetReactionVFX
+--- !u!1001 &6677367724889741373
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7670467076615744421}
+    m_Modifications:
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_Name
+      value: Target Reaction 02
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+--- !u!4 &8255041246004564172 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 6677367724889741373}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8442768683600813194 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2990526438838863031, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 6677367724889741373}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd772863c0b1aa4483438eddc888d79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapTargetReactionVFX
+--- !u!1001 &7278291543239596459
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1089080596167355075}
+    m_Modifications:
+    - target: {fileID: 6077953089319342706, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+      propertyPath: m_Name
+      value: Cast Anticipation
+      objectReference: {fileID: 0}
+    - target: {fileID: 6077953089319342706, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6881775340840799505, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6881775340840799505, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6881775340840799505, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6881775340840799505, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6881775340840799505, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6881775340840799505, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6881775340840799505, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6881775340840799505, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6881775340840799505, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6881775340840799505, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+--- !u!4 &4215744934698636474 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6881775340840799505, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+  m_PrefabInstance: {fileID: 7278291543239596459}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7984840637857379067 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 850746957055994704, guid: d5025d7de7a5bbb4b8e9be6aa0b3cd0c, type: 3}
+  m_PrefabInstance: {fileID: 7278291543239596459}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4716a8aab257f448a8d8839b79d8d5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapCastVFX
+--- !u!1001 &8786673546254444252
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7670467076615744421}
+    m_Modifications:
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_Name
+      value: Target Reaction 04
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+--- !u!114 &5796399879332225643 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2990526438838863031, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 8786673546254444252}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd772863c0b1aa4483438eddc888d79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapTargetReactionVFX
+--- !u!4 &6329109843649736237 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 8786673546254444252}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8868893462656614088
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7670467076615744421}
+    m_Modifications:
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_Name
+      value: Target Reaction 09
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+--- !u!114 &5950618978749119103 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2990526438838863031, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 8868893462656614088}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd772863c0b1aa4483438eddc888d79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapTargetReactionVFX
+--- !u!4 &6138873904901699129 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 8868893462656614088}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &9078948126239428561
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7670467076615744421}
+    m_Modifications:
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_Name
+      value: Target Reaction 05
+      objectReference: {fileID: 0}
+    - target: {fileID: 7793304728582113870, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+--- !u!4 &6042684871649380128 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3325075822695074033, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 9078948126239428561}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6088476113771989862 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2990526438838863031, guid: 1692ba89bd41f6549ac461221d90c0e3, type: 3}
+  m_PrefabInstance: {fileID: 9078948126239428561}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bd772863c0b1aa4483438eddc888d79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Warrior.ThunderClapTargetReactionVFX

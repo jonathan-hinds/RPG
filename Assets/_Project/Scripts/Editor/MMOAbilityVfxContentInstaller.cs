@@ -24,6 +24,7 @@ namespace RPGClone.EditorTools
         private const string LightningCastPrefabPath = "Assets/_Project/VFX/Lightning/Prefabs/LightningCastVFX.prefab";
         private const string LightningBeamPrefabPath = "Assets/_Project/VFX/Lightning/Prefabs/LightningBeamVFX.prefab";
         private const string LightningImpactPrefabPath = "Assets/_Project/VFX/Lightning/Prefabs/LightningImpactVFX.prefab";
+        private const string ThunderClapPrefabPath = "Assets/_Project/VFX/ThunderClap/Prefabs/ThunderClapVFX.prefab";
 
         [MenuItem("Tools/RPG Clone/VFX/Install Ability VFX Content")]
         public static void InstallAbilityVfxContent()
@@ -103,7 +104,8 @@ namespace RPGClone.EditorTools
                 ArcaneImpact = CreateBurstPrefab("Arcane_Impact", particleMaterials["Arcane"], new Color(0.72f, 0.32f, 1f, 0.82f), new Color(0.32f, 0.82f, 1f, 0.5f), 0.44f, 76, 0.52f, 0.052f),
                 MageArmor = CreateAuraBurstPrefab("Mage_Armor_Aura", particleMaterials["Arcane"], new Color(0.35f, 0.72f, 1f, 0.46f), new Color(0.7f, 0.42f, 1f, 0.48f), 0.62f, 98, 1.05f),
 
-                Thunderclap = CreateGroundRingPrefab("Thunderclap_Ring", particleMaterials["Physical"], lineMaterials["Physical"], new Color(0.95f, 0.82f, 0.42f, 0.58f), 2.2f, 0.48f),
+                Thunderclap = AssetDatabase.LoadAssetAtPath<GameObject>(ThunderClapPrefabPath)
+                    ?? CreateGroundRingPrefab("Thunderclap_Ring", particleMaterials["Physical"], lineMaterials["Physical"], new Color(0.95f, 0.82f, 0.42f, 0.58f), 2.2f, 0.48f),
                 Earthquake = CreateGroundRingPrefab("Earthquake_Dust_Ring", particleMaterials["Earth"], lineMaterials["Physical"], new Color(0.74f, 0.46f, 0.18f, 0.54f), 3.0f, 0.95f),
                 PhysicalImpact = CreateBurstPrefab("Physical_Impact", particleMaterials["Physical"], new Color(1f, 0.82f, 0.42f, 0.58f), new Color(1f, 1f, 0.7f, 0.38f), 0.36f, 54, 0.36f, 0.04f),
                 ChargeDust = CreateTrailPrefab("Charge_Dust_Trail", particleMaterials["Earth"], new Color(0.74f, 0.52f, 0.28f, 0.38f), 0.42f),
@@ -150,7 +152,9 @@ namespace RPGClone.EditorTools
                 ["shaman_frost_shock"] = ConfigureDefinition("Shaman_Frost_Shock_VFX", null, prefabs.FrostShock, prefabs.FrostImpact, 0.04f, true),
                 ["shaman_water_shield"] = ConfigureDefinition("Shaman_Water_Shield_VFX", null, null, prefabs.WaterShield, 0.02f, false),
                 ["shaman_earthquake"] = ConfigureDefinition("Shaman_Earthquake_VFX", null, null, prefabs.Earthquake, 0.02f, false, false),
-                ["warrior_thunderclap"] = ConfigureDefinition("Warrior_Thunderclap_VFX", null, null, prefabs.Thunderclap, 0.02f, false, false),
+                ["warrior_thunderclap"] = AssetDatabase.LoadAssetAtPath<GameObject>(ThunderClapPrefabPath) != null
+                    ? ConfigureDefinition("Warrior_Thunderclap_VFX", null, prefabs.Thunderclap, null, 0f, true, false, false, false)
+                    : ConfigureDefinition("Warrior_Thunderclap_VFX", null, null, prefabs.Thunderclap, 0.02f, false, false),
                 ["warrior_gouge"] = ConfigureDefinition("Warrior_Gouge_VFX", null, null, prefabs.PhysicalImpact, 0.04f, false),
                 ["warrior_bash"] = ConfigureDefinition(
                     "Warrior_Bash_VFX",

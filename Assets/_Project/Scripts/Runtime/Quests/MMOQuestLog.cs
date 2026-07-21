@@ -327,6 +327,14 @@ namespace RPGClone.Quests
 
         public bool RecordCreatureKilled(MMOEnemyDefinition creatureDefinition, string creatureId)
         {
+            return RecordCreatureKilled(creatureDefinition, creatureId, false);
+        }
+
+        public bool RecordCreatureKilled(
+            MMOEnemyDefinition creatureDefinition,
+            string creatureId,
+            bool isPartyCredit)
+        {
             bool changed = false;
             foreach (MMOQuestRuntimeState state in activeQuests)
             {
@@ -339,7 +347,9 @@ namespace RPGClone.Quests
                 for (int i = 0; i < quest.Objectives.Count; i++)
                 {
                     MMOQuestObjectiveDefinition objective = quest.Objectives[i];
-                    if (objective.ObjectiveType != MMOQuestObjectiveType.KillCreature || state.GetProgress(i) >= objective.RequiredCount)
+                    if (objective.ObjectiveType != MMOQuestObjectiveType.KillCreature
+                        || state.GetProgress(i) >= objective.RequiredCount
+                        || (isPartyCredit && objective.PartyCreditBehavior != MMOQuestPartyCreditBehavior.EligibleParty))
                     {
                         continue;
                     }

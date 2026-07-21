@@ -255,8 +255,8 @@ namespace RPGClone.Enemies
             Quaternion snapshotRotation = Quaternion.Euler(snapshot.rotationEuler.ToVector3());
             bool wasRespawning = respawning;
             bool wasCorpse = corpseActive;
-            identity.Health.Configure(Mathf.Max(1, snapshot.maxHealth), snapshot.currentHealth, false);
-            identity.Mana.Configure(Mathf.Max(0, snapshot.maxMana), snapshot.currentMana, false);
+            ApplyResourceSnapshot(identity.Health, Mathf.Max(1, snapshot.maxHealth), snapshot.currentHealth);
+            ApplyResourceSnapshot(identity.Mana, Mathf.Max(0, snapshot.maxMana), snapshot.currentMana);
             corpseActive = snapshot.runtimeState == EnemyRuntimeState.Corpse;
             respawning = snapshot.runtimeState == EnemyRuntimeState.Respawning;
             currentTarget = ResolveSnapshotTarget(snapshot);
@@ -590,6 +590,17 @@ namespace RPGClone.Enemies
             {
                 leashState.Reset(homePosition);
             }
+        }
+
+        private static void ApplyResourceSnapshot(MMOCharacterResource resource, int maxValue, int currentValue)
+        {
+            if (resource == null
+                || (resource.MaxValue == maxValue && resource.CurrentValue == Mathf.Clamp(currentValue, 0, maxValue)))
+            {
+                return;
+            }
+
+            resource.Configure(maxValue, currentValue);
         }
 
         private void UpdateReturnHome()

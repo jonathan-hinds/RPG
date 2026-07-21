@@ -73,6 +73,7 @@ namespace RPGClone.Multiplayer
         public string enemyDefinitionId;
         public string creatureId;
         public int experienceAmount;
+        public bool isPartyCredit;
         public long createdUtcTicks;
         public List<string> appliedCharacterIds = new();
     }
@@ -824,6 +825,7 @@ namespace RPGClone.Multiplayer
                 enemyDefinitionId,
                 string.Empty,
                 Mathf.Max(0, experienceAmount),
+                false,
                 initiallyAppliedCharacterId);
         }
 
@@ -833,6 +835,7 @@ namespace RPGClone.Multiplayer
             string enemySpawnId,
             string enemyDefinitionId,
             string creatureId,
+            bool isPartyCredit,
             string initiallyAppliedCharacterId)
         {
             PublishRewardEvent(
@@ -843,6 +846,7 @@ namespace RPGClone.Multiplayer
                 enemyDefinitionId,
                 creatureId,
                 0,
+                isPartyCredit,
                 initiallyAppliedCharacterId);
         }
 
@@ -854,6 +858,7 @@ namespace RPGClone.Multiplayer
             string enemyDefinitionId,
             string creatureId,
             int experienceAmount,
+            bool isPartyCredit,
             string initiallyAppliedCharacterId)
         {
             if (string.IsNullOrWhiteSpace(sessionId)
@@ -873,6 +878,7 @@ namespace RPGClone.Multiplayer
                 enemyDefinitionId = enemyDefinitionId ?? string.Empty,
                 creatureId = creatureId ?? string.Empty,
                 experienceAmount = Mathf.Max(0, experienceAmount),
+                isPartyCredit = isPartyCredit,
                 createdUtcTicks = DateTime.UtcNow.Ticks
             };
             if (!string.IsNullOrWhiteSpace(initiallyAppliedCharacterId))
@@ -1331,6 +1337,52 @@ namespace RPGClone.Multiplayer
             }
         }
 
+        public static bool TryApplyPersonalLootUpdate(
+            MMOCorpseLootState proposedSnapshot,
+            string characterId,
+            out MMOCorpseLootState authoritativeSnapshot)
+        {
+            authoritativeSnapshot = null;
+            if (proposedSnapshot == null
+                || string.IsNullOrWhiteSpace(proposedSnapshot.sessionId)
+                || string.IsNullOrWhiteSpace(proposedSnapshot.enemySpawnId)
+                || string.IsNullOrWhiteSpace(characterId))
+            {
+                return false;
+            }
+
+            using (AcquireStateLease())
+            {
+                MMOSharedEnemyRuntimeStore store = LoadEnemyRuntimeStore();
+                MMOCorpseLootState existing = store.corpseLootSnapshots.Find(candidate =>
+                    candidate != null
+                    && candidate.sessionId == proposedSnapshot.sessionId
+                    && candidate.enemySpawnId == proposedSnapshot.enemySpawnId);
+                MMOPersonalLootState proposedPersonalLoot = proposedSnapshot.personalLoot?.Find(candidate =>
+                    candidate != null && candidate.characterId == characterId);
+                MMOPersonalLootState existingPersonalLoot = existing?.personalLoot?.Find(candidate =>
+                    candidate != null && candidate.characterId == characterId);
+                if (existing == null
+                    || proposedPersonalLoot == null
+                    || existingPersonalLoot == null
+                    || !IsValidLootDepletion(existingPersonalLoot, proposedPersonalLoot))
+                {
+                    return false;
+                }
+
+                MMOPersonalLootState acceptedPersonalLoot = Clone(proposedPersonalLoot);
+                acceptedPersonalLoot.characterId = existingPersonalLoot.characterId;
+                acceptedPersonalLoot.participantId = existingPersonalLoot.participantId;
+                acceptedPersonalLoot.looted = !acceptedPersonalLoot.HasLoot;
+                int personalLootIndex = existing.personalLoot.IndexOf(existingPersonalLoot);
+                existing.personalLoot[personalLootIndex] = acceptedPersonalLoot;
+                existing.updatedUtcTicks = DateTime.UtcNow.Ticks;
+                SaveEnemyRuntimeStore(store);
+                authoritativeSnapshot = Clone(existing);
+                return true;
+            }
+        }
+
         public static IReadOnlyList<MMOCorpseLootState> GetCorpseLootSnapshots(string sessionId)
         {
             if (string.IsNullOrWhiteSpace(sessionId))
@@ -1440,14 +1492,16 @@ namespace RPGClone.Multiplayer
                 MMOSharedSessionRuntimeStore runtimeStore = string.IsNullOrWhiteSpace(snapshot.runtimeStoreJson)
                     ? new MMOSharedSessionRuntimeStore()
                     : JsonUtility.FromJson<MMOSharedSessionRuntimeStore>(snapshot.runtimeStoreJson) ?? new MMOSharedSessionRuntimeStore();
+                MMOSharedEnemyRuntimeStore worldRuntimeStore = string.IsNullOrWhiteSpace(snapshot.enemyRuntimeStoreJson)
+                    ? new MMOSharedEnemyRuntimeStore()
+                    : JsonUtility.FromJson<MMOSharedEnemyRuntimeStore>(snapshot.enemyRuntimeStoreJson) ?? new MMOSharedEnemyRuntimeStore();
+                NormalizeSnapshotRetentionTimestamps(sharedStore, runtimeStore, worldRuntimeStore);
                 string authoritativeSessionId = ResolveAuthoritativeSessionId(sharedStore, runtimeStore);
                 PreserveLocalParticipant(sharedStore, runtimeStore, localParticipant, localRuntime, authoritativeSessionId);
 
                 sharedState = sharedStore;
                 participantRuntimeState = runtimeStore;
-                worldRuntimeState = string.IsNullOrWhiteSpace(snapshot.enemyRuntimeStoreJson)
-                    ? new MMOSharedEnemyRuntimeStore()
-                    : JsonUtility.FromJson<MMOSharedEnemyRuntimeStore>(snapshot.enemyRuntimeStoreJson) ?? new MMOSharedEnemyRuntimeStore();
+                worldRuntimeState = worldRuntimeStore;
             }
         }
 
@@ -1741,34 +1795,25 @@ namespace RPGClone.Multiplayer
             long now = DateTime.UtcNow.Ticks;
             int removedParticipants = store.participants.RemoveAll(participant =>
                 participant == null
-                || participant.updatedUtcTicks <= 0
-                || new TimeSpan(now - participant.updatedUtcTicks) > ParticipantTimeout);
+                || IsExpired(participant.updatedUtcTicks, now, ParticipantTimeout));
             int removedEvents = store.abilityEvents.RemoveAll(sharedEvent =>
                 sharedEvent == null
-                || sharedEvent.createdUtcTicks <= 0
-                || new TimeSpan(now - sharedEvent.createdUtcTicks) > EventTimeout);
+                || IsExpired(sharedEvent.createdUtcTicks, now, EventTimeout));
             int removedCombatRequests = store.combatRequests.RemoveAll(request =>
                 request == null
-                || request.requestedUtcTicks <= 0
-                || (request.processed && new TimeSpan(now - request.requestedUtcTicks) > CombatRequestTimeout)
-                || new TimeSpan(now - request.requestedUtcTicks) > ParticipantTimeout);
+                || IsExpired(request.requestedUtcTicks, now, request.processed ? CombatRequestTimeout : ParticipantTimeout));
             int removedCombatEvents = store.combatEvents.RemoveAll(sharedEvent =>
                 sharedEvent?.record == null
-                || sharedEvent.record.createdUtcTicks <= 0
-                || new TimeSpan(now - sharedEvent.record.createdUtcTicks) > EventTimeout);
+                || IsExpired(sharedEvent.record.createdUtcTicks, now, EventTimeout));
             int removedRewardEvents = store.rewardEvents.RemoveAll(rewardEvent =>
                 rewardEvent == null
-                || rewardEvent.createdUtcTicks <= 0
-                || new TimeSpan(now - rewardEvent.createdUtcTicks) > EventTimeout);
+                || IsExpired(rewardEvent.createdUtcTicks, now, EventTimeout));
             int removedWorldObjectSnapshots = store.worldObjectSnapshots.RemoveAll(snapshot =>
                 snapshot == null
-                || snapshot.updatedUtcTicks <= 0
-                || new TimeSpan(now - snapshot.updatedUtcTicks) > WorldObjectSnapshotTimeout);
+                || IsExpired(snapshot.updatedUtcTicks, now, WorldObjectSnapshotTimeout));
             int removedWorldObjectRequests = store.worldObjectInteractionRequests.RemoveAll(request =>
                 request == null
-                || request.requestedUtcTicks <= 0
-                || (request.processed && new TimeSpan(now - request.requestedUtcTicks) > WorldObjectRequestTimeout)
-                || new TimeSpan(now - request.requestedUtcTicks) > ParticipantTimeout);
+                || IsExpired(request.requestedUtcTicks, now, request.processed ? WorldObjectRequestTimeout : ParticipantTimeout));
             return removedParticipants > 0
                 || removedEvents > 0
                 || removedCombatRequests > 0
@@ -1783,8 +1828,7 @@ namespace RPGClone.Multiplayer
             long now = DateTime.UtcNow.Ticks;
             return store.participants.RemoveAll(participant =>
                 participant == null
-                || participant.updatedUtcTicks <= 0
-                || new TimeSpan(now - participant.updatedUtcTicks) > ParticipantTimeout) > 0;
+                || IsExpired(participant.updatedUtcTicks, now, ParticipantTimeout)) > 0;
         }
 
         private static bool Prune(MMOSharedEnemyRuntimeStore store)
@@ -1792,13 +1836,156 @@ namespace RPGClone.Multiplayer
             long now = DateTime.UtcNow.Ticks;
             int removedEnemySnapshots = store.enemySnapshots.RemoveAll(snapshot =>
                 snapshot == null
-                || snapshot.updatedUtcTicks <= 0
-                || new TimeSpan(now - snapshot.updatedUtcTicks) > EnemySnapshotTimeout);
+                || IsExpired(snapshot.updatedUtcTicks, now, EnemySnapshotTimeout));
             int removedCorpseSnapshots = store.corpseLootSnapshots.RemoveAll(snapshot =>
                 snapshot == null
-                || snapshot.updatedUtcTicks <= 0
-                || new TimeSpan(now - snapshot.updatedUtcTicks) > CorpseLootSnapshotTimeout);
+                || IsExpired(snapshot.updatedUtcTicks, now, CorpseLootSnapshotTimeout));
             return removedEnemySnapshots > 0 || removedCorpseSnapshots > 0;
+        }
+
+        private static bool IsExpired(long timestampUtcTicks, long nowUtcTicks, TimeSpan timeout)
+        {
+            if (timestampUtcTicks <= 0)
+            {
+                return true;
+            }
+
+            return nowUtcTicks >= timestampUtcTicks
+                && nowUtcTicks - timestampUtcTicks > timeout.Ticks;
+        }
+
+        private static void NormalizeSnapshotRetentionTimestamps(
+            MMOSharedSessionStore sharedStore,
+            MMOSharedSessionRuntimeStore runtimeStore,
+            MMOSharedEnemyRuntimeStore worldRuntimeStore)
+        {
+            long receivedUtcTicks = DateTime.UtcNow.Ticks;
+            if (sharedStore != null)
+            {
+                foreach (MMOSharedAbilityEvent abilityEvent in sharedStore.abilityEvents)
+                {
+                    if (abilityEvent != null)
+                    {
+                        abilityEvent.createdUtcTicks = receivedUtcTicks;
+                    }
+                }
+
+                foreach (CombatActionRequest request in sharedStore.combatRequests)
+                {
+                    if (request != null)
+                    {
+                        request.requestedUtcTicks = receivedUtcTicks;
+                    }
+                }
+
+                foreach (MMOSharedCombatEvent combatEvent in sharedStore.combatEvents)
+                {
+                    if (combatEvent?.record != null)
+                    {
+                        combatEvent.record.createdUtcTicks = receivedUtcTicks;
+                    }
+                }
+
+                foreach (MMOSharedRewardEvent rewardEvent in sharedStore.rewardEvents)
+                {
+                    if (rewardEvent != null)
+                    {
+                        rewardEvent.createdUtcTicks = receivedUtcTicks;
+                    }
+                }
+
+                foreach (MMOSharedWorldObjectSnapshot worldObjectSnapshot in sharedStore.worldObjectSnapshots)
+                {
+                    if (worldObjectSnapshot != null)
+                    {
+                        worldObjectSnapshot.updatedUtcTicks = receivedUtcTicks;
+                    }
+                }
+
+                foreach (MMOSharedWorldObjectInteractionRequest request in sharedStore.worldObjectInteractionRequests)
+                {
+                    if (request != null)
+                    {
+                        request.requestedUtcTicks = receivedUtcTicks;
+                    }
+                }
+            }
+
+            if (runtimeStore == null)
+            {
+                return;
+            }
+
+            foreach (MMOSessionParticipantRuntimeSnapshot participant in runtimeStore.participants)
+            {
+                if (participant != null)
+                {
+                    participant.updatedUtcTicks = receivedUtcTicks;
+                }
+            }
+
+            if (worldRuntimeStore == null)
+            {
+                return;
+            }
+
+            foreach (MMOCorpseLootState corpseLoot in worldRuntimeStore.corpseLootSnapshots)
+            {
+                if (corpseLoot != null)
+                {
+                    corpseLoot.updatedUtcTicks = receivedUtcTicks;
+                }
+            }
+        }
+
+        private static bool IsValidLootDepletion(MMOPersonalLootState existing, MMOPersonalLootState proposed)
+        {
+            if (existing == null || proposed == null || existing.characterId != proposed.characterId)
+            {
+                return false;
+            }
+
+            if (proposed.items != null && proposed.items.Exists(item =>
+                    item == null || string.IsNullOrWhiteSpace(item.itemId) || item.quantity < 0))
+            {
+                return false;
+            }
+
+            Dictionary<string, int> existingQuantities = GetLootQuantities(existing);
+            Dictionary<string, int> proposedQuantities = GetLootQuantities(proposed);
+            foreach (KeyValuePair<string, int> pair in proposedQuantities)
+            {
+                if (!existingQuantities.TryGetValue(pair.Key, out int existingQuantity)
+                    || pair.Value < 0
+                    || pair.Value > existingQuantity)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static Dictionary<string, int> GetLootQuantities(MMOPersonalLootState state)
+        {
+            Dictionary<string, int> quantities = new(StringComparer.Ordinal);
+            if (state?.items == null)
+            {
+                return quantities;
+            }
+
+            foreach (MMOPersonalLootItemState item in state.items)
+            {
+                if (item == null || string.IsNullOrWhiteSpace(item.itemId) || item.quantity < 0)
+                {
+                    continue;
+                }
+
+                quantities.TryGetValue(item.itemId, out int currentQuantity);
+                quantities[item.itemId] = currentQuantity + item.quantity;
+            }
+
+            return quantities;
         }
 
         private static void UpsertParticipantRuntimeInLease(
@@ -1999,6 +2186,7 @@ namespace RPGClone.Multiplayer
                     enemyDefinitionId = source.enemyDefinitionId,
                     creatureId = source.creatureId,
                     experienceAmount = source.experienceAmount,
+                    isPartyCredit = source.isPartyCredit,
                     createdUtcTicks = source.createdUtcTicks,
                     appliedCharacterIds = new List<string>(source.appliedCharacterIds ?? new List<string>())
                 };
