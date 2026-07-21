@@ -17,7 +17,9 @@ MonoBehaviour:
   twoHandCombatIdle: {fileID: 7400000, guid: bcd7316fb6fcdce4a83223288f3c9590, type: 2}
   idleEnterTransitionSeconds: 0.16
   idleExitTransitionSeconds: 0.12
-  stationarySpeedThreshold: 0.08
+  stationarySpeedThreshold: 0.025
+  layeredMovementStopSpeedThreshold: 0.01
+  layeredMovementHoldSeconds: 0.2
   oneHandAttack: {fileID: 7400000, guid: f67803b0a0c338e40bc8f8b2690df9ef, type: 2}
   twoHandAttack: {fileID: 7400000, guid: b57ecfc92fba1924597139ab1d8ba9cc, type: 2}
   unarmedAttack: {fileID: 0}

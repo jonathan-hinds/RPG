@@ -40,6 +40,7 @@ namespace RPGClone.Animation
 
         private readonly List<KeyValuePair<AnimationClip, AnimationClip>> clipOverrides = new();
         private readonly MMOLayeredActionPlayer layeredActionPlayer = new();
+        private readonly MMOLayeredMovementState layeredMovementState = new();
         private AnimatorOverrideController overrideController;
         private IMMOCreatureLocomotionSource locomotionSource;
         private Vector3 lastPosition;
@@ -87,6 +88,7 @@ namespace RPGClone.Animation
         private void OnDisable()
         {
             layeredActionPlayer.Reset();
+            layeredMovementState.Reset();
             if (abilitySystem != null)
             {
                 abilitySystem.AbilityUsed -= OnAbilityUsed;
@@ -141,6 +143,7 @@ namespace RPGClone.Animation
             animator = newAnimator;
             visualRoot = newVisualRoot;
             visualYawOffsetDegrees = newVisualYawOffsetDegrees;
+            layeredMovementState.Reset();
             ApplyCreatureSurfacePolicy();
             ApplyAnimationSet();
             layeredActionPlayer.Configure(animator, LocomotionHash);
@@ -167,6 +170,7 @@ namespace RPGClone.Animation
                 }
 
                 dead = true;
+                layeredMovementState.Reset();
                 if (animator == null)
                 {
                     return;
@@ -441,6 +445,7 @@ namespace RPGClone.Animation
         private void ResetAfterRespawn()
         {
             dead = false;
+            layeredMovementState.Reset();
             nextAttackIndex = 0;
             attackPriorityUntil = 0f;
             castReturnTime = 0f;
@@ -529,7 +534,10 @@ namespace RPGClone.Animation
         {
             return !dead
                 && animationSet != null
-                && worldSpeed > animationSet.StationarySpeedThreshold;
+                && layeredMovementState.Evaluate(
+                    worldSpeed,
+                    Time.time,
+                    animationSet.LayeredMovementPolicy);
         }
 
         private void OnValidate()

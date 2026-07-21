@@ -57,7 +57,9 @@ namespace RPGClone.Animation
         [SerializeField] private bool alternateAttacks = true;
         [SerializeField, Min(0f)] private float attackPrioritySeconds = 0.8f;
         [SerializeField, Min(0f)] private float damageReactionCooldownSeconds = 0.45f;
-        [SerializeField, Min(0f)] private float stationarySpeedThreshold = 0.08f;
+        [SerializeField, Min(0f)] private float stationarySpeedThreshold = MMOLayeredMovementPolicy.DefaultStartSpeedThreshold;
+        [SerializeField, Min(0f)] private float layeredMovementStopSpeedThreshold = MMOLayeredMovementPolicy.DefaultStopSpeedThreshold;
+        [SerializeField, Min(0f)] private float layeredMovementHoldSeconds = MMOLayeredMovementPolicy.DefaultMovementHoldSeconds;
 
         [Header("Presentation")]
         [SerializeField] private bool applyRootMotion;
@@ -76,7 +78,11 @@ namespace RPGClone.Animation
         public bool AlternateAttacks => alternateAttacks;
         public float AttackPrioritySeconds => attackPrioritySeconds;
         public float DamageReactionCooldownSeconds => damageReactionCooldownSeconds;
-        public float StationarySpeedThreshold => Mathf.Max(0.03f, stationarySpeedThreshold);
+        public float StationarySpeedThreshold => Mathf.Max(0f, stationarySpeedThreshold);
+        public MMOLayeredMovementPolicy LayeredMovementPolicy => new(
+            stationarySpeedThreshold,
+            layeredMovementStopSpeedThreshold,
+            layeredMovementHoldSeconds);
         public float MovementDampSeconds => movementDampSeconds;
         public bool ApplyRootMotion => applyRootMotion;
         public float ModelYawOffsetDegrees => modelYawOffsetDegrees;

@@ -28,6 +28,8 @@ MonoBehaviour:
   alternateAttacks: 1
   attackPrioritySeconds: 0.95
   damageReactionCooldownSeconds: 0.5
-  stationarySpeedThreshold: 0.08
+  stationarySpeedThreshold: 0.025
+  layeredMovementStopSpeedThreshold: 0.01
+  layeredMovementHoldSeconds: 0.2
   applyRootMotion: 0
   modelYawOffsetDegrees: 0

@@ -44,7 +44,9 @@ namespace RPGClone.Player
         [SerializeField] private AnimationClip twoHandCombatIdle;
         [SerializeField, Min(0f)] private float idleEnterTransitionSeconds = 0.16f;
         [SerializeField, Min(0f)] private float idleExitTransitionSeconds = 0.12f;
-        [SerializeField, Min(0f)] private float stationarySpeedThreshold = 0.08f;
+        [SerializeField, Min(0f)] private float stationarySpeedThreshold = MMOLayeredMovementPolicy.DefaultStartSpeedThreshold;
+        [SerializeField, Min(0f)] private float layeredMovementStopSpeedThreshold = MMOLayeredMovementPolicy.DefaultStopSpeedThreshold;
+        [SerializeField, Min(0f)] private float layeredMovementHoldSeconds = MMOLayeredMovementPolicy.DefaultMovementHoldSeconds;
 
         [Header("Weapon Attacks")]
         [SerializeField] private AnimationClip oneHandAttack;
@@ -80,7 +82,11 @@ namespace RPGClone.Player
         public AnimationClip Cast => cast;
         public float IdleEnterTransitionSeconds => idleEnterTransitionSeconds;
         public float IdleExitTransitionSeconds => idleExitTransitionSeconds;
-        public float StationarySpeedThreshold => stationarySpeedThreshold;
+        public float StationarySpeedThreshold => Mathf.Max(0f, stationarySpeedThreshold);
+        public MMOLayeredMovementPolicy LayeredMovementPolicy => new(
+            stationarySpeedThreshold,
+            layeredMovementStopSpeedThreshold,
+            layeredMovementHoldSeconds);
         public float AttackImpactNormalizedTime => attackImpactNormalizedTime;
         public float AttackTransitionSeconds => attackTransitionSeconds;
         public float DamageTransitionSeconds => damageTransitionSeconds;

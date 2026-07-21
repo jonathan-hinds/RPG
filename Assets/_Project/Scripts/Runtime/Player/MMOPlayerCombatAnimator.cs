@@ -35,6 +35,7 @@ namespace RPGClone.Player
         [SerializeField] private MMOAutoAttackController autoAttackController;
 
         private readonly MMOLayeredActionPlayer layeredActionPlayer = new();
+        private readonly MMOLayeredMovementState layeredMovementState = new();
         private bool lastAppliedInCombat;
         private MMOWeaponType lastAppliedCombatIdleWeaponType = MMOWeaponType.None;
         private bool hasAppliedCombatState;
@@ -92,6 +93,7 @@ namespace RPGClone.Player
         {
             Unsubscribe();
             layeredActionPlayer.Reset();
+            layeredMovementState.Reset();
             if (locomotionAnimator != null)
             {
                 locomotionAnimator.SetIdleOverride(null);
@@ -125,6 +127,7 @@ namespace RPGClone.Player
             abilitySystem = newAbilitySystem;
             autoAttackController = newAutoAttackController;
             hasAppliedCombatState = false;
+            layeredMovementState.Reset();
             ConfigureLayeredActionPlayer();
 
             if (Application.isPlaying)
@@ -623,8 +626,10 @@ namespace RPGClone.Player
             float speed = locomotionAnimator != null
                 ? locomotionAnimator.CurrentPlanarSpeed
                 : motor != null ? motor.CurrentPlanarSpeed : 0f;
-            float threshold = animationSet != null ? animationSet.StationarySpeedThreshold : 0.08f;
-            return speed > threshold;
+            MMOLayeredMovementPolicy policy = animationSet != null
+                ? animationSet.LayeredMovementPolicy
+                : MMOLayeredMovementPolicy.Default;
+            return layeredMovementState.Evaluate(speed, Time.time, policy);
         }
 
         private void ConfigureLayeredActionPlayer()

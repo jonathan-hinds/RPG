@@ -137,6 +137,37 @@ namespace RPGClone.EditorTests
                 set => set.BaseController);
         }
 
+        [Test]
+        public void LowSpeedLocomotionUsesLayeredActions()
+        {
+            MMOLayeredMovementState movementState = new();
+            MMOLayeredMovementPolicy policy = MMOLayeredMovementPolicy.Default;
+
+            Assert.That(movementState.Evaluate(0.04f, 1f, policy), Is.True);
+        }
+
+        [Test]
+        public void MovementStateSurvivesBriefLowSpeedSamples()
+        {
+            MMOLayeredMovementState movementState = new();
+            MMOLayeredMovementPolicy policy = MMOLayeredMovementPolicy.Default;
+
+            Assert.That(movementState.Evaluate(0.04f, 1f, policy), Is.True);
+            Assert.That(movementState.Evaluate(0f, 1.1f, policy), Is.True);
+            Assert.That(movementState.Evaluate(0f, 1.21f, policy), Is.False);
+        }
+
+        [Test]
+        public void MovementStateUsesHysteresisBetweenThresholds()
+        {
+            MMOLayeredMovementState movementState = new();
+            MMOLayeredMovementPolicy policy = MMOLayeredMovementPolicy.Default;
+
+            Assert.That(movementState.Evaluate(0.02f, 1f, policy), Is.False);
+            Assert.That(movementState.Evaluate(0.03f, 1.1f, policy), Is.True);
+            Assert.That(movementState.Evaluate(0.015f, 2f, policy), Is.True);
+        }
+
         private static bool GetTransformWeight(AvatarMask mask, string path)
         {
             for (int i = 0; i < mask.transformCount; i++)
