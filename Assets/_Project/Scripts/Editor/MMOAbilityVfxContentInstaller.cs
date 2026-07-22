@@ -21,6 +21,7 @@ namespace RPGClone.EditorTools
         private const string BashPrefabPath = "Assets/_Project/VFX/Bash/Prefabs/BashVFX.prefab";
         private const string BerzerkitisPrefabPath = "Assets/_Project/VFX/Berzerkitis/Prefabs/BerzerkitisVFX.prefab";
         private const string WaterShieldPrefabPath = "Assets/_Project/VFX/WaterShield/Prefabs/WaterShieldVFX.prefab";
+        private const string ArcaneMissilesPrefabPath = "Assets/_Project/VFX/ArcaneMissiles/Prefabs/ArcaneMissilesVFX.prefab";
         private const string LightningCastPrefabPath = "Assets/_Project/VFX/Lightning/Prefabs/LightningCastVFX.prefab";
         private const string LightningBeamPrefabPath = "Assets/_Project/VFX/Lightning/Prefabs/LightningBeamVFX.prefab";
         private const string LightningImpactPrefabPath = "Assets/_Project/VFX/Lightning/Prefabs/LightningImpactVFX.prefab";
@@ -107,6 +108,7 @@ namespace RPGClone.EditorTools
                     ?? CreateAuraBurstPrefab("Water_Shield_Aura", particleMaterials["Water"], new Color(0.22f, 0.66f, 1f, 0.54f), new Color(0.78f, 1f, 1f, 0.32f), 0.52f, 96, 1.05f),
 
                 ArcaneMissile = CreateBeamPrefab("Arcane_Missile_Channel", lineMaterials["Arcane"], particleMaterials["Arcane"], 5f, 9, 0.055f, 24f, false, 0.042f, 0.58f),
+                ArcaneMissilesPackage = AssetDatabase.LoadAssetAtPath<GameObject>(ArcaneMissilesPrefabPath),
                 ArcaneImpact = CreateBurstPrefab("Arcane_Impact", particleMaterials["Arcane"], new Color(0.72f, 0.32f, 1f, 0.82f), new Color(0.32f, 0.82f, 1f, 0.5f), 0.44f, 76, 0.52f, 0.052f),
                 MageArmor = CreateAuraBurstPrefab("Mage_Armor_Aura", particleMaterials["Arcane"], new Color(0.35f, 0.72f, 1f, 0.46f), new Color(0.7f, 0.42f, 1f, 0.48f), 0.62f, 98, 1.05f),
 
@@ -135,7 +137,17 @@ namespace RPGClone.EditorTools
                 ["mage_fireball"] = ConfigureDefinition("Mage_Fireball_VFX", prefabs.FireCasting, prefabs.Fireball, prefabs.FireBurst, 0.18f, true),
                 ["mage_fire_blast"] = ConfigureDefinition("Mage_Fire_Blast_VFX", null, prefabs.FireBlast, prefabs.FireBurst, 0.03f, true),
                 ["mage_flamestrike"] = ConfigureDefinition("Mage_Flamestrike_VFX", prefabs.FireCasting, null, prefabs.Flamestrike, 0.05f, false, false),
-                ["mage_arcane_missile"] = ConfigureDefinition("Mage_Arcane_Missile_VFX", prefabs.ArcaneCasting, prefabs.ArcaneMissile, prefabs.ArcaneImpact, 0.35f, false),
+                ["mage_arcane_missile"] = prefabs.ArcaneMissilesPackage != null
+                    ? ConfigureDefinition(
+                        "Mage_Arcane_Missile_VFX",
+                        prefabs.ArcaneMissilesPackage,
+                        null,
+                        null,
+                        0f,
+                        false,
+                        useHandCastingAnchors: false,
+                        alignCastPrefabToTarget: false)
+                    : ConfigureDefinition("Mage_Arcane_Missile_VFX", prefabs.ArcaneCasting, prefabs.ArcaneMissile, prefabs.ArcaneImpact, 0.35f, false),
                 ["mage_mage_armor"] = ConfigureDefinition("Mage_Mage_Armor_VFX", null, null, prefabs.MageArmor, 0.02f, false),
                 ["shaman_healing_beam"] = ConfigureDefinition(
                     "Shaman_Healing_Beam_VFX",
@@ -651,6 +663,7 @@ namespace RPGClone.EditorTools
             public GameObject FrostImpact;
             public GameObject WaterShield;
             public GameObject ArcaneMissile;
+            public GameObject ArcaneMissilesPackage;
             public GameObject ArcaneImpact;
             public GameObject MageArmor;
             public GameObject Thunderclap;

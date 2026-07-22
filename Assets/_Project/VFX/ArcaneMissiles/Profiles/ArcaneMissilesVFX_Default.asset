@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 642367459e293cc479a18c743574250a, type: 3}
+  m_Name: ArcaneMissilesVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.ArcaneMissiles.ArcaneMissilesVFXProfile
+  channelDuration: 5
+  handBrightness: 3.6
+  centralCoreSize: 0.34
+  runeCircleScale: 1.8
+  channelParticleAmount: 24
+  orbOffsets:
+  - {x: -0.72, y: 1.48, z: 0.15}
+  - {x: 0.72, y: 1.48, z: 0.15}
+  - {x: 0, y: 1.95, z: -0.18}
+  formationDelay: 0.16
+  formationDuration: 0.38
+  orbScale: 0.46
+  runeScale: 0.74
+  runeSpeed: 28
+  ringCount: 2
+  ringSpeed: {x: 46, y: -31}
+  fragmentCount: 14
+  rebuildDuration: 0.62
+  energyConnectionWidth: 0.035
+  firingOrder: 0000000001000000020000000000000002000000
+  projectileSpeed: 13
+  projectileAcceleration: 28
+  homingStrength: 12
+  curveAmount: 0.24
+  projectileScale: 0.34
+  projectileCoreBrightness: 4.8
+  projectileBodyThickness: 0.28
+  projectileRuneVisibility: 0.95
+  spiralAmount: 0.075
+  minimumLaunchLeadSeconds: 0.24
+  maximumLaunchLeadSeconds: 0.68
+  trailCoreWidth: 0.055
+  trailBlueRibbonWidth: 0.24
+  purpleRibbonCount: 2
+  trailLifetime: 0.44
+  trailFragmentAmount: 12
+  trailVaporAmount: 8
+  impactFlashSize: 0.68
+  impactExplosionScale: 1
+  shockRingCount: 1
+  spikeCount: 7
+  impactSparkAmount: 26
+  targetWrapIntensity: 1
+  impactDuration: 0.52
+  finalScaleMultiplier: 1.24
+  finalBrightnessMultiplier: 1.28
+  finalTrailMultiplier: 1.25
+  finalImpactMultiplier: 1.28
+  interruptCollapseDuration: 0.42
+  interruptRuneFragments: 30
+  connectionSnapIntensity: 1.25
+  unfinishedMissileDissolve: 0.22
+  overallScale: 1
+  overallBrightness: 1
+  blueColor: {r: 0.08, g: 0.66, b: 1.35, a: 1}
+  purpleColor: {r: 0.52, g: 0.12, b: 1.15, a: 1}
+  magentaAccent: {r: 1.1, g: 0.08, b: 0.78, a: 1}
+  particleQuality: 2
+  completionCleanupDuration: 0.52
