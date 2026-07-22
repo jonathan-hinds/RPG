@@ -27,6 +27,8 @@ namespace RPGClone.EditorTools
         private const string ThunderClapPrefabPath = "Assets/_Project/VFX/ThunderClap/Prefabs/ThunderClapVFX.prefab";
         private const string FrostShockProjectilePrefabPath = "Assets/_Project/VFX/FrostShock/Prefabs/FrostShockProjectileVFX.prefab";
         private const string FrostShockImpactPrefabPath = "Assets/_Project/VFX/FrostShock/Prefabs/FrostShockImpactVFX.prefab";
+        private const string GougeCastPrefabPath = "Assets/_Project/VFX/Gouge/Prefabs/GougeCastVFX.prefab";
+        private const string GougePrefabPath = "Assets/_Project/VFX/Gouge/Prefabs/GougeVFX.prefab";
 
         [MenuItem("Tools/RPG Clone/VFX/Install Ability VFX Content")]
         public static void InstallAbilityVfxContent()
@@ -159,7 +161,18 @@ namespace RPGClone.EditorTools
                 ["warrior_thunderclap"] = AssetDatabase.LoadAssetAtPath<GameObject>(ThunderClapPrefabPath) != null
                     ? ConfigureDefinition("Warrior_Thunderclap_VFX", null, prefabs.Thunderclap, null, 0f, true, false, false, false)
                     : ConfigureDefinition("Warrior_Thunderclap_VFX", null, null, prefabs.Thunderclap, 0.02f, false, false),
-                ["warrior_gouge"] = ConfigureDefinition("Warrior_Gouge_VFX", null, null, prefabs.PhysicalImpact, 0.04f, false),
+                ["warrior_gouge"] = AssetDatabase.LoadAssetAtPath<GameObject>(GougePrefabPath) != null
+                    ? ConfigureDefinition(
+                        "Warrior_Gouge_VFX",
+                        null,
+                        AssetDatabase.LoadAssetAtPath<GameObject>(GougeCastPrefabPath),
+                        AssetDatabase.LoadAssetAtPath<GameObject>(GougePrefabPath),
+                        0f,
+                        false,
+                        true,
+                        false,
+                        false)
+                    : ConfigureDefinition("Warrior_Gouge_VFX", null, null, prefabs.PhysicalImpact, 0.04f, false),
                 ["warrior_bash"] = ConfigureDefinition(
                     "Warrior_Bash_VFX",
                     null,

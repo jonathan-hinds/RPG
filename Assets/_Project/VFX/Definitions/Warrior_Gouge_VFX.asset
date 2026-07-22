@@ -12,16 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f19b6985de7578844a289965931ed701, type: 3}
   m_Name: Warrior_Gouge_VFX
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.MMOAbilityVfxDefinition
+  targetingPrefab: {fileID: 0}
   castingPrefab: {fileID: 0}
-  castPrefab: {fileID: 0}
-  hitPrefab: {fileID: 9213798051702445802, guid: 10568a275b224724d877c9d6cc70e51f, type: 3}
+  castPrefab: {fileID: 7205076269348261434, guid: 6a0099040a1371b4099456610f161e6c, type: 3}
+  hitPrefab: {fileID: 1015185932237098261, guid: 0199dfb7c9fae814f8d25d3f11c0c747, type: 3}
   attachCastingToCaster: 1
-  useHandCastingAnchors: 1
+  useHandCastingAnchors: 0
   attachHitToTarget: 1
-  alignCastPrefabToTarget: 1
-  castingLocalOffset: {x: 0, y: 1.15, z: 0.42}
+  alignCastPrefabToTarget: 0
+  castingLocalOffset: {x: 0, y: 1.1, z: 0.35}
   handCastingLocalOffset: {x: 0, y: 0, z: 0}
-  castOriginLocalOffset: {x: 0, y: 1.18, z: 0.48}
-  hitLocalOffset: {x: 0, y: 0.85, z: 0}
-  hitDelaySeconds: 0.04
+  castOriginLocalOffset: {x: 0, y: 1.1, z: 0.35}
+  hitLocalOffset: {x: 0, y: 1.02, z: 0}
+  hitDelaySeconds: 0
   castPrefabControlsHitTiming: 0

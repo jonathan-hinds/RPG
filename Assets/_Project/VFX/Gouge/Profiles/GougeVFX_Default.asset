@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d832768ad7ff309439564a4b9d4ef88e, type: 3}
+  m_Name: GougeVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Physical.GougeVFXProfile
+  overallScale: 1
+  overallBrightness: 1.12
+  goreIntensity: 0.98
+  particleQuality: 2
+  palette:
+    ImpactWhite: {r: 1.8, g: 1.65, b: 1.25, a: 1}
+    ImpactYellow: {r: 1.45, g: 0.92, b: 0.28, a: 1}
+    Crimson: {r: 1.25, g: 0.055, b: 0.025, a: 1}
+    DeepRed: {r: 0.62, g: 0.018, b: 0.012, a: 1}
+    Maroon: {r: 0.25, g: 0.008, b: 0.01, a: 0.95}
+    BrownRed: {r: 0.3, g: 0.065, b: 0.035, a: 0.9}
+    Charcoal: {r: 0.11, g: 0.085, b: 0.075, a: 0.8}
+    Metallic: {r: 0.92, g: 0.88, b: 0.72, a: 1}
+  profileVersion: 4
+  anticipationDuration: 0.08
+  attackMotionDuration: 0.24
+  mainTrailWidth: 0.82
+  mainTrailLength: 2.35
+  mainTrailBrightness: 1.55
+  tearingTrailWidth: 0.5
+  tearingTrailColor: {r: 0.92, g: 0.025, b: 0.012, a: 0.96}
+  weaponGlintCount: 2
+  motionFragmentAmount: 9
+  impactDuration: 0.44
+  contactFlashSize: 1.18
+  contactFlashBrightness: 2.05
+  woundSize: 1.08
+  woundOrientation: -22
+  mainBloodSprayAmount: 48
+  sprayLength: 2.3
+  sprayAngle: 26
+  closeBurstAmount: 34
+  tornFragmentCount: 8
+  dustBurstAmount: 20
+  dustBurstSize: 1.45
+  environmentalHeavyDustAmount: 42
+  environmentalHeavyDustSize: 1.5
+  environmentalHeavyDustLifetime: 2.5
+  environmentalFineDustAmount: 32
+  environmentalFineDustSize: 0.92
+  environmentalFineDustLifetime: 3
+  dustRingSize: 3.35
+  groundDebrisCount: 14
+  groundDebrisSize: 0.24
+  bleedDuration: 9
+  woundBaseOpacity: 0.98
+  innerCutBrightness: 1.68
+  wetHighlightAmount: 0.66
+  seepageSpeed: 0.19
+  dripFrequency: 0.9
+  dripSize: 0.15
+  woundMistIntensity: 0.32
+  woundCameraOffset: 0.36
+  woundPulseStrength: 0.18
+  tickDuration: 0.36
+  tickFlashBrightness: 2.05
+  tickPulseSize: 1.22
+  tickSprayAmount: 10
+  tickDropletCount: 7
+  tickBodyAccentStrength: 0.34
+  finalTickMultiplier: 1.22
+  woundScaleByStack: {x: 1, y: 1.18, z: 1.36}
+  brightnessByStack: {x: 1, y: 1.18, z: 1.34}
+  seepageByStack: {x: 1, y: 1.42, z: 1.9}
+  dropletByStack: {x: 1, y: 1.45, z: 1.95}
+  tickIntensityByStack: {x: 1, y: 1.28, z: 1.58}
+  mistByStack: {x: 1, y: 1.38, z: 1.78}
+  criticalFlashMultiplier: 1.9
+  criticalTrailCount: 2
+  criticalBloodMultiplier: 1.72
+  criticalSparkAmount: 14
+  resetRingSize: 0.92
+  resetRingBrightness: 1.85
+  resetRingDuration: 0.22
+  enableLocalPlayerScreenAccent: 0
+  woundDimmingDuration: 0.24
+  finalDropletAmount: 2
+  woundDissolveDuration: 0.48
+  mistFadeDuration: 0.52
