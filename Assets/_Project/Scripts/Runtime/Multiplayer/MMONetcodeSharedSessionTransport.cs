@@ -4,6 +4,7 @@ using System.Text;
 using RPGClone.CharacterSelection;
 using RPGClone.Combat;
 using RPGClone.Enemies;
+using RPGClone.Inventory;
 using RPGClone.Loot;
 using RPGClone.Services;
 using Unity.Collections;
@@ -21,12 +22,15 @@ namespace RPGClone.Multiplayer
         private const int MaximumRuntimeIdentifierLength = 64;
         private const int MaximumEnemySpawnIdentifierLength = 512;
         private const int MaximumAbilityIdentifierLength = 128;
+        private const int MaximumRememberedConsumableRequests = 4096;
         private const int MaximumJsonPayloadBytes = 2 * 1024 * 1024;
         private const int RuntimeSnapshotWriterCapacity = (MaximumRuntimeIdentifierLength * 2) + 64;
         private const NetworkDelivery SharedSessionDelivery = NetworkDelivery.ReliableFragmentedSequenced;
         private const NetworkDelivery RuntimeSnapshotDelivery = NetworkDelivery.UnreliableSequenced;
         private static NetworkManager registeredManager;
         private static readonly Dictionary<ulong, string> HostCharacterIdsByClientId = new();
+        private static readonly HashSet<string> ProcessedConsumableRequestIds = new();
+        private static readonly Queue<string> ProcessedConsumableRequestOrder = new();
         private static bool applyingRemoteOperation;
         private static bool applyingSnapshot;
         private static bool applyingRemoteRuntimeSnapshot;
@@ -119,6 +123,8 @@ namespace RPGClone.Multiplayer
             registeredManager.OnClientDisconnectCallback -= OnClientDisconnected;
             registeredManager = null;
             HostCharacterIdsByClientId.Clear();
+            ProcessedConsumableRequestIds.Clear();
+            ProcessedConsumableRequestOrder.Clear();
             applyingRemoteRuntimeSnapshot = false;
             applyingRemoteEnemySnapshot = false;
         }
@@ -306,6 +312,27 @@ namespace RPGClone.Multiplayer
             {
                 NormalizeOperationTimestampsForReceiver(operation, true);
                 if (operation != null
+                    && operation.kind == MMOSharedSessionNetworkOperationKind.RequestConsumableUse)
+                {
+                    MMOConsumableUseRequest request = operation.consumableUseRequest;
+                    if (request == null
+                        || string.IsNullOrWhiteSpace(request.requestId)
+                        || request.requestId.Length > MaximumRuntimeIdentifierLength
+                        || !TryRegisterConsumableRequest(request.requestId))
+                    {
+                        Debug.LogWarning($"Rejected invalid or duplicate consumable request from client {senderClientId}.");
+                        return;
+                    }
+
+                    if (!MMOConsumableRewardAuthority.TryProcessHostRequest(request))
+                    {
+                        Debug.LogWarning($"Rejected consumable request '{request.requestId}' from client {senderClientId}.");
+                    }
+
+                    return;
+                }
+
+                if (operation != null
                     && operation.kind == MMOSharedSessionNetworkOperationKind.UpsertCorpseLootSnapshot)
                 {
                     if (!HostCharacterIdsByClientId.TryGetValue(senderClientId, out string characterId)
@@ -424,6 +451,22 @@ namespace RPGClone.Multiplayer
             HostCharacterIdsByClientId.Remove(clientId);
         }
 
+        private static bool TryRegisterConsumableRequest(string requestId)
+        {
+            if (!ProcessedConsumableRequestIds.Add(requestId))
+            {
+                return false;
+            }
+
+            ProcessedConsumableRequestOrder.Enqueue(requestId);
+            while (ProcessedConsumableRequestOrder.Count > MaximumRememberedConsumableRequests)
+            {
+                ProcessedConsumableRequestIds.Remove(ProcessedConsumableRequestOrder.Dequeue());
+            }
+
+            return true;
+        }
+
         private static bool IsOperationAllowedFromClient(ulong senderClientId, MMOSharedSessionNetworkOperation operation)
         {
             NetworkManager manager = NetworkManager.Singleton;
@@ -457,6 +500,8 @@ namespace RPGClone.Multiplayer
                     => IsSenderCorpseLootParticipant(senderClientId, operation.corpseLootSnapshot),
                 MMOSharedSessionNetworkOperationKind.PublishWorldObjectInteractionRequest
                     => IsRegisteredSenderParticipant(senderClientId, operation.worldObjectInteractionRequest?.actorCharacterId),
+                MMOSharedSessionNetworkOperationKind.RequestConsumableUse
+                    => IsRegisteredSenderParticipant(senderClientId, operation.consumableUseRequest?.characterId),
                 _ => false
             };
         }

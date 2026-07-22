@@ -367,6 +367,11 @@ namespace RPGClone.UI
 
         private static string BuildConsumableEffectText(MMOItemDefinition item)
         {
+            if (item.ExperienceRewardAmount > 0)
+            {
+                return $"Use: Grants {item.ExperienceRewardAmount} experience instantly.";
+            }
+
             List<string> effects = new();
             if (item.RestoreHealthAmount > 0)
             {

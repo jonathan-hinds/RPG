@@ -21,6 +21,7 @@ namespace RPGClone.Inventory
         [SerializeField] private MMOConsumableType consumableType = MMOConsumableType.None;
         [SerializeField, Min(0)] private int restoreHealthAmount;
         [SerializeField, Min(0)] private int restoreManaAmount;
+        [SerializeField, Min(0)] private int experienceRewardAmount;
         [SerializeField, Min(0.1f)] private float consumeDurationSeconds = 10f;
         [SerializeField] private bool requiresStationary = true;
         [Header("Equipment")]
@@ -48,6 +49,7 @@ namespace RPGClone.Inventory
         public MMOConsumableType ConsumableType => consumableType;
         public int RestoreHealthAmount => Mathf.Max(0, restoreHealthAmount);
         public int RestoreManaAmount => Mathf.Max(0, restoreManaAmount);
+        public int ExperienceRewardAmount => Mathf.Max(0, experienceRewardAmount);
         public float ConsumeDurationSeconds => Mathf.Max(0.1f, consumeDurationSeconds);
         public bool RequiresStationary => requiresStationary;
         public MMOEquipmentSlotType EquipmentSlot => equipmentSlot;
@@ -92,6 +94,7 @@ namespace RPGClone.Inventory
                 consumableType = MMOConsumableType.None;
                 restoreHealthAmount = 0;
                 restoreManaAmount = 0;
+                experienceRewardAmount = 0;
             }
         }
 
@@ -113,8 +116,35 @@ namespace RPGClone.Inventory
             consumableType = newConsumableType;
             restoreHealthAmount = Mathf.Max(0, newRestoreHealthAmount);
             restoreManaAmount = Mathf.Max(0, newRestoreManaAmount);
+            experienceRewardAmount = 0;
             consumeDurationSeconds = Mathf.Max(0.1f, newConsumeDurationSeconds);
             requiresStationary = newRequiresStationary;
+        }
+
+        public void ConfigureExperienceConsumable(
+            string newItemId,
+            string newDisplayName,
+            string newDescription,
+            MMOItemQuality newQuality,
+            int newMaxStackSize,
+            int newVendorValueCopper,
+            int newExperienceRewardAmount,
+            Sprite newIcon = null)
+        {
+            ConfigureConsumable(
+                newItemId,
+                newDisplayName,
+                newDescription,
+                newQuality,
+                newMaxStackSize,
+                newVendorValueCopper,
+                MMOConsumableType.Experience,
+                0,
+                0,
+                0.1f,
+                false,
+                newIcon);
+            experienceRewardAmount = Mathf.Max(0, newExperienceRewardAmount);
         }
 
         public void ConfigureEquipment(

@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d519e2760960a5449818f22c6c103e8d, type: 3}
+  m_Name: FrostShockVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Shaman.FrostShockVFXProfile
+  castDuration: 0.18
+  castHandEffectScale: 0.42
+  handFlashBrightness: 3.8
+  wristRibbonCount: 2
+  frostCoreSize: 0.22
+  frostCoreBrightness: 4.4
+  releaseBurstSize: 0.72
+  projectileSpeed: 72
+  projectileLength: 1.7
+  coreWidth: 0.09
+  mainBodyWidth: 0.24
+  outerGlowWidth: 0.4
+  projectileBrightness: 4.2
+  iceFragmentCount: 14
+  vaporTrailLength: 1.1
+  vaporTrailWidth: 0.32
+  snowTrailAmount: 14
+  trailFadeDuration: 0.55
+  contactFlashScale: 1.05
+  contactFlashBrightness: 5
+  mainShardCount: 10
+  mainShardSize: 0.72
+  secondaryFragmentCount: 26
+  frostExplosionScale: 1.65
+  frostCrackDensity: 6
+  shockRingSize: 2.35
+  groundFrostRadius: 1.35
+  groundSpikeCount: 7
+  impactMistAmount: 18
+  snowBurstAmount: 42
+  debuffDuration: 6
+  footIceScale: 0.78
+  footIceBrightness: 1.65
+  lowerLegFrostCoverage: 0.68
+  bodyFrostCoverage: 0.28
+  energyBandCount: 2
+  energyBandSpeed: 36
+  mistEmissionRate: 7
+  snowEmissionRate: 10
+  crackFlickerFrequency: 0.72
+  movementTrailDensity: 7
+  movementTrailLifetime: 0.85
+  movementPulseIntensity: 0.36
+  fractureDuration: 0.18
+  shatterFragmentCount: 18
+  shatterVelocity: 2.4
+  finalMistAmount: 14
+  finalSnowAmount: 22
+  frostDissolveDuration: 0.55
+  overallScale: 1
+  overallBrightness: 1
+  whiteHotColor: {r: 1, g: 1, b: 1, a: 1}
+  paleCyanColor: {r: 0.58, g: 0.96, b: 1, a: 1}
+  saturatedBlueColor: {r: 0.08, g: 0.48, b: 1, a: 1}
+  deepBlueColor: {r: 0.025, g: 0.12, b: 0.48, a: 0.95}
+  violetBlueAccent: {r: 0.32, g: 0.22, b: 0.78, a: 0.7}
+  mistColor: {r: 0.72, g: 0.9, b: 1, a: 0.48}
+  distortionStrength: 0.035
+  particleQuality: 2

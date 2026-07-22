@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using RPGClone.Combat;
 using RPGClone.Enemies;
+using RPGClone.Inventory;
 using RPGClone.Loot;
 using RPGClone.Quests;
 
@@ -23,6 +24,7 @@ namespace RPGClone.Multiplayer
         public MMOSharedRewardEvent rewardEvent;
         public MMOSharedWorldObjectSnapshot worldObjectSnapshot;
         public MMOSharedWorldObjectInteractionRequest worldObjectInteractionRequest;
+        public MMOConsumableUseRequest consumableUseRequest;
         public EnemySnapshot enemySnapshot;
         public MMOCorpseLootState corpseLootSnapshot;
         public List<MMOSharedWorldObjectSnapshot> worldObjectSnapshots = new();
@@ -45,6 +47,7 @@ namespace RPGClone.Multiplayer
         public const string UpsertWorldObjectSnapshot = "upsert_world_object_snapshot";
         public const string UpsertWorldObjectSnapshots = "upsert_world_object_snapshots";
         public const string PublishWorldObjectInteractionRequest = "publish_world_object_interaction_request";
+        public const string RequestConsumableUse = "request_consumable_use";
         public const string MarkWorldObjectInteractionRequestProcessed = "mark_world_object_interaction_request_processed";
         public const string UpsertEnemySnapshot = "upsert_enemy_snapshot";
         public const string UpsertEnemySnapshots = "upsert_enemy_snapshots";

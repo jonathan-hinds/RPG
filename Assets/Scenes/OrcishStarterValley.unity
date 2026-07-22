@@ -132581,6 +132581,9 @@ MonoBehaviour:
   displayNameOverride: Quartermaster Grakka
   title: General Goods Merchant
   stock:
+  - item: {fileID: 11400000, guid: eb7d340a3de5a2a458f7b3250453e381, type: 2}
+    quantity: 1
+    priceCopper: 0
   - item: {fileID: 11400000, guid: 64e8f12602b3d9f4e88b59c0e51d220a, type: 2}
     quantity: 1
     priceCopper: 16

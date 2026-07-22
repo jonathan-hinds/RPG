@@ -69,6 +69,59 @@ namespace RPGClone.EditorTools
             Debug.Log("Installed starter quest content: 4 chains, 12 quests, quest NPCs, world objectives, quest loot, currency rewards, and class-filtered gear rewards.");
         }
 
+        [MenuItem("Tools/RPG Clone/Quests/Install Lucky Copper Coin")]
+        public static void InstallLuckyCopperCoin()
+        {
+            if (SceneManager.GetActiveScene().path != ScenePath)
+            {
+                Debug.LogError($"Open {ScenePath} before installing the Lucky Copper Coin.");
+                return;
+            }
+
+            EnsureFolders();
+            MMOItemDefinition coin = GetOrCreateExperienceConsumable(
+                "Lucky Copper Coin",
+                "lucky_copper_coin",
+                "A lucky coin reserved for testing new abilities and equipment.",
+                1000,
+                20,
+                0);
+
+            string catalogPath = $"{ItemFolder}/Starter_Item_Catalog.asset";
+            MMOItemCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOItemCatalog>(catalogPath);
+            if (catalog == null)
+            {
+                Debug.LogError($"Starter item catalog was not found at {catalogPath}.");
+                return;
+            }
+
+            List<MMOItemDefinition> catalogItems = new(catalog.Items);
+            catalogItems.RemoveAll(item => item != null && item.ItemId == coin.ItemId);
+            catalogItems.Add(coin);
+            catalog.Configure(catalogItems);
+            EditorUtility.SetDirty(catalog);
+
+            GameObject vendorObject = GameObject.Find("Vendor - Quartermaster");
+            MMOVendorNpc vendor = vendorObject != null ? vendorObject.GetComponent<MMOVendorNpc>() : null;
+            if (vendor == null)
+            {
+                Debug.LogError("Quartermaster Grakka was not found in the active scene.");
+                return;
+            }
+
+            List<MMOVendorStockEntry> stock = new(vendor.Stock);
+            stock.RemoveAll(entry => entry?.Item != null && entry.Item.ItemId == coin.ItemId);
+            stock.Insert(0, new MMOVendorStockEntry(coin, 1, 0));
+            vendor.Configure(vendor.VendorId, vendor.DisplayName, vendor.Title, stock, vendor.BuysTrash);
+            EditorUtility.SetDirty(vendor);
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+
+            AssetDatabase.SaveAssets();
+            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+            AssetDatabase.Refresh();
+            Debug.Log("Installed Lucky Copper Coin into the starter item catalog and Quartermaster Grakka's stock.");
+        }
+
         private static void EnsureFolders()
         {
             CreateFolderIfMissing(RootFolder);
@@ -113,6 +166,13 @@ namespace RPGClone.EditorTools
 
             items.RazorcragJerky = GetOrCreateConsumable("Razorcrag Jerky", "razorcrag_jerky", "Salted trail meat from the camp stores.", MMOConsumableType.Food, 250, 0, 10f, 20, 8);
             items.SpringwaterFlask = GetOrCreateConsumable("Springwater Flask", "springwater_flask", "A stoppered flask of clean valley springwater.", MMOConsumableType.Water, 0, 250, 10f, 20, 8);
+            items.LuckyCopperCoin = GetOrCreateExperienceConsumable(
+                "Lucky Copper Coin",
+                "lucky_copper_coin",
+                "A lucky coin reserved for testing new abilities and equipment.",
+                1000,
+                20,
+                0);
 
             items.BootRewards = CreateGearSet("Trailbreaker's Boots", MMOEquipmentSlotType.Feet, 2);
             items.GloveRewards = CreateGearSet("Razorcrag Grips", MMOEquipmentSlotType.Hands, 2);
@@ -166,6 +226,34 @@ namespace RPGClone.EditorTools
             }
 
             item.ConfigureConsumable(itemId, displayName, description, MMOItemQuality.Common, maxStack, vendorValueCopper, consumableType, restoreHealth, restoreMana, durationSeconds);
+            EditorUtility.SetDirty(item);
+            return item;
+        }
+
+        private static MMOItemDefinition GetOrCreateExperienceConsumable(
+            string displayName,
+            string itemId,
+            string description,
+            int experienceReward,
+            int maxStack,
+            int vendorValueCopper)
+        {
+            string path = $"{ItemFolder}/{Sanitize(displayName)}.asset";
+            MMOItemDefinition item = AssetDatabase.LoadAssetAtPath<MMOItemDefinition>(path);
+            if (item == null)
+            {
+                item = ScriptableObject.CreateInstance<MMOItemDefinition>();
+                AssetDatabase.CreateAsset(item, path);
+            }
+
+            item.ConfigureExperienceConsumable(
+                itemId,
+                displayName,
+                description,
+                MMOItemQuality.Common,
+                maxStack,
+                vendorValueCopper,
+                experienceReward);
             EditorUtility.SetDirty(item);
             return item;
         }
@@ -522,6 +610,7 @@ namespace RPGClone.EditorTools
             EnsureQuestNpc("Quest Giver - Canyon Scout", "canyon_scout_rakka", "Canyon Scout Rakka", new Vector3(128f, 2f, 55f), new[] { quests.C2, quests.C3 }, friendlyNpcProfile);
             EnsureVendorNpc("Vendor - Quartermaster", "quartermaster_grakka", "Quartermaster Grakka", "General Goods Merchant", new Vector3(-13f, 2f, -128f), new[]
             {
+                new MMOVendorStockEntry(items.LuckyCopperCoin, 1, 0),
                 new MMOVendorStockEntry(items.RazorcragJerky, 1, 16),
                 new MMOVendorStockEntry(items.SpringwaterFlask, 1, 16),
                 new MMOVendorStockEntry(LoadItem("Recruits_Shortsword"), 1, 0),
@@ -753,6 +842,7 @@ namespace RPGClone.EditorTools
             public MMOItemDefinition WaterGourd;
             public MMOItemDefinition RazorcragJerky;
             public MMOItemDefinition SpringwaterFlask;
+            public MMOItemDefinition LuckyCopperCoin;
             public MMOItemDefinition[] BootRewards;
             public MMOItemDefinition[] GloveRewards;
             public MMOItemDefinition[] ChestRewards;
@@ -773,7 +863,8 @@ namespace RPGClone.EditorTools
                         RepairHammer,
                         WaterGourd,
                         RazorcragJerky,
-                        SpringwaterFlask
+                        SpringwaterFlask,
+                        LuckyCopperCoin
                     };
                     AddRange(items, BootRewards);
                     AddRange(items, GloveRewards);

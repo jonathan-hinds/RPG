@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f19b6985de7578844a289965931ed701, type: 3}
   m_Name: Shaman_Frost_Shock_VFX
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.MMOAbilityVfxDefinition
+  targetingPrefab: {fileID: 0}
   castingPrefab: {fileID: 0}
-  castPrefab: {fileID: 9039995209262403359, guid: 047f299dda11ab54d8902e81586e74dc, type: 3}
-  hitPrefab: {fileID: 8719763590169504030, guid: 17e3d05047c7e1d498bd69fad569e859, type: 3}
+  castPrefab: {fileID: 7964530701478386496, guid: de12bfc167da56244afb8a21248bb735, type: 3}
+  hitPrefab: {fileID: 3882560358949824125, guid: 653559f36bb25394ea475fe1a3c81886, type: 3}
   attachCastingToCaster: 1
   useHandCastingAnchors: 1
   attachHitToTarget: 1
@@ -23,5 +24,5 @@ MonoBehaviour:
   handCastingLocalOffset: {x: 0, y: 0, z: 0}
   castOriginLocalOffset: {x: 0, y: 1.18, z: 0.48}
   hitLocalOffset: {x: 0, y: 0.85, z: 0}
-  hitDelaySeconds: 0.04
+  hitDelaySeconds: 0
   castPrefabControlsHitTiming: 1

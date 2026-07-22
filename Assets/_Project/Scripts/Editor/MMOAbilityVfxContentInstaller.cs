@@ -25,6 +25,8 @@ namespace RPGClone.EditorTools
         private const string LightningBeamPrefabPath = "Assets/_Project/VFX/Lightning/Prefabs/LightningBeamVFX.prefab";
         private const string LightningImpactPrefabPath = "Assets/_Project/VFX/Lightning/Prefabs/LightningImpactVFX.prefab";
         private const string ThunderClapPrefabPath = "Assets/_Project/VFX/ThunderClap/Prefabs/ThunderClapVFX.prefab";
+        private const string FrostShockProjectilePrefabPath = "Assets/_Project/VFX/FrostShock/Prefabs/FrostShockProjectileVFX.prefab";
+        private const string FrostShockImpactPrefabPath = "Assets/_Project/VFX/FrostShock/Prefabs/FrostShockImpactVFX.prefab";
 
         [MenuItem("Tools/RPG Clone/VFX/Install Ability VFX Content")]
         public static void InstallAbilityVfxContent()
@@ -95,8 +97,10 @@ namespace RPGClone.EditorTools
                     ?? CreateBeamPrefab("Lightning_Bolt_Beam", lineMaterials["Nature"], particleMaterials["Nature"], 0.36f, 10, 0.08f, 38f, true, 0.042f, 0.36f),
                 LightningImpact = AssetDatabase.LoadAssetAtPath<GameObject>(LightningImpactPrefabPath)
                     ?? CreateBurstPrefab("Lightning_Impact", particleMaterials["Nature"], new Color(0.5f, 1f, 0.22f, 0.82f), new Color(1f, 0.96f, 0.24f, 0.58f), 0.5f, 88, 0.46f, 0.062f),
-                FrostShock = CreateBeamPrefab("Frost_Shock_Bolt", lineMaterials["Frost"], particleMaterials["Frost"], 0.22f, 7, 0.04f, 20f, true, 0.04f, 0.32f),
-                FrostImpact = CreateBurstPrefab("Frost_Impact", particleMaterials["Frost"], new Color(0.42f, 0.9f, 1f, 0.8f), new Color(0.9f, 1f, 1f, 0.52f), 0.48f, 82, 0.58f, 0.052f),
+                FrostShock = AssetDatabase.LoadAssetAtPath<GameObject>(FrostShockProjectilePrefabPath)
+                    ?? CreateBeamPrefab("Frost_Shock_Bolt", lineMaterials["Frost"], particleMaterials["Frost"], 0.22f, 7, 0.04f, 20f, true, 0.04f, 0.32f),
+                FrostImpact = AssetDatabase.LoadAssetAtPath<GameObject>(FrostShockImpactPrefabPath)
+                    ?? CreateBurstPrefab("Frost_Impact", particleMaterials["Frost"], new Color(0.42f, 0.9f, 1f, 0.8f), new Color(0.9f, 1f, 1f, 0.52f), 0.48f, 82, 0.58f, 0.052f),
                 WaterShield = AssetDatabase.LoadAssetAtPath<GameObject>(WaterShieldPrefabPath)
                     ?? CreateAuraBurstPrefab("Water_Shield_Aura", particleMaterials["Water"], new Color(0.22f, 0.66f, 1f, 0.54f), new Color(0.78f, 1f, 1f, 0.32f), 0.52f, 96, 1.05f),
 

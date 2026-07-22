@@ -79,31 +79,7 @@ namespace RPGClone.Loot
 
         public static MMOItemDefinition ResolveItem(string itemId)
         {
-            if (string.IsNullOrWhiteSpace(itemId))
-            {
-                return null;
-            }
-
-            MMOItemDefinition[] items = Resources.FindObjectsOfTypeAll<MMOItemDefinition>();
-            foreach (MMOItemDefinition item in items)
-            {
-                if (item != null && item.ItemId == itemId)
-                {
-                    return item;
-                }
-            }
-
-            MMOItemCatalog[] catalogs = Resources.FindObjectsOfTypeAll<MMOItemCatalog>();
-            foreach (MMOItemCatalog catalog in catalogs)
-            {
-                MMOItemDefinition item = catalog != null ? catalog.FindById(itemId) : null;
-                if (item != null)
-                {
-                    return item;
-                }
-            }
-
-            return null;
+            return MMOItemCatalog.FindLoadedById(itemId);
         }
 
         private static MMOPersonalLootState ToPersonalLootState(MMOPlayerParticipant recipient, IEnumerable<MMOItemStack> stacks)

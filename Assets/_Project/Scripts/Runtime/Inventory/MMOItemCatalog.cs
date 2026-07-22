@@ -32,5 +32,32 @@ namespace RPGClone.Inventory
 
             return null;
         }
+
+        public static MMOItemDefinition FindLoadedById(string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+            {
+                return null;
+            }
+
+            foreach (MMOItemDefinition item in Resources.FindObjectsOfTypeAll<MMOItemDefinition>())
+            {
+                if (item != null && item.ItemId == itemId)
+                {
+                    return item;
+                }
+            }
+
+            foreach (MMOItemCatalog catalog in Resources.FindObjectsOfTypeAll<MMOItemCatalog>())
+            {
+                MMOItemDefinition item = catalog != null ? catalog.FindById(itemId) : null;
+                if (item != null)
+                {
+                    return item;
+                }
+            }
+
+            return null;
+        }
     }
 }

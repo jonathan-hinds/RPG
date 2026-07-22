@@ -173,7 +173,7 @@ namespace RPGClone.Vfx
                     }
                 }
 
-                GameObject instance = Instantiate(definition.CastPrefab, sourcePosition, rotation, vfxRoot);
+                GameObject instance = MMOAbilityVfxPool.Spawn(definition.CastPrefab, sourcePosition, rotation, vfxRoot);
                 InitializeInstance(instance, ability, definition, target, sourcePosition, targetPosition, hasGroundTarget, RequestHit);
             }
 
@@ -220,7 +220,7 @@ namespace RPGClone.Vfx
             Transform parent = definition.AttachHitToTarget && targetTransform != null ? targetTransform : vfxRoot;
             Vector3 position = ResolveTargetPosition(target, targetPosition, hasGroundTarget, definition);
             Quaternion rotation = hasGroundTarget ? Quaternion.identity : transform.rotation;
-            GameObject instance = Instantiate(definition.HitPrefab, position, rotation, parent);
+            GameObject instance = MMOAbilityVfxPool.Spawn(definition.HitPrefab, position, rotation, parent);
             InitializeInstance(instance, ability, definition, target, anchors != null ? anchors.ResolveCastOriginPosition(definition) : transform.position, position, hasGroundTarget, null);
         }
 
@@ -316,7 +316,7 @@ namespace RPGClone.Vfx
             Transform parent,
             Vector3 position)
         {
-            GameObject instance = Instantiate(definition.CastingPrefab, position, transform.rotation, parent);
+            GameObject instance = MMOAbilityVfxPool.Spawn(definition.CastingPrefab, position, transform.rotation, parent);
             activeCastingInstances.Add(instance);
             bool hasGroundTarget = abilitySystem != null && abilitySystem.CurrentCastHasGroundTarget;
             Vector3 targetPosition = hasGroundTarget
@@ -362,7 +362,7 @@ namespace RPGClone.Vfx
                 }
                 else
                 {
-                    Destroy(activeCastingInstance);
+                    MMOAbilityVfxPool.Release(activeCastingInstance);
                 }
             }
 

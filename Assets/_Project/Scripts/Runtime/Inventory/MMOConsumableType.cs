@@ -4,6 +4,7 @@ namespace RPGClone.Inventory
     {
         None,
         Food,
-        Water
+        Water,
+        Experience
     }
 }

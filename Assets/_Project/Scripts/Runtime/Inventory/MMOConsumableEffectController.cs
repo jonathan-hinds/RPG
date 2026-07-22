@@ -27,6 +27,11 @@ namespace RPGClone.Inventory
                 return false;
             }
 
+            if (item.ConsumableType == MMOConsumableType.Experience)
+            {
+                return MMOConsumableRewardAuthority.TryConsumeExperience(item, identity);
+            }
+
             if (buffController == null)
             {
                 buffController = gameObject.AddComponent<MMOCharacterBuffController>();
