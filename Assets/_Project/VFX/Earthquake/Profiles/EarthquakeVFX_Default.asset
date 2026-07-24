@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 725d9aad4288ea5409bd5341747a17bb, type: 3}
+  m_Name: EarthquakeVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Shaman.EarthquakeVFXProfile
+  radius: 6
+  overallScale: 1
+  waveSpeed: 11.5
+  ringIrregularity: 0.18
+  groundLayerOffset: 0.035
+  anticipationDuration: 0.14
+  settleDuration: 0.82
+  aftermathDuration: 1.45
+  waveTimingVariation: 0.12
+  groundSectionCount: 30
+  liftHeight: 0.48
+  sinkDepth: 0.08
+  tiltAmount: 17
+  cubeSizeRange: {x: 0.45, y: 1.35}
+  cubeLiftHeightRange: {x: 0.18, y: 0.58}
+  clusterDensity: 0.68
+  terrainTintStrength: 0.78
+  grassTopSupport: 1
+  crackCount: 7
+  crackWidth: 0.82
+  branchingAmount: 0.72
+  crackExpansionSpeed: 0.7
+  crackDarkness: 0.82
+  warmHighlightStrength: 0.08
+  crackFadeDuration: 1.25
+  dirtRingWidth: 0.72
+  dirtHorizontalForce: 8.2
+  dirtVerticalForceLimit: 0.52
+  dirtClumpCount: 48
+  fineDirtAmount: 64
+  dirtArcBreakup: 0.38
+  dirtLifetime: 1.15
+  leadingEdgeWidth: 0.28
+  mainRingWidth: 1.15
+  dustGroundHeight: 0.18
+  dustDensity: 92
+  dustOpacity: 0.64
+  dustArcCount: 9
+  wakeAmount: 56
+  dustLifetime: 1.65
+  smokeRingWidth: 1.35
+  smokeHorizontalSpeed: 5.4
+  smokeCurlAmount: 0.42
+  smokeMaximumHeight: 0.62
+  smokeDensity: 42
+  smokeFadeDuration: 1.9
+  rockCount: 24
+  rockHorizontalVelocity: 7.2
+  rockMaximumVerticalVelocity: 0.9
+  rockBounceAmount: 0.24
+  rockLifetime: 1.35
+  localCrackScale: 0.9
+  localDustRingSize: 1.35
+  localRockCount: 7
+  impactPulseStrength: 1.2
+  overallBrightness: 1
+  dirtColor: {r: 0.5, g: 0.31, b: 0.16, a: 0.95}
+  dustColor: {r: 0.76, g: 0.58, b: 0.36, a: 0.64}
+  smokeColor: {r: 0.27, g: 0.24, b: 0.22, a: 0.48}
+  stoneColor: {r: 0.46, g: 0.45, b: 0.42, a: 0.96}
+  impactColor: {r: 1, g: 0.82, b: 0.43, a: 0.78}
+  distortionStrength: 0.16
+  particleQuality: 2
+  distantReductionStart: 24
+  cullDistance: 58
+  minimumDistantDensity: 0.32

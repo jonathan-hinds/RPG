@@ -12,16 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f19b6985de7578844a289965931ed701, type: 3}
   m_Name: Shaman_Earthquake_VFX
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.MMOAbilityVfxDefinition
+  targetingPrefab: {fileID: 0}
   castingPrefab: {fileID: 0}
-  castPrefab: {fileID: 0}
-  hitPrefab: {fileID: 8358852631036614537, guid: e35ec1538de34eb4b9c775ea95cddfe0, type: 3}
-  attachCastingToCaster: 1
-  useHandCastingAnchors: 1
+  castPrefab: {fileID: 7244835980849846062, guid: 4752f4e699b7ede4aa5bdabae04d80cd, type: 3}
+  hitPrefab: {fileID: 0}
+  attachCastingToCaster: 0
+  useHandCastingAnchors: 0
   attachHitToTarget: 0
-  alignCastPrefabToTarget: 1
-  castingLocalOffset: {x: 0, y: 1.15, z: 0.42}
+  alignCastPrefabToTarget: 0
+  castingLocalOffset: {x: 0, y: 0, z: 0}
   handCastingLocalOffset: {x: 0, y: 0, z: 0}
-  castOriginLocalOffset: {x: 0, y: 1.18, z: 0.48}
-  hitLocalOffset: {x: 0, y: 0.85, z: 0}
-  hitDelaySeconds: 0.02
-  castPrefabControlsHitTiming: 0
+  castOriginLocalOffset: {x: 0, y: 0, z: 0}
+  hitLocalOffset: {x: 0, y: 0, z: 0}
+  hitDelaySeconds: 0
+  castPrefabControlsHitTiming: 1
