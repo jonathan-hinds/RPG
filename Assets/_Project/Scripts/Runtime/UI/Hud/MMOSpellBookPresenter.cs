@@ -133,15 +133,18 @@ namespace RPGClone.UI
             background.color = new Color(0.08f, 0.065f, 0.05f, 0.95f);
 
             Button button = buttonObject.AddComponent<Button>();
-            button.onClick.AddListener(() => MMOActionBarDragState.EndDrag());
+            button.onClick.AddListener(() => MMOSlotDragState.EndDrag());
 
             Image icon = MMOUiFactory.CreateImage("Icon", buttonObject.transform, ability.Icon != null ? Color.white : new Color(0.18f, 0.12f, 0.055f, 1f), false);
-            icon.sprite = ability.Icon;
+            icon.sprite = null;
+            icon.color = new Color(1f, 1f, 1f, 0.001f);
             icon.rectTransform.anchorMin = new Vector2(0f, 0.5f);
             icon.rectTransform.anchorMax = new Vector2(0f, 0.5f);
             icon.rectTransform.pivot = new Vector2(0f, 0.5f);
             icon.rectTransform.anchoredPosition = new Vector2(5f, 0f);
             icon.rectTransform.sizeDelta = new Vector2(38f, 38f);
+            MMOSlotView sharedSlotView = MMOSlotView.Attach(icon.gameObject);
+            sharedSlotView.Present(MMOAbilitySlotAdapter.Present(ability));
 
             Text label = MMOUiFactory.CreateText("Name", buttonObject.transform, 12, FontStyle.Bold, TextAnchor.MiddleLeft);
             label.text = ability.DisplayName;
@@ -151,7 +154,7 @@ namespace RPGClone.UI
             label.rectTransform.offsetMax = new Vector2(-8f, -5f);
 
             MMOSpellBookAbilityView dragView = buttonObject.AddComponent<MMOSpellBookAbilityView>();
-            dragView.Configure(ability);
+            dragView.Configure(ability, sharedSlotView);
 
             MMOAbilityTooltipTrigger tooltipTrigger = buttonObject.AddComponent<MMOAbilityTooltipTrigger>();
             tooltipTrigger.Configure(ability);

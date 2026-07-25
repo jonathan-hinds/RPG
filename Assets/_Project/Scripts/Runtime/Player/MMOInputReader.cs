@@ -105,7 +105,7 @@ namespace RPGClone.Player
 
         private static bool IsGameplayMouseInputBlocked()
         {
-            if (MMOActionBarDragState.BlocksGameplayMouseInput)
+            if (MMOSlotDragState.BlocksGameplayMouseInput)
             {
                 return true;
             }

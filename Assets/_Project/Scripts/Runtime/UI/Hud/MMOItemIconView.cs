@@ -24,33 +24,12 @@ namespace RPGClone.UI
                 return;
             }
 
-            bool restricted = IsRestrictedForLocalPlayer(item);
-            Color iconTint = restricted ? RestrictedTint : Color.white;
-            Image icon = MMOUiFactory.CreateImage("Item Icon", slot, iconTint, false);
-            icon.sprite = item.Icon;
-            icon.preserveAspect = true;
-            icon.gameObject.SetActive(item.Icon != null);
-            StretchWithInset(icon.rectTransform, inset);
+            MMOSlotView view = MMOSlotView.Attach(slot.gameObject);
+            view.Present(MMOItemSlotAdapter.Present(item, quantity, selected));
 
-            if (item.Icon == null)
-            {
-                Text placeholder = MMOUiFactory.CreateText("Icon Placeholder", slot, 16, FontStyle.Bold, TextAnchor.MiddleCenter);
-                placeholder.text = BuildFallbackLabel(item);
-                placeholder.color = restricted ? RestrictedTint : GetQualityTextColor(item.Quality);
-                MMOUiFactory.Stretch(placeholder.rectTransform);
-                placeholder.rectTransform.offsetMin = new Vector2(inset, inset);
-                placeholder.rectTransform.offsetMax = new Vector2(-inset, -inset);
-            }
-
-            AddFrame(slot.gameObject, item.Quality, selected);
             if (bindTooltip)
             {
                 MMOItemTooltipTrigger.Bind(slot.gameObject, item);
-            }
-
-            if (quantity > 1)
-            {
-                AddQuantity(slot, quantity);
             }
         }
 
@@ -100,38 +79,7 @@ namespace RPGClone.UI
             };
         }
 
-        private static void AddFrame(GameObject slot, MMOItemQuality quality, bool selected)
-        {
-            Outline outline = slot.GetComponent<Outline>();
-            if (outline == null)
-            {
-                outline = slot.AddComponent<Outline>();
-            }
-
-            outline.effectColor = selected ? new Color(1f, 0.82f, 0.24f, 1f) : GetQualityTextColor(quality);
-            outline.effectDistance = selected ? new Vector2(2f, -2f) : new Vector2(1f, -1f);
-        }
-
-        private static void AddQuantity(RectTransform slot, int quantity)
-        {
-            Text quantityText = MMOUiFactory.CreateText("Quantity", slot, 11, FontStyle.Bold, TextAnchor.LowerRight);
-            quantityText.text = quantity.ToString();
-            quantityText.color = Color.white;
-            quantityText.raycastTarget = false;
-            MMOUiFactory.Stretch(quantityText.rectTransform);
-            quantityText.rectTransform.offsetMin = new Vector2(4f, 2f);
-            quantityText.rectTransform.offsetMax = new Vector2(-4f, -2f);
-        }
-
-        private static void StretchWithInset(RectTransform rectTransform, float inset)
-        {
-            rectTransform.anchorMin = Vector2.zero;
-            rectTransform.anchorMax = Vector2.one;
-            rectTransform.offsetMin = new Vector2(inset, inset);
-            rectTransform.offsetMax = new Vector2(-inset, -inset);
-        }
-
-        private static string BuildFallbackLabel(MMOItemDefinition item)
+        public static string GetFallbackLabel(MMOItemDefinition item)
         {
             string displayName = item.DisplayName;
             if (string.IsNullOrWhiteSpace(displayName))

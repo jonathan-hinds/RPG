@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 
 namespace RPGClone.UI
 {
-    public sealed class MMOInventoryItemUseTrigger : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+    public sealed class MMOInventoryItemUseTrigger : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IMMOSlotDropTarget
     {
         private MMOInventoryContainer inventory;
         private int slotIndex;
@@ -34,8 +34,8 @@ namespace RPGClone.UI
             }
 
             MMOGameTooltipPresenter.HideTooltip();
-            MMOActionBarDragState.BeginDrag(
-                new MMOActionBarDragPayload(stack.Item, inventory, slotIndex),
+            MMOSlotDragState.BeginDrag(
+                MMOSlotDragPayload.InventoryItem(stack.Item, inventory, slotIndex, stack.Quantity),
                 eventData,
                 transform,
                 stack.Item.DisplayName,
@@ -44,19 +44,20 @@ namespace RPGClone.UI
 
         public void OnDrag(PointerEventData eventData)
         {
-            MMOActionBarDragState.UpdateDrag(eventData);
+            MMOSlotDragState.UpdateDrag(eventData);
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            MMOActionBarDragState.EndDrag();
+            MMOSlotDragState.EndDrag();
         }
 
         public void OnDrop(PointerEventData eventData)
         {
-            MMOActionBarDragPayload payload = MMOActionBarDragState.Current;
+            MMOSlotDragPayload payload = MMOSlotDragState.Current;
             if (inventory == null)
             {
+                MMOSlotDragState.EndDrag();
                 return;
             }
 
@@ -69,7 +70,22 @@ namespace RPGClone.UI
                 payload.SourceEquipment.TryUnequipToInventory(inventory, payload.SourceEquipmentSlot, slotIndex);
             }
 
-            MMOActionBarDragState.EndDrag();
+            MMOSlotDragState.EndDrag();
+        }
+
+        public MMOSlotDropState EvaluateDrop(MMOSlotDragPayload payload)
+        {
+            if (inventory == null || !payload.IsValid)
+            {
+                return MMOSlotDropState.Invalid;
+            }
+
+            if (payload.FromInventory && payload.SourceInventory == inventory)
+            {
+                return MMOSlotDropState.Valid;
+            }
+
+            return payload.FromEquipment ? MMOSlotDropState.Valid : MMOSlotDropState.Invalid;
         }
     }
 }

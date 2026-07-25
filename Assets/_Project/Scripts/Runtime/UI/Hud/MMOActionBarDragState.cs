@@ -1,85 +1,28 @@
-using RPGClone.Abilities;
-using RPGClone.Inventory;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace RPGClone.UI
 {
-    public readonly struct MMOActionBarDragPayload
-    {
-        public readonly MMOAbilityDefinition Ability;
-        public readonly MMOItemDefinition Item;
-        public readonly MMOActionBarPresenter SourceActionBar;
-        public readonly MMOInventoryContainer SourceInventory;
-        public readonly MMOCharacterEquipment SourceEquipment;
-        public readonly MMOEquipmentSlotType SourceEquipmentSlot;
-        public readonly int SourceSlotIndex;
-
-        public bool IsValid => Ability != null || Item != null;
-        public bool FromActionBar => SourceActionBar != null && SourceSlotIndex >= 0;
-        public bool FromInventory => SourceInventory != null && SourceSlotIndex >= 0;
-        public bool FromEquipment => SourceEquipment != null && Item != null;
-        public MMOActionBarSlotBindingType BindingType => Ability != null
-            ? MMOActionBarSlotBindingType.Ability
-            : Item != null
-                ? MMOActionBarSlotBindingType.Item
-                : MMOActionBarSlotBindingType.Empty;
-
-        public MMOActionBarDragPayload(MMOAbilityDefinition ability, MMOActionBarPresenter sourceActionBar = null, int sourceSlotIndex = -1)
-        {
-            Ability = ability;
-            Item = null;
-            SourceActionBar = sourceActionBar;
-            SourceInventory = null;
-            SourceEquipment = null;
-            SourceEquipmentSlot = default;
-            SourceSlotIndex = sourceSlotIndex;
-        }
-
-        public MMOActionBarDragPayload(MMOItemDefinition item, MMOInventoryContainer sourceInventory = null, int sourceSlotIndex = -1)
-        {
-            Ability = null;
-            Item = item;
-            SourceActionBar = null;
-            SourceInventory = sourceInventory;
-            SourceEquipment = null;
-            SourceEquipmentSlot = default;
-            SourceSlotIndex = sourceSlotIndex;
-        }
-
-        public MMOActionBarDragPayload(MMOItemDefinition item, MMOActionBarPresenter sourceActionBar, int sourceSlotIndex)
-        {
-            Ability = null;
-            Item = item;
-            SourceActionBar = sourceActionBar;
-            SourceInventory = null;
-            SourceEquipment = null;
-            SourceEquipmentSlot = default;
-            SourceSlotIndex = sourceSlotIndex;
-        }
-
-        public MMOActionBarDragPayload(MMOItemDefinition item, MMOCharacterEquipment sourceEquipment, MMOEquipmentSlotType sourceEquipmentSlot)
-        {
-            Ability = null;
-            Item = item;
-            SourceActionBar = null;
-            SourceInventory = null;
-            SourceEquipment = sourceEquipment;
-            SourceEquipmentSlot = sourceEquipmentSlot;
-            SourceSlotIndex = -1;
-        }
-    }
-
-    public static class MMOActionBarDragState
+    /// <summary>
+    /// One shared drag session for every slot content category.
+    /// Payload ownership stays at the source until a destination gameplay system accepts it.
+    /// </summary>
+    public static class MMOSlotDragState
     {
         private static RectTransform dragVisual;
+        private static MMOSlotView sourceView;
 
-        public static MMOActionBarDragPayload Current { get; private set; }
+        public static MMOSlotDragPayload Current { get; private set; }
         public static bool HasPayload => Current.IsValid;
         public static bool BlocksGameplayMouseInput => HasPayload;
 
-        public static bool BeginDrag(MMOActionBarDragPayload payload, PointerEventData eventData, Transform owner, string label, Sprite icon)
+        public static bool BeginDrag(
+            MMOSlotDragPayload payload,
+            PointerEventData eventData,
+            Transform owner,
+            string fallbackLabel,
+            Sprite icon)
         {
             if (!payload.IsValid)
             {
@@ -88,23 +31,25 @@ namespace RPGClone.UI
 
             EndDrag();
             Current = payload;
-            CreateDragVisual(payload, owner, label, icon);
+            sourceView = owner != null ? owner.GetComponent<MMOSlotView>() : null;
+            sourceView?.SetDragging(true);
+            CreateDragVisual(payload, owner, fallbackLabel, icon);
             UpdateDrag(eventData);
             return true;
         }
 
         public static void UpdateDrag(PointerEventData eventData)
         {
-            if (dragVisual == null || eventData == null)
+            if (dragVisual != null && eventData != null)
             {
-                return;
+                dragVisual.position = eventData.position;
             }
-
-            dragVisual.position = eventData.position;
         }
 
         public static void EndDrag()
         {
+            sourceView?.SetDragging(false);
+            sourceView = null;
             Current = default;
             if (dragVisual == null)
             {
@@ -123,42 +68,56 @@ namespace RPGClone.UI
             dragVisual = null;
         }
 
-        private static void CreateDragVisual(MMOActionBarDragPayload payload, Transform owner, string label, Sprite icon)
+        private static void CreateDragVisual(
+            MMOSlotDragPayload payload,
+            Transform owner,
+            string fallbackLabel,
+            Sprite icon)
         {
             Canvas canvas = owner != null ? owner.GetComponentInParent<Canvas>() : null;
             Transform parent = canvas != null ? canvas.transform : owner;
-            GameObject visualObject = new("Dragged Action", typeof(RectTransform));
+            GameObject visualObject = new("Dragged Slot Content", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
             visualObject.transform.SetParent(parent, false);
             visualObject.transform.SetAsLastSibling();
 
             dragVisual = (RectTransform)visualObject.transform;
-            dragVisual.sizeDelta = new Vector2(52f, 52f);
+            dragVisual.sizeDelta = new Vector2(54f, 54f);
 
-            CanvasGroup group = visualObject.AddComponent<CanvasGroup>();
+            CanvasGroup group = visualObject.GetComponent<CanvasGroup>();
             group.blocksRaycasts = false;
-            group.alpha = 0.82f;
+            group.interactable = false;
+            group.alpha = 0.84f;
 
-            Image background = visualObject.AddComponent<Image>();
-            background.color = new Color(0.02f, 0.018f, 0.014f, 0.94f);
-            background.raycastTarget = false;
+            Image raycastImage = visualObject.GetComponent<Image>();
+            raycastImage.color = new Color(1f, 1f, 1f, 0.001f);
+            raycastImage.raycastTarget = false;
 
-            if (icon != null)
-            {
-                Color iconTint = payload.Item != null ? MMOItemIconView.GetIconTint(payload.Item) : Color.white;
-                Image iconImage = MMOUiFactory.CreateImage("Icon", dragVisual, iconTint, false);
-                iconImage.sprite = icon;
-                MMOUiFactory.Stretch(iconImage.rectTransform);
-            }
+            Image shadow = MMOUiFactory.CreateImage(
+                "Drag Shadow",
+                dragVisual,
+                new Color(0f, 0f, 0f, 0.34f),
+                false);
+            shadow.sprite = MMOSlotSkin.DragShadow;
+            shadow.preserveAspect = false;
+            MMOUiFactory.Stretch(shadow.rectTransform);
+            shadow.rectTransform.offsetMin = new Vector2(3f, -5f);
+            shadow.rectTransform.offsetMax = new Vector2(7f, -1f);
+            shadow.transform.SetAsFirstSibling();
 
-            Text text = MMOUiFactory.CreateText("Label", dragVisual, 9, FontStyle.Bold, TextAnchor.MiddleCenter);
-            text.text = Shorten(label, 10);
-            text.color = payload.Item != null && icon == null
-                ? MMOItemIconView.GetIconTint(payload.Item)
-                : Color.white;
-            text.rectTransform.anchorMin = Vector2.zero;
-            text.rectTransform.anchorMax = Vector2.one;
-            text.rectTransform.offsetMin = new Vector2(3f, 5f);
-            text.rectTransform.offsetMax = new Vector2(-3f, -3f);
+            MMOSlotView slotView = MMOSlotView.Attach(visualObject);
+            shadow.transform.SetAsFirstSibling();
+            string quantity = payload.Quantity > 1 ? payload.Quantity.ToString() : null;
+            string fallback = icon == null ? Shorten(fallbackLabel, 8) : quantity;
+            Color iconTint = payload.Item != null ? MMOItemIconView.GetIconTint(payload.Item) : Color.white;
+            Color borderTint = payload.Item != null
+                ? MMOItemIconView.GetQualityTextColor(payload.Item.Quality)
+                : Color.clear;
+            slotView.Present(new MMOSlotPresentation(
+                icon: icon,
+                primaryText: icon != null ? fallback : null,
+                centerText: icon == null ? fallback : null,
+                iconTint: iconTint,
+                borderTint: borderTint));
         }
 
         private static string Shorten(string value, int maxLength)
@@ -169,6 +128,36 @@ namespace RPGClone.UI
             }
 
             return value.Length <= maxLength ? value : value[..maxLength];
+        }
+    }
+
+    /// <summary>
+    /// Compatibility bridge for existing integrations. New code should use MMOSlotDragState.
+    /// </summary>
+    public static class MMOActionBarDragState
+    {
+        public static MMOSlotDragPayload Current => MMOSlotDragState.Current;
+        public static bool HasPayload => MMOSlotDragState.HasPayload;
+        public static bool BlocksGameplayMouseInput => MMOSlotDragState.BlocksGameplayMouseInput;
+
+        public static bool BeginDrag(
+            MMOSlotDragPayload payload,
+            PointerEventData eventData,
+            Transform owner,
+            string label,
+            Sprite icon)
+        {
+            return MMOSlotDragState.BeginDrag(payload, eventData, owner, label, icon);
+        }
+
+        public static void UpdateDrag(PointerEventData eventData)
+        {
+            MMOSlotDragState.UpdateDrag(eventData);
+        }
+
+        public static void EndDrag()
+        {
+            MMOSlotDragState.EndDrag();
         }
     }
 }

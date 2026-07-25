@@ -7,10 +7,12 @@ namespace RPGClone.UI
     public sealed class MMOSpellBookAbilityView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         private MMOAbilityDefinition ability;
+        private MMOSlotView sourceSlotView;
 
-        public void Configure(MMOAbilityDefinition newAbility)
+        public void Configure(MMOAbilityDefinition newAbility, MMOSlotView newSourceSlotView = null)
         {
             ability = newAbility;
+            sourceSlotView = newSourceSlotView;
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -21,22 +23,22 @@ namespace RPGClone.UI
             }
 
             MMOAbilityTooltipPresenter.HideAbility(ability);
-            MMOActionBarDragState.BeginDrag(
-                new MMOActionBarDragPayload(ability),
+            MMOSlotDragState.BeginDrag(
+                MMOSlotDragPayload.AbilityBinding(ability),
                 eventData,
-                transform,
+                sourceSlotView != null ? sourceSlotView.transform : transform,
                 ability.DisplayName,
                 ability.Icon);
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            MMOActionBarDragState.UpdateDrag(eventData);
+            MMOSlotDragState.UpdateDrag(eventData);
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            MMOActionBarDragState.EndDrag();
+            MMOSlotDragState.EndDrag();
         }
     }
 }

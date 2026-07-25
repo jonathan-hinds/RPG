@@ -315,9 +315,8 @@ namespace RPGClone.UI
                 : new Vector2(0f, -localIndex * (EquipmentSlotSize.y + EquipmentSlotSpacing));
             rectTransform.sizeDelta = horizontal ? WeaponSlotSize : EquipmentSlotSize;
 
-            Outline outline = slot.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.42f, 0.35f, 0.23f, 0.9f);
-            outline.effectDistance = new Vector2(1f, -1f);
+            MMOSlotView sharedSlotView = MMOSlotView.Attach(slot.gameObject);
+            sharedSlotView.Present(MMOSlotPresentation.Empty(MMOSlotSkin.DefaultCategorySilhouette));
 
             Text label = MMOUiFactory.CreateText("Label", rectTransform, 10, FontStyle.Bold, TextAnchor.MiddleCenter);
             MMOItemDefinition equippedItem = equipment != null ? equipment.GetEquippedItem(slotType) : null;

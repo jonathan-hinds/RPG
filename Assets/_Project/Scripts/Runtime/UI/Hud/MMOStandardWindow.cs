@@ -96,6 +96,7 @@ namespace RPGClone.UI
 
             ResolveReferences();
             EnsureFallbackVisuals();
+            MMOPanelSkin.ApplyStandardPanel(gameObject);
             RegisterCloseButton();
             SetTitle(title);
         }
@@ -208,6 +209,7 @@ namespace RPGClone.UI
                 return;
             }
 
+            MMOPanelSkin.ConfigureCloseButton(closeButton);
             closeButton.onClick.RemoveListener(RequestClose);
             closeButton.onClick.AddListener(RequestClose);
         }

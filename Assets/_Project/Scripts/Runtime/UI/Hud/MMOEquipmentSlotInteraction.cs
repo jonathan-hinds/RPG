@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 
 namespace RPGClone.UI
 {
-    public sealed class MMOEquipmentSlotInteraction : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+    public sealed class MMOEquipmentSlotInteraction : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IMMOSlotDropTarget
     {
         private MMOCharacterEquipment equipment;
         private MMOInventoryContainer inventory;
@@ -36,8 +36,8 @@ namespace RPGClone.UI
             }
 
             MMOGameTooltipPresenter.HideTooltip();
-            MMOActionBarDragState.BeginDrag(
-                new MMOActionBarDragPayload(item, equipment, slotType),
+            MMOSlotDragState.BeginDrag(
+                MMOSlotDragPayload.EquipmentItem(item, equipment, slotType),
                 eventData,
                 transform,
                 item.DisplayName,
@@ -46,23 +46,34 @@ namespace RPGClone.UI
 
         public void OnDrag(PointerEventData eventData)
         {
-            MMOActionBarDragState.UpdateDrag(eventData);
+            MMOSlotDragState.UpdateDrag(eventData);
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            MMOActionBarDragState.EndDrag();
+            MMOSlotDragState.EndDrag();
         }
 
         public void OnDrop(PointerEventData eventData)
         {
-            MMOActionBarDragPayload payload = MMOActionBarDragState.Current;
+            MMOSlotDragPayload payload = MMOSlotDragState.Current;
             if (payload.FromInventory)
             {
                 equipment?.TryEquipFromInventory(payload.SourceInventory, payload.SourceSlotIndex);
             }
 
-            MMOActionBarDragState.EndDrag();
+            MMOSlotDragState.EndDrag();
+        }
+
+        public MMOSlotDropState EvaluateDrop(MMOSlotDragPayload payload)
+        {
+            return payload.FromInventory
+                && payload.Item != null
+                && equipment != null
+                && payload.Item.EquipmentSlot == slotType
+                && equipment.CanEquip(payload.Item)
+                ? MMOSlotDropState.Valid
+                : MMOSlotDropState.Invalid;
         }
     }
 }

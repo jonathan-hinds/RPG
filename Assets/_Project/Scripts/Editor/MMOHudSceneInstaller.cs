@@ -699,7 +699,7 @@ namespace RPGClone.EditorTools
             MMOTargetSelectionController selectionController,
             MMOAbilityDefinition autoAttackAbility)
         {
-            Transform bottomHud = canvas.Find("Bottom HUD");
+            Transform bottomHud = EnsureBottomHudRoot(canvas);
             Transform existing = bottomHud != null ? bottomHud.Find("Action Bar") : null;
             if (existing == null)
             {
@@ -775,8 +775,8 @@ namespace RPGClone.EditorTools
             MMOQuestLogPresenter questLogPanel,
             MMOSocialWindowPresenter socialPanel)
         {
-            Transform existing = canvas.Find("Bottom HUD");
-            GameObject bottomHudObject = existing != null ? existing.gameObject : new GameObject("Bottom HUD", typeof(RectTransform));
+            Transform existing = EnsureBottomHudRoot(canvas);
+            GameObject bottomHudObject = existing.gameObject;
             bottomHudObject.transform.SetParent(canvas, false);
             bottomHudObject.SetActive(true);
 
@@ -839,7 +839,21 @@ namespace RPGClone.EditorTools
         private static MMOInventoryPresenter EnsureInventoryPanel(Transform canvas, MMOInventoryContainer inventory)
         {
             Transform existing = canvas.Find("Inventory Panel");
-            GameObject panelObject = existing != null ? existing.gameObject : new GameObject("Inventory Panel", typeof(RectTransform));
+            GameObject panelObject;
+            if (existing != null)
+            {
+                panelObject = existing.gameObject;
+            }
+            else
+            {
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    MMOHudLayoutPrefabAuthoring.InventoryPanelPrefabPath);
+                panelObject = prefab != null
+                    ? (GameObject)PrefabUtility.InstantiatePrefab(prefab, canvas)
+                    : new GameObject("Inventory Panel", typeof(RectTransform));
+            }
+
+            panelObject.name = "Inventory Panel";
             panelObject.transform.SetParent(canvas, false);
 
             RectTransform rectTransform = (RectTransform)panelObject.transform;
@@ -935,6 +949,24 @@ namespace RPGClone.EditorTools
             panelObject.SetActive(false);
             EditorUtility.SetDirty(presenter);
             return presenter;
+        }
+
+        private static Transform EnsureBottomHudRoot(Transform canvas)
+        {
+            Transform existing = canvas.Find("Bottom HUD");
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                MMOHudLayoutPrefabAuthoring.BottomHudPrefabPath);
+            GameObject instance = prefab != null
+                ? (GameObject)PrefabUtility.InstantiatePrefab(prefab, canvas)
+                : new GameObject("Bottom HUD", typeof(RectTransform));
+            instance.name = "Bottom HUD";
+            instance.transform.SetParent(canvas, false);
+            return instance.transform;
         }
 
         private static MMOSocialWindowPresenter EnsureSocialPanel(Transform canvas)

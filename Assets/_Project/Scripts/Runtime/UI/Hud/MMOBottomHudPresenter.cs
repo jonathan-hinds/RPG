@@ -83,49 +83,60 @@ namespace RPGClone.UI
 
         private void BuildIfNeeded()
         {
+            bool hasAuthoredLayout = transform.childCount > 0;
             RectTransform root = (RectTransform)transform;
-            root.anchorMin = new Vector2(0.5f, 0f);
-            root.anchorMax = new Vector2(0.5f, 0f);
-            root.pivot = new Vector2(0.5f, 0f);
-            root.anchoredPosition = new Vector2(0f, 18f);
-            root.sizeDelta = new Vector2(1080f, 96f);
-
-            Image background = gameObject.GetComponent<Image>();
-            if (background == null)
+            if (root.sizeDelta.x <= 0f || root.sizeDelta.y <= 0f)
             {
-                background = gameObject.AddComponent<Image>();
+                root.anchorMin = new Vector2(0.5f, 0f);
+                root.anchorMax = new Vector2(0.5f, 0f);
+                root.pivot = new Vector2(0.5f, 0f);
+                root.anchoredPosition = new Vector2(0f, 18f);
+                root.sizeDelta = new Vector2(1080f, 96f);
             }
 
-            background.color = new Color(0.024f, 0.022f, 0.02f, 0.86f);
+            if (!hasAuthoredLayout)
+            {
+                MMOPanelSkin.ApplyBottomHud(gameObject);
+            }
+
             ResolveSocialPanel();
 
             if (menuButtons == null)
             {
                 Transform existing = transform.Find("Menu Buttons");
-                menuButtons = existing != null ? (RectTransform)existing : MMOUiFactory.CreateRect("Menu Buttons", transform);
-                menuButtons.anchorMin = new Vector2(1f, 0.5f);
-                menuButtons.anchorMax = new Vector2(1f, 0.5f);
-                menuButtons.pivot = new Vector2(1f, 0.5f);
-                menuButtons.anchoredPosition = new Vector2(-12f, 0f);
+                bool createdMenuButtons = existing == null;
+                menuButtons = createdMenuButtons
+                    ? MMOUiFactory.CreateRect("Menu Buttons", transform)
+                    : (RectTransform)existing;
+                if (createdMenuButtons)
+                {
+                    menuButtons.anchorMin = new Vector2(1f, 0.5f);
+                    menuButtons.anchorMax = new Vector2(1f, 0.5f);
+                    menuButtons.pivot = new Vector2(1f, 0.5f);
+                    menuButtons.anchoredPosition = new Vector2(-12f, 0f);
+                    menuButtons.sizeDelta = new Vector2(378f, 48f);
+                }
             }
 
-            menuButtons.sizeDelta = new Vector2(378f, 48f);
             BuildMenuButtons();
 
             if (actionBar != null)
             {
                 RectTransform actionRect = (RectTransform)actionBar.transform;
-                actionRect.SetParent(transform, false);
-                actionRect.anchorMin = new Vector2(0f, 0.5f);
-                actionRect.anchorMax = new Vector2(0f, 0.5f);
-                actionRect.pivot = new Vector2(0f, 0.5f);
-                actionRect.anchoredPosition = new Vector2(12f, 0f);
+                bool wasReparented = actionRect.parent != transform;
+                if (wasReparented)
+                {
+                    actionRect.SetParent(transform, false);
+                    actionRect.anchorMin = new Vector2(0f, 0.5f);
+                    actionRect.anchorMax = new Vector2(0f, 0.5f);
+                    actionRect.pivot = new Vector2(0f, 0.5f);
+                    actionRect.anchoredPosition = new Vector2(12f, 0f);
+                }
             }
         }
 
         private void BuildMenuButtons()
         {
-            MMOUiFactory.DestroyChildren(menuButtons);
             if (returnToCharacterSelectionController == null)
             {
                 MMOGameplaySessionService.LocalPlayer.TryGetComponent(out returnToCharacterSelectionController);
@@ -141,14 +152,32 @@ namespace RPGClone.UI
 
         private void CreateMenuButton(string objectName, string label, int index, UnityEngine.Events.UnityAction onClick)
         {
-            Button button = MMOUiFactory.CreateTextButton(objectName, menuButtons, label, new Vector2(58f, 42f), new Color(0.09f, 0.07f, 0.052f, 0.95f));
-            button.onClick.AddListener(onClick);
+            Transform existing = menuButtons.Find(objectName);
+            bool created = existing == null;
+            Button button = created
+                ? MMOUiFactory.CreateTextButton(objectName, menuButtons, label, new Vector2(58f, 42f), new Color(0.09f, 0.07f, 0.052f, 0.95f))
+                : existing.GetComponent<Button>();
+            if (button == null)
+            {
+                button = existing.gameObject.AddComponent<Button>();
+            }
 
-            RectTransform rectTransform = button.GetComponent<RectTransform>();
-            rectTransform.anchorMin = new Vector2(0f, 0.5f);
-            rectTransform.anchorMax = new Vector2(0f, 0.5f);
-            rectTransform.pivot = new Vector2(0f, 0.5f);
-            rectTransform.anchoredPosition = new Vector2(index * 64f, 0f);
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(onClick);
+            Text buttonLabel = MMOUiFactory.FindButtonLabel(button);
+            if (created && buttonLabel != null)
+            {
+                buttonLabel.text = label;
+            }
+
+            if (created)
+            {
+                RectTransform rectTransform = button.GetComponent<RectTransform>();
+                rectTransform.anchorMin = new Vector2(0f, 0.5f);
+                rectTransform.anchorMax = new Vector2(0f, 0.5f);
+                rectTransform.pivot = new Vector2(0f, 0.5f);
+                rectTransform.anchoredPosition = new Vector2(index * 64f, 0f);
+            }
         }
 
         private void ResolveSocialPanel()

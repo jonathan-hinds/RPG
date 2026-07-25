@@ -27,15 +27,9 @@ namespace RPGClone.UI
         [SerializeField] private List<MMOActionBarSlot> slots = new();
 
         private readonly List<Button> buttons = new();
-        private readonly List<Text> labels = new();
-        private readonly List<Text> keyLabels = new();
-        private readonly List<Text> cooldownLabels = new();
-        private readonly List<Image> iconImages = new();
-        private readonly List<Image> backgrounds = new();
-        private readonly List<Image> cooldownOverlays = new();
+        private readonly List<MMOSlotView> sharedSlotViews = new();
         private readonly List<MMOActionBarSlotView> slotViews = new();
         private readonly List<MMOAbilityTooltipTrigger> tooltipTriggers = new();
-        private static Font cachedFont;
 
         public IReadOnlyList<MMOActionBarSlot> Slots => slots;
 
@@ -200,11 +194,11 @@ namespace RPGClone.UI
             Sprite icon = slot.bindingType == MMOActionBarSlotBindingType.Item
                 ? slot.item.Icon
                 : slot.ability.Icon;
-            MMOActionBarDragPayload payload = slot.bindingType == MMOActionBarSlotBindingType.Item
-                ? new MMOActionBarDragPayload(slot.item, this, index)
-                : new MMOActionBarDragPayload(slot.ability, this, index);
+            MMOSlotDragPayload payload = slot.bindingType == MMOActionBarSlotBindingType.Item
+                ? MMOSlotDragPayload.ActionBarItem(slot.item, this, index)
+                : MMOSlotDragPayload.AbilityBinding(slot.ability, this, index);
 
-            return MMOActionBarDragState.BeginDrag(
+            return MMOSlotDragState.BeginDrag(
                 payload,
                 eventData,
                 owner,
@@ -212,9 +206,20 @@ namespace RPGClone.UI
                 icon);
         }
 
-        public void AcceptDrop(int targetIndex, MMOActionBarDragPayload payload)
+        public bool CanAcceptDrop(int targetIndex, MMOSlotDragPayload payload)
         {
-            if (!payload.IsValid || targetIndex < 0 || targetIndex >= slots.Count)
+            return payload.IsValid
+                && targetIndex >= 0
+                && targetIndex < slots.Count
+                && payload.Category is MMOSlotContentCategory.Ability
+                    or MMOSlotContentCategory.Item
+                    or MMOSlotContentCategory.Equipment
+                && (payload.Ability != null || payload.Item != null);
+        }
+
+        public void AcceptDrop(int targetIndex, MMOSlotDragPayload payload)
+        {
+            if (!CanAcceptDrop(targetIndex, payload))
             {
                 return;
             }
@@ -230,7 +235,7 @@ namespace RPGClone.UI
             }
             else
             {
-                if (payload.BindingType == MMOActionBarSlotBindingType.Item)
+                if (payload.Item != null)
                 {
                     slots[targetIndex].SetItem(payload.Item);
                 }
@@ -308,22 +313,19 @@ namespace RPGClone.UI
         private void BuildIfNeeded()
         {
             EnsureSlotState();
-            if (buttons.Count == 0 && transform.childCount > 0)
-            {
-                MMOUiFactory.DestroyChildren(transform);
-            }
 
+            bool hasAuthoredLayout = transform.childCount > 0;
             RectTransform root = (RectTransform)transform;
-            if (root.sizeDelta == Vector2.zero)
+            if (!hasAuthoredLayout)
             {
-                root.sizeDelta = new Vector2((48f * slotCount) + (6f * (slotCount - 1)), 58f);
+                Vector2 requiredSize = new((48f * slotCount) + (4f * (slotCount - 1)) + 12f, 56f);
+                root.sizeDelta = new Vector2(
+                    Mathf.Max(root.sizeDelta.x, requiredSize.x),
+                    Mathf.Max(root.sizeDelta.y, requiredSize.y));
+                MMOPanelSkin.ApplyActionBar(gameObject);
             }
 
-            while (buttons.Count < slots.Count)
-            {
-                int index = buttons.Count;
-                CreateSlotButton(index);
-            }
+            ResolveAuthoredSlotButtons();
 
             for (int i = 0; i < buttons.Count; i++)
             {
@@ -335,76 +337,72 @@ namespace RPGClone.UI
             }
         }
 
+        private void ResolveAuthoredSlotButtons()
+        {
+            if (buttons.Count > 0)
+            {
+                return;
+            }
+
+            for (int index = 0; index < slotCount; index++)
+            {
+                Transform existing = transform.Find($"Action Slot {index + 1}");
+                if (existing == null)
+                {
+                    CreateSlotButton(index);
+                    continue;
+                }
+
+                RegisterSlotButton(existing.gameObject, index, false);
+            }
+        }
+
         private void CreateSlotButton(int index)
         {
             GameObject buttonObject = new($"Action Slot {index + 1}", typeof(RectTransform));
             buttonObject.transform.SetParent(transform, false);
+            RegisterSlotButton(buttonObject, index, true);
+        }
 
+        private void RegisterSlotButton(GameObject buttonObject, int index, bool applyDefaultLayout)
+        {
             RectTransform rectTransform = (RectTransform)buttonObject.transform;
-            rectTransform.anchorMin = new Vector2(0f, 0.5f);
-            rectTransform.anchorMax = new Vector2(0f, 0.5f);
-            rectTransform.pivot = new Vector2(0f, 0.5f);
-            rectTransform.anchoredPosition = new Vector2(index * 54f, 0f);
-            rectTransform.sizeDelta = new Vector2(48f, 48f);
+            if (applyDefaultLayout)
+            {
+                rectTransform.anchorMin = new Vector2(0f, 0.5f);
+                rectTransform.anchorMax = new Vector2(0f, 0.5f);
+                rectTransform.pivot = new Vector2(0f, 0.5f);
+                rectTransform.anchoredPosition = new Vector2(6f + index * 52f, 0f);
+                rectTransform.sizeDelta = new Vector2(48f, 48f);
+            }
 
-            Image background = buttonObject.AddComponent<Image>();
-            background.color = new Color(0.05f, 0.045f, 0.04f, 0.95f);
+            Image background = buttonObject.GetComponent<Image>();
+            bool createdBackground = background == null;
+            if (createdBackground)
+            {
+                background = buttonObject.AddComponent<Image>();
+            }
 
-            Button button = buttonObject.AddComponent<Button>();
+            if ((applyDefaultLayout || createdBackground) && background.sprite == null)
+            {
+                background.color = new Color(1f, 1f, 1f, 0.001f);
+            }
+
+            Button button = buttonObject.GetComponent<Button>() ?? buttonObject.AddComponent<Button>();
+            button.onClick.RemoveAllListeners();
             int capturedIndex = index;
             button.onClick.AddListener(() => ActivateSlot(capturedIndex));
 
-            Text label = CreateText("Ability Label", buttonObject.transform, 10, FontStyle.Bold, TextAnchor.MiddleCenter);
-            label.rectTransform.anchorMin = Vector2.zero;
-            label.rectTransform.anchorMax = Vector2.one;
-            label.rectTransform.offsetMin = new Vector2(3f, 9f);
-            label.rectTransform.offsetMax = new Vector2(-3f, -3f);
-
-            Image iconImage = MMOUiFactory.CreateImage("Icon", buttonObject.transform, Color.white, false);
-            iconImage.rectTransform.anchorMin = Vector2.zero;
-            iconImage.rectTransform.anchorMax = Vector2.one;
-            iconImage.rectTransform.offsetMin = new Vector2(3f, 3f);
-            iconImage.rectTransform.offsetMax = new Vector2(-3f, -3f);
-            iconImage.gameObject.SetActive(false);
-            iconImage.transform.SetAsFirstSibling();
-
-            Image cooldownOverlay = MMOUiFactory.CreateImage("Cooldown Overlay", buttonObject.transform, new Color(0f, 0f, 0f, 0.62f), false);
-            cooldownOverlay.rectTransform.anchorMin = Vector2.zero;
-            cooldownOverlay.rectTransform.anchorMax = Vector2.one;
-            cooldownOverlay.rectTransform.offsetMin = new Vector2(3f, 3f);
-            cooldownOverlay.rectTransform.offsetMax = new Vector2(-3f, -3f);
-            cooldownOverlay.type = Image.Type.Filled;
-            cooldownOverlay.fillMethod = Image.FillMethod.Radial360;
-            cooldownOverlay.fillOrigin = 2;
-            cooldownOverlay.fillClockwise = false;
-            cooldownOverlay.gameObject.SetActive(false);
-
-            Text keyLabel = CreateText("Key Label", buttonObject.transform, 10, FontStyle.Bold, TextAnchor.UpperLeft);
-            keyLabel.rectTransform.anchorMin = Vector2.zero;
-            keyLabel.rectTransform.anchorMax = Vector2.one;
-            keyLabel.rectTransform.offsetMin = new Vector2(4f, 2f);
-            keyLabel.rectTransform.offsetMax = new Vector2(-4f, -2f);
-            keyLabel.color = new Color(0.98f, 0.82f, 0.36f, 1f);
-
-            Text cooldownLabel = CreateText("Cooldown Label", buttonObject.transform, 15, FontStyle.Bold, TextAnchor.MiddleCenter);
-            cooldownLabel.rectTransform.anchorMin = Vector2.zero;
-            cooldownLabel.rectTransform.anchorMax = Vector2.one;
-            cooldownLabel.rectTransform.offsetMin = Vector2.zero;
-            cooldownLabel.rectTransform.offsetMax = Vector2.zero;
-            cooldownLabel.color = Color.white;
-            cooldownLabel.gameObject.SetActive(false);
-
-            MMOActionBarSlotView slotView = buttonObject.AddComponent<MMOActionBarSlotView>();
+            MMOActionBarSlotView slotView = buttonObject.GetComponent<MMOActionBarSlotView>()
+                ?? buttonObject.AddComponent<MMOActionBarSlotView>();
             slotView.Configure(this, index);
-            MMOAbilityTooltipTrigger tooltipTrigger = buttonObject.AddComponent<MMOAbilityTooltipTrigger>();
+            MMOSlotView sharedSlotView = MMOSlotView.Attach(buttonObject);
+            sharedSlotView.Present(MMOSlotPresentation.Empty());
+            MMOAbilityTooltipTrigger tooltipTrigger = buttonObject.GetComponent<MMOAbilityTooltipTrigger>()
+                ?? buttonObject.AddComponent<MMOAbilityTooltipTrigger>();
 
             buttons.Add(button);
-            labels.Add(label);
-            keyLabels.Add(keyLabel);
-            cooldownLabels.Add(cooldownLabel);
-            iconImages.Add(iconImage);
-            backgrounds.Add(background);
-            cooldownOverlays.Add(cooldownOverlay);
+            sharedSlotViews.Add(sharedSlotView);
             slotViews.Add(slotView);
             tooltipTriggers.Add(tooltipTrigger);
         }
@@ -419,20 +417,28 @@ namespace RPGClone.UI
                 MMOItemDefinition item = slot.item;
                 bool hasAbility = slot.bindingType == MMOActionBarSlotBindingType.Ability && ability != null;
                 bool hasItem = slot.bindingType == MMOActionBarSlotBindingType.Item && item != null;
-                string displayName = hasItem ? item.DisplayName : hasAbility ? ability.DisplayName : string.Empty;
-                Sprite icon = hasItem ? item.Icon : hasAbility ? ability.Icon : null;
-                Color itemTint = hasItem ? MMOItemIconView.GetIconTint(item) : Color.white;
+                string keybinding = slots[i].key == Key.None ? string.Empty : GetKeyLabel(slots[i].key);
+                bool active = hasAbility
+                    && ability.IsAutoAttack
+                    && autoAttackController != null
+                    && autoAttackController.IsAutoAttacking;
+                MMOSlotPresentation presentation;
+                if (hasItem)
+                {
+                    int quantity = inventory != null ? inventory.CountItem(item) : 0;
+                    presentation = MMOItemSlotAdapter.Present(item, quantity, false, keybinding);
+                }
+                else if (hasAbility)
+                {
+                    presentation = MMOAbilitySlotAdapter.Present(ability, keybinding, active);
+                }
+                else
+                {
+                    presentation = new MMOSlotPresentation(secondaryText: keybinding);
+                }
 
-                labels[i].text = !string.IsNullOrWhiteSpace(displayName) && icon == null ? Shorten(displayName) : string.Empty;
-                labels[i].color = itemTint;
-                keyLabels[i].text = slots[i].key == Key.None ? string.Empty : GetKeyLabel(slots[i].key);
+                sharedSlotViews[i].Present(presentation);
                 buttons[i].interactable = true;
-                backgrounds[i].color = hasAbility || hasItem
-                    ? new Color(0.12f, 0.09f, 0.055f, 0.98f)
-                    : new Color(0.04f, 0.036f, 0.034f, 0.78f);
-                iconImages[i].sprite = icon;
-                iconImages[i].color = itemTint;
-                iconImages[i].gameObject.SetActive(icon != null);
                 tooltipTriggers[i].Configure(hasAbility ? ability : null);
                 MMOItemTooltipTrigger itemTooltip = buttons[i].GetComponent<MMOItemTooltipTrigger>();
                 if (hasItem)
@@ -450,32 +456,27 @@ namespace RPGClone.UI
 
         private void UpdateCooldowns()
         {
-            if (abilitySystem == null)
-            {
-                return;
-            }
-
-            int count = Mathf.Min(slots.Count, cooldownOverlays.Count);
+            int count = Mathf.Min(slots.Count, sharedSlotViews.Count);
             for (int i = 0; i < count; i++)
             {
                 MMOAbilityDefinition ability = slots[i].ability;
                 bool isAutoAttack = ability != null && ability.IsAutoAttack && autoAttackController != null;
-                float remaining = isAutoAttack
+                float remaining = abilitySystem == null
+                    ? 0f
+                    : isAutoAttack
                     ? autoAttackController.GetAutoAttackCooldownRemaining()
                     : abilitySystem.GetCooldownRemaining(ability);
                 bool coolingDown = ability != null && remaining > 0f;
-
-                cooldownOverlays[i].gameObject.SetActive(coolingDown);
-                cooldownLabels[i].gameObject.SetActive(coolingDown);
                 if (!coolingDown)
                 {
+                    sharedSlotViews[i].SetCooldown(0f, null);
                     continue;
                 }
 
-                cooldownOverlays[i].fillAmount = isAutoAttack
+                float normalized = isAutoAttack
                     ? autoAttackController.GetAutoAttackCooldownNormalized()
                     : abilitySystem.GetCooldownNormalized(ability);
-                cooldownLabels[i].text = FormatCooldown(remaining);
+                sharedSlotViews[i].SetCooldown(normalized, FormatCooldown(remaining));
             }
         }
 
@@ -522,16 +523,6 @@ namespace RPGClone.UI
             }
         }
 
-        private static string Shorten(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return string.Empty;
-            }
-
-            return value.Length <= 11 ? value : value[..11];
-        }
-
         private static string GetKeyLabel(Key key)
         {
             string value = key.ToString();
@@ -543,35 +534,5 @@ namespace RPGClone.UI
             return seconds >= 10f ? Mathf.CeilToInt(seconds).ToString() : seconds.ToString("0.0");
         }
 
-        private static Text CreateText(string objectName, Transform parent, int fontSize, FontStyle style, TextAnchor alignment)
-        {
-            GameObject child = new(objectName, typeof(RectTransform));
-            child.transform.SetParent(parent, false);
-            Text text = child.AddComponent<Text>();
-            text.font = GetFont(fontSize);
-            text.fontSize = fontSize;
-            text.fontStyle = style;
-            text.alignment = alignment;
-            text.color = Color.white;
-            text.raycastTarget = false;
-            text.supportRichText = false;
-            return text;
-        }
-
-        private static Font GetFont(int size)
-        {
-            if (cachedFont != null)
-            {
-                return cachedFont;
-            }
-
-            cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            if (cachedFont == null)
-            {
-                cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Arial", "Segoe UI", "Liberation Sans" }, size);
-            }
-
-            return cachedFont;
-        }
     }
 }

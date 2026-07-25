@@ -9,12 +9,22 @@ namespace RPGClone.UI
     [RequireComponent(typeof(RectTransform))]
     public sealed class MMOInventoryPresenter : MonoBehaviour
     {
+        private const int Columns = 4;
+        private const int MinimumRows = 4;
+        private const float PanelWidth = 300f;
+        private const float SlotSize = 58f;
+        private const float SlotStride = 62f;
+        private const float PanelVerticalChrome = 116f;
+
         [SerializeField] private bool autoBuild = true;
         [SerializeField] private MMOInventoryContainer inventory;
         [SerializeField] private MMOCurrencyWallet wallet;
 
         private RectTransform slotGrid;
         private Text moneyText;
+        private Vector2 authoredPanelSize;
+        private bool authoredPanelSizeCaptured;
+        private bool usesAuthoredLayout;
 
         private void Awake()
         {
@@ -112,68 +122,142 @@ namespace RPGClone.UI
 
         private void BuildIfNeeded()
         {
-            if (slotGrid != null)
-            {
-                return;
-            }
-
-            MMOUiFactory.DestroyChildren(transform);
-
+            bool hasAuthoredLayout = transform.childCount > 0;
             RectTransform root = (RectTransform)transform;
-            root.sizeDelta = new Vector2(300f, 364f);
-
-            Image background = gameObject.GetComponent<Image>();
-            if (background == null)
+            if (!authoredPanelSizeCaptured)
             {
-                background = gameObject.AddComponent<Image>();
+                usesAuthoredLayout = hasAuthoredLayout;
+                authoredPanelSize = root.sizeDelta;
+                if (authoredPanelSize.x <= 0f || authoredPanelSize.y <= 0f)
+                {
+                    authoredPanelSize = new Vector2(
+                        PanelWidth,
+                        PanelVerticalChrome + MinimumRows * SlotStride);
+                    root.sizeDelta = authoredPanelSize;
+                }
+
+                authoredPanelSizeCaptured = true;
             }
 
-            background.color = new Color(0.035f, 0.032f, 0.028f, 0.96f);
+            if (!hasAuthoredLayout)
+            {
+                MMOPanelSkin.ApplyBagPanel(gameObject);
+            }
 
-            Text title = MMOUiFactory.CreateText("Title", transform, 18, FontStyle.Bold, TextAnchor.MiddleLeft);
-            title.text = "Inventory";
-            title.rectTransform.anchorMin = new Vector2(0f, 1f);
-            title.rectTransform.anchorMax = new Vector2(1f, 1f);
-            title.rectTransform.pivot = new Vector2(0f, 1f);
-            title.rectTransform.anchoredPosition = new Vector2(14f, -10f);
-            title.rectTransform.sizeDelta = new Vector2(-28f, 28f);
+            Transform existingTitle = transform.Find("Title");
+            bool createdTitle = existingTitle == null;
+            Text title = createdTitle
+                ? MMOUiFactory.CreateText("Title", transform, 18, FontStyle.Bold, TextAnchor.MiddleLeft)
+                : existingTitle.GetComponent<Text>();
+            if (title == null)
+            {
+                title = existingTitle.gameObject.AddComponent<Text>();
+            }
 
-            Button closeButton = MMOUiFactory.CreateTextButton("Close", transform, "X", new Vector2(26f, 24f), new Color(0.12f, 0.09f, 0.07f, 0.95f));
+            if (createdTitle)
+            {
+                title.text = "Backpack";
+                title.rectTransform.anchorMin = new Vector2(0f, 1f);
+                title.rectTransform.anchorMax = new Vector2(1f, 1f);
+                title.rectTransform.pivot = new Vector2(0f, 1f);
+                title.rectTransform.anchoredPosition = new Vector2(68f, -8f);
+                title.rectTransform.sizeDelta = new Vector2(-126f, 32f);
+            }
+
+            Transform existingClose = transform.Find("Close");
+            bool createdClose = existingClose == null;
+            Button closeButton = createdClose
+                ? MMOUiFactory.CreateTextButton("Close", transform, "X", new Vector2(30f, 30f), new Color(0.12f, 0.09f, 0.07f, 0.95f))
+                : existingClose.GetComponent<Button>();
+            if (closeButton == null)
+            {
+                closeButton = existingClose.gameObject.AddComponent<Button>();
+            }
+
+            if (createdClose)
+            {
+                MMOPanelSkin.ConfigureCloseButton(closeButton);
+            }
+
+            closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(() => gameObject.SetActive(false));
-            RectTransform closeRect = closeButton.GetComponent<RectTransform>();
-            closeRect.anchorMin = new Vector2(1f, 1f);
-            closeRect.anchorMax = new Vector2(1f, 1f);
-            closeRect.pivot = new Vector2(1f, 1f);
-            closeRect.anchoredPosition = new Vector2(-10f, -10f);
+            if (createdClose)
+            {
+                RectTransform closeRect = closeButton.GetComponent<RectTransform>();
+                closeRect.anchorMin = new Vector2(1f, 1f);
+                closeRect.anchorMax = new Vector2(1f, 1f);
+                closeRect.pivot = new Vector2(1f, 1f);
+                closeRect.anchoredPosition = new Vector2(-6f, -7f);
+            }
 
-            slotGrid = MMOUiFactory.CreateRect("Slots", transform);
-            slotGrid.anchorMin = new Vector2(0f, 0f);
-            slotGrid.anchorMax = new Vector2(1f, 1f);
-            slotGrid.offsetMin = new Vector2(16f, 52f);
-            slotGrid.offsetMax = new Vector2(-16f, -58f);
+            if (slotGrid == null)
+            {
+                Transform existingSlots = transform.Find("Slots");
+                bool createdSlots = existingSlots == null;
+                slotGrid = createdSlots
+                    ? MMOUiFactory.CreateRect("Slots", transform)
+                    : (RectTransform)existingSlots;
+                if (createdSlots)
+                {
+                    slotGrid.anchorMin = new Vector2(0f, 0f);
+                    slotGrid.anchorMax = new Vector2(1f, 1f);
+                    slotGrid.offsetMin = new Vector2(28f, 52f);
+                    slotGrid.offsetMax = new Vector2(-28f, -58f);
+                }
+            }
 
-            moneyText = MMOUiFactory.CreateText("Money", transform, 12, FontStyle.Bold, TextAnchor.MiddleRight);
-            moneyText.color = new Color(0.95f, 0.82f, 0.48f, 1f);
-            moneyText.rectTransform.anchorMin = new Vector2(0f, 0f);
-            moneyText.rectTransform.anchorMax = new Vector2(1f, 0f);
-            moneyText.rectTransform.pivot = new Vector2(1f, 0f);
-            moneyText.rectTransform.anchoredPosition = new Vector2(-16f, 16f);
-            moneyText.rectTransform.sizeDelta = new Vector2(-32f, 24f);
+            Transform existingMoney = transform.Find("Money");
+            bool createdMoney = existingMoney == null;
+            moneyText = createdMoney
+                ? MMOUiFactory.CreateText("Money", transform, 12, FontStyle.Bold, TextAnchor.MiddleRight)
+                : existingMoney.GetComponent<Text>();
+            if (moneyText == null)
+            {
+                moneyText = existingMoney.gameObject.AddComponent<Text>();
+            }
+
+            if (createdMoney)
+            {
+                moneyText.color = new Color(0.95f, 0.82f, 0.48f, 1f);
+                moneyText.rectTransform.anchorMin = new Vector2(0f, 0f);
+                moneyText.rectTransform.anchorMax = new Vector2(1f, 0f);
+                moneyText.rectTransform.pivot = new Vector2(1f, 0f);
+                moneyText.rectTransform.anchoredPosition = new Vector2(-18f, 10f);
+                moneyText.rectTransform.sizeDelta = new Vector2(-36f, 28f);
+            }
         }
 
         private void Refresh()
         {
             BuildIfNeeded();
-            MMOUiFactory.DestroyChildren(slotGrid);
             if (moneyText != null)
             {
                 moneyText.text = wallet != null ? MMOCurrencyWallet.FormatCopper(wallet.Copper) : "0c";
             }
 
             int slotCount = inventory != null ? inventory.SlotCount : 0;
+            int rows = Mathf.Max(MinimumRows, Mathf.CeilToInt(slotCount / (float)Columns));
+            if (!usesAuthoredLayout)
+            {
+                ((RectTransform)transform).sizeDelta = new Vector2(
+                    authoredPanelSize.x,
+                    authoredPanelSize.y + (rows - MinimumRows) * SlotStride);
+            }
             for (int i = 0; i < slotCount; i++)
             {
                 CreateSlot(i, inventory != null ? inventory.GetSlot(i) : null);
+            }
+
+            for (int i = 0; i < slotGrid.childCount; i++)
+            {
+                Transform child = slotGrid.GetChild(i);
+                const string slotPrefix = "Inventory Slot ";
+                if (child.name.StartsWith(slotPrefix)
+                    && int.TryParse(child.name[slotPrefix.Length..], out int authoredSlotNumber)
+                    && authoredSlotNumber > slotCount)
+                {
+                    child.gameObject.SetActive(false);
+                }
             }
         }
 
@@ -185,16 +269,34 @@ namespace RPGClone.UI
         private void CreateSlot(int index, MMOItemStack itemStack)
         {
             bool hasItem = itemStack != null && !itemStack.IsEmpty;
-            Color slotColor = hasItem ? MMOItemIconView.GetSlotBackgroundColor(itemStack.Item) : new Color(0.045f, 0.04f, 0.036f, 0.94f);
-            Image slot = MMOUiFactory.CreateImage($"Inventory Slot {index + 1}", slotGrid, slotColor);
+            string slotName = $"Inventory Slot {index + 1}";
+            Transform existing = slotGrid.Find(slotName);
+            bool created = existing == null;
+            Image slot = created
+                ? MMOUiFactory.CreateImage(
+                    slotName,
+                    slotGrid,
+                    new Color(1f, 1f, 1f, 0.001f))
+                : existing.GetComponent<Image>();
+            if (slot == null)
+            {
+                slot = existing.gameObject.AddComponent<Image>();
+            }
+
+            slot.gameObject.SetActive(true);
             RectTransform rectTransform = slot.rectTransform;
-            int column = index % 4;
-            int row = index / 4;
-            rectTransform.anchorMin = new Vector2(0f, 1f);
-            rectTransform.anchorMax = new Vector2(0f, 1f);
-            rectTransform.pivot = new Vector2(0f, 1f);
-            rectTransform.anchoredPosition = new Vector2(column * 66f, -row * 66f);
-            rectTransform.sizeDelta = new Vector2(58f, 58f);
+            int column = index % Columns;
+            int row = index / Columns;
+            if (created)
+            {
+                slot.color = new Color(1f, 1f, 1f, 0.001f);
+                slot.raycastTarget = true;
+                rectTransform.anchorMin = new Vector2(0f, 1f);
+                rectTransform.anchorMax = new Vector2(0f, 1f);
+                rectTransform.pivot = new Vector2(0f, 1f);
+                rectTransform.anchoredPosition = new Vector2(column * SlotStride, -row * SlotStride);
+                rectTransform.sizeDelta = new Vector2(SlotSize, SlotSize);
+            }
 
             MMOInventoryItemUseTrigger useTrigger = slot.gameObject.GetComponent<MMOInventoryItemUseTrigger>();
             if (useTrigger == null)
@@ -203,9 +305,16 @@ namespace RPGClone.UI
             }
 
             useTrigger.Configure(inventory, index);
+            MMOSlotView.Attach(slot.gameObject).Present(MMOSlotPresentation.Empty());
 
             if (!hasItem)
             {
+                MMOItemTooltipTrigger tooltip = slot.GetComponent<MMOItemTooltipTrigger>();
+                if (tooltip != null)
+                {
+                    tooltip.Configure(null);
+                }
+
                 return;
             }
 
