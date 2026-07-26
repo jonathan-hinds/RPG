@@ -422,6 +422,14 @@ namespace RPGClone.UI
         private MMOInventoryPresenter FindInventoryPresenter()
         {
             MMOInventoryPresenter[] presenters = FindObjectsByType<MMOInventoryPresenter>(FindObjectsInactive.Include);
+            for (int i = 0; i < presenters.Length; i++)
+            {
+                if (presenters[i].DisplayedBagIndex == MMOBagBarPresenter.BackpackBagIndex)
+                {
+                    return presenters[i];
+                }
+            }
+
             return presenters.Length > 0 ? presenters[0] : null;
         }
 

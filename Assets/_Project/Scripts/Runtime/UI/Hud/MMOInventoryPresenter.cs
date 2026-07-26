@@ -1,3 +1,4 @@
+using System;
 using RPGClone.Inventory;
 using RPGClone.Quests;
 using RPGClone.Services;
@@ -27,6 +28,8 @@ namespace RPGClone.UI
         private Vector2 authoredPanelSize;
         private bool authoredPanelSizeCaptured;
 
+        public event Action<MMOInventoryPresenter, bool> VisibilityChanged;
+        public event Action<MMOInventoryPresenter> LayoutChanged;
         public int DisplayedBagIndex => displayedBagIndex;
 
         private void Awake()
@@ -43,11 +46,13 @@ namespace RPGClone.UI
         private void OnEnable()
         {
             Subscribe();
+            VisibilityChanged?.Invoke(this, true);
         }
 
         private void OnDisable()
         {
             Unsubscribe();
+            VisibilityChanged?.Invoke(this, false);
         }
 
         public void Configure(MMOInventoryContainer newInventory, int newDisplayedBagIndex = -1)
@@ -249,7 +254,8 @@ namespace RPGClone.UI
             BuildIfNeeded();
             if (displayedBagIndex >= 0 && (inventory == null || inventory.GetEquippedBag(displayedBagIndex) == null))
             {
-                displayedBagIndex = -1;
+                gameObject.SetActive(false);
+                return;
             }
 
             if (titleText != null)
@@ -287,6 +293,8 @@ namespace RPGClone.UI
                     child.gameObject.SetActive(false);
                 }
             }
+
+            LayoutChanged?.Invoke(this);
         }
 
         private void OnWalletChanged(MMOCurrencyWallet changedWallet)

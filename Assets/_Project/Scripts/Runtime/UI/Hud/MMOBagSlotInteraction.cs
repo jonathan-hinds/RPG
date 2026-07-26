@@ -14,18 +14,15 @@ namespace RPGClone.UI
     {
         private MMOBagBarPresenter bagBar;
         private MMOInventoryContainer inventory;
-        private MMOInventoryPresenter inventoryPanel;
         private int bagSlotIndex;
 
         public void Configure(
             MMOBagBarPresenter newBagBar,
             MMOInventoryContainer newInventory,
-            MMOInventoryPresenter newInventoryPanel,
             int newBagSlotIndex)
         {
             bagBar = newBagBar;
             inventory = newInventory;
-            inventoryPanel = newInventoryPanel;
             bagSlotIndex = newBagSlotIndex;
         }
 
@@ -36,7 +33,7 @@ namespace RPGClone.UI
                 return;
             }
 
-            inventoryPanel?.ToggleBag(bagSlotIndex);
+            bagBar?.ToggleBag(bagSlotIndex);
         }
 
         public void OnBeginDrag(PointerEventData eventData)

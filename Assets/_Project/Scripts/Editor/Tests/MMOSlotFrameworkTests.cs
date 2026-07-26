@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using RPGClone.Inventory;
 using RPGClone.UI;
@@ -450,6 +451,99 @@ namespace RPGClone.Tests
         }
 
         [Test]
+        public void ToggleAllBagsOpensOneWindowPerEquippedBagAndClosesTheCompleteSet()
+        {
+            GameObject inventoryObject = new("Inventory Data");
+            GameObject viewport = new("HUD Canvas", typeof(RectTransform));
+            MMOItemDefinition bag = ScriptableObject.CreateInstance<MMOItemDefinition>();
+            try
+            {
+                MMOInventoryContainer inventory = CreateInventoryWithFourEightSlotBags(
+                    inventoryObject,
+                    bag);
+                ((RectTransform)viewport.transform).sizeDelta = new Vector2(1280f, 900f);
+                MMOInventoryPresenter backpack = CreateBackpackWindow(viewport.transform, inventory);
+                MMOBagBarPresenter bagBar = CreateBagBar(viewport.transform, inventory, backpack);
+
+                bagBar.ToggleAllBags();
+
+                MMOInventoryPresenter[] windows =
+                    viewport.GetComponentsInChildren<MMOInventoryPresenter>(true);
+                Assert.That(windows.Length, Is.EqualTo(5));
+                Assert.That(windows.Count(window => window.gameObject.activeSelf), Is.EqualTo(5));
+                Assert.That(windows.Select(window => window.DisplayedBagIndex), Is.EquivalentTo(
+                    new[]
+                    {
+                        MMOBagBarPresenter.BackpackBagIndex,
+                        0,
+                        1,
+                        2,
+                        3
+                    }));
+
+                bagBar.ToggleAllBags();
+                Assert.That(windows.Count(window => window.gameObject.activeSelf), Is.Zero);
+            }
+            finally
+            {
+                Object.DestroyImmediate(bag);
+                Object.DestroyImmediate(viewport);
+                Object.DestroyImmediate(inventoryObject);
+            }
+        }
+
+        [Test]
+        public void OpenBagWindowsStackUpwardAndWrapIntoColumnsToTheLeft()
+        {
+            GameObject inventoryObject = new("Inventory Data");
+            GameObject viewport = new("HUD Canvas", typeof(RectTransform));
+            MMOItemDefinition bag = ScriptableObject.CreateInstance<MMOItemDefinition>();
+            try
+            {
+                MMOInventoryContainer inventory = CreateInventoryWithFourEightSlotBags(
+                    inventoryObject,
+                    bag);
+                ((RectTransform)viewport.transform).sizeDelta = new Vector2(1280f, 700f);
+                MMOInventoryPresenter backpack = CreateBackpackWindow(viewport.transform, inventory);
+                MMOBagBarPresenter bagBar = CreateBagBar(viewport.transform, inventory, backpack);
+
+                bagBar.ToggleAllBags();
+
+                MMOInventoryPresenter[] windows =
+                    viewport.GetComponentsInChildren<MMOInventoryPresenter>(true);
+                RectTransform backpackRect = FindBagWindow(windows, -1);
+                RectTransform bagOneRect = FindBagWindow(windows, 0);
+                RectTransform bagTwoRect = FindBagWindow(windows, 1);
+                RectTransform bagThreeRect = FindBagWindow(windows, 2);
+                RectTransform bagFourRect = FindBagWindow(windows, 3);
+
+                Assert.That(backpackRect.anchoredPosition, Is.EqualTo(new Vector2(-10f, 10f)));
+                Assert.That(
+                    bagOneRect.anchoredPosition,
+                    Is.EqualTo(new Vector2(-10f, 377f)),
+                    "The first equipped bag should stack above the backpack.");
+                Assert.That(bagTwoRect.anchoredPosition, Is.EqualTo(new Vector2(-310f, 10f)));
+                Assert.That(bagThreeRect.anchoredPosition, Is.EqualTo(new Vector2(-310f, 253f)));
+                Assert.That(bagFourRect.anchoredPosition, Is.EqualTo(new Vector2(-610f, 10f)));
+
+                bagBar.ToggleBag(0);
+
+                Assert.That(
+                    bagTwoRect.anchoredPosition,
+                    Is.EqualTo(new Vector2(-10f, 377f)),
+                    "Closing a window should collapse the next open bag upward in its place.");
+                Assert.That(bagThreeRect.anchoredPosition, Is.EqualTo(new Vector2(-310f, 10f)));
+                Assert.That(bagFourRect.anchoredPosition, Is.EqualTo(new Vector2(-310f, 253f)));
+            }
+            finally
+            {
+                Object.DestroyImmediate(bag);
+                Object.DestroyImmediate(viewport);
+                Object.DestroyImmediate(inventoryObject);
+            }
+        }
+
+        [Test]
         public void ActionBarSwapPreservesBothBindingsAndKeys()
         {
             GameObject actionBarObject = new("Action Bar", typeof(RectTransform));
@@ -478,6 +572,68 @@ namespace RPGClone.Tests
                 Object.DestroyImmediate(secondItem);
                 Object.DestroyImmediate(actionBarObject);
             }
+        }
+
+        private static MMOInventoryContainer CreateInventoryWithFourEightSlotBags(
+            GameObject inventoryObject,
+            MMOItemDefinition bag)
+        {
+            bag.ConfigureContainer(
+                "test_8_slot_bag",
+                "Test Satchel",
+                string.Empty,
+                MMOItemQuality.Common,
+                8,
+                0);
+            MMOInventoryContainer inventory =
+                inventoryObject.AddComponent<MMOInventoryContainer>();
+            for (int bagIndex = 0; bagIndex < inventory.BagSlotCount; bagIndex++)
+            {
+                inventory.SetSlot(bagIndex, bag, 1);
+                Assert.That(inventory.TryEquipBagFromInventory(bagIndex, bagIndex), Is.True);
+            }
+
+            return inventory;
+        }
+
+        private static MMOInventoryPresenter CreateBackpackWindow(
+            Transform parent,
+            MMOInventoryContainer inventory)
+        {
+            GameObject panel = new("Inventory Panel", typeof(RectTransform), typeof(Image));
+            panel.SetActive(false);
+            panel.transform.SetParent(parent, false);
+            RectTransform rect = (RectTransform)panel.transform;
+            rect.anchorMin = new Vector2(1f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(1f, 0f);
+            rect.anchoredPosition = new Vector2(-10f, 10f);
+            rect.sizeDelta = new Vector2(300f, 364f);
+            MMOInventoryPresenter presenter = panel.AddComponent<MMOInventoryPresenter>();
+            presenter.Configure(inventory);
+            return presenter;
+        }
+
+        private static MMOBagBarPresenter CreateBagBar(
+            Transform parent,
+            MMOInventoryContainer inventory,
+            MMOInventoryPresenter backpack)
+        {
+            GameObject bagBarObject = new("Bag Slots", typeof(RectTransform));
+            bagBarObject.SetActive(false);
+            bagBarObject.transform.SetParent(parent, false);
+            MMOBagBarPresenter bagBar = bagBarObject.AddComponent<MMOBagBarPresenter>();
+            bagBar.Configure(inventory, backpack);
+            return bagBar;
+        }
+
+        private static RectTransform FindBagWindow(
+            IEnumerable<MMOInventoryPresenter> windows,
+            int bagIndex)
+        {
+            return (RectTransform)windows
+                .Single(window => window.DisplayedBagIndex == bagIndex)
+                .transform;
         }
 
         private static void AssertBottomHudPrefabSurvivesRuntimeBinding()

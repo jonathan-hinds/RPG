@@ -44,7 +44,7 @@ namespace RPGClone.UI
 
             if (keyboard.bKey.wasPressedThisFrame || keyboard.iKey.wasPressedThisFrame)
             {
-                bagBar?.ToggleBag(MMOBagBarPresenter.BackpackBagIndex);
+                bagBar?.ToggleAllBags();
             }
 
             if (keyboard.pKey.wasPressedThisFrame)
