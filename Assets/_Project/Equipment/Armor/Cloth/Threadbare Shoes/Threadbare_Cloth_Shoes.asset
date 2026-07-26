@@ -17,12 +17,14 @@ MonoBehaviour:
   description: Scuffed cloth shoes offering little protection from the trail.
   itemType: 3
   quality: 0
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 265b36d24ca5d34418f04b08b0b2a0c6, type: 3}
   maxStackSize: 1
   vendorValueCopper: 0
+  containerSlotCount: 0
   consumableType: 0
   restoreHealthAmount: 0
   restoreManaAmount: 0
+  experienceRewardAmount: 0
   consumeDurationSeconds: 10
   requiresStationary: 1
   equipmentSlot: 11

@@ -17,12 +17,14 @@ MonoBehaviour:
   description: A reinforced shield for standing in the gate.
   itemType: 3
   quality: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 9eb11e80304db374e9db55922fa4b9ab, type: 3}
   maxStackSize: 1
   vendorValueCopper: 5
+  containerSlotCount: 0
   consumableType: 0
   restoreHealthAmount: 0
   restoreManaAmount: 0
+  experienceRewardAmount: 0
   consumeDurationSeconds: 10
   requiresStationary: 1
   equipmentSlot: 17

@@ -17,12 +17,14 @@ MonoBehaviour:
   description: Supple leather boots for scouts and shamans.
   itemType: 3
   quality: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 12c35e0dc494cfc4881c36133c0ef53f, type: 3}
   maxStackSize: 1
   vendorValueCopper: 12
+  containerSlotCount: 0
   consumableType: 0
   restoreHealthAmount: 0
   restoreManaAmount: 0
+  experienceRewardAmount: 0
   consumeDurationSeconds: 10
   requiresStationary: 1
   equipmentSlot: 11

@@ -4,13 +4,13 @@ Use this file to record decisions learned from approved project icons.
 
 ## Current defaults
 
-- Artwork remains borderless; borders are handled separately in Unity.
+- Artwork remains completely borderless; all slot and rarity borders are handled separately in Unity.
 - Generate 1024x1024 masters.
 - Export 256x256, 64x64, and 32x32 versions.
 - Favor saturated, clearly separated material colors.
 - Avoid muddy global shading.
 - Keep one dominant readable symbol.
-- Use dark or simplified corners with concentrated focal highlights.
+- Use a soft irregular painted vignette in the outer 10-20% of the canvas, with concentrated focal highlights.
 
 ## Approved reference slots
 
@@ -37,4 +37,7 @@ TBD after approved examples are supplied.
 
 ### Items
 
-TBD after approved examples are supplied.
+- Show only the painted item artwork and atmospheric vignette.
+- Do not generate a square inventory frame, bevel, metal rim, or rarity-colored edge.
+- Common gear should remain simple and readable, with restrained ornamentation and limited material complexity.
+

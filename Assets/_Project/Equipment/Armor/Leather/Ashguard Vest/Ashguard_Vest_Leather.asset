@@ -17,12 +17,14 @@ MonoBehaviour:
   description: Supple leather chest armor for scouts and shamans.
   itemType: 3
   quality: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 6968a36c05627544d97f938ce9359db7, type: 3}
   maxStackSize: 1
   vendorValueCopper: 20
+  containerSlotCount: 0
   consumableType: 0
   restoreHealthAmount: 0
   restoreManaAmount: 0
+  experienceRewardAmount: 0
   consumeDurationSeconds: 10
   requiresStationary: 1
   equipmentSlot: 4

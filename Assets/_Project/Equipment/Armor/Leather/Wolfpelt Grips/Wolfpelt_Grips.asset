@@ -17,12 +17,14 @@ MonoBehaviour:
   description: Supple hide grips that keep their hold in rain and blood.
   itemType: 3
   quality: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 987fa14275b301f40a1466a7abd81690, type: 3}
   maxStackSize: 1
   vendorValueCopper: 21
+  containerSlotCount: 0
   consumableType: 0
   restoreHealthAmount: 0
   restoreManaAmount: 0
+  experienceRewardAmount: 0
   consumeDurationSeconds: 10
   requiresStationary: 1
   equipmentSlot: 8

@@ -1,66 +1,60 @@
 # Prompt Templates
 
-## Universal production prompt
+## Required style block
 
-Create square icon artwork for an original hand-painted fantasy MMORPG.
+Append this block to every image-generation prompt:
 
-Icon name: [NAME]
-Category: [CATEGORY]
-Gameplay meaning: [MECHANIC]
-
-Depict [PRIMARY SUBJECT AND ACTION]. Support it with [SECONDARY CUE]. Use [PALETTE] with [LIGHTING OR MOOD]. The focal subject should fill approximately 70-90% of the frame and remain recognizable at 32x32 pixels.
-
-Use exaggerated perspective, a strong silhouette, broad painterly forms, rich saturated local color, concentrated highlights, deep simplified shadows, and a subdued atmospheric background. Keep the brightest contrast around the focal point.
-
-No text, letters, numbers, logos, permanent UI border, full scene, horizon line, tiny decorative clutter, photographic realism, smooth generic 3D rendering, or copied game imagery.
-
-## Active ability template
-
-Create square icon artwork for an original fantasy MMORPG active ability.
-
-Show [ACTOR OR OBJECT] actively [ACTION] toward [TARGET OR DIRECTION]. Emphasize [IMPACT, SPEED, FORCE, OR ELEMENT] using [SECONDARY EFFECT]. Use a dynamic diagonal composition and exaggerated foreshortening. Make the impact point or action center the brightest region.
-
-The image must read immediately as [GAMEPLAY MEANING] at 32x32 pixels. Use broad hand-painted forms, rich color, deep corner shadows, and controlled energy effects.
-
-Avoid a static item pose, generic energy cloud, text, frame, scenery, and tiny details.
-
-## Buff template
-
-Create square icon artwork for an original fantasy MMORPG beneficial status effect.
-
-Depict [SUBJECT] being visibly empowered by [ENHANCEMENT]. Use stable upward movement or balanced symmetry, with [PALETTE] and a clear radiant focal point. Communicate [MECHANIC] without relying on text or arrows unless the arrow itself is a deliberate symbolic element.
-
-Keep the subject large, the silhouette clean, and the effect readable at 32x32. Use hand-painted fantasy rendering, controlled glow, deep surrounding shadows, and bright concentrated highlights.
-
-## Debuff template
-
-Create square icon artwork for an original fantasy MMORPG harmful status effect.
-
-Depict [SUBJECT] being [RESTRICTED, CORRUPTED, WEAKENED, OR DAMAGED] by [CAUSE]. Use constricting, downward, fractured, or inward-moving forms. The concrete condition must remain clearer than the surrounding magical effects.
-
-Use [PALETTE], deep shadow masses, sharp focal highlights, and broad painted shapes. Make the condition understandable at 32x32.
-
-Avoid a generic skull unless death or disease is central, excessive green, text, permanent frame, and abstract clutter.
+> Render as a compact classic MMORPG inventory icon, not as cinematic concept art. Use chunky hand-painted shapes, simplified materials, a tight crop, a strong silhouette, limited micro-detail, broad value groups, selective highlights, and a quiet abstract painted background. Design for immediate readability at 32x32 pixels. Avoid photorealism, realistic PBR materials, studio product lighting, excessive scratches, tiny rivets, dense chain links, ornate clutter, full scenes, text, and any baked UI frame. Fill the square canvas with artwork to the edges and use only a soft irregular painted vignette around the outer 10-20%. Do not draw a metallic rim, bevel, slot border, hard rectangle, or rarity-colored outline.
 
 ## Item template
 
-Create square icon artwork for an original fantasy MMORPG item.
+Create one square inventory icon for an original fantasy MMORPG.
 
-Show one [ITEM] in a dramatic three-quarter view, filling most of the canvas. Emphasize its [MATERIALS, CRAFTSMANSHIP, DAMAGE, MAGIC, OR RARITY] through distinct material highlights and an exaggerated readable silhouette. Use a simple atmospheric background that supports contrast without becoming a scene.
+- Item: [ITEM]
+- Slot/type: [TYPE]
+- Rarity: [POOR/COMMON/UNCOMMON/RARE/EPIC/LEGENDARY]
+- Materials: [MATERIALS]
+- Primary shape: [SILHOUETTE]
+- Signature feature: [FEATURE]
+- Palette: [PALETTE]
+- Mood: [MOOD]
+- Avoid: [AVOID]
 
-No character holding it, no inventory grid, no text, no price tag, no permanent border, and no additional unrelated objects.
+Show only the item in a tight three-quarter or diagonal crop. Apply the visual complexity and effect intensity defined for [RARITY] in `rarity-direction.md`. The icon should feel like painted game UI art rather than a detailed illustration.
 
-## Prompt intake example
+[REQUIRED STYLE BLOCK]
 
-Input:
-- Name: Press the Attack
-- Category: Warrior active ability
-- Mechanic: Temporarily increases movement and attack speed
-- Primary symbol: Armored boot driving forward
-- Secondary cue: Partial weapon and forceful speed streaks
-- Palette: Steel, crimson, orange
-- Avoid: Teleportation, lightning, mounted imagery
+## Ability template
 
-Output prompt:
+Create one square ability icon for an original fantasy MMORPG.
 
-Create square icon artwork for an original hand-painted fantasy MMORPG active ability. Depict an oversized armored warrior boot forcefully driving forward from the lower-left toward the upper-right, accompanied by a partial steel weapon silhouette and broad crimson-orange motion streaks. Communicate relentless forward aggression, increased movement speed, and faster attacks. Use exaggerated foreshortening, a strong diagonal composition, broad painterly forms, deep shadowed corners, rich steel and crimson colors, and concentrated orange highlights around the leading edge. The dominant forms must remain recognizable at 32x32 pixels. No text, permanent UI frame, lightning, magical teleportation, mounted imagery, full character portrait, scenery, or tiny decorative clutter.
+- Ability: [NAME]
+- Class/school: [CLASS OR SCHOOL]
+- Gameplay meaning: [MECHANIC]
+- Primary action: [ACTION]
+- Focal symbol: [SYMBOL]
+- Palette: [PALETTE]
+- Avoid: [AVOID]
+
+Depict one forceful action or symbolic impact with a clear direction. Keep the effect graphic, compact, and readable. Use a single focal point and simplified elemental shapes rather than a full scene.
+
+[REQUIRED STYLE BLOCK]
+
+## Buff or debuff template
+
+Create one square [BUFF/DEBUFF] icon for an original fantasy MMORPG.
+
+- Name: [NAME]
+- Status meaning: [MECHANIC]
+- Affected subject or symbol: [SUBJECT]
+- Visual transformation: [CHANGE]
+- Palette: [PALETTE]
+- Avoid: [AVOID]
+
+Show the condition through one concrete symbolic change. Keep the composition simpler than an active ability and immediately readable at tiny size.
+
+[REQUIRED STYLE BLOCK]
+
+## Rarity comparison batch
+
+Create six versions of the same [ITEM], one for each rarity: poor, common, uncommon, rare, epic, and legendary. Preserve the same item family and basic function while increasing craftsmanship, silhouette distinction, color richness, magical treatment, and purposeful ornamentation according to `rarity-direction.md`. Do not merely recolor the same image. Do not make higher rarities photorealistic or cluttered.

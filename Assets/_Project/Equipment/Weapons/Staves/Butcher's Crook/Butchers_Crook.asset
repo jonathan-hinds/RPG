@@ -17,12 +17,14 @@ MonoBehaviour:
   description: A long staff weighted for hard swings and careful spellwork.
   itemType: 3
   quality: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 6e7658af8739aa74786033b171666338, type: 3}
   maxStackSize: 1
   vendorValueCopper: 6
+  containerSlotCount: 0
   consumableType: 0
   restoreHealthAmount: 0
   restoreManaAmount: 0
+  experienceRewardAmount: 0
   consumeDurationSeconds: 10
   requiresStationary: 1
   equipmentSlot: 16

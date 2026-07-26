@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Normalize a square icon master and export standard game-ready sizes."""
+"""Normalize an icon master and export sizes into rarity/category folders."""
 
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 from PIL import Image, ImageOps
 
 DEFAULT_SIZES = (256, 64, 32)
+RARITIES = ("poor", "common", "uncommon", "rare", "epic", "legendary")
 
 
 def parse_sizes(value: str) -> tuple[int, ...]:
@@ -20,6 +22,13 @@ def parse_sizes(value: str) -> tuple[int, ...]:
     return sizes
 
 
+def slug(value: str) -> str:
+    cleaned = re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
+    if not cleaned:
+        raise argparse.ArgumentTypeError("value must contain letters or numbers")
+    return cleaned
+
+
 def square_crop(image: Image.Image) -> Image.Image:
     width, height = image.size
     side = min(width, height)
@@ -30,22 +39,21 @@ def square_crop(image: Image.Image) -> Image.Image:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("input", type=Path, help="Path to the approved master PNG")
-    parser.add_argument("--output-dir", type=Path, required=True, help="Directory for exports")
-    parser.add_argument("--name", required=True, help="Base filename without extension")
-    parser.add_argument("--sizes", type=parse_sizes, default=DEFAULT_SIZES, help="Comma-separated sizes")
-    parser.add_argument(
-        "--fit",
-        choices=("crop", "contain"),
-        default="crop",
-        help="crop=center-crop to square; contain=pad to square with transparent pixels",
-    )
+    parser.add_argument("input", type=Path, help="Approved source PNG")
+    parser.add_argument("--output-root", type=Path, default=Path("output"))
+    parser.add_argument("--rarity", choices=RARITIES, default="common")
+    parser.add_argument("--category", type=slug, default="misc")
+    parser.add_argument("--name", type=slug, required=True)
+    parser.add_argument("--sizes", type=parse_sizes, default=DEFAULT_SIZES)
+    parser.add_argument("--fit", choices=("crop", "contain"), default="crop")
     args = parser.parse_args()
 
     if not args.input.is_file():
         parser.error(f"input file does not exist: {args.input}")
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = args.output_root / args.rarity / args.category / args.name
+    output_dir.mkdir(parents=True, exist_ok=True)
+    base_name = f"{args.category}_{args.name}"
 
     with Image.open(args.input) as source:
         image = source.convert("RGBA")
@@ -53,16 +61,19 @@ def main() -> int:
             normalized = square_crop(image)
         else:
             side = max(image.size)
-            normalized = ImageOps.pad(image, (side, side), method=Image.Resampling.LANCZOS, color=(0, 0, 0, 0))
+            normalized = ImageOps.pad(
+                image,
+                (side, side),
+                method=Image.Resampling.LANCZOS,
+                color=(0, 0, 0, 0),
+            )
 
-        master_path = args.output_dir / f"{args.name}_master.png"
-        normalized.save(master_path, optimize=True)
-
+        normalized.save(output_dir / f"{base_name}_master.png", optimize=True)
         for size in args.sizes:
             exported = normalized.resize((size, size), Image.Resampling.LANCZOS)
-            exported.save(args.output_dir / f"{args.name}_{size}.png", optimize=True)
+            exported.save(output_dir / f"{base_name}_{size}.png", optimize=True)
 
-    print(f"Created normalized master and {len(args.sizes)} exports in {args.output_dir}")
+    print(f"Created master and {len(args.sizes)} exports in {output_dir}")
     return 0
 
 

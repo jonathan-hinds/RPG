@@ -1,127 +1,99 @@
 # Icon Style Bible
 
-## Goal
+## Target
 
-Create original, highly readable, hand-painted fantasy MMORPG icon artwork. The result should feel designed for a classic game interface rather than like a miniature illustration, product render, or cinematic concept painting.
+Create original inventory and ability artwork with the compact, hand-painted readability of classic MMORPG interface icons. Use `assets/style-references/target_wow_inventory_reference.png` as the principal presentation reference. Use `assets/style-references/rejected_overrendered_reference.png` as a negative example.
 
-## Core visual language
+The target is **small game UI artwork**, not a high-resolution fantasy product render.
 
-- Square, tightly cropped composition.
-- One dominant focal subject.
-- Exaggerated shape and perspective.
-- Broad painterly forms.
-- Strong light-dark separation.
-- Rich saturated local color.
-- Concentrated bright highlights.
-- Deep, simplified shadow masses.
-- Darkened or visually quiet corners.
-- Energetic diagonals where motion is appropriate.
-- Controlled glow that supports rather than obscures the subject.
+## Correct visual language
+
+- Square icon composition designed for 32x32 and 64x64 display.
+- One immediately recognizable subject.
+- Tight crop; the subject usually fills 75-95% of the canvas.
+- Chunky silhouette and simplified construction.
+- Hand-painted, graphic forms with visible shape grouping.
+- Moderate stylization and exaggerated proportions.
+- Bold local color with clear material separation.
+- A few deliberate highlights rather than reflections on every edge.
+- Dark, simple, abstract, or softly painted background with a gentle vignette toward the canvas edges.
+- Slightly uneven painted edges are acceptable and desirable.
+- Detail is concentrated around the focal feature and simplified elsewhere.
+
+## Explicitly avoid the rejected direction
+
+The rejected reference is too cinematic, realistic, and over-rendered. Do not reproduce its traits:
+
+- No photorealistic or near-photorealistic metal.
+- No physically based material showcase.
+- No thousands of chain links, scratches, cracks, rivets, or micro-details.
+- No dramatic studio product photography.
+- No full object presentation when a tighter symbolic crop reads better.
+- No high-frequency texture covering the whole icon.
+- No harsh black cinematic vignette swallowing the silhouette. Use only a soft painted edge vignette that supports readability.
+- No concept-art canvas intended to be admired at 1024px.
+
+At full resolution the painting may look intentionally simplified. That is correct because the final target is a tiny interface slot.
 
 ## Composition hierarchy
 
-1. Primary symbol: communicates the mechanic immediately.
-2. Secondary cue: explains damage type, motion, target, or status.
-3. Background energy: supports mood and contrast only.
+1. Primary silhouette: identify the item or action.
+2. One focal feature: blade edge, gem, flame, eye, crack, potion liquid, or impact point.
+3. Secondary material cue: leather wrap, metal trim, cloth fold, bone, wood, or magical accent.
+4. Background: only enough to separate the silhouette.
 
-The primary symbol should occupy roughly 70-90% of the canvas. Avoid large empty centers and avoid shrinking the subject to show unnecessary context.
+For item icons, prefer a strong diagonal or three-quarter angle. Crop long weapons near the edges. Armor may be shown as a simplified torso, helm, glove, boot, or shoulder silhouette rather than a complete product render.
 
-## Thumbnail readability
+## Rendering scale
 
-At 32x32:
+Paint as though using a broad brush:
 
-- The subject must remain recognizable.
-- The brightest area must support the focal point.
-- The silhouette must not collapse into the background.
-- Small particles and surface marks may disappear without harming meaning.
-- The icon should not depend on facial details or written symbols.
+- Large color blocks first.
+- Two or three major value groups.
+- One concentrated highlight family.
+- A limited number of interior marks.
+- Shapes should survive downscaling without depending on texture.
 
 ## Lighting
 
-Use a deliberate key light and concentrated accents. Do not illuminate every surface equally. Favor:
-
-- Bright impact points.
-- Rim light on important silhouette edges.
-- Dark recesses around the focal subject.
-- Warm-cool contrast when appropriate.
-
-Avoid flat ambient lighting, photographic HDR, heavy bloom, and a uniform wash over the entire canvas.
+- Use one readable light direction.
+- Reserve the brightest values for the focal feature.
+- Use selective rim light only where it improves the silhouette.
+- Keep shadows broad and painted.
+- Avoid HDR reflections, realistic bounce lighting, and full-surface specular noise.
 
 ## Color
 
 - Use 2-4 dominant colors.
-- Keep materials distinguishable.
-- Preserve one clear high-contrast focal region.
-- Let the background be darker, quieter, or less saturated.
-- Avoid gray-brown contamination across the entire image.
-- Avoid random rainbow effects unless the mechanic specifically calls for them.
+- Let the item carry stronger local color than the background.
+- Use saturation selectively; do not wash the whole icon in one color.
+- Keep low-rarity items restrained and high-rarity items more expressive according to `rarity-direction.md`.
 
-## Brushwork and detail
+## Materials
 
-- Use broad, intentional strokes.
-- Suggest texture rather than rendering every surface detail.
-- Favor chunky cracks, folds, facets, grain, and sparks.
-- Use fine detail only near the focal point.
-- Avoid noisy procedural texture, over-sharpening, and tiny AI ornamentation.
+Represent materials with shorthand rather than simulation:
 
-## Material cues
+- Metal: one dark plane, one midtone, a few sharp highlights.
+- Leather: warm block color, one soft highlight, one seam or fold.
+- Cloth: two or three large folds, clear hue identity.
+- Wood: broad grain marks only.
+- Stone: large facets and one or two cracks.
+- Bone: pale block shapes with dark joints or cavities.
+- Magic: a concentrated core with controlled glow, not fog over the entire image.
 
-### Metal
+## Background
 
-- Sharp edge highlights.
-- Dark reflected planes.
-- Limited bright specular accents.
-- Clear separation from leather or stone.
+Use a simple painted field, radial value shift, elemental smear, or abstract complementary shape. Add a soft painted vignette: gradually darken or desaturate the outer 10-20% of the image while keeping the subject readable. The vignette must remain irregular and painterly, not a geometric border. Do not create a room, landscape, pedestal, horizon, narrative scene, metallic frame, beveled slot edge, or hard rectangular outline.
 
-### Leather
+## Originality
 
-- Warm midtones.
-- Broad soft highlights.
-- Dark seams or folds.
-- Minimal glossy reflection.
+Use genre-level principles only. Do not copy an existing icon, named item, logo, character, exact composition, or interface frame.
 
-### Cloth
 
-- Large readable folds.
-- Soft transitions.
-- Strong color identity.
+## Border prohibition
 
-### Stone and earth
-
-- Angular broken planes.
-- Large cracks.
-- Dust and debris kept subordinate.
-- Matte highlights.
-
-### Wood
-
-- Broad grain marks.
-- Warm planes.
-- Chunky splits rather than fine realistic fibers.
-
-### Bone
-
-- Pale matte surfaces.
-- Dark creases and cavities.
-- Warm or sickly reflected light depending on context.
-
-### Crystal and magic
-
-- Hard facets or concentrated energy cores.
-- Bright internal light.
-- Controlled glow with visible structure.
-
-## Backgrounds
-
-Use simple atmospheric or magical backgrounds that increase contrast. Good backgrounds include:
-
-- Dark radial gradients.
-- Blurred elemental motion.
-- Simplified smoke or aura.
-- Large abstract shapes.
-
-Avoid literal landscapes, rooms, horizon lines, scenery, and storytelling details that compete with the subject.
-
-## Originality requirement
-
-Use genre-level visual principles only. Do not reproduce an existing game icon, copyrighted emblem, named character, exact spell composition, or recognizable UI frame.
+- Generate artwork only.
+- Never include a metallic, stone, colored, beveled, embossed, or painted inventory-slot border.
+- Never leave a visible rectangular frame line around the artwork.
+- Let the artwork continue naturally to every canvas edge beneath the soft vignette.
+- UI borders and rarity borders belong in Unity and are not part of the generated icon artwork.

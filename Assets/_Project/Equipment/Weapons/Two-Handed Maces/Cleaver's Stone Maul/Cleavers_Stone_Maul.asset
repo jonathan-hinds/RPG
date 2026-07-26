@@ -17,12 +17,14 @@ MonoBehaviour:
   description: A heavy two-handed mace fit for crushing armor.
   itemType: 3
   quality: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: d959da150edf4f04eb5a4be1dfc292d8, type: 3}
   maxStackSize: 1
   vendorValueCopper: 6
+  containerSlotCount: 0
   consumableType: 0
   restoreHealthAmount: 0
   restoreManaAmount: 0
+  experienceRewardAmount: 0
   consumeDurationSeconds: 10
   requiresStationary: 1
   equipmentSlot: 16

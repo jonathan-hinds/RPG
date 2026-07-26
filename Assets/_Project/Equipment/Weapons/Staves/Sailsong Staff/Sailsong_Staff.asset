@@ -17,12 +17,14 @@ MonoBehaviour:
   description: A staff marked with windmill sail notches.
   itemType: 3
   quality: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 5b331e86fea6aee4885c8e8a22446d6c, type: 3}
   maxStackSize: 1
   vendorValueCopper: 5
+  containerSlotCount: 0
   consumableType: 0
   restoreHealthAmount: 0
   restoreManaAmount: 0
+  experienceRewardAmount: 0
   consumeDurationSeconds: 10
   requiresStationary: 1
   equipmentSlot: 16

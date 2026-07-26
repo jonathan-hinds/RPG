@@ -17,12 +17,14 @@ MonoBehaviour:
   description: A thin pair of worn cloth gloves with frayed seams.
   itemType: 3
   quality: 0
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: fc0593215a473b14ca0f094809ed2b80, type: 3}
   maxStackSize: 1
   vendorValueCopper: 0
+  containerSlotCount: 0
   consumableType: 0
   restoreHealthAmount: 0
   restoreManaAmount: 0
+  experienceRewardAmount: 0
   consumeDurationSeconds: 10
   requiresStationary: 1
   equipmentSlot: 8

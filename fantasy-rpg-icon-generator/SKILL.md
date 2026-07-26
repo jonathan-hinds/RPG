@@ -1,139 +1,115 @@
 ---
 name: fantasy-rpg-icon-generator
-description: Generate and prepare consistent hand-painted fantasy MMORPG icon artwork for abilities, buffs, debuffs, passives, items, resources, quest items, and status effects. Use when creating new game icons, turning gameplay mechanics into readable visual symbols, producing prompt sets or icon sheets, evaluating icon consistency, or exporting approved square artwork into standardized Unity-ready sizes.
+description: Generate and prepare original classic-MMORPG-style icon artwork for inventory items, gear, consumables, resources, abilities, buffs, debuffs, passives, quest items, and status effects. Use when creating compact hand-painted game UI icons, designing item art by rarity, producing icon variations, evaluating tiny-size readability, organizing exports into rarity folders, or converting approved masters into Unity-ready PNG sizes.
 ---
 
 # Fantasy RPG Icon Generator
 
-Create original fantasy MMORPG icon artwork with the visual clarity, saturation, dramatic lighting, and hand-painted readability associated with classic early-2000s fantasy game interfaces. Do not copy specific copyrighted icons, logos, characters, or exact compositions.
+Generate original compact game-interface artwork that prioritizes the visual readability of classic MMORPG inventory icons. Do not create cinematic product renders or copy existing game icons.
 
 ## Required workflow
 
 1. Read `references/icon-style.md`.
 2. Read the relevant category in `references/icon-categories.md`.
-3. Convert the gameplay concept into one dominant visual symbol.
-4. Build the image prompt with `references/prompt-templates.md`.
-5. Generate artwork without a permanent UI frame unless the user explicitly requests one.
-6. Review the result against `references/quality-checklist.md`.
-7. Inspect it at 64x64 and 32x32 before approval.
-8. Use `scripts/process_icon.py` to create standardized exports from an approved master.
-9. Use `scripts/create_contact_sheet.py` when comparing multiple icons or variants.
+3. For items or gear, read `references/rarity-direction.md` and assign a rarity.
+4. Inspect `assets/style-references/target_wow_inventory_reference.png` for scale, crop, simplification, and UI readability.
+5. Inspect `assets/style-references/rejected_overrendered_reference.png` only as a negative example.
+6. Build the prompt with `references/prompt-templates.md`.
+7. Generate borderless artwork with a soft painted vignette. Never bake an inventory-slot frame into the image unless the user explicitly requests one for that specific icon.
+8. Review against `references/quality-checklist.md` at 64x64 and 32x32.
+9. Use `scripts/process_icon.py` to export the approved master into the correct rarity and category folders.
+10. Use `scripts/create_contact_sheet.py` to compare batches.
 
 ## Default assumptions
 
-Use these defaults unless the user provides different requirements:
-
-- Master artwork: 1024x1024 PNG.
-- Final crop: square.
-- Artwork only, without cooldown overlays, rarity borders, text, labels, or permanent frames.
+- Master: 1024x1024 PNG used as a source, but painted with intentionally broad simplified detail.
 - Exports: 256x256, 64x64, and 32x32 PNG.
-- Subject coverage: approximately 70-90% of the canvas.
-- One dominant focal subject.
-- Dramatic but readable lighting.
-- Darkened or simplified corners.
-- Strong silhouette and value separation.
-- No transparency inside the painted artwork unless explicitly requested.
+- Tight square crop with the subject covering 75-95% of the canvas.
+- One dominant object, symbol, or action.
+- Chunky hand-painted forms, limited micro-detail, and a quiet abstract background with a soft edge vignette.
+- No permanent UI frame, metallic border, bevel, slot edge, text, labels, cooldown treatment, or rarity border.
+- Item rarity controls art complexity using `references/rarity-direction.md`.
 
-## Intake format
+## Intake
 
-Extract or infer the following fields:
+Extract or infer:
 
 - Icon name
 - Category
-- Gameplay effect
-- Primary visual symbol
-- Secondary visual cue
-- Magic school, damage type, item material, or emotional tone
-- Preferred palette
+- Item type or gameplay effect
+- Rarity for gear/items
+- Primary silhouette or visual symbol
+- Signature feature
+- Materials, magic school, or damage type
+- Palette
 - Elements to avoid
 
-When information is missing, choose the clearest conventional symbol for the mechanic and state the interpretation briefly.
+When rarity is not specified for an item, ask for it only when the result materially depends on rarity. Otherwise default to `common` and state the assumption briefly.
 
-## Design rules
+## Core art-direction rules
 
 - Design backward from 32x32 readability.
-- Depict an action for active abilities rather than a static inventory object.
-- Use a concrete symbol before abstract energy.
-- Exaggerate perspective, gesture, and silhouette.
-- Keep the focal subject large and immediately identifiable.
-- Use broad painted shapes and controlled texture.
-- Preserve material identity through distinct highlight behavior.
-- Keep backgrounds subordinate to the focal subject.
-- Avoid tiny decorative details, excessive particles, clutter, photographic realism, smooth generic 3D rendering, and muddy global color grading.
-- Do not use text, letters, numbers, logos, interface labels, or accidental pseudo-lettering.
-- Do not make every debuff green, every holy effect gold, or every harmful effect a skull. Match the symbol to the mechanic.
-- Maintain meaningful visual differences between icons in the same family.
+- Favor a tight symbolic crop over displaying the full object at a distance.
+- Use broad painted shapes and two or three major value groups.
+- Simplify chainmail, engraving, cracks, grain, stitching, and surface damage.
+- Use selective highlights; do not render every edge.
+- Keep the background subordinate and abstract; use a soft painted vignette that darkens the outer edges without forming a hard frame.
+- Treat photorealism, PBR rendering, studio lighting, and high-frequency material texture as failures.
+- Do not confuse more rarity with more noise.
+- Preserve clear differences between icons in the same family.
 
-## Variant workflow
+## Rarity output structure
 
-For a new icon family or an uncertain concept:
+Export item icons to:
 
-1. Produce three substantially different symbolic directions.
-2. Compare them at thumbnail size.
-3. Select the clearest direction, not merely the most detailed image.
-4. Refine that direction into the final master.
+```text
+output/<rarity>/<category>/<icon_name>/
+```
 
-For an established family, generate one primary direction plus one alternative only when useful.
+Supported rarity values:
 
-## Consistency workflow
+```text
+poor
+common
+uncommon
+rare
+epic
+legendary
+```
 
-When approved project icons are available:
+Suggested categories include `weapons`, `armor`, `consumables`, `resources`, `quest-items`, and `misc`.
 
-- Treat them as stronger guidance than broad genre labels.
-- Match their crop, contrast, edge treatment, brush scale, saturation, background density, and lighting intensity.
-- Do not duplicate their exact subject arrangement.
-- Record recurring visual rules in `references/project-style-overrides.md`.
+Ability, buff, debuff, passive, and status icons may use `common` as the organizational default unless the project assigns them a rarity tier.
 
-## Borders and UI treatment
-
-Prefer separate UI borders applied in Unity or by a deterministic image-processing step. Keep source art borderless so the same artwork can support:
-
-- Ability buttons
-- Buff and debuff frames
-- Item rarity frames
-- Disabled states
-- Cooldown overlays
-- Proc highlights
-- Selected and hovered states
-
-If a user requests baked borders, create the artwork first and apply a consistent provided frame afterward. Never ask the image model to improvise a different frame for every icon.
-
-## Output naming
+## Naming
 
 Use lowercase snake_case:
 
-- Master: `<category>_<icon_name>_master.png`
-- 256 export: `<category>_<icon_name>_256.png`
-- 64 export: `<category>_<icon_name>_64.png`
-- 32 export: `<category>_<icon_name>_32.png`
+- `<category>_<icon_name>_master.png`
+- `<category>_<icon_name>_256.png`
+- `<category>_<icon_name>_64.png`
+- `<category>_<icon_name>_32.png`
 
-Example:
-
-`ability_press_the_attack_master.png`
-
-## Script usage
-
-Process an approved master:
+## Process an approved icon
 
 ```bash
-python scripts/process_icon.py path/to/master.png --output-dir path/to/exports --name ability_press_the_attack
+python scripts/process_icon.py path/to/master.png \
+  --output-root output \
+  --rarity uncommon \
+  --category armor \
+  --name bonebound_chainmail
 ```
 
-Create a contact sheet:
+This creates:
 
-```bash
-python scripts/create_contact_sheet.py path/to/icons --output path/to/contact_sheet.png
+```text
+output/uncommon/armor/bonebound_chainmail/
 ```
 
-## Deliverables
+## Concept batches
 
-For a single icon request, provide:
+For uncertain art direction, generate three or four substantially different silhouettes, then select the clearest at 32x32. For a rarity progression, generate all six rarities as related but independently designed items; do not just recolor one base image.
 
-1. A concise visual concept.
-2. A production-ready image-generation prompt.
-3. An optional alternate concept when ambiguity is high.
-4. A short avoidance list.
-5. The generated image when image generation is available.
-6. Exported sizes after the user approves the master and a local file is available.
+## Approved references
 
-For a batch, preserve visual variety while keeping shared family rules consistent. Use a contact sheet to review duplicate silhouettes, palette repetition, and inconsistent rendering.
+The initial target screenshot is sufficient to begin. As original icons are approved, add only the strongest ones to `assets/approved-references/`. Treat approved project icons as stronger references than broad genre labels, but never copy their exact composition into unrelated icons.
