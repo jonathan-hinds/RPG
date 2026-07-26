@@ -324,7 +324,7 @@ namespace RPGClone.UI
             rect.pivot = new Vector2(1f, 1f);
             rect.anchoredPosition = new Vector2(0f, -y);
             rect.sizeDelta = new Vector2(42f, 42f);
-            MMOItemIconView.AddToSlot(rect, item, 0);
+            MMOItemIconView.AddToWindowSlot(rect, item, 0);
         }
 
         private Button CreateItemIconButton(string objectName, MMOItemDefinition item, int quantity, Vector2 anchoredPosition, bool selected)
@@ -338,7 +338,12 @@ namespace RPGClone.UI
             rect.sizeDelta = new Vector2(42f, 42f);
 
             Button button = slot.gameObject.AddComponent<Button>();
-            MMOItemIconView.AddToSlot(rect, item, quantity, false, selected);
+            MMOItemIconView.AddToWindowSlot(
+                rect,
+                item,
+                quantity,
+                false,
+                selected);
             return button;
         }
 

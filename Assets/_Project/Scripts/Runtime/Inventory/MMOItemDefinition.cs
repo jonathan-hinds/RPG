@@ -17,6 +17,8 @@ namespace RPGClone.Inventory
         [SerializeField] private Sprite icon;
         [SerializeField, Min(1)] private int maxStackSize = 20;
         [SerializeField, Min(0)] private int vendorValueCopper;
+        [Header("Container")]
+        [SerializeField, Min(0)] private int containerSlotCount;
         [Header("Consumable")]
         [SerializeField] private MMOConsumableType consumableType = MMOConsumableType.None;
         [SerializeField, Min(0)] private int restoreHealthAmount;
@@ -46,6 +48,7 @@ namespace RPGClone.Inventory
         public Sprite Icon => icon;
         public int MaxStackSize => Mathf.Max(1, maxStackSize);
         public int VendorValueCopper => vendorValueCopper;
+        public int ContainerSlotCount => IsContainer ? Mathf.Max(1, containerSlotCount) : 0;
         public MMOConsumableType ConsumableType => consumableType;
         public int RestoreHealthAmount => Mathf.Max(0, restoreHealthAmount);
         public int RestoreManaAmount => Mathf.Max(0, restoreManaAmount);
@@ -63,6 +66,7 @@ namespace RPGClone.Inventory
         public int ShieldBlockValue => Mathf.Max(0, shieldBlockValue);
         public IReadOnlyList<MMOPlayableClass> AllowedClasses => allowedClasses;
         public bool IsEquipment => itemType == MMOItemType.Equipment;
+        public bool IsContainer => itemType == MMOItemType.Container && containerSlotCount > 0;
         public bool IsConsumable => itemType == MMOItemType.Consumable && consumableType != MMOConsumableType.None;
         public bool IsWeapon => IsEquipment && weaponType != MMOWeaponType.None && weaponType != MMOWeaponType.Shield;
         public bool IsShield => IsEquipment && weaponType == MMOWeaponType.Shield;
@@ -89,6 +93,11 @@ namespace RPGClone.Inventory
             maxStackSize = Mathf.Max(1, newMaxStackSize);
             vendorValueCopper = Mathf.Max(0, newVendorValueCopper);
             icon = newIcon;
+            if (itemType != MMOItemType.Container)
+            {
+                containerSlotCount = 0;
+            }
+
             if (itemType != MMOItemType.Consumable)
             {
                 consumableType = MMOConsumableType.None;
@@ -119,6 +128,27 @@ namespace RPGClone.Inventory
             experienceRewardAmount = 0;
             consumeDurationSeconds = Mathf.Max(0.1f, newConsumeDurationSeconds);
             requiresStationary = newRequiresStationary;
+        }
+
+        public void ConfigureContainer(
+            string newItemId,
+            string newDisplayName,
+            string newDescription,
+            MMOItemQuality newQuality,
+            int newContainerSlotCount,
+            int newVendorValueCopper,
+            Sprite newIcon = null)
+        {
+            Configure(
+                newItemId,
+                newDisplayName,
+                newDescription,
+                MMOItemType.Container,
+                newQuality,
+                1,
+                newVendorValueCopper,
+                newIcon);
+            containerSlotCount = Mathf.Max(1, newContainerSlotCount);
         }
 
         public void ConfigureExperienceConsumable(

@@ -122,6 +122,58 @@ namespace RPGClone.EditorTools
             Debug.Log("Installed Lucky Copper Coin into the starter item catalog and Quartermaster Grakka's stock.");
         }
 
+        [MenuItem("Tools/RPG Clone/Inventory/Install 8-Slot Bag")]
+        public static void InstallEightSlotBag()
+        {
+            if (SceneManager.GetActiveScene().path != ScenePath)
+            {
+                Debug.LogError($"Open {ScenePath} before installing the 8-slot bag.");
+                return;
+            }
+
+            EnsureFolders();
+            MMOItemDefinition bag = GetOrCreateContainer(
+                "Brown Leather Satchel",
+                "brown_leather_satchel",
+                "An 8-slot leather bag. Drag it to an empty bag slot or right-click to equip it.",
+                8,
+                625);
+
+            string catalogPath = $"{ItemFolder}/Starter_Item_Catalog.asset";
+            MMOItemCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOItemCatalog>(catalogPath);
+            if (catalog == null)
+            {
+                Debug.LogError($"Starter item catalog was not found at {catalogPath}.");
+                return;
+            }
+
+            List<MMOItemDefinition> catalogItems = new(catalog.Items);
+            catalogItems.RemoveAll(item => item != null && item.ItemId == bag.ItemId);
+            catalogItems.Add(bag);
+            catalog.Configure(catalogItems);
+            EditorUtility.SetDirty(catalog);
+
+            GameObject vendorObject = GameObject.Find("Vendor - Quartermaster");
+            MMOVendorNpc vendor = vendorObject != null ? vendorObject.GetComponent<MMOVendorNpc>() : null;
+            if (vendor == null)
+            {
+                Debug.LogError("Quartermaster Grakka was not found in the active scene.");
+                return;
+            }
+
+            List<MMOVendorStockEntry> stock = new(vendor.Stock);
+            stock.RemoveAll(entry => entry?.Item != null && entry.Item.ItemId == bag.ItemId);
+            stock.Insert(Mathf.Min(3, stock.Count), new MMOVendorStockEntry(bag, 1, 2500));
+            vendor.Configure(vendor.VendorId, vendor.DisplayName, vendor.Title, stock, vendor.BuysTrash);
+            EditorUtility.SetDirty(vendor);
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+
+            AssetDatabase.SaveAssets();
+            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+            AssetDatabase.Refresh();
+            Debug.Log("Installed Brown Leather Satchel into the starter item catalog and Quartermaster Grakka's stock.");
+        }
+
         private static void EnsureFolders()
         {
             CreateFolderIfMissing(RootFolder);
@@ -166,6 +218,12 @@ namespace RPGClone.EditorTools
 
             items.RazorcragJerky = GetOrCreateConsumable("Razorcrag Jerky", "razorcrag_jerky", "Salted trail meat from the camp stores.", MMOConsumableType.Food, 250, 0, 10f, 20, 8);
             items.SpringwaterFlask = GetOrCreateConsumable("Springwater Flask", "springwater_flask", "A stoppered flask of clean valley springwater.", MMOConsumableType.Water, 0, 250, 10f, 20, 8);
+            items.BrownLeatherSatchel = GetOrCreateContainer(
+                "Brown Leather Satchel",
+                "brown_leather_satchel",
+                "An 8-slot leather bag. Drag it to an empty bag slot or right-click to equip it.",
+                8,
+                625);
             items.LuckyCopperCoin = GetOrCreateExperienceConsumable(
                 "Lucky Copper Coin",
                 "lucky_copper_coin",
@@ -226,6 +284,32 @@ namespace RPGClone.EditorTools
             }
 
             item.ConfigureConsumable(itemId, displayName, description, MMOItemQuality.Common, maxStack, vendorValueCopper, consumableType, restoreHealth, restoreMana, durationSeconds);
+            EditorUtility.SetDirty(item);
+            return item;
+        }
+
+        private static MMOItemDefinition GetOrCreateContainer(
+            string displayName,
+            string itemId,
+            string description,
+            int containerSlotCount,
+            int vendorValueCopper)
+        {
+            string path = $"{ItemFolder}/{Sanitize(displayName)}.asset";
+            MMOItemDefinition item = AssetDatabase.LoadAssetAtPath<MMOItemDefinition>(path);
+            if (item == null)
+            {
+                item = ScriptableObject.CreateInstance<MMOItemDefinition>();
+                AssetDatabase.CreateAsset(item, path);
+            }
+
+            item.ConfigureContainer(
+                itemId,
+                displayName,
+                description,
+                MMOItemQuality.Common,
+                containerSlotCount,
+                vendorValueCopper);
             EditorUtility.SetDirty(item);
             return item;
         }
@@ -613,6 +697,7 @@ namespace RPGClone.EditorTools
                 new MMOVendorStockEntry(items.LuckyCopperCoin, 1, 0),
                 new MMOVendorStockEntry(items.RazorcragJerky, 1, 16),
                 new MMOVendorStockEntry(items.SpringwaterFlask, 1, 16),
+                new MMOVendorStockEntry(items.BrownLeatherSatchel, 1, 2500),
                 new MMOVendorStockEntry(LoadItem("Recruits_Shortsword"), 1, 0),
                 new MMOVendorStockEntry(LoadItem("Recruits_Greatsword"), 1, 0),
                 new MMOVendorStockEntry(LoadItem("Recruits_Staff"), 1, 0),
@@ -842,6 +927,7 @@ namespace RPGClone.EditorTools
             public MMOItemDefinition WaterGourd;
             public MMOItemDefinition RazorcragJerky;
             public MMOItemDefinition SpringwaterFlask;
+            public MMOItemDefinition BrownLeatherSatchel;
             public MMOItemDefinition LuckyCopperCoin;
             public MMOItemDefinition[] BootRewards;
             public MMOItemDefinition[] GloveRewards;
@@ -864,6 +950,7 @@ namespace RPGClone.EditorTools
                         WaterGourd,
                         RazorcragJerky,
                         SpringwaterFlask,
+                        BrownLeatherSatchel,
                         LuckyCopperCoin
                     };
                     AddRange(items, BootRewards);

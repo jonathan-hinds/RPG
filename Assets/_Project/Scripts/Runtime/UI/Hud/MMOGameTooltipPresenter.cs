@@ -247,6 +247,11 @@ namespace RPGClone.UI
 
             MMOTooltipContent content = new(item.DisplayName, GetQualityColor(item.Quality));
             content.Add($"{MMOUiFactory.FormatEnumLabel(item.Quality)} {MMOUiFactory.FormatEnumLabel(item.ItemType)}", 11, FontStyle.Normal, new Color(0.82f, 0.78f, 0.68f, 1f));
+            if (item.IsContainer)
+            {
+                content.Add($"{item.ContainerSlotCount} Slot Bag", 11, FontStyle.Normal, Color.white);
+            }
+
             if (item.IsEquipment)
             {
                 if (item.IsWeapon)

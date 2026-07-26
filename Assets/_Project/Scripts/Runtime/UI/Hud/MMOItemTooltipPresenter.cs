@@ -186,6 +186,10 @@ namespace RPGClone.UI
             ClearContent();
             AddLine(item.DisplayName, 15, FontStyle.Bold, GetQualityColor(item.Quality));
             AddLine($"{FormatQuality(item.Quality)} {MMOUiFactory.FormatEnumLabel(item.ItemType)}", 11, FontStyle.Normal, new Color(0.82f, 0.78f, 0.68f, 1f));
+            if (item.IsContainer)
+            {
+                AddLine($"{item.ContainerSlotCount} Slot Bag", 11, FontStyle.Normal, Color.white);
+            }
 
             if (item.IsEquipment)
             {

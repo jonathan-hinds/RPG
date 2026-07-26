@@ -39,6 +39,11 @@ namespace RPGClone.UI
                 return true;
             }
 
+            if (stack.Item.IsContainer && inventory.TryEquipBagFromInventory(slotIndex))
+            {
+                return true;
+            }
+
             MMOCharacterEquipment equipment = context.ActorObject.GetComponent<MMOCharacterEquipment>();
             if (equipment != null && stack.Item.IsEquipment && equipment.TryEquipFromInventory(inventory, slotIndex))
             {

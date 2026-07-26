@@ -69,6 +69,10 @@ namespace RPGClone.UI
             {
                 payload.SourceEquipment.TryUnequipToInventory(inventory, payload.SourceEquipmentSlot, slotIndex);
             }
+            else if (payload.FromEquippedBag)
+            {
+                payload.SourceBagBar.TryUnequipBag(payload.SourceSlotIndex, slotIndex);
+            }
 
             MMOSlotDragState.EndDrag();
         }
@@ -85,7 +89,14 @@ namespace RPGClone.UI
                 return MMOSlotDropState.Valid;
             }
 
-            return payload.FromEquipment ? MMOSlotDropState.Valid : MMOSlotDropState.Invalid;
+            if (payload.FromEquipment)
+            {
+                return MMOSlotDropState.Valid;
+            }
+
+            return payload.FromEquippedBag && payload.SourceBagBar.CanUnequipBag(payload.SourceSlotIndex, slotIndex)
+                ? MMOSlotDropState.Valid
+                : MMOSlotDropState.Invalid;
         }
     }
 }

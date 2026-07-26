@@ -1102,6 +1102,7 @@ MonoBehaviour:
   autoBuild: 1
   inventory: {fileID: 0}
   wallet: {fileID: 0}
+  displayedBagIndex: -1
 --- !u!1 &378522765632141308
 GameObject:
   m_ObjectHideFlags: 0
@@ -6982,7 +6983,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 51c52cb641cb2834db800e29dc483599, type: 3}
-  m_Type: 3
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -13216,9 +13217,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 8803758875228207849}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -2.83, y: 160.7}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: -2.83, y: -21.300003}
   m_SizeDelta: {x: 100, y: 32}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &7703001155028510079
@@ -20253,9 +20254,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 8803758875228207849}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -2.83, y: -128.1}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: -2.83, y: 53.899994}
   m_SizeDelta: {x: 100, y: 32}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &8888032275971477489

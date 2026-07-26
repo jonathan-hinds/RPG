@@ -411,6 +411,7 @@ namespace RPGClone.CharacterSelection
             destination.rotationEuler = source.rotationEuler;
             destination.copper = source.copper;
             destination.inventory = new System.Collections.Generic.List<MMOInventorySlotSaveData>(source.inventory ?? new System.Collections.Generic.List<MMOInventorySlotSaveData>());
+            destination.equippedBagItemIds = new System.Collections.Generic.List<string>(source.equippedBagItemIds ?? new System.Collections.Generic.List<string>());
             destination.equipment = new System.Collections.Generic.List<MMOEquipmentSlotSaveData>(source.equipment ?? new System.Collections.Generic.List<MMOEquipmentSlotSaveData>());
             destination.weaponSkills = new System.Collections.Generic.List<MMOWeaponSkillSaveEntry>(source.weaponSkills ?? new System.Collections.Generic.List<MMOWeaponSkillSaveEntry>());
             destination.learnedAbilityIds = new System.Collections.Generic.List<string>(source.learnedAbilityIds ?? new System.Collections.Generic.List<string>());
@@ -464,6 +465,8 @@ namespace RPGClone.CharacterSelection
         {
             saveData.inventory ??= new System.Collections.Generic.List<MMOInventorySlotSaveData>();
             saveData.inventory.Clear();
+            saveData.equippedBagItemIds ??= new System.Collections.Generic.List<string>();
+            saveData.equippedBagItemIds.Clear();
             if (inventory == null)
             {
                 return;
@@ -483,6 +486,12 @@ namespace RPGClone.CharacterSelection
                     itemId = stack.Item.ItemId,
                     quantity = stack.Quantity
                 });
+            }
+
+            for (int i = 0; i < inventory.BagSlotCount; i++)
+            {
+                MMOItemDefinition bag = inventory.GetEquippedBag(i);
+                saveData.equippedBagItemIds.Add(bag != null ? bag.ItemId : null);
             }
         }
 
@@ -625,6 +634,14 @@ namespace RPGClone.CharacterSelection
                 return;
             }
 
+            System.Collections.Generic.List<MMOItemDefinition> equippedBags = new();
+            foreach (string itemId in saveData.equippedBagItemIds ?? new System.Collections.Generic.List<string>())
+            {
+                MMOItemDefinition bag = ResolveItem(itemId);
+                equippedBags.Add(bag != null && bag.IsContainer ? bag : null);
+            }
+
+            inventory.RestoreEquippedBags(equippedBags);
             inventory.Clear();
             foreach (MMOInventorySlotSaveData slot in saveData.inventory ?? new System.Collections.Generic.List<MMOInventorySlotSaveData>())
             {

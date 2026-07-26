@@ -38,6 +38,7 @@ namespace RPGClone.CharacterSelection
         public Vector3SaveData rotationEuler;
         public int copper;
         public List<MMOInventorySlotSaveData> inventory = new();
+        public List<string> equippedBagItemIds = new();
         public List<MMOEquipmentSlotSaveData> equipment = new();
         public List<MMOWeaponSkillSaveEntry> weaponSkills = new();
         public List<string> learnedAbilityIds = new();

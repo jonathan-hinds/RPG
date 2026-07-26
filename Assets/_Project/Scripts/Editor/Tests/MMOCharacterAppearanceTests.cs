@@ -115,7 +115,14 @@ namespace RPGClone.EditorTests
                 headStyleId = "head_custom",
                 faceId = "face_custom",
                 hairstyleId = "hair_custom",
-                hairColorId = "hair_color_custom"
+                hairColorId = "hair_color_custom",
+                equippedBagItemIds = new System.Collections.Generic.List<string>
+                {
+                    "brown_leather_satchel",
+                    null,
+                    null,
+                    null
+                }
             };
             MethodInfo cloneMethod = typeof(MMOSharedSessionState).GetMethod(
                 "CloneCharacter",
@@ -129,6 +136,8 @@ namespace RPGClone.EditorTests
             Assert.That(clone.faceId, Is.EqualTo("face_custom"));
             Assert.That(clone.hairstyleId, Is.EqualTo("hair_custom"));
             Assert.That(clone.hairColorId, Is.EqualTo("hair_color_custom"));
+            Assert.That(clone.equippedBagItemIds, Is.EqualTo(source.equippedBagItemIds));
+            Assert.That(clone.equippedBagItemIds, Is.Not.SameAs(source.equippedBagItemIds));
         }
 
         [Test]

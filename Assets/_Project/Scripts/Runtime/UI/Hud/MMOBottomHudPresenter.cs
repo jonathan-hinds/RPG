@@ -16,6 +16,7 @@ namespace RPGClone.UI
         [SerializeField] private MMOSpellBookPresenter spellBookPanel;
         [SerializeField] private MMOQuestLogPresenter questLogPanel;
         [SerializeField] private MMOSocialWindowPresenter socialPanel;
+        [SerializeField] private MMOBagBarPresenter bagBar;
         [SerializeField] private MMOReturnToCharacterSelectionController returnToCharacterSelectionController;
 
         private RectTransform menuButtons;
@@ -43,7 +44,7 @@ namespace RPGClone.UI
 
             if (keyboard.bKey.wasPressedThisFrame || keyboard.iKey.wasPressedThisFrame)
             {
-                inventoryPanel?.Toggle();
+                bagBar?.ToggleBag(MMOBagBarPresenter.BackpackBagIndex);
             }
 
             if (keyboard.pKey.wasPressedThisFrame)
@@ -59,6 +60,27 @@ namespace RPGClone.UI
             if (keyboard.oKey.wasPressedThisFrame)
             {
                 socialPanel?.Toggle();
+            }
+
+            if (keyboard.f12Key.wasPressedThisFrame)
+            {
+                bagBar?.ToggleBag(MMOBagBarPresenter.BackpackBagIndex);
+            }
+            else if (keyboard.f11Key.wasPressedThisFrame)
+            {
+                bagBar?.ToggleBag(0);
+            }
+            else if (keyboard.f10Key.wasPressedThisFrame)
+            {
+                bagBar?.ToggleBag(1);
+            }
+            else if (keyboard.f9Key.wasPressedThisFrame)
+            {
+                bagBar?.ToggleBag(2);
+            }
+            else if (keyboard.f8Key.wasPressedThisFrame)
+            {
+                bagBar?.ToggleBag(3);
             }
         }
 
@@ -119,6 +141,7 @@ namespace RPGClone.UI
             }
 
             BuildMenuButtons();
+            ResolveBagBar();
 
             if (actionBar != null)
             {
@@ -143,11 +166,16 @@ namespace RPGClone.UI
             }
 
             CreateMenuButton("Character", "Char", 0, () => characterPanel?.Toggle());
-            CreateMenuButton("Inventory", "Bag", 1, () => inventoryPanel?.Toggle());
-            CreateMenuButton("Spellbook", "Book", 2, () => spellBookPanel?.Toggle());
-            CreateMenuButton("Quest Log", "Quest", 3, () => questLogPanel?.Toggle());
-            CreateMenuButton("Friends", "Social", 4, () => socialPanel?.Toggle());
-            CreateMenuButton("Exit", "Exit", 5, () => returnToCharacterSelectionController?.ReturnToCharacterSelection());
+            Transform legacyInventoryButton = menuButtons.Find("Inventory");
+            if (legacyInventoryButton != null)
+            {
+                legacyInventoryButton.gameObject.SetActive(false);
+            }
+
+            CreateMenuButton("Spellbook", "Book", 1, () => spellBookPanel?.Toggle());
+            CreateMenuButton("Quest Log", "Quest", 2, () => questLogPanel?.Toggle());
+            CreateMenuButton("Friends", "Social", 3, () => socialPanel?.Toggle());
+            CreateMenuButton("Exit", "Exit", 4, () => returnToCharacterSelectionController?.ReturnToCharacterSelection());
         }
 
         private void CreateMenuButton(string objectName, string label, int index, UnityEngine.Events.UnityAction onClick)
@@ -207,6 +235,35 @@ namespace RPGClone.UI
             }
 
             panelObject.SetActive(false);
+        }
+
+        private void ResolveBagBar()
+        {
+            if (bagBar == null)
+            {
+                Transform existing = transform.Find("Bag Slots");
+                bool created = existing == null;
+                RectTransform bagRoot = created
+                    ? MMOUiFactory.CreateRect("Bag Slots", transform)
+                    : (RectTransform)existing;
+                if (created)
+                {
+                    bagRoot.anchorMin = new Vector2(1f, 0.5f);
+                    bagRoot.anchorMax = new Vector2(1f, 0.5f);
+                    bagRoot.pivot = new Vector2(1f, 0.5f);
+                    bagRoot.anchoredPosition = new Vector2(-12f, 23f);
+                    bagRoot.sizeDelta = new Vector2(226f, 42f);
+                }
+
+                bagBar = bagRoot.GetComponent<MMOBagBarPresenter>();
+                if (bagBar == null)
+                {
+                    bagBar = bagRoot.gameObject.AddComponent<MMOBagBarPresenter>();
+                }
+            }
+
+            MMOGameplaySessionService.LocalPlayer.TryGetComponent(out RPGClone.Inventory.MMOInventoryContainer inventory);
+            bagBar.Configure(inventory, inventoryPanel);
         }
     }
 }

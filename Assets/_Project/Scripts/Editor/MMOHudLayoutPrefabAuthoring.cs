@@ -37,6 +37,69 @@ namespace RPGClone.EditorTools
                 + ".");
         }
 
+        [MenuItem("Tools/RPG Clone/UI/Install Bag Bar Into Editable HUD Prefab")]
+        public static void InstallBagBarIntoEditableHudPrefab()
+        {
+            GameObject root = PrefabUtility.LoadPrefabContents(BottomHudPrefabPath);
+            try
+            {
+                Transform menuButtons = root.transform.Find("Menu Buttons");
+                if (menuButtons != null)
+                {
+                    Transform legacyInventoryButton = menuButtons.Find("Inventory");
+                    if (legacyInventoryButton != null)
+                    {
+                        Object.DestroyImmediate(legacyInventoryButton.gameObject);
+                    }
+
+                    RectTransform menuRect = (RectTransform)menuButtons;
+                    menuRect.anchoredPosition = new Vector2(menuRect.anchoredPosition.x, -23f);
+                    menuRect.sizeDelta = new Vector2(314f, menuRect.sizeDelta.y);
+                    PositionMenuButton(menuButtons, "Character", 0);
+                    PositionMenuButton(menuButtons, "Spellbook", 1);
+                    PositionMenuButton(menuButtons, "Quest Log", 2);
+                    PositionMenuButton(menuButtons, "Friends", 3);
+                    PositionMenuButton(menuButtons, "Exit", 4);
+                }
+
+                Transform existingBagRoot = root.transform.Find("Bag Slots");
+                GameObject bagObject = existingBagRoot != null
+                    ? existingBagRoot.gameObject
+                    : new GameObject("Bag Slots", typeof(RectTransform), typeof(MMOBagBarPresenter));
+                RectTransform bagRect = (RectTransform)bagObject.transform;
+                bagRect.SetParent(root.transform, false);
+                bagRect.anchorMin = new Vector2(1f, 0.5f);
+                bagRect.anchorMax = new Vector2(1f, 0.5f);
+                bagRect.pivot = new Vector2(1f, 0.5f);
+                bagRect.anchoredPosition = new Vector2(-12f, 23f);
+                bagRect.sizeDelta = new Vector2(226f, 42f);
+
+                MMOBagBarPresenter bagBar = bagObject.GetComponent<MMOBagBarPresenter>();
+                if (bagBar == null)
+                {
+                    bagBar = bagObject.AddComponent<MMOBagBarPresenter>();
+                }
+
+                bagBar.Configure(null, null);
+                MMOBottomHudPresenter bottomHud = root.GetComponent<MMOBottomHudPresenter>();
+                if (bottomHud != null)
+                {
+                    SerializedObject serializedBottomHud = new(bottomHud);
+                    serializedBottomHud.FindProperty("bagBar").objectReferenceValue = bagBar;
+                    serializedBottomHud.ApplyModifiedPropertiesWithoutUndo();
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(root, BottomHudPrefabPath);
+                ConfigureInventoryPrefabForDynamicRows();
+                AssetDatabase.SaveAssets();
+                Debug.Log("Installed the five-slot bag bar and configured the inventory prefab for dynamic bag rows.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
         [MenuItem("Tools/RPG Clone/UI/Sync HUD Scene Instances From Prefabs")]
         public static void SyncHudSceneInstancesFromPrefabs()
         {
@@ -79,6 +142,59 @@ namespace RPGClone.EditorTools
             finally
             {
                 Object.DestroyImmediate(root);
+            }
+        }
+
+        private static void PositionMenuButton(Transform menuButtons, string buttonName, int index)
+        {
+            Transform button = menuButtons.Find(buttonName);
+            if (button == null)
+            {
+                return;
+            }
+
+            RectTransform rect = (RectTransform)button;
+            rect.anchoredPosition = new Vector2(index * 64f, rect.anchoredPosition.y);
+        }
+
+        private static void ConfigureInventoryPrefabForDynamicRows()
+        {
+            GameObject inventoryRoot = PrefabUtility.LoadPrefabContents(InventoryPanelPrefabPath);
+            try
+            {
+                ReanchorVertically(inventoryRoot.transform.Find("Bag Panel Header") as RectTransform, 1f);
+                ReanchorVertically(inventoryRoot.transform.Find("Bag Panel Currency Well") as RectTransform, 0f);
+                EnsureSlicedImage(inventoryRoot.transform.Find("Bag Panel Background Art"));
+                EnsureSlicedImage(inventoryRoot.transform.Find("Bag Panel Frame"));
+                PrefabUtility.SaveAsPrefabAsset(inventoryRoot, InventoryPanelPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(inventoryRoot);
+            }
+        }
+
+        private static void ReanchorVertically(RectTransform rect, float anchorY)
+        {
+            if (rect == null || rect.parent is not RectTransform parent)
+            {
+                return;
+            }
+
+            float oldAnchorY = (rect.anchorMin.y + rect.anchorMax.y) * 0.5f;
+            Vector2 anchoredPosition = rect.anchoredPosition;
+            anchoredPosition.y += (oldAnchorY - anchorY) * parent.rect.height;
+            rect.anchorMin = new Vector2(rect.anchorMin.x, anchorY);
+            rect.anchorMax = new Vector2(rect.anchorMax.x, anchorY);
+            rect.anchoredPosition = anchoredPosition;
+        }
+
+        private static void EnsureSlicedImage(Transform target)
+        {
+            Image image = target != null ? target.GetComponent<Image>() : null;
+            if (image != null && image.sprite != null && image.sprite.border.sqrMagnitude > 0f)
+            {
+                image.type = Image.Type.Sliced;
             }
         }
 

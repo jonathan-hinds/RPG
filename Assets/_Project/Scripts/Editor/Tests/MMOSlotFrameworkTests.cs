@@ -110,6 +110,71 @@ namespace RPGClone.Tests
         }
 
         [Test]
+        public void EquippingContainerAddsItsSlotsAndRemovesTheBagItem()
+        {
+            GameObject inventoryObject = new("Inventory");
+            MMOItemDefinition bag = ScriptableObject.CreateInstance<MMOItemDefinition>();
+            try
+            {
+                bag.ConfigureContainer(
+                    "test_8_slot_bag",
+                    "Test Satchel",
+                    string.Empty,
+                    MMOItemQuality.Common,
+                    8,
+                    0);
+                MMOInventoryContainer inventory = inventoryObject.AddComponent<MMOInventoryContainer>();
+                inventory.SetSlot(0, bag, 1);
+
+                Assert.That(inventory.TryEquipBagFromInventory(0), Is.True);
+                Assert.That(inventory.GetEquippedBag(0), Is.SameAs(bag));
+                Assert.That(inventory.BaseSlotCount, Is.EqualTo(16));
+                Assert.That(inventory.SlotCount, Is.EqualTo(24));
+                Assert.That(inventory.GetSlot(0).IsEmpty, Is.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(bag);
+                Object.DestroyImmediate(inventoryObject);
+            }
+        }
+
+        [Test]
+        public void EquippedBagMustBeEmptyBeforeItCanBeUnequipped()
+        {
+            GameObject inventoryObject = new("Inventory");
+            MMOItemDefinition bag = ScriptableObject.CreateInstance<MMOItemDefinition>();
+            MMOItemDefinition item = ScriptableObject.CreateInstance<MMOItemDefinition>();
+            try
+            {
+                bag.ConfigureContainer(
+                    "test_8_slot_bag",
+                    "Test Satchel",
+                    string.Empty,
+                    MMOItemQuality.Common,
+                    8,
+                    0);
+                MMOInventoryContainer inventory = inventoryObject.AddComponent<MMOInventoryContainer>();
+                inventory.SetSlot(0, bag, 1);
+                Assert.That(inventory.TryEquipBagFromInventory(0), Is.True);
+
+                inventory.SetSlot(inventory.GetBagStartIndex(0), item, 1);
+                Assert.That(inventory.CanUnequipBagToInventory(0), Is.False);
+
+                inventory.SetSlot(inventory.GetBagStartIndex(0), null, 0);
+                Assert.That(inventory.TryUnequipBagToInventory(0), Is.True);
+                Assert.That(inventory.SlotCount, Is.EqualTo(16));
+                Assert.That(inventory.CountItem(bag), Is.EqualTo(1));
+            }
+            finally
+            {
+                Object.DestroyImmediate(item);
+                Object.DestroyImmediate(bag);
+                Object.DestroyImmediate(inventoryObject);
+            }
+        }
+
+        [Test]
         public void SkinResourcesAndSharedPrefabAreImportable()
         {
             Assert.That(MMOSlotSkin.SlotBackground, Is.Not.Null);
@@ -137,6 +202,14 @@ namespace RPGClone.Tests
             Assert.That(bottomHudPrefab.GetComponent<MMOBottomHudPresenter>(), Is.Not.Null);
             Assert.That(bottomHudPrefab.transform.Find("Action Bar"), Is.Not.Null);
             Assert.That(bottomHudPrefab.transform.Find("Menu Buttons"), Is.Not.Null);
+            Transform bagSlots = bottomHudPrefab.transform.Find("Bag Slots");
+            Assert.That(bagSlots, Is.Not.Null);
+            Assert.That(bagSlots.Find("Backpack"), Is.Not.Null);
+            Assert.That(bagSlots.Find("Bag Slot 1"), Is.Not.Null);
+            Assert.That(bagSlots.Find("Bag Slot 2"), Is.Not.Null);
+            Assert.That(bagSlots.Find("Bag Slot 3"), Is.Not.Null);
+            Assert.That(bagSlots.Find("Bag Slot 4"), Is.Not.Null);
+            Assert.That(bottomHudPrefab.transform.Find("Menu Buttons/Inventory"), Is.Null);
             Assert.That(inventoryPrefab, Is.Not.Null);
             Assert.That(inventoryPrefab.activeSelf, Is.True);
             Assert.That(inventoryPrefab.GetComponent<MMOInventoryPresenter>(), Is.Not.Null);
@@ -164,6 +237,87 @@ namespace RPGClone.Tests
         {
             AssertBottomHudPrefabSurvivesRuntimeBinding();
             AssertInventoryPrefabSurvivesRuntimeBinding();
+        }
+
+        [Test]
+        public void StandardWindowInitializationPreservesTheOriginalWindowArtwork()
+        {
+            const string prefabPath =
+                "Assets/Resources/RPGClone/UI/Windows/GenericWindow.prefab";
+            GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                Image background = root.GetComponent<Image>();
+                Button closeButton = root.transform
+                    .Find("Close Button")
+                    .GetComponent<Button>();
+                Image closeImage = closeButton.targetGraphic as Image;
+                Assert.That(background, Is.Not.Null);
+                Assert.That(closeImage, Is.Not.Null);
+
+                Sprite backgroundSprite = background.sprite;
+                Color backgroundColor = background.color;
+                Image.Type backgroundType = background.type;
+                Sprite closeSprite = closeImage.sprite;
+                Color closeColor = closeImage.color;
+                SpriteState closeStates = closeButton.spriteState;
+
+                MMOStandardWindow.Ensure(root, "Original Window", null);
+
+                Assert.That(background.sprite, Is.SameAs(backgroundSprite));
+                Assert.That(background.color, Is.EqualTo(backgroundColor));
+                Assert.That(background.type, Is.EqualTo(backgroundType));
+                Assert.That(closeImage.sprite, Is.SameAs(closeSprite));
+                Assert.That(closeImage.color, Is.EqualTo(closeColor));
+                Assert.That(
+                    closeButton.spriteState.highlightedSprite,
+                    Is.SameAs(closeStates.highlightedSprite));
+                Assert.That(
+                    closeButton.spriteState.pressedSprite,
+                    Is.SameAs(closeStates.pressedSprite));
+                Assert.That(root.transform.Find("Panel Background Art"), Is.Null);
+                Assert.That(root.transform.Find("Panel Frame Art"), Is.Null);
+                Assert.That(root.transform.Find("Panel Header Art"), Is.Null);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        [Test]
+        public void NpcWindowItemSlotsKeepTheirOriginalPresentation()
+        {
+            GameObject slot = new("NPC Window Item", typeof(RectTransform), typeof(Image));
+            MMOItemDefinition item = ScriptableObject.CreateInstance<MMOItemDefinition>();
+            try
+            {
+                item.Configure(
+                    "window_test_item",
+                    "Window Test Item",
+                    string.Empty,
+                    MMOItemType.Quest,
+                    MMOItemQuality.Rare,
+                    20,
+                    0);
+
+                MMOItemIconView.AddToWindowSlot(
+                    (RectTransform)slot.transform,
+                    item,
+                    3,
+                    false,
+                    true);
+
+                Assert.That(slot.GetComponent<MMOSlotView>(), Is.Null);
+                Assert.That(slot.GetComponent<Outline>(), Is.Not.Null);
+                Assert.That(slot.transform.Find("Icon Placeholder"), Is.Not.Null);
+                Assert.That(slot.transform.Find("Quantity"), Is.Not.Null);
+            }
+            finally
+            {
+                Object.DestroyImmediate(item);
+                Object.DestroyImmediate(slot);
+            }
         }
 
         [Test]
@@ -259,6 +413,43 @@ namespace RPGClone.Tests
         }
 
         [Test]
+        public void EightSlotBagShortensTheWindowWithoutScalingItsChildren()
+        {
+            GameObject inventoryObject = new("Inventory Data");
+            GameObject panel = new("Inventory Panel", typeof(RectTransform), typeof(Image));
+            MMOItemDefinition bag = ScriptableObject.CreateInstance<MMOItemDefinition>();
+            panel.SetActive(false);
+            try
+            {
+                bag.ConfigureContainer(
+                    "test_8_slot_bag",
+                    "Test Satchel",
+                    string.Empty,
+                    MMOItemQuality.Common,
+                    8,
+                    0);
+                MMOInventoryContainer inventory = inventoryObject.AddComponent<MMOInventoryContainer>();
+                inventory.SetSlot(0, bag, 1);
+                Assert.That(inventory.TryEquipBagFromInventory(0), Is.True);
+
+                RectTransform panelRect = (RectTransform)panel.transform;
+                panelRect.sizeDelta = new Vector2(300f, 364f);
+                MMOInventoryPresenter presenter = panel.AddComponent<MMOInventoryPresenter>();
+                presenter.Configure(inventory, 0);
+
+                Assert.That(panelRect.sizeDelta, Is.EqualTo(new Vector2(300f, 240f)));
+                Assert.That(panel.transform.localScale, Is.EqualTo(Vector3.one));
+                Assert.That(panel.transform.Find("Slots").childCount, Is.EqualTo(8));
+            }
+            finally
+            {
+                Object.DestroyImmediate(bag);
+                Object.DestroyImmediate(panel);
+                Object.DestroyImmediate(inventoryObject);
+            }
+        }
+
+        [Test]
         public void ActionBarSwapPreservesBothBindingsAndKeys()
         {
             GameObject actionBarObject = new("Action Bar", typeof(RectTransform));
@@ -347,8 +538,8 @@ namespace RPGClone.Tests
                 presenter.RefreshNow();
                 Assert.That(
                     ((RectTransform)root.transform).sizeDelta,
-                    Is.EqualTo(authoredRootSize),
-                    "Inventory capacity must not resize an authored prefab root.");
+                    Is.EqualTo(authoredRootSize + new Vector2(0f, 62f)),
+                    "Authored bag chrome should resize by rows without scaling the prefab.");
             }
             finally
             {

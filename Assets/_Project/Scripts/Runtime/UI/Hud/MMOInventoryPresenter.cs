@@ -10,7 +10,7 @@ namespace RPGClone.UI
     public sealed class MMOInventoryPresenter : MonoBehaviour
     {
         private const int Columns = 4;
-        private const int MinimumRows = 4;
+        private const int BackpackRows = 4;
         private const float PanelWidth = 300f;
         private const float SlotSize = 58f;
         private const float SlotStride = 62f;
@@ -19,12 +19,15 @@ namespace RPGClone.UI
         [SerializeField] private bool autoBuild = true;
         [SerializeField] private MMOInventoryContainer inventory;
         [SerializeField] private MMOCurrencyWallet wallet;
+        [SerializeField] private int displayedBagIndex = -1;
 
         private RectTransform slotGrid;
         private Text moneyText;
+        private Text titleText;
         private Vector2 authoredPanelSize;
         private bool authoredPanelSizeCaptured;
-        private bool usesAuthoredLayout;
+
+        public int DisplayedBagIndex => displayedBagIndex;
 
         private void Awake()
         {
@@ -47,10 +50,11 @@ namespace RPGClone.UI
             Unsubscribe();
         }
 
-        public void Configure(MMOInventoryContainer newInventory)
+        public void Configure(MMOInventoryContainer newInventory, int newDisplayedBagIndex = -1)
         {
             Unsubscribe();
             inventory = newInventory;
+            displayedBagIndex = newDisplayedBagIndex;
             ResolveWalletFromInventory();
             BuildIfNeeded();
             Refresh();
@@ -64,11 +68,25 @@ namespace RPGClone.UI
 
         public void Toggle()
         {
-            gameObject.SetActive(!gameObject.activeSelf);
-            if (gameObject.activeSelf)
+            ToggleBag(-1);
+        }
+
+        public void ToggleBag(int bagIndex)
+        {
+            bool isSameOpenBag = gameObject.activeSelf && displayedBagIndex == bagIndex;
+            displayedBagIndex = bagIndex;
+            gameObject.SetActive(!isSameOpenBag);
+            if (!isSameOpenBag)
             {
                 Refresh();
             }
+        }
+
+        public void ShowBag(int bagIndex)
+        {
+            displayedBagIndex = bagIndex;
+            gameObject.SetActive(true);
+            Refresh();
         }
 
         private void ResolveReferences()
@@ -126,13 +144,12 @@ namespace RPGClone.UI
             RectTransform root = (RectTransform)transform;
             if (!authoredPanelSizeCaptured)
             {
-                usesAuthoredLayout = hasAuthoredLayout;
                 authoredPanelSize = root.sizeDelta;
                 if (authoredPanelSize.x <= 0f || authoredPanelSize.y <= 0f)
                 {
                     authoredPanelSize = new Vector2(
                         PanelWidth,
-                        PanelVerticalChrome + MinimumRows * SlotStride);
+                        PanelVerticalChrome + BackpackRows * SlotStride);
                     root.sizeDelta = authoredPanelSize;
                 }
 
@@ -146,22 +163,22 @@ namespace RPGClone.UI
 
             Transform existingTitle = transform.Find("Title");
             bool createdTitle = existingTitle == null;
-            Text title = createdTitle
+            titleText = createdTitle
                 ? MMOUiFactory.CreateText("Title", transform, 18, FontStyle.Bold, TextAnchor.MiddleLeft)
                 : existingTitle.GetComponent<Text>();
-            if (title == null)
+            if (titleText == null)
             {
-                title = existingTitle.gameObject.AddComponent<Text>();
+                titleText = existingTitle.gameObject.AddComponent<Text>();
             }
 
             if (createdTitle)
             {
-                title.text = "Backpack";
-                title.rectTransform.anchorMin = new Vector2(0f, 1f);
-                title.rectTransform.anchorMax = new Vector2(1f, 1f);
-                title.rectTransform.pivot = new Vector2(0f, 1f);
-                title.rectTransform.anchoredPosition = new Vector2(68f, -8f);
-                title.rectTransform.sizeDelta = new Vector2(-126f, 32f);
+                titleText.text = "Backpack";
+                titleText.rectTransform.anchorMin = new Vector2(0f, 1f);
+                titleText.rectTransform.anchorMax = new Vector2(1f, 1f);
+                titleText.rectTransform.pivot = new Vector2(0f, 1f);
+                titleText.rectTransform.anchoredPosition = new Vector2(68f, -8f);
+                titleText.rectTransform.sizeDelta = new Vector2(-126f, 32f);
             }
 
             Transform existingClose = transform.Find("Close");
@@ -230,22 +247,33 @@ namespace RPGClone.UI
         private void Refresh()
         {
             BuildIfNeeded();
+            if (displayedBagIndex >= 0 && (inventory == null || inventory.GetEquippedBag(displayedBagIndex) == null))
+            {
+                displayedBagIndex = -1;
+            }
+
+            if (titleText != null)
+            {
+                MMOItemDefinition displayedBag = displayedBagIndex >= 0 && inventory != null
+                    ? inventory.GetEquippedBag(displayedBagIndex)
+                    : null;
+                titleText.text = displayedBag != null ? displayedBag.DisplayName : "Backpack";
+            }
+
             if (moneyText != null)
             {
                 moneyText.text = wallet != null ? MMOCurrencyWallet.FormatCopper(wallet.Copper) : "0c";
             }
 
-            int slotCount = inventory != null ? inventory.SlotCount : 0;
-            int rows = Mathf.Max(MinimumRows, Mathf.CeilToInt(slotCount / (float)Columns));
-            if (!usesAuthoredLayout)
-            {
-                ((RectTransform)transform).sizeDelta = new Vector2(
-                    authoredPanelSize.x,
-                    authoredPanelSize.y + (rows - MinimumRows) * SlotStride);
-            }
+            int slotCount = inventory != null ? inventory.GetBagCapacity(displayedBagIndex) : 0;
+            int rows = Mathf.Max(1, Mathf.CeilToInt(slotCount / (float)Columns));
+            ((RectTransform)transform).sizeDelta = new Vector2(
+                authoredPanelSize.x,
+                authoredPanelSize.y + (rows - BackpackRows) * SlotStride);
             for (int i = 0; i < slotCount; i++)
             {
-                CreateSlot(i, inventory != null ? inventory.GetSlot(i) : null);
+                int globalSlotIndex = inventory.GetBagStartIndex(displayedBagIndex) + i;
+                CreateSlot(i, globalSlotIndex, inventory.GetSlot(globalSlotIndex));
             }
 
             for (int i = 0; i < slotGrid.childCount; i++)
@@ -266,10 +294,10 @@ namespace RPGClone.UI
             Refresh();
         }
 
-        private void CreateSlot(int index, MMOItemStack itemStack)
+        private void CreateSlot(int localIndex, int globalSlotIndex, MMOItemStack itemStack)
         {
             bool hasItem = itemStack != null && !itemStack.IsEmpty;
-            string slotName = $"Inventory Slot {index + 1}";
+            string slotName = $"Inventory Slot {localIndex + 1}";
             Transform existing = slotGrid.Find(slotName);
             bool created = existing == null;
             Image slot = created
@@ -285,8 +313,8 @@ namespace RPGClone.UI
 
             slot.gameObject.SetActive(true);
             RectTransform rectTransform = slot.rectTransform;
-            int column = index % Columns;
-            int row = index / Columns;
+            int column = localIndex % Columns;
+            int row = localIndex / Columns;
             if (created)
             {
                 slot.color = new Color(1f, 1f, 1f, 0.001f);
@@ -304,7 +332,7 @@ namespace RPGClone.UI
                 useTrigger = slot.gameObject.AddComponent<MMOInventoryItemUseTrigger>();
             }
 
-            useTrigger.Configure(inventory, index);
+            useTrigger.Configure(inventory, globalSlotIndex);
             MMOSlotView.Attach(slot.gameObject).Present(MMOSlotPresentation.Empty());
 
             if (!hasItem)

@@ -45,9 +45,11 @@ namespace RPGClone.UI
         public MMOActionBarPresenter SourceActionBar => SourceContext as MMOActionBarPresenter;
         public MMOInventoryContainer SourceInventory => SourceContext as MMOInventoryContainer;
         public MMOCharacterEquipment SourceEquipment => SourceContext as MMOCharacterEquipment;
+        public MMOBagBarPresenter SourceBagBar => SourceContext as MMOBagBarPresenter;
         public bool FromActionBar => SourceActionBar != null && SourceSlotIndex >= 0;
         public bool FromInventory => SourceInventory != null && SourceSlotIndex >= 0;
         public bool FromEquipment => SourceEquipment != null && Item != null;
+        public bool FromEquippedBag => SourceBagBar != null && SourceSlotIndex >= 0 && Item != null;
 
         private MMOSlotDragPayload(
             MMOSlotContentCategory category,
@@ -114,6 +116,18 @@ namespace RPGClone.UI
                 equipment,
                 -1,
                 slot,
+                1,
+                MMOSlotDragOperation.Unequip);
+        }
+
+        public static MMOSlotDragPayload EquippedBag(MMOItemDefinition item, MMOBagBarPresenter bagBar, int bagSlotIndex)
+        {
+            return new MMOSlotDragPayload(
+                MMOSlotContentCategory.Custom,
+                item,
+                bagBar,
+                bagSlotIndex,
+                default,
                 1,
                 MMOSlotDragOperation.Unequip);
         }

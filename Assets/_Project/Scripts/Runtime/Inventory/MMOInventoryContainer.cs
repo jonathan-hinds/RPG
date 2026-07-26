@@ -1,16 +1,26 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace RPGClone.Inventory
 {
     public sealed class MMOInventoryContainer : MonoBehaviour
     {
-        [SerializeField, Min(0)] private int slotCount = 16;
+        public const int DefaultBackpackSlotCount = 16;
+        public const int DefaultEquippedBagSlotCount = 4;
+
+        [FormerlySerializedAs("slotCount")]
+        [SerializeField, Min(0)] private int baseSlotCount = DefaultBackpackSlotCount;
+        [SerializeField, Min(0)] private int bagSlotCount = DefaultEquippedBagSlotCount;
+        [SerializeField] private List<MMOItemDefinition> equippedBags = new();
         [SerializeField] private List<MMOItemStack> slots = new();
 
         public event Action Changed;
-        public int SlotCount => slotCount;
+        public int SlotCount => CalculateTotalSlotCount();
+        public int BaseSlotCount => Mathf.Max(0, baseSlotCount);
+        public int BagSlotCount => Mathf.Max(0, bagSlotCount);
+        public IReadOnlyList<MMOItemDefinition> EquippedBags => equippedBags;
         public IReadOnlyList<MMOItemStack> Slots => slots;
 
         private void Awake()
@@ -20,19 +30,202 @@ namespace RPGClone.Inventory
 
         private void OnValidate()
         {
-            slotCount = Mathf.Max(0, slotCount);
+            baseSlotCount = Mathf.Max(0, baseSlotCount);
+            bagSlotCount = Mathf.Max(0, bagSlotCount);
+            EnsureBagList();
             EnsureSlotList();
         }
 
         public void Resize(int newSlotCount)
         {
             int clampedSlotCount = Mathf.Max(0, newSlotCount);
-            if (slotCount == clampedSlotCount)
+            if (baseSlotCount == clampedSlotCount)
             {
                 return;
             }
 
-            slotCount = clampedSlotCount;
+            baseSlotCount = clampedSlotCount;
+            EnsureSlotList();
+            Changed?.Invoke();
+        }
+
+        public MMOItemDefinition GetEquippedBag(int bagSlotIndex)
+        {
+            EnsureBagList();
+            return bagSlotIndex >= 0 && bagSlotIndex < equippedBags.Count
+                ? equippedBags[bagSlotIndex]
+                : null;
+        }
+
+        public int GetBagCapacity(int bagSlotIndex)
+        {
+            if (bagSlotIndex < 0)
+            {
+                return BaseSlotCount;
+            }
+
+            MMOItemDefinition bag = GetEquippedBag(bagSlotIndex);
+            return bag != null ? bag.ContainerSlotCount : 0;
+        }
+
+        public int GetBagStartIndex(int bagSlotIndex)
+        {
+            EnsureBagList();
+            if (bagSlotIndex < 0)
+            {
+                return 0;
+            }
+
+            int startIndex = BaseSlotCount;
+            int upperBound = Mathf.Min(bagSlotIndex, equippedBags.Count);
+            for (int i = 0; i < upperBound; i++)
+            {
+                MMOItemDefinition bag = equippedBags[i];
+                if (bag != null)
+                {
+                    startIndex += bag.ContainerSlotCount;
+                }
+            }
+
+            return startIndex;
+        }
+
+        public bool CanEquipBagFromInventory(int inventorySlotIndex, int bagSlotIndex = -1)
+        {
+            EnsureSlotList();
+            MMOItemStack source = GetSlot(inventorySlotIndex);
+            if (source == null || source.IsEmpty || source.Quantity != 1 || !source.Item.IsContainer)
+            {
+                return false;
+            }
+
+            int targetSlot = ResolveBagSlotForEquip(bagSlotIndex);
+            if (targetSlot < 0)
+            {
+                return false;
+            }
+
+            MMOItemDefinition currentBag = GetEquippedBag(targetSlot);
+            return currentBag == null || IsBagSegmentEmpty(targetSlot);
+        }
+
+        public bool TryEquipBagFromInventory(int inventorySlotIndex, int bagSlotIndex = -1)
+        {
+            if (!CanEquipBagFromInventory(inventorySlotIndex, bagSlotIndex))
+            {
+                return false;
+            }
+
+            int targetSlot = ResolveBagSlotForEquip(bagSlotIndex);
+            MMOItemStack source = GetSlot(inventorySlotIndex);
+            MMOItemDefinition newBag = source.Item;
+            MMOItemDefinition replacedBag = GetEquippedBag(targetSlot);
+
+            source.Clear();
+            if (replacedBag != null)
+            {
+                int oldStart = GetBagStartIndex(targetSlot);
+                slots.RemoveRange(oldStart, replacedBag.ContainerSlotCount);
+            }
+
+            equippedBags[targetSlot] = newBag;
+            int newStart = GetBagStartIndex(targetSlot);
+            slots.InsertRange(newStart, CreateEmptySlots(newBag.ContainerSlotCount));
+
+            if (replacedBag != null && !TryAddItemWithoutNotification(replacedBag, 1))
+            {
+                Debug.LogError($"Could not return replaced bag '{replacedBag.DisplayName}' to inventory.", this);
+                return false;
+            }
+
+            EnsureSlotList();
+            Changed?.Invoke();
+            return true;
+        }
+
+        public bool CanUnequipBagToInventory(int bagSlotIndex, int targetInventorySlotIndex = -1)
+        {
+            EnsureSlotList();
+            MMOItemDefinition bag = GetEquippedBag(bagSlotIndex);
+            if (bag == null || !IsBagSegmentEmpty(bagSlotIndex))
+            {
+                return false;
+            }
+
+            int start = GetBagStartIndex(bagSlotIndex);
+            int end = start + bag.ContainerSlotCount;
+            if (targetInventorySlotIndex >= 0)
+            {
+                MMOItemStack target = GetSlot(targetInventorySlotIndex);
+                return targetInventorySlotIndex < start || targetInventorySlotIndex >= end
+                    ? target != null && target.IsEmpty
+                    : false;
+            }
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                if ((i < start || i >= end) && slots[i].IsEmpty)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool TryUnequipBagToInventory(int bagSlotIndex, int targetInventorySlotIndex = -1)
+        {
+            if (!CanUnequipBagToInventory(bagSlotIndex, targetInventorySlotIndex))
+            {
+                return false;
+            }
+
+            MMOItemDefinition bag = GetEquippedBag(bagSlotIndex);
+            int start = GetBagStartIndex(bagSlotIndex);
+            int capacity = bag.ContainerSlotCount;
+            slots.RemoveRange(start, capacity);
+            equippedBags[bagSlotIndex] = null;
+            EnsureSlotList();
+
+            int target = targetInventorySlotIndex;
+            if (target >= start + capacity)
+            {
+                target -= capacity;
+            }
+
+            if (target < 0)
+            {
+                target = slots.FindIndex(slot => slot != null && slot.IsEmpty);
+            }
+
+            if (target < 0 || target >= slots.Count || !slots[target].IsEmpty)
+            {
+                Debug.LogError($"Could not find an inventory slot for unequipped bag '{bag.DisplayName}'.", this);
+                return false;
+            }
+
+            slots[target].Configure(bag, 1);
+            Changed?.Invoke();
+            return true;
+        }
+
+        public void RestoreEquippedBags(IEnumerable<MMOItemDefinition> bags)
+        {
+            equippedBags = new List<MMOItemDefinition>();
+            if (bags != null)
+            {
+                foreach (MMOItemDefinition bag in bags)
+                {
+                    if (equippedBags.Count >= BagSlotCount)
+                    {
+                        break;
+                    }
+
+                    equippedBags.Add(bag != null && bag.IsContainer ? bag : null);
+                }
+            }
+
+            EnsureBagList();
             EnsureSlotList();
             Changed?.Invoke();
         }
@@ -307,7 +500,9 @@ namespace RPGClone.Inventory
 
         private void EnsureSlotList()
         {
+            EnsureBagList();
             slots ??= new List<MMOItemStack>();
+            int slotCount = CalculateTotalSlotCount();
             while (slots.Count < slotCount)
             {
                 slots.Add(new MMOItemStack());
@@ -322,6 +517,110 @@ namespace RPGClone.Inventory
             {
                 slots[i] ??= new MMOItemStack();
             }
+        }
+
+        private void EnsureBagList()
+        {
+            equippedBags ??= new List<MMOItemDefinition>();
+            while (equippedBags.Count < BagSlotCount)
+            {
+                equippedBags.Add(null);
+            }
+
+            if (equippedBags.Count > BagSlotCount)
+            {
+                equippedBags.RemoveRange(BagSlotCount, equippedBags.Count - BagSlotCount);
+            }
+
+            for (int i = 0; i < equippedBags.Count; i++)
+            {
+                if (equippedBags[i] != null && !equippedBags[i].IsContainer)
+                {
+                    equippedBags[i] = null;
+                }
+            }
+        }
+
+        private int CalculateTotalSlotCount()
+        {
+            int count = BaseSlotCount;
+            if (equippedBags == null)
+            {
+                return count;
+            }
+
+            for (int i = 0; i < equippedBags.Count; i++)
+            {
+                MMOItemDefinition bag = equippedBags[i];
+                if (bag != null && bag.IsContainer)
+                {
+                    count += bag.ContainerSlotCount;
+                }
+            }
+
+            return count;
+        }
+
+        private int ResolveBagSlotForEquip(int requestedBagSlot)
+        {
+            EnsureBagList();
+            if (requestedBagSlot >= 0)
+            {
+                return requestedBagSlot < equippedBags.Count ? requestedBagSlot : -1;
+            }
+
+            return equippedBags.FindIndex(bag => bag == null);
+        }
+
+        private bool IsBagSegmentEmpty(int bagSlotIndex)
+        {
+            MMOItemDefinition bag = GetEquippedBag(bagSlotIndex);
+            if (bag == null)
+            {
+                return true;
+            }
+
+            int start = GetBagStartIndex(bagSlotIndex);
+            int end = start + bag.ContainerSlotCount;
+            for (int i = start; i < end && i < slots.Count; i++)
+            {
+                if (slots[i] != null && !slots[i].IsEmpty)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static IEnumerable<MMOItemStack> CreateEmptySlots(int count)
+        {
+            List<MMOItemStack> emptySlots = new(Mathf.Max(0, count));
+            for (int i = 0; i < count; i++)
+            {
+                emptySlots.Add(new MMOItemStack());
+            }
+
+            return emptySlots;
+        }
+
+        private bool TryAddItemWithoutNotification(MMOItemDefinition item, int quantity)
+        {
+            int remaining = quantity;
+            for (int i = 0; i < slots.Count && remaining > 0; i++)
+            {
+                MMOItemStack slot = slots[i];
+                if (slot == null || !slot.IsEmpty)
+                {
+                    continue;
+                }
+
+                int accepted = Mathf.Min(remaining, item.MaxStackSize);
+                slot.Configure(item, accepted);
+                remaining -= accepted;
+            }
+
+            return remaining <= 0;
         }
 
         private static bool CanAddItemToSimulatedSlots(List<MMOItemStack> simulatedSlots, MMOItemDefinition item, int quantity)

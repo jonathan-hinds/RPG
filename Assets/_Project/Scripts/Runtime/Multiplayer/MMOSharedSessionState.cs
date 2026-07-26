@@ -2374,6 +2374,7 @@ namespace RPGClone.Multiplayer
                 rotationEuler = source.rotationEuler,
                 copper = source.copper,
                 inventory = CloneInventorySlots(source.inventory),
+                equippedBagItemIds = source.equippedBagItemIds != null ? new List<string>(source.equippedBagItemIds) : new List<string>(),
                 equipment = CloneEquipmentSlots(source.equipment),
                 weaponSkills = CloneWeaponSkills(source.weaponSkills),
                 learnedAbilityIds = source.learnedAbilityIds != null ? new List<string>(source.learnedAbilityIds) : new List<string>(),

@@ -6,6 +6,7 @@ namespace RPGClone.Inventory
         Material,
         Consumable,
         Equipment,
-        Quest
+        Quest,
+        Container
     }
 }

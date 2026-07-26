@@ -44941,6 +44941,19 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
+--- !u!134 &361506592
+PhysicsMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ' (Instance) (Instance) (Instance) (Instance)'
+  serializedVersion: 2
+  m_DynamicFriction: 0.6
+  m_StaticFriction: 0.6
+  m_Bounciness: 0
+  m_FrictionCombine: 0
+  m_BounceCombine: 0
 --- !u!1 &361628486 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -3789743638152443754, guid: 82a41c4db19dbed418c701ae996850aa, type: 3}
@@ -107216,7 +107229,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b02dd5d173fb42c4d93101c5afd5ba41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Inventory.MMOInventoryContainer
-  slotCount: 16
+  baseSlotCount: 16
+  bagSlotCount: 4
+  equippedBags:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   slots:
   - item: {fileID: 0}
     quantity: 0
@@ -133835,6 +133854,9 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 06e5a0da6f3749f4a9d62ad5f4076df2, type: 2}
     quantity: 1
     priceCopper: 16
+  - item: {fileID: 11400000, guid: 8cd35ccd954df2246a964425152d14ee, type: 2}
+    quantity: 1
+    priceCopper: 2500
   - item: {fileID: 11400000, guid: 9d146e485a7802446838f24183575d5c, type: 2}
     quantity: 1
     priceCopper: 0
@@ -133948,7 +133970,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1427268690}
-  m_Material: {fileID: 1883405330}
+  m_Material: {fileID: 361506592}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -170728,19 +170750,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Buffs.MMOCharacterBuffController
   stationarySpeedThreshold: 0.05
---- !u!134 &1883405330
-PhysicsMaterial:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: ' (Instance) (Instance) (Instance)'
-  serializedVersion: 2
-  m_DynamicFriction: 0.6
-  m_StaticFriction: 0.6
-  m_Bounciness: 0
-  m_FrictionCombine: 0
-  m_BounceCombine: 0
 --- !u!1 &1883545804
 GameObject:
   m_ObjectHideFlags: 0

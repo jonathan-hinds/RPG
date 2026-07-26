@@ -287,16 +287,45 @@ namespace RPGClone.UI
         private void CreateAbilityIcon(RectTransform rowRect, MMOAbilityDefinition ability)
         {
             Image icon = MMOUiFactory.CreateImage("Icon", rowRect, ability != null && ability.Icon != null ? Color.white : new Color(0.18f, 0.12f, 0.055f, 1f), false);
-            icon.sprite = null;
-            icon.color = new Color(1f, 1f, 1f, 0.001f);
+            icon.sprite = ability != null ? ability.Icon : null;
             icon.preserveAspect = true;
             icon.rectTransform.anchorMin = new Vector2(0f, 0.5f);
             icon.rectTransform.anchorMax = new Vector2(0f, 0.5f);
             icon.rectTransform.pivot = new Vector2(0f, 0.5f);
             icon.rectTransform.anchoredPosition = new Vector2(5f, 0f);
             icon.rectTransform.sizeDelta = new Vector2(IconSize, IconSize);
-            MMOSlotView.Attach(icon.gameObject).Present(MMOAbilitySlotAdapter.Present(ability));
 
+            Outline outline = icon.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0.55f, 0.45f, 0.24f, 1f);
+            outline.effectDistance = new Vector2(1f, -1f);
+
+            if (ability == null || ability.Icon != null)
+            {
+                return;
+            }
+
+            Text placeholder = MMOUiFactory.CreateText("Icon Placeholder", icon.transform, 12, FontStyle.Bold, TextAnchor.MiddleCenter);
+            placeholder.text = BuildFallbackLabel(ability.DisplayName);
+            placeholder.color = MMONpcWindowFrame.TitleColor;
+            MMOUiFactory.Stretch(placeholder.rectTransform);
+        }
+
+        private static string BuildFallbackLabel(string displayName)
+        {
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                return "?";
+            }
+
+            string[] words = displayName.Split(' ');
+            if (words.Length == 1)
+            {
+                return displayName.Length <= 2 ? displayName.ToUpperInvariant() : displayName[..2].ToUpperInvariant();
+            }
+
+            char first = words[0].Length > 0 ? words[0][0] : '?';
+            char second = words[^1].Length > 0 ? words[^1][0] : '?';
+            return $"{char.ToUpperInvariant(first)}{char.ToUpperInvariant(second)}";
         }
 
         private bool CanTrain(MMOTrainerOfferEntry offer)
