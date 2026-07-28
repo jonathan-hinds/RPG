@@ -19,7 +19,7 @@ MonoBehaviour:
   quality: 0
   icon: {fileID: 21300000, guid: a367613ac3e6ce24fbbea4376ac4f43e, type: 3}
   maxStackSize: 1
-  vendorValueCopper: 0
+  vendorValueCopper: 2
   containerSlotCount: 0
   consumableType: 0
   restoreHealthAmount: 0

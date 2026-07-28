@@ -110,6 +110,31 @@ namespace RPGClone.EditorTests
         }
 
         [Test]
+        public void AuthoredOutdoorEnemies_UseClassicRespawnBaseline()
+        {
+            string[] definitionPaths =
+            {
+                "Assets/_Project/Configs/Enemies/Ash_Canyon_Aggressive.asset",
+                "Assets/_Project/Configs/Enemies/AshGeneral_Aggressive.asset",
+                "Assets/_Project/Configs/Enemies/Bristleback_Aggressive.asset",
+                "Assets/_Project/Configs/Enemies/Bristleback_Docile.asset",
+                "Assets/_Project/Configs/Enemies/Ogre_Aggressive.asset",
+                "Assets/_Project/Configs/Enemies/Trog_Caster_Aggressive.asset",
+                "Assets/_Project/Configs/Enemies/Wolf_Aggressive.asset"
+            };
+
+            foreach (string path in definitionPaths)
+            {
+                MMOEnemyDefinition definition = AssetDatabase.LoadAssetAtPath<MMOEnemyDefinition>(path);
+                Assert.That(definition, Is.Not.Null, path);
+                Assert.That(
+                    definition.RespawnSeconds,
+                    Is.EqualTo(MMOClassicRespawnDefaults.StandardOutdoorSeconds),
+                    path);
+            }
+        }
+
+        [Test]
         public void EnemySnapshot_PreservesLeashAnchorAndReturnState()
         {
             EnemySnapshot original = new()

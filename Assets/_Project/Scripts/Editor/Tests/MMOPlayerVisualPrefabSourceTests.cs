@@ -1,5 +1,6 @@
 using System.Linq;
 using NUnit.Framework;
+using RPGClone.Characters;
 using RPGClone.Player;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -55,6 +56,44 @@ namespace RPGClone.EditorTools.Tests
                 Assert.That(locomotionState.FindProperty("visualRoot").objectReferenceValue, Is.SameAs(sceneVisual));
                 Assert.That(locomotionState.FindProperty("animator").objectReferenceValue, Is.SameAs(sceneAnimator));
                 Assert.That(combatState.FindProperty("animator").objectReferenceValue, Is.SameAs(sceneAnimator));
+            }
+            finally
+            {
+                if (closeSceneAfterTest && scene.IsValid() && scene.isLoaded)
+                {
+                    EditorSceneManager.CloseScene(scene, true);
+                }
+            }
+        }
+
+        [Test]
+        public void GameplayNpcs_MatchPlayerVisualLocalTransform()
+        {
+            Scene scene = SceneManager.GetSceneByPath(GameplayScenePath);
+            bool closeSceneAfterTest = !scene.IsValid() || !scene.isLoaded;
+            if (closeSceneAfterTest)
+            {
+                scene = EditorSceneManager.OpenScene(GameplayScenePath, OpenSceneMode.Additive);
+            }
+
+            try
+            {
+                GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
+                Transform playerVisual = playerPrefab.transform.Find("Character Visual");
+                Assert.That(playerVisual, Is.Not.Null);
+
+                MMONpcVisualAuthoring[] npcs = scene.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<MMONpcVisualAuthoring>(true))
+                    .ToArray();
+                Assert.That(npcs, Is.Not.Empty);
+                foreach (MMONpcVisualAuthoring npc in npcs)
+                {
+                    Transform npcVisual = npc.transform.Find("Character Visual");
+                    Assert.That(npcVisual, Is.Not.Null, npc.name);
+                    Assert.That(npcVisual.localPosition, Is.EqualTo(playerVisual.localPosition), npc.name);
+                    Assert.That(npcVisual.localRotation, Is.EqualTo(playerVisual.localRotation), npc.name);
+                    Assert.That(npcVisual.localScale, Is.EqualTo(playerVisual.localScale), npc.name);
+                }
             }
             finally
             {

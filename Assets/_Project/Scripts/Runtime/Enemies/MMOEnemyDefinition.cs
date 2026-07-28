@@ -42,7 +42,7 @@ namespace RPGClone.Enemies
         [SerializeField, Min(0f)] private float lootedCorpseDespawnSeconds = 2.5f;
         [SerializeField, Min(0f)] private float emptyCorpseDespawnSeconds = 6f;
         [SerializeField, Min(0f)] private float unlootedCorpseDespawnSeconds = 120f;
-        [SerializeField, Min(0f)] private float respawnSeconds = 30f;
+        [SerializeField, Min(0f)] private float respawnSeconds = MMOClassicRespawnDefaults.StandardOutdoorSeconds;
 
         public MMOCharacterProfile CharacterProfile => characterProfile;
         public MMOEnemyDisposition Disposition => disposition;
@@ -89,7 +89,7 @@ namespace RPGClone.Enemies
             float newLootedCorpseDespawnSeconds = 2.5f,
             float newEmptyCorpseDespawnSeconds = 6f,
             float newUnlootedCorpseDespawnSeconds = 120f,
-            float newRespawnSeconds = 30f,
+            float newRespawnSeconds = MMOClassicRespawnDefaults.StandardOutdoorSeconds,
             float newLeashGraceSeconds = MMOClassicEnemyPursuitDefaults.StandardLeashGraceSeconds)
         {
             characterProfile = newCharacterProfile;

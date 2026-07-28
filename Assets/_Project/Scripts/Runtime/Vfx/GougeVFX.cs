@@ -496,11 +496,40 @@ namespace RPGClone.Vfx.Physical
 
         private Bounds ResolveTargetBounds()
         {
+            Collider rootCollider = target.GetComponent<Collider>();
+            if (IsUsableBodyCollider(rootCollider))
+            {
+                return rootCollider.bounds;
+            }
+
             bool found = false;
             Bounds combined = default;
+            foreach (Collider collider in target.GetComponentsInChildren<Collider>(true))
+            {
+                if (!IsUsableBodyCollider(collider) || collider.transform.IsChildOf(transform))
+                {
+                    continue;
+                }
+
+                if (!found)
+                {
+                    combined = collider.bounds;
+                    found = true;
+                }
+                else
+                {
+                    combined.Encapsulate(collider.bounds);
+                }
+            }
+
+            if (found)
+            {
+                return combined;
+            }
+
             foreach (Renderer renderer in target.GetComponentsInChildren<Renderer>(true))
             {
-                if (renderer == null || renderer.transform.IsChildOf(transform))
+                if (!IsUsableBodyRenderer(renderer) || renderer.transform.IsChildOf(transform))
                 {
                     continue;
                 }
@@ -516,13 +545,23 @@ namespace RPGClone.Vfx.Physical
                 }
             }
 
-            if (found)
-            {
-                return combined;
-            }
+            return found ? combined : default;
+        }
 
-            Collider collider = target.GetComponentInChildren<Collider>();
-            return collider != null ? collider.bounds : default;
+        private static bool IsUsableBodyCollider(Collider collider)
+        {
+            return collider != null
+                && collider.enabled
+                && !collider.isTrigger
+                && collider.gameObject.activeInHierarchy;
+        }
+
+        private static bool IsUsableBodyRenderer(Renderer renderer)
+        {
+            return renderer != null
+                && renderer.enabled
+                && renderer.gameObject.activeInHierarchy
+                && renderer is MeshRenderer or SkinnedMeshRenderer;
         }
 
         private Transform ResolveWeaponHand()

@@ -779,6 +779,8 @@ namespace RPGClone.EditorTests
             foreach (MMOItemDefinition item in archetype.StartingEquipment)
             {
                 Assert.That(item, Is.Not.Null);
+                Assert.That(item.VendorValueCopper, Is.GreaterThan(0),
+                    $"{item.DisplayName} is starting equipment and must have a non-zero vendor value.");
                 if (item.EquipmentSlot is MMOEquipmentSlotType.Chest
                     or MMOEquipmentSlotType.Hands
                     or MMOEquipmentSlotType.Legs

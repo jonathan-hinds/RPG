@@ -222,7 +222,7 @@ namespace RPGClone.EditorTools
             float lootedCorpseDespawnSeconds = 2.5f,
             float emptyCorpseDespawnSeconds = 6f,
             float unlootedCorpseDespawnSeconds = 120f,
-            float respawnSeconds = 30f)
+            float respawnSeconds = MMOClassicRespawnDefaults.StandardOutdoorSeconds)
         {
             string path = $"{EnemyDefinitionFolder}/{assetName}.asset";
             MMOEnemyDefinition definition = AssetDatabase.LoadAssetAtPath<MMOEnemyDefinition>(path);

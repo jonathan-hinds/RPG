@@ -787,7 +787,9 @@ namespace RPGClone.Enemies
             lootableCorpse.ClearLoot();
             respawning = true;
 
-            float respawnDelay = definition != null ? definition.RespawnSeconds : 30f;
+            float respawnDelay = definition != null
+                ? definition.RespawnSeconds
+                : MMOClassicRespawnDefaults.StandardOutdoorSeconds;
             respawnEndTime = Time.time + Mathf.Max(0f, respawnDelay);
             if (respawnDelay > 0f)
             {

@@ -34,9 +34,9 @@ namespace RPGClone.UI
                 return false;
             }
 
-            if (MMOVendorPresenter.TrySellInventorySlot(inventory, slotIndex))
+            if (MMOVendorPresenter.HasOpenVendor)
             {
-                return true;
+                return MMOVendorPresenter.TrySellInventorySlot(inventory, slotIndex);
             }
 
             if (stack.Item.IsContainer && inventory.TryEquipBagFromInventory(slotIndex))

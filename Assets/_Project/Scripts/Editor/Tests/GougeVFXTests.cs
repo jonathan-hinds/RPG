@@ -225,6 +225,55 @@ namespace RPGClone.EditorTests
         }
 
         [Test]
+        public void AttachmentBoundsIgnoreUnrelatedTargetParticleRenderers()
+        {
+            MMOAbilityDefinition ability = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(AbilityPath);
+            MMOAbilityVfxDefinition definition = AssetDatabase.LoadAssetAtPath<MMOAbilityVfxDefinition>(DefinitionPath);
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Root + "/Prefabs/GougeVFX.prefab");
+            GameObject source = new("Gouge Bounds Source");
+            GameObject target = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            GameObject unrelatedEffect = new("Unrelated Target Effect");
+            GameObject instance = Object.Instantiate(prefab, target.transform);
+            try
+            {
+                source.transform.position = new Vector3(0f, 1f, -2f);
+                target.AddComponent<MMOCharacterIdentity>();
+                target.AddComponent<MMOCombatant>();
+                unrelatedEffect.transform.SetParent(target.transform, false);
+                unrelatedEffect.transform.localPosition = new Vector3(500f, 200f, -350f);
+                unrelatedEffect.AddComponent<ParticleSystem>();
+
+                Vector3 requestedHitPosition = target.transform.TransformPoint(new Vector3(0f, 0.65f, 0f));
+                MMOAbilityVfxContext context = new(
+                    null,
+                    ability,
+                    definition,
+                    source.transform,
+                    target.transform,
+                    source.transform.position,
+                    requestedHitPosition,
+                    false,
+                    null);
+
+                GougeVFX effect = instance.GetComponent<GougeVFX>();
+                effect.Initialize(context);
+
+                Transform attached = instance.transform.Find("Target Attached Layers");
+                Assert.That(attached, Is.Not.Null);
+                Assert.That(Vector3.Distance(attached.position, target.transform.position), Is.LessThan(2f),
+                    "Temporary particle renderers parented to a target must not displace the persistent wound.");
+                Assert.That(attached.position.y, Is.EqualTo(requestedHitPosition.y).Within(0.08f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+                Object.DestroyImmediate(unrelatedEffect);
+                Object.DestroyImmediate(target);
+                Object.DestroyImmediate(source);
+            }
+        }
+
+        [Test]
         public void ReceiverLocalRelayRetainsReplicatedCriticalResultWithoutRemoteClockMath()
         {
             GameObject sourceObject = new("Gouge Relay Source");
