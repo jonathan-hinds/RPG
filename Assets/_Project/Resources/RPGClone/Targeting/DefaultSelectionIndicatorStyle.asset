@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 348fc1ffca034f74c82e53f37d2244fe, type: 3}
+  m_Name: DefaultSelectionIndicatorStyle
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Targeting.MMOSelectionIndicatorStyle
+  indicatorShader: {fileID: 4800000, guid: 143c6cf8c0d0ff44e907088464b92267, type: 3}
+  groundMask: {fileID: 2800000, guid: 38b7a615e2e1dc24796745506d9aea51, type: 3}
+  reticleMask: {fileID: 2800000, guid: 2d7e72305bd933c448a154533a6f26eb, type: 3}
+  playerColor: {r: 0.15, g: 1.15, b: 0.35, a: 0.92}
+  npcColor: {r: 1.2, g: 0.78, b: 0.08, a: 0.94}
+  hostileColor: {r: 1.35, g: 0.08, b: 0.05, a: 0.96}
+  minimumGroundRadius: 1.1
+  boundsRadiusMultiplier: 1.65
+  groundOffset: 0.045
+  groundGlowOpacity: 0.34
+  groundCoreOpacity: 0.96
+  groundRotationDegreesPerSecond: 5
+  reticleLayerName: UI
+  reticleWorldSize: 0.86
+  reticleCameraOffset: 0.08
+  orbColor: {r: 2.2, g: 2.2, b: 2.2, a: 1}
+  orbScale: 0.46
+  orbOpacity: 0.9
+  orbIntensity: 3.4
+  reticleGlowOpacity: 0.48
+  reticleCoreOpacity: 1
+  reticleRotationDegreesPerSecond: -4
+  pulseFrequency: 1.2
+  pulseScaleAmount: 0.04
+  hideForLocalPlayer: 1

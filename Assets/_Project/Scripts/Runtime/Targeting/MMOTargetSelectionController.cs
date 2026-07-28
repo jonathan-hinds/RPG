@@ -1,21 +1,35 @@
 using System;
+using System.Collections.Generic;
 using RPGClone.Characters;
+using RPGClone.Combat;
 using RPGClone.Services;
+using TMPro;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
-using UnityEngine.Rendering;
+using UnityEngine.Serialization;
+using UnityEngine.UI;
 
 namespace RPGClone.Targeting
 {
+    [DisallowMultipleComponent]
     public sealed class MMOTargetSelectionController : MonoBehaviour
     {
         [SerializeField] private Camera selectionCamera;
         [SerializeField] private LayerMask selectionMask = ~0;
         [SerializeField, Min(1f)] private float maxSelectionDistance = 250f;
         [SerializeField] private bool ignorePointerOverUi = true;
-        [SerializeField] private bool showSelectionRing = true;
+        [FormerlySerializedAs("showSelectionRing")]
+        [SerializeField] private bool showSelectionIndicator = true;
+
+        [Header("Tab Targeting")]
+        [SerializeField] private bool enableTabTargeting = true;
+        [SerializeField, Min(1f)] private float tabTargetMaxDistance = 45f;
+        [SerializeField, Range(0f, 0.5f)] private float tabTargetViewportPadding = 0.08f;
+        [SerializeField, Min(0f)] private float tabTargetScreenCenterWeight = 2.25f;
+        [SerializeField, Min(0f)] private float tabTargetDistanceWeight = 1f;
+
+        private readonly List<TabTargetCandidate> tabCandidates = new(32);
 
         public event Action<MMOCharacterIdentity> TargetChanged;
 
@@ -29,12 +43,8 @@ namespace RPGClone.Targeting
 
         private void Awake()
         {
-            if (selectionCamera == null)
-            {
-                selectionCamera = MMORuntimeSceneReferences.MainCamera;
-            }
-
-            EnsureSelectionRingPresenter();
+            ResolveSelectionCamera();
+            EnsureSelectionIndicatorPresenter();
         }
 
         private void Update()
@@ -43,6 +53,17 @@ namespace RPGClone.Targeting
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
             {
                 ClearTarget();
+                return;
+            }
+
+            if (enableTabTargeting
+                && keyboard != null
+                && keyboard.tabKey.wasPressedThisFrame
+                && !IsKeyboardInputCaptured()
+                && !MMOGroundTargetingController.IsAnyTargeting)
+            {
+                bool reverse = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
+                CycleHostileTarget(reverse ? -1 : 1);
                 return;
             }
 
@@ -86,13 +107,83 @@ namespace RPGClone.Targeting
             SelectTarget(null);
         }
 
-        private void TrySelectFromPointer(Vector2 pointerPosition)
+        public bool CycleHostileTarget(int direction)
         {
-            if (selectionCamera == null)
+            ResolveSelectionCamera();
+
+            MMOCharacterIdentity localPlayer = MMOGameplaySessionService.LocalPlayer.Identity;
+            Transform localPlayerTransform = MMOGameplaySessionService.LocalPlayer.PlayerTransform;
+            if (selectionCamera == null || localPlayer == null || localPlayerTransform == null)
             {
-                selectionCamera = MMORuntimeSceneReferences.MainCamera;
+                return false;
             }
 
+            BuildTabTargetCandidates(localPlayer, localPlayerTransform.position);
+            if (tabCandidates.Count == 0)
+            {
+                return false;
+            }
+
+            tabCandidates.Sort(TabTargetCandidate.Compare);
+            int currentIndex = tabCandidates.FindIndex(candidate => candidate.Identity == CurrentTarget);
+            int step = direction < 0 ? -1 : 1;
+            int nextIndex = currentIndex < 0
+                ? 0
+                : (currentIndex + step + tabCandidates.Count) % tabCandidates.Count;
+
+            SelectTarget(tabCandidates[nextIndex].Identity);
+            return true;
+        }
+
+        private void BuildTabTargetCandidates(MMOCharacterIdentity localPlayer, Vector3 origin)
+        {
+            tabCandidates.Clear();
+            float maxDistanceSquared = tabTargetMaxDistance * tabTargetMaxDistance;
+
+            foreach (MMOCombatant combatant in MMOCombatant.ActiveCombatants)
+            {
+                if (combatant == null || !combatant.isActiveAndEnabled || !combatant.IsAlive)
+                {
+                    continue;
+                }
+
+                MMOCharacterIdentity candidate = combatant.Identity;
+                if (candidate == null
+                    || candidate == localPlayer
+                    || !candidate.Selectable
+                    || !MMOFactionRules.CanDamage(localPlayer, candidate))
+                {
+                    continue;
+                }
+
+                Vector3 offset = candidate.transform.position - origin;
+                float distanceSquared = offset.sqrMagnitude;
+                if (distanceSquared > maxDistanceSquared)
+                {
+                    continue;
+                }
+
+                Vector3 viewportPosition = selectionCamera.WorldToViewportPoint(ResolveAimPoint(candidate));
+                if (viewportPosition.z <= 0f
+                    || viewportPosition.x < -tabTargetViewportPadding
+                    || viewportPosition.x > 1f + tabTargetViewportPadding
+                    || viewportPosition.y < -tabTargetViewportPadding
+                    || viewportPosition.y > 1f + tabTargetViewportPadding)
+                {
+                    continue;
+                }
+
+                Vector2 viewportOffset = new(viewportPosition.x - 0.5f, viewportPosition.y - 0.5f);
+                float normalizedDistance = Mathf.Sqrt(distanceSquared) / tabTargetMaxDistance;
+                float score = viewportOffset.sqrMagnitude * tabTargetScreenCenterWeight
+                    + normalizedDistance * tabTargetDistanceWeight;
+                tabCandidates.Add(new TabTargetCandidate(candidate, score));
+            }
+        }
+
+        private void TrySelectFromPointer(Vector2 pointerPosition)
+        {
+            ResolveSelectionCamera();
             if (selectionCamera == null)
             {
                 return;
@@ -108,286 +199,60 @@ namespace RPGClone.Targeting
             if (target != null && target.Selectable)
             {
                 SelectTarget(target);
-                return;
             }
-
         }
 
-        private void EnsureSelectionRingPresenter()
+        private void ResolveSelectionCamera()
         {
-            if (!showSelectionRing || GetComponent<MMOSelectionRingPresenter>() != null)
+            if (selectionCamera == null)
             {
-                return;
-            }
-
-            gameObject.AddComponent<MMOSelectionRingPresenter>();
-        }
-    }
-
-    [DisallowMultipleComponent]
-    public sealed class MMOSelectionRingPresenter : MonoBehaviour
-    {
-        private const int CircleSegments = 96;
-        private const float DefaultRadius = 0.8f;
-
-        [SerializeField] private MMOTargetSelectionController targetSelectionController;
-        [SerializeField] private LayerMask groundMask = ~0;
-        [SerializeField, Min(0.1f)] private float minimumRadius = 0.55f;
-        [SerializeField, Min(0.1f)] private float radiusMultiplier = 1.15f;
-        [SerializeField, Min(0.001f)] private float lineWidth = 0.045f;
-        [SerializeField, Min(0.001f)] private float groundOffset = 0.045f;
-        [SerializeField, Min(0.1f)] private float groundProbeHeight = 5f;
-        [SerializeField, Min(0.1f)] private float groundProbeDistance = 24f;
-        [SerializeField] private bool hideForLocalPlayer = true;
-        [SerializeField] private Color ringColor = new(0.95f, 0.78f, 0.24f, 0.88f);
-
-        private readonly RaycastHit[] groundHits = new RaycastHit[16];
-        private MMOCharacterIdentity target;
-        private GameObject ringRoot;
-        private LineRenderer ringRenderer;
-        private Material ringMaterial;
-
-        private void Awake()
-        {
-            ResolveController();
-            CreateRingIfNeeded();
-            SetRingVisible(false);
-        }
-
-        private void OnEnable()
-        {
-            ResolveController();
-            if (targetSelectionController != null)
-            {
-                targetSelectionController.TargetChanged -= OnTargetChanged;
-                targetSelectionController.TargetChanged += OnTargetChanged;
-                OnTargetChanged(targetSelectionController.CurrentTarget);
+                selectionCamera = MMORuntimeSceneReferences.MainCamera;
             }
         }
 
-        private void OnDisable()
+        private void EnsureSelectionIndicatorPresenter()
         {
-            if (targetSelectionController != null)
-            {
-                targetSelectionController.TargetChanged -= OnTargetChanged;
-            }
-
-            SetRingVisible(false);
-        }
-
-        private void OnDestroy()
-        {
-            if (ringRoot != null)
-            {
-                Destroy(ringRoot);
-            }
-
-            if (ringMaterial != null)
-            {
-                Destroy(ringMaterial);
-            }
-        }
-
-        private void LateUpdate()
-        {
-            if (!ShouldShowRing())
-            {
-                SetRingVisible(false);
-                return;
-            }
-
-            UpdateRingTransform();
-        }
-
-        private void OnTargetChanged(MMOCharacterIdentity newTarget)
-        {
-            target = newTarget;
-            SetRingVisible(ShouldShowRing());
-        }
-
-        private bool ShouldShowRing()
-        {
-            return target != null
-                && target.Selectable
-                && (!hideForLocalPlayer || MMOGameplaySessionService.LocalPlayer.Identity != target);
-        }
-
-        private void ResolveController()
-        {
-            if (targetSelectionController == null)
-            {
-                targetSelectionController = GetComponent<MMOTargetSelectionController>();
-            }
-        }
-
-        private void CreateRingIfNeeded()
-        {
-            if (ringRoot != null)
+            if (!showSelectionIndicator || GetComponent<MMOSelectionIndicatorPresenter>() != null)
             {
                 return;
             }
 
-            ringRoot = new GameObject("Selected Target Ring")
-            {
-                hideFlags = HideFlags.DontSave
-            };
-
-            ringRenderer = ringRoot.AddComponent<LineRenderer>();
-            ringMaterial = CreateRingMaterial(ringColor);
-            ringRenderer.sharedMaterial = ringMaterial;
-            ringRenderer.useWorldSpace = false;
-            ringRenderer.loop = true;
-            ringRenderer.positionCount = CircleSegments;
-            ringRenderer.widthMultiplier = lineWidth;
-            ringRenderer.alignment = LineAlignment.TransformZ;
-            ringRenderer.shadowCastingMode = ShadowCastingMode.Off;
-            ringRenderer.receiveShadows = false;
-
-            for (int i = 0; i < CircleSegments; i++)
-            {
-                float angle = i / (float)CircleSegments * Mathf.PI * 2f;
-                ringRenderer.SetPosition(i, new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)));
-            }
+            gameObject.AddComponent<MMOSelectionIndicatorPresenter>();
         }
 
-        private void UpdateRingTransform()
+        private static bool IsKeyboardInputCaptured()
         {
-            CreateRingIfNeeded();
-            Bounds targetBounds = ResolveTargetBounds(target);
-            float radius = ResolveRingRadius(targetBounds);
-            Vector3 probeCenter = targetBounds.size == Vector3.zero ? target.transform.position : targetBounds.center;
-
-            if (TryResolveGroundPose(probeCenter, target, out Vector3 groundPosition, out Vector3 groundNormal))
-            {
-                ringRoot.transform.SetPositionAndRotation(
-                    groundPosition + groundNormal * groundOffset,
-                    Quaternion.FromToRotation(Vector3.up, groundNormal));
-            }
-            else
-            {
-                ringRoot.transform.SetPositionAndRotation(
-                    new Vector3(probeCenter.x, targetBounds.min.y + groundOffset, probeCenter.z),
-                    Quaternion.identity);
-            }
-
-            ringRoot.transform.localScale = new Vector3(radius, radius, radius);
-            SetRingVisible(true);
+            GameObject selectedObject = EventSystem.current != null
+                ? EventSystem.current.currentSelectedGameObject
+                : null;
+            return selectedObject != null
+                && (selectedObject.GetComponent<InputField>() != null
+                    || selectedObject.GetComponent<TMP_InputField>() != null);
         }
 
-        private bool TryResolveGroundPose(
-            Vector3 probeCenter,
-            MMOCharacterIdentity selectedTarget,
-            out Vector3 groundPosition,
-            out Vector3 groundNormal)
+        private static Vector3 ResolveAimPoint(MMOCharacterIdentity identity)
         {
-            Vector3 rayOrigin = probeCenter + Vector3.up * groundProbeHeight;
-            float rayDistance = groundProbeHeight + groundProbeDistance;
-            int hitCount = Physics.RaycastNonAlloc(
-                rayOrigin,
-                Vector3.down,
-                groundHits,
-                rayDistance,
-                groundMask,
-                QueryTriggerInteraction.Ignore);
-
-            float nearestDistance = float.PositiveInfinity;
-            RaycastHit nearestGroundHit = default;
-            for (int i = 0; i < hitCount; i++)
-            {
-                Collider hitCollider = groundHits[i].collider;
-                if (hitCollider == null
-                    || selectedTarget != null && hitCollider.transform.IsChildOf(selectedTarget.transform))
-                {
-                    continue;
-                }
-
-                if (groundHits[i].distance < nearestDistance)
-                {
-                    nearestDistance = groundHits[i].distance;
-                    nearestGroundHit = groundHits[i];
-                }
-            }
-
-            if (nearestGroundHit.collider != null)
-            {
-                groundPosition = nearestGroundHit.point;
-                groundNormal = nearestGroundHit.normal.sqrMagnitude > 0.001f ? nearestGroundHit.normal.normalized : Vector3.up;
-                return true;
-            }
-
-            if (NavMesh.SamplePosition(probeCenter, out NavMeshHit navHit, groundProbeDistance, NavMesh.AllAreas))
-            {
-                groundPosition = navHit.position;
-                groundNormal = Vector3.up;
-                return true;
-            }
-
-            groundPosition = default;
-            groundNormal = Vector3.up;
-            return false;
+            Collider collider = identity != null ? identity.GetComponentInChildren<Collider>() : null;
+            return collider != null ? collider.bounds.center : identity.transform.position + Vector3.up;
         }
 
-        private static Bounds ResolveTargetBounds(MMOCharacterIdentity selectedTarget)
+        private readonly struct TabTargetCandidate
         {
-            if (selectedTarget == null)
+            public TabTargetCandidate(MMOCharacterIdentity identity, float score)
             {
-                return default;
+                Identity = identity;
+                Score = score;
             }
 
-            Collider[] colliders = selectedTarget.GetComponentsInChildren<Collider>();
-            bool hasBounds = false;
-            Bounds bounds = default;
-            foreach (Collider collider in colliders)
+            public MMOCharacterIdentity Identity { get; }
+            private float Score { get; }
+
+            public static int Compare(TabTargetCandidate left, TabTargetCandidate right)
             {
-                if (collider == null || collider.isTrigger || !collider.enabled)
-                {
-                    continue;
-                }
-
-                if (!hasBounds)
-                {
-                    bounds = collider.bounds;
-                    hasBounds = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(collider.bounds);
-                }
-            }
-
-            if (hasBounds)
-            {
-                return bounds;
-            }
-
-            return new Bounds(selectedTarget.transform.position, Vector3.zero);
-        }
-
-        private float ResolveRingRadius(Bounds targetBounds)
-        {
-            if (targetBounds.size == Vector3.zero)
-            {
-                return Mathf.Max(minimumRadius, DefaultRadius);
-            }
-
-            float extents = Mathf.Max(targetBounds.extents.x, targetBounds.extents.z);
-            return Mathf.Max(minimumRadius, extents * radiusMultiplier);
-        }
-
-        private static Material CreateRingMaterial(Color color)
-        {
-            Shader shader = Shader.Find("Sprites/Default");
-            return new Material(shader)
-            {
-                color = color
-            };
-        }
-
-        private void SetRingVisible(bool visible)
-        {
-            if (ringRoot != null && ringRoot.activeSelf != visible)
-            {
-                ringRoot.SetActive(visible);
+                int scoreComparison = left.Score.CompareTo(right.Score);
+                return scoreComparison != 0
+                    ? scoreComparison
+                    : left.Identity.GetInstanceID().CompareTo(right.Identity.GetInstanceID());
             }
         }
     }
