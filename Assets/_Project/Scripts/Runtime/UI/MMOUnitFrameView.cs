@@ -11,48 +11,52 @@ namespace RPGClone.UI
     [RequireComponent(typeof(RectTransform))]
     public sealed class MMOUnitFrameView : MonoBehaviour, IPointerClickHandler
     {
+        private const int CurrentVisualVersion = 3;
+        private const string ThemeResourcePath = "RPGClone/UI/UnitFrames/ClassicUnitFrameTheme";
+        private const float BuffSize = 26f;
+        private const float BuffSpacing = 4f;
+
         [Header("Binding")]
         [SerializeField] private bool autoBuild = true;
         [SerializeField] private bool hideWhenUnbound = true;
 
-        [Header("Colors")]
-        [SerializeField] private Color frameColor = new(0.05f, 0.05f, 0.055f, 0.92f);
-        [SerializeField] private Color borderColor = new(0.72f, 0.63f, 0.42f, 1f);
-        [SerializeField] private Color healthColor = new(0.08f, 0.62f, 0.14f, 1f);
-        [SerializeField] private Color manaColor = new(0.05f, 0.28f, 0.82f, 1f);
-        [SerializeField] private Color emptyBarColor = new(0.02f, 0.02f, 0.025f, 1f);
+        [Header("Presentation")]
+        [SerializeField] private MMOUnitFrameStyle frameStyle = MMOUnitFrameStyle.Player;
+        [SerializeField] private MMOUnitFrameTheme theme;
+        [SerializeField, HideInInspector] private int visualVersion;
 
-        private const float PortraitSize = 56f;
-        private const float Padding = 6f;
-        private const float BarHeight = 18f;
-        private const float BuffSize = 26f;
-        private const float BuffSpacing = 4f;
-
-        private Image background;
+        private Image frameArtwork;
         private Image portraitImage;
         private Text portraitInitialText;
         private Text nameText;
         private Text levelText;
         private Image healthFill;
         private Text healthText;
+        private RectTransform healthBar;
         private Image manaFill;
         private Text manaText;
+        private RectTransform manaBar;
         private RectTransform buffRoot;
+
         private readonly List<BuffIconView> buffIcons = new();
         private MMOCharacterIdentity boundCharacter;
         private MMOCharacterBuffController boundBuffController;
         private bool subscribedToBoundCharacter;
+        private float nextBuffTimerRefreshAt;
 
+        private static MMOUnitFrameTheme cachedTheme;
         private static Font cachedFont;
 
         public event Action<MMOUnitFrameView, MMOCharacterIdentity> Clicked;
+
         public MMOCharacterIdentity BoundCharacter => boundCharacter;
+        public MMOUnitFrameStyle FrameStyle => frameStyle;
 
         private void Awake()
         {
             if (autoBuild)
             {
-                BuildIfNeeded();
+                EnsureVisuals();
             }
 
             Refresh();
@@ -70,7 +74,37 @@ namespace RPGClone.UI
 
         private void Update()
         {
+            if (Time.unscaledTime < nextBuffTimerRefreshAt)
+            {
+                return;
+            }
+
+            nextBuffTimerRefreshAt = Time.unscaledTime + 0.2f;
             RefreshBuffTimers();
+        }
+
+        public void ConfigureStyle(MMOUnitFrameStyle style, MMOUnitFrameTheme unitFrameTheme = null)
+        {
+            bool changed = frameStyle != style || (unitFrameTheme != null && theme != unitFrameTheme);
+            frameStyle = style;
+            if (unitFrameTheme != null)
+            {
+                theme = unitFrameTheme;
+            }
+
+            if (changed || visualVersion != CurrentVisualVersion)
+            {
+                RebuildVisuals();
+            }
+        }
+
+        public void RebuildVisuals()
+        {
+            DestroyGeneratedChildren();
+            ClearVisualReferences();
+            CreateVisualHierarchy();
+            visualVersion = CurrentVisualVersion;
+            Refresh();
         }
 
         public void Bind(MMOCharacterIdentity character)
@@ -81,13 +115,11 @@ namespace RPGClone.UI
                 return;
             }
 
-            if (boundCharacter != null)
-            {
-                UnsubscribeFromBoundCharacter();
-            }
-
+            UnsubscribeFromBoundCharacter();
             boundCharacter = character;
-            boundBuffController = boundCharacter != null ? boundCharacter.GetComponent<MMOCharacterBuffController>() : null;
+            boundBuffController = boundCharacter != null
+                ? boundCharacter.GetComponent<MMOCharacterBuffController>()
+                : null;
 
             Refresh();
             SubscribeToBoundCharacter();
@@ -100,7 +132,9 @@ namespace RPGClone.UI
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (eventData == null || eventData.button != PointerEventData.InputButton.Left || boundCharacter == null)
+            if (eventData == null
+                || eventData.button != PointerEventData.InputButton.Left
+                || boundCharacter == null)
             {
                 return;
             }
@@ -167,177 +201,322 @@ namespace RPGClone.UI
             subscribedToBoundCharacter = false;
         }
 
-        private void BuildIfNeeded()
+        private void EnsureVisuals()
         {
-            if (background != null)
+            if (frameArtwork != null)
             {
-                ConfigureRaycastSurface();
+                frameArtwork.raycastTarget = true;
                 return;
             }
 
-            if (TryBindExistingHierarchy())
+            if (visualVersion == CurrentVisualVersion && TryBindExistingHierarchy())
             {
-                ConfigureRaycastSurface();
+                frameArtwork.raycastTarget = true;
                 return;
             }
 
+            DestroyGeneratedChildren();
+            ClearVisualReferences();
+            CreateVisualHierarchy();
+            visualVersion = CurrentVisualVersion;
+        }
+
+        private void CreateVisualHierarchy()
+        {
+            MMOUnitFrameTheme resolvedTheme = ResolveTheme();
+            MMOUnitFrameLayout layout = resolvedTheme?.GetLayout(frameStyle) ?? CreateFallbackLayout();
             RectTransform root = (RectTransform)transform;
-            if (root.sizeDelta == Vector2.zero)
-            {
-                root.sizeDelta = new Vector2(270f, 76f);
-            }
+            root.sizeDelta = layout.FrameSize;
 
-            background = CreateImage("Frame Background", transform, frameColor);
-            Stretch(background.rectTransform);
-            background.rectTransform.offsetMin = Vector2.one * 2f;
-            background.rectTransform.offsetMax = Vector2.one * -2f;
+            CreateBackplate(resolvedTheme);
+            Vector2 portraitCenter = GetPortraitCenter(layout);
+            CreatePortrait(resolvedTheme, layout, portraitCenter);
+            CreateContent(resolvedTheme, layout);
+            CreateLevelBadge(resolvedTheme, layout, portraitCenter);
+            CreateBuffRoot(layout);
+        }
 
-            Image border = CreateImage("Frame Border", transform, borderColor);
-            Stretch(border.rectTransform);
-            border.transform.SetAsFirstSibling();
+        private void CreateBackplate(MMOUnitFrameTheme resolvedTheme)
+        {
+            Image shadow = CreateImage(
+                "Frame Shadow",
+                transform,
+                resolvedTheme != null ? resolvedTheme.FrameShadowColor : new Color(0f, 0f, 0f, 0.62f),
+                false);
+            shadow.sprite = resolvedTheme?.Backplate;
+            shadow.type = Image.Type.Sliced;
+            Stretch(shadow.rectTransform);
+            shadow.rectTransform.offsetMin = new Vector2(-3f, -5f);
+            shadow.rectTransform.offsetMax = new Vector2(3f, 1f);
 
-            RectTransform portrait = CreateRect("Portrait", transform);
-            portrait.anchorMin = new Vector2(0f, 0.5f);
-            portrait.anchorMax = new Vector2(0f, 0.5f);
-            portrait.pivot = new Vector2(0f, 0.5f);
-            portrait.anchoredPosition = new Vector2(Padding, 0f);
-            portrait.sizeDelta = new Vector2(PortraitSize, PortraitSize);
-            portraitImage = portrait.gameObject.AddComponent<Image>();
-            portraitImage.raycastTarget = false;
+            frameArtwork = CreateImage("Backplate", transform, Color.white, true);
+            frameArtwork.sprite = resolvedTheme?.Backplate;
+            frameArtwork.type = Image.Type.Sliced;
+            Stretch(frameArtwork.rectTransform);
+        }
 
-            portraitInitialText = CreateText("Portrait Initial", portrait, 22, FontStyle.Bold, TextAnchor.MiddleCenter);
+        private void CreatePortrait(
+            MMOUnitFrameTheme resolvedTheme,
+            MMOUnitFrameLayout layout,
+            Vector2 portraitCenter)
+        {
+            RectTransform maskRoot = CreateRect("Portrait Mask", transform);
+            AnchorToPortraitSide(maskRoot, layout, portraitCenter, layout.PortraitMaskSize);
+
+            Image maskGraphic = maskRoot.gameObject.AddComponent<Image>();
+            maskGraphic.sprite = resolvedTheme?.PortraitMask;
+            maskGraphic.color = Color.white;
+            maskGraphic.raycastTarget = false;
+            Mask mask = maskRoot.gameObject.AddComponent<Mask>();
+            mask.showMaskGraphic = false;
+
+            portraitImage = CreateImage("Portrait", maskRoot, Color.white, false);
+            Stretch(portraitImage.rectTransform);
+            portraitImage.rectTransform.offsetMin = Vector2.one * -3f;
+            portraitImage.rectTransform.offsetMax = Vector2.one * 3f;
+            portraitImage.preserveAspect = true;
+
+            portraitInitialText = CreateText(
+                "Portrait Initial",
+                maskRoot,
+                layout.NameFontSize + 8,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                true);
             Stretch(portraitInitialText.rectTransform);
 
+            Image bezel = CreateImage("Portrait Bezel", transform, Color.white, false);
+            bezel.sprite = resolvedTheme?.PortraitBezel;
+            bezel.preserveAspect = true;
+            AnchorToPortraitSide(bezel.rectTransform, layout, portraitCenter, layout.PortraitBezelSize);
+        }
+
+        private void CreateContent(MMOUnitFrameTheme resolvedTheme, MMOUnitFrameLayout layout)
+        {
             RectTransform content = CreateRect("Content", transform);
-            content.anchorMin = new Vector2(0f, 0f);
-            content.anchorMax = new Vector2(1f, 1f);
-            content.offsetMin = new Vector2(Padding + PortraitSize + Padding, Padding);
-            content.offsetMax = new Vector2(-Padding, -Padding);
+            Stretch(content);
+            content.offsetMin = new Vector2(
+                layout.IsMirrored ? layout.ContentOuterInset : layout.ContentPortraitInset,
+                layout.ContentBottomInset);
+            content.offsetMax = new Vector2(
+                -(layout.IsMirrored ? layout.ContentPortraitInset : layout.ContentOuterInset),
+                -layout.ContentTopInset);
 
-            nameText = CreateText("Name", content, 15, FontStyle.Bold, TextAnchor.UpperLeft);
-            nameText.rectTransform.anchorMin = new Vector2(0f, 1f);
-            nameText.rectTransform.anchorMax = new Vector2(1f, 1f);
-            nameText.rectTransform.pivot = new Vector2(0f, 1f);
-            nameText.rectTransform.anchoredPosition = Vector2.zero;
-            nameText.rectTransform.sizeDelta = new Vector2(0f, 20f);
+            float y = 0f;
+            Image nameplateArtwork = CreateImage("Nameplate", content, Color.white, false);
+            nameplateArtwork.sprite = resolvedTheme?.Nameplate;
+            nameplateArtwork.type = Image.Type.Sliced;
+            AnchorTop(nameplateArtwork.rectTransform, y, layout.NameHeight);
 
-            RectTransform healthBar = CreateBar("Health Bar", content, 0f, out healthFill, out healthText);
-            healthBar.anchorMin = new Vector2(0f, 0.5f);
-            healthBar.anchorMax = new Vector2(1f, 0.5f);
-            healthBar.pivot = new Vector2(0.5f, 0.5f);
-            healthBar.anchoredPosition = new Vector2(0f, -2f);
+            nameText = CreateText(
+                "Name",
+                nameplateArtwork.transform,
+                layout.NameFontSize,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                true);
+            Stretch(nameText.rectTransform);
+            nameText.rectTransform.offsetMin = new Vector2(12f, 1f);
+            nameText.rectTransform.offsetMax = new Vector2(-12f, -1f);
+            nameText.resizeTextForBestFit = true;
+            nameText.resizeTextMinSize = Mathf.Max(9, layout.NameFontSize - 4);
+            nameText.resizeTextMaxSize = layout.NameFontSize;
+            y += layout.NameHeight + layout.ElementSpacing;
 
-            RectTransform manaBar = CreateBar("Mana Bar", content, 0f, out manaFill, out manaText);
-            manaBar.anchorMin = new Vector2(0f, 0f);
-            manaBar.anchorMax = new Vector2(1f, 0f);
-            manaBar.pivot = new Vector2(0.5f, 0f);
-            manaBar.anchoredPosition = Vector2.zero;
+            healthBar = CreateBar(
+                "Health Bar",
+                content,
+                resolvedTheme,
+                y,
+                layout.HealthHeight,
+                layout.ValueFontSize,
+                out healthFill,
+                out healthText);
+            y += layout.HealthHeight + layout.ElementSpacing;
 
-            healthFill.color = healthColor;
-            manaFill.color = manaColor;
+            manaBar = CreateBar(
+                "Resource Bar",
+                content,
+                resolvedTheme,
+                y,
+                layout.ResourceHeight,
+                Mathf.Max(8, layout.ValueFontSize - 1),
+                out manaFill,
+                out manaText);
 
-            Image levelBackground = CreateImage("Level Badge", transform, new Color(0.02f, 0.02f, 0.025f, 0.95f));
-            levelBackground.rectTransform.anchorMin = new Vector2(0f, 0f);
-            levelBackground.rectTransform.anchorMax = new Vector2(0f, 0f);
-            levelBackground.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            levelBackground.rectTransform.anchoredPosition = new Vector2(Padding + PortraitSize, Padding);
-            levelBackground.rectTransform.sizeDelta = new Vector2(28f, 22f);
+            if (resolvedTheme != null)
+            {
+                healthFill.color = resolvedTheme.HealthColor;
+                manaFill.color = resolvedTheme.ManaColor;
+                nameText.color = resolvedTheme.TextColor;
+                healthText.color = resolvedTheme.TextColor;
+                manaText.color = resolvedTheme.TextColor;
+            }
+        }
 
-            levelText = CreateText("Level", transform, 13, FontStyle.Bold, TextAnchor.MiddleCenter);
-            levelText.rectTransform.anchorMin = new Vector2(0f, 0f);
-            levelText.rectTransform.anchorMax = new Vector2(0f, 0f);
-            levelText.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            levelText.rectTransform.anchoredPosition = new Vector2(Padding + PortraitSize, Padding);
-            levelText.rectTransform.sizeDelta = new Vector2(28f, 22f);
+        private static void AnchorTop(RectTransform rect, float topOffset, float height)
+        {
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -topOffset);
+            rect.sizeDelta = new Vector2(0f, height);
+        }
 
+        private RectTransform CreateBar(
+            string objectName,
+            Transform parent,
+            MMOUnitFrameTheme resolvedTheme,
+            float topOffset,
+            float height,
+            int fontSize,
+            out Image fill,
+            out Text valueText)
+        {
+            RectTransform root = CreateRect(objectName, parent);
+            AnchorTop(root, topOffset, height);
+
+            Image well = root.gameObject.AddComponent<Image>();
+            well.sprite = resolvedTheme?.BarWell;
+            well.type = Image.Type.Sliced;
+            well.color = Color.white;
+            well.raycastTarget = false;
+
+            float horizontalInset = Mathf.Clamp(height * 0.28f, 3f, 6f);
+            float verticalInset = Mathf.Clamp(height * 0.18f, 2f, 4f);
+            RectTransform fillArea = CreateRect("Fill Area", root);
+            Stretch(fillArea);
+            fillArea.offsetMin = new Vector2(horizontalInset, verticalInset);
+            fillArea.offsetMax = new Vector2(-horizontalInset, -verticalInset);
+            fill = CreateImage("Fill", fillArea, Color.white, false);
+            Stretch(fill.rectTransform);
+
+            Image highlight = CreateImage(
+                "Highlight",
+                fill.transform,
+                resolvedTheme != null ? resolvedTheme.BarHighlightColor : new Color(1f, 1f, 1f, 0.16f),
+                false);
+            highlight.rectTransform.anchorMin = new Vector2(0f, 0.62f);
+            highlight.rectTransform.anchorMax = Vector2.one;
+            highlight.rectTransform.offsetMin = Vector2.zero;
+            highlight.rectTransform.offsetMax = Vector2.zero;
+
+            valueText = CreateText(
+                "Value",
+                root,
+                fontSize,
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                true);
+            Stretch(valueText.rectTransform);
+            valueText.resizeTextForBestFit = true;
+            valueText.resizeTextMinSize = 7;
+            valueText.resizeTextMaxSize = fontSize;
+            return root;
+        }
+
+        private void CreateLevelBadge(
+            MMOUnitFrameTheme resolvedTheme,
+            MMOUnitFrameLayout layout,
+            Vector2 portraitCenter)
+        {
+            Vector2 signedOffset = layout.LevelBadgeOffset;
+            if (layout.IsMirrored)
+            {
+                signedOffset.x = -signedOffset.x;
+            }
+
+            Image badge = CreateImage("Level Badge", transform, Color.white, false);
+            badge.sprite = resolvedTheme?.LevelMedallion;
+            badge.preserveAspect = true;
+            AnchorToPortraitSide(
+                badge.rectTransform,
+                layout,
+                portraitCenter + signedOffset,
+                layout.LevelBadgeSize);
+
+            levelText = CreateText(
+                "Level",
+                badge.transform,
+                Mathf.Max(9, layout.ValueFontSize),
+                FontStyle.Bold,
+                TextAnchor.MiddleCenter,
+                true);
+            Stretch(levelText.rectTransform);
+            levelText.rectTransform.offsetMin = Vector2.one * 3f;
+            levelText.rectTransform.offsetMax = Vector2.one * -3f;
+            levelText.color = resolvedTheme != null ? resolvedTheme.TextColor : Color.white;
+        }
+
+        private void CreateBuffRoot(MMOUnitFrameLayout layout)
+        {
             buffRoot = CreateRect("Buffs", transform);
-            buffRoot.anchorMin = new Vector2(0f, 0f);
-            buffRoot.anchorMax = new Vector2(0f, 0f);
-            buffRoot.pivot = new Vector2(0f, 1f);
-            buffRoot.anchoredPosition = new Vector2(Padding, -4f);
-            buffRoot.sizeDelta = new Vector2(270f, BuffSize);
-            ConfigureRaycastSurface();
+            buffRoot.anchorMin = new Vector2(layout.IsMirrored ? 1f : 0f, 0f);
+            buffRoot.anchorMax = buffRoot.anchorMin;
+            buffRoot.pivot = new Vector2(layout.IsMirrored ? 1f : 0f, 1f);
+            buffRoot.anchoredPosition = new Vector2(
+                layout.IsMirrored ? -layout.ContentOuterInset : layout.ContentPortraitInset,
+                -4f);
+            buffRoot.sizeDelta = new Vector2(layout.FrameSize.x - layout.ContentPortraitInset, BuffSize);
+        }
+
+        private static Vector2 GetPortraitCenter(MMOUnitFrameLayout layout)
+        {
+            float x = layout.PortraitEdgeInset + layout.PortraitBezelSize * 0.5f;
+            return new Vector2(layout.IsMirrored ? -x : x, layout.PortraitVerticalOffset);
+        }
+
+        private static void AnchorToPortraitSide(
+            RectTransform rect,
+            MMOUnitFrameLayout layout,
+            Vector2 anchoredPosition,
+            float size)
+        {
+            Vector2 anchor = new(layout.IsMirrored ? 1f : 0f, 0.5f);
+            rect.anchorMin = anchor;
+            rect.anchorMax = anchor;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = Vector2.one * size;
         }
 
         private bool TryBindExistingHierarchy()
         {
             Transform content = transform.Find("Content");
-            Transform portrait = transform.Find("Portrait");
-            Transform healthBar = content != null ? content.Find("Health Bar") : null;
-            Transform manaBar = content != null ? content.Find("Mana Bar") : null;
+            Transform portraitMask = transform.Find("Portrait Mask");
+            Transform health = content != null ? content.Find("Health Bar") : null;
+            Transform resource = content != null ? content.Find("Resource Bar") : null;
 
-            background = GetImage(transform.Find("Frame Background"));
-            portraitImage = GetImage(portrait);
-            portraitInitialText = GetText(portrait != null ? portrait.Find("Portrait Initial") : null);
-            nameText = GetText(content != null ? content.Find("Name") : null);
-            levelText = GetText(transform.Find("Level"));
-            healthFill = GetImage(healthBar != null ? healthBar.Find("Fill") : null);
-            healthText = GetText(healthBar != null ? healthBar.Find("Value") : null);
-            manaFill = GetImage(manaBar != null ? manaBar.Find("Fill") : null);
-            manaText = GetText(manaBar != null ? manaBar.Find("Value") : null);
+            frameArtwork = GetImage(transform.Find("Backplate"));
+            portraitImage = GetImage(portraitMask != null ? portraitMask.Find("Portrait") : null);
+            portraitInitialText = GetText(portraitMask != null ? portraitMask.Find("Portrait Initial") : null);
+            nameText = GetText(content != null ? content.Find("Nameplate/Name") : null);
+            levelText = GetText(transform.Find("Level Badge/Level"));
+            healthBar = health as RectTransform;
+            healthFill = GetImage(health != null ? health.Find("Fill Area/Fill") : null);
+            healthText = GetText(health != null ? health.Find("Value") : null);
+            manaBar = resource as RectTransform;
+            manaFill = GetImage(resource != null ? resource.Find("Fill Area/Fill") : null);
+            manaText = GetText(resource != null ? resource.Find("Value") : null);
             buffRoot = transform.Find("Buffs") as RectTransform;
-            if (buffRoot == null)
-            {
-                buffRoot = CreateRect("Buffs", transform);
-                buffRoot.anchorMin = new Vector2(0f, 0f);
-                buffRoot.anchorMax = new Vector2(0f, 0f);
-                buffRoot.pivot = new Vector2(0f, 1f);
-                buffRoot.anchoredPosition = new Vector2(Padding, -4f);
-                buffRoot.sizeDelta = new Vector2(270f, BuffSize);
-            }
 
-            return background != null
+            return frameArtwork != null
                 && portraitImage != null
                 && portraitInitialText != null
                 && nameText != null
                 && levelText != null
+                && healthBar != null
                 && healthFill != null
                 && healthText != null
+                && manaBar != null
                 && manaFill != null
-                && manaText != null;
-        }
-
-        private void ConfigureRaycastSurface()
-        {
-            if (background != null)
-            {
-                background.raycastTarget = true;
-            }
-        }
-
-        private static Image GetImage(Transform target)
-        {
-            return target != null ? target.GetComponent<Image>() : null;
-        }
-
-        private static Text GetText(Transform target)
-        {
-            return target != null ? target.GetComponent<Text>() : null;
-        }
-
-        private RectTransform CreateBar(string objectName, Transform parent, float y, out Image fill, out Text valueText)
-        {
-            RectTransform root = CreateRect(objectName, parent);
-            root.sizeDelta = new Vector2(0f, BarHeight);
-            root.anchoredPosition = new Vector2(0f, y);
-
-            Image backgroundImage = root.gameObject.AddComponent<Image>();
-            backgroundImage.color = emptyBarColor;
-            backgroundImage.raycastTarget = false;
-
-            fill = CreateImage("Fill", root, Color.white);
-            Stretch(fill.rectTransform);
-            fill.type = Image.Type.Simple;
-            fill.fillAmount = 1f;
-
-            valueText = CreateText("Value", root, 11, FontStyle.Bold, TextAnchor.MiddleCenter);
-            Stretch(valueText.rectTransform);
-            return root;
+                && manaText != null
+                && buffRoot != null;
         }
 
         private void Refresh()
         {
-            BuildIfNeeded();
+            EnsureVisuals();
 
             bool hasCharacter = boundCharacter != null;
             gameObject.SetActive(hasCharacter || !hideWhenUnbound);
@@ -346,21 +525,43 @@ namespace RPGClone.UI
                 return;
             }
 
+            MMOUnitFrameTheme resolvedTheme = ResolveTheme();
             nameText.text = boundCharacter.DisplayName;
+            nameText.color = ResolveNameColor(boundCharacter.Faction, resolvedTheme);
             levelText.text = boundCharacter.Level.ToString();
+
             portraitImage.sprite = boundCharacter.Portrait;
-            portraitImage.color = boundCharacter.Portrait != null ? Color.white : boundCharacter.PortraitTint;
+            portraitImage.color = boundCharacter.Portrait != null
+                ? Color.white
+                : boundCharacter.PortraitTint;
             portraitInitialText.text = GetInitial(boundCharacter.DisplayName);
             portraitInitialText.enabled = boundCharacter.Portrait == null;
+            portraitInitialText.color = resolvedTheme != null ? resolvedTheme.TextColor : Color.white;
 
-            RefreshResource(boundCharacter.Health, healthFill, healthText);
-            RefreshResource(boundCharacter.Mana, manaFill, manaText);
+            RefreshResource(boundCharacter.Health, healthFill, healthText, healthBar, true);
+            RefreshResource(boundCharacter.Mana, manaFill, manaText, manaBar, false);
             RefreshBuffs();
+        }
+
+        private static Color ResolveNameColor(MMOEntityFaction faction, MMOUnitFrameTheme resolvedTheme)
+        {
+            if (resolvedTheme == null)
+            {
+                return Color.white;
+            }
+
+            return faction switch
+            {
+                MMOEntityFaction.Friendly => resolvedTheme.FriendlyNameColor,
+                MMOEntityFaction.Hostile => resolvedTheme.HostileNameColor,
+                MMOEntityFaction.Neutral => resolvedTheme.NeutralNameColor,
+                _ => resolvedTheme.TextColor
+            };
         }
 
         private void RefreshBuffs()
         {
-            BuildIfNeeded();
+            EnsureVisuals();
             int buffCount = boundBuffController != null ? boundBuffController.ActiveBuffs.Count : 0;
             EnsureBuffIconCount(buffCount);
 
@@ -378,8 +579,12 @@ namespace RPGClone.UI
                 iconView.Icon.sprite = buff.Icon;
                 iconView.Icon.color = buff.Icon != null
                     ? Color.white
-                    : buff.IsHarmful ? new Color(0.2f, 0.035f, 0.03f, 1f) : new Color(0.16f, 0.11f, 0.06f, 1f);
-                iconView.BorderBaseColor = buff.IsHarmful ? new Color(0.92f, 0.12f, 0.08f, 1f) : new Color(0.72f, 0.63f, 0.42f, 1f);
+                    : buff.IsHarmful
+                        ? new Color(0.2f, 0.035f, 0.03f, 1f)
+                        : new Color(0.16f, 0.11f, 0.06f, 1f);
+                iconView.BorderBaseColor = buff.IsHarmful
+                    ? new Color(0.92f, 0.12f, 0.08f, 1f)
+                    : new Color(0.64f, 0.54f, 0.32f, 1f);
                 iconView.Border.color = iconView.BorderBaseColor;
                 iconView.Initial.text = buff.Icon == null ? GetInitial(buff.DisplayName) : string.Empty;
                 iconView.Tooltip.Configure(boundBuffController, buff.BuffId);
@@ -404,7 +609,9 @@ namespace RPGClone.UI
         private static void RefreshBuffTimer(BuffIconView iconView, MMOActiveBuff buff)
         {
             iconView.Timer.text = FormatBuffTime(buff.RemainingSeconds);
-            float alpha = buff.IsNearExpiry ? Mathf.Lerp(0.38f, 1f, Mathf.PingPong(Time.unscaledTime * 2.2f, 1f)) : 1f;
+            float alpha = buff.IsNearExpiry
+                ? Mathf.Lerp(0.38f, 1f, Mathf.PingPong(Time.unscaledTime * 2.2f, 1f))
+                : 1f;
             Color iconColor = iconView.Icon.color;
             iconView.Icon.color = new Color(iconColor.r, iconColor.g, iconColor.b, alpha);
             Color borderColor = iconView.BorderBaseColor;
@@ -421,34 +628,137 @@ namespace RPGClone.UI
 
         private BuffIconView CreateBuffIcon(int index)
         {
+            bool targetLayout = frameStyle == MMOUnitFrameStyle.Target;
             RectTransform root = CreateRect($"Buff {index + 1}", buffRoot);
-            root.anchorMin = new Vector2(0f, 1f);
-            root.anchorMax = new Vector2(0f, 1f);
-            root.pivot = new Vector2(0f, 1f);
-            root.anchoredPosition = new Vector2(index * (BuffSize + BuffSpacing), 0f);
+            root.anchorMin = new Vector2(targetLayout ? 1f : 0f, 1f);
+            root.anchorMax = root.anchorMin;
+            root.pivot = new Vector2(targetLayout ? 1f : 0f, 1f);
+            float x = index * (BuffSize + BuffSpacing);
+            root.anchoredPosition = new Vector2(targetLayout ? -x : x, 0f);
             root.sizeDelta = new Vector2(BuffSize, BuffSize);
 
-            Image border = CreateImage("Border", root, new Color(0.72f, 0.63f, 0.42f, 1f));
+            Image border = CreateImage("Border", root, new Color(0.64f, 0.54f, 0.32f, 1f), false);
             Stretch(border.rectTransform);
 
-            Image icon = CreateImage("Icon", root, new Color(0.16f, 0.11f, 0.06f, 1f));
-            icon.rectTransform.anchorMin = Vector2.zero;
-            icon.rectTransform.anchorMax = Vector2.one;
+            Image icon = CreateImage("Icon", root, new Color(0.16f, 0.11f, 0.06f, 1f), true);
+            Stretch(icon.rectTransform);
             icon.rectTransform.offsetMin = new Vector2(2f, 2f);
             icon.rectTransform.offsetMax = new Vector2(-2f, -2f);
-            icon.raycastTarget = true;
 
-            Text initial = CreateText("Initial", root, 11, FontStyle.Bold, TextAnchor.MiddleCenter);
+            Text initial = CreateText("Initial", root, 11, FontStyle.Bold, TextAnchor.MiddleCenter, true);
             Stretch(initial.rectTransform);
 
-            Text timer = CreateText("Timer", root, 8, FontStyle.Bold, TextAnchor.LowerCenter);
+            Text timer = CreateText("Timer", root, 8, FontStyle.Bold, TextAnchor.LowerCenter, true);
             Stretch(timer.rectTransform);
-            timer.rectTransform.offsetMin = new Vector2(1f, 1f);
-            timer.rectTransform.offsetMax = new Vector2(-1f, -1f);
-            timer.color = Color.white;
+            timer.rectTransform.offsetMin = Vector2.one;
+            timer.rectTransform.offsetMax = Vector2.one * -1f;
 
             MMOBuffTooltipTrigger tooltip = root.gameObject.AddComponent<MMOBuffTooltipTrigger>();
             return new BuffIconView(root, icon, border, initial, timer, tooltip);
+        }
+
+        private void DestroyGeneratedChildren()
+        {
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                Transform child = transform.GetChild(i);
+                if (child.name == "Target Cast Bar")
+                {
+                    continue;
+                }
+
+                if (Application.isPlaying)
+                {
+                    Destroy(child.gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(child.gameObject);
+                }
+            }
+        }
+
+        private void ClearVisualReferences()
+        {
+            frameArtwork = null;
+            portraitImage = null;
+            portraitInitialText = null;
+            nameText = null;
+            levelText = null;
+            healthFill = null;
+            healthText = null;
+            healthBar = null;
+            manaFill = null;
+            manaText = null;
+            manaBar = null;
+            buffRoot = null;
+            buffIcons.Clear();
+        }
+
+        private MMOUnitFrameTheme ResolveTheme()
+        {
+            if (theme != null)
+            {
+                return theme;
+            }
+
+            if (cachedTheme == null)
+            {
+                cachedTheme = Resources.Load<MMOUnitFrameTheme>(ThemeResourcePath);
+            }
+
+            return cachedTheme;
+        }
+
+        private MMOUnitFrameLayout CreateFallbackLayout()
+        {
+            bool party = frameStyle == MMOUnitFrameStyle.Party;
+            bool target = frameStyle == MMOUnitFrameStyle.Target;
+            return new MMOUnitFrameLayout().Configure(
+                party ? new Vector2(250f, 68f) : new Vector2(320f, 96f),
+                target ? MMOUnitFramePortraitSide.Right : MMOUnitFramePortraitSide.Left,
+                party ? 62f : 88f,
+                party ? 43f : 61f,
+                party ? 2f : 3f,
+                party ? 54f : 76f,
+                party ? 8f : 10f,
+                party ? 6f : 10f,
+                party ? 6f : 10f,
+                party ? 18f : 24f,
+                party ? 17f : 22f,
+                party ? 11f : 14f,
+                2f,
+                party ? 23f : 29f,
+                party ? new Vector2(22f, -21f) : new Vector2(31f, -31f),
+                party ? 13 : 15,
+                party ? 9 : 11);
+        }
+
+        private static void RefreshResource(
+            MMOCharacterResource resource,
+            Image fill,
+            Text valueText,
+            RectTransform bar,
+            bool alwaysVisible)
+        {
+            bool visible = alwaysVisible || resource.MaxValue > 0;
+            bar.gameObject.SetActive(visible);
+            if (!visible)
+            {
+                return;
+            }
+
+            SetBarFill(fill, resource.Normalized);
+            valueText.text = $"{resource.CurrentValue}/{resource.MaxValue}";
+        }
+
+        private static void SetBarFill(Image fill, float normalized)
+        {
+            RectTransform rectTransform = fill.rectTransform;
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = new Vector2(Mathf.Clamp01(normalized), 1f);
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
         }
 
         private static string FormatBuffTime(float seconds)
@@ -461,28 +771,11 @@ namespace RPGClone.UI
             return seconds >= 10f ? Mathf.CeilToInt(seconds).ToString() : seconds.ToString("0");
         }
 
-        private static void RefreshResource(MMOCharacterResource resource, Image fill, Text valueText)
-        {
-            SetBarFill(fill, resource.Normalized);
-            valueText.text = $"{resource.CurrentValue}/{resource.MaxValue}";
-        }
-
-        private static void SetBarFill(Image fill, float normalized)
-        {
-            float clampedValue = Mathf.Clamp01(normalized);
-            fill.type = Image.Type.Simple;
-            fill.fillAmount = 1f;
-
-            RectTransform rectTransform = fill.rectTransform;
-            rectTransform.anchorMin = Vector2.zero;
-            rectTransform.anchorMax = new Vector2(clampedValue, 1f);
-            rectTransform.offsetMin = Vector2.zero;
-            rectTransform.offsetMax = Vector2.zero;
-        }
-
         private static string GetInitial(string value)
         {
-            return string.IsNullOrWhiteSpace(value) ? "?" : value.Trim()[0].ToString().ToUpperInvariant();
+            return string.IsNullOrWhiteSpace(value)
+                ? "?"
+                : value.Trim()[0].ToString().ToUpperInvariant();
         }
 
         private static RectTransform CreateRect(string objectName, Transform parent)
@@ -492,16 +785,26 @@ namespace RPGClone.UI
             return (RectTransform)child.transform;
         }
 
-        private static Image CreateImage(string objectName, Transform parent, Color color)
+        private static Image CreateImage(
+            string objectName,
+            Transform parent,
+            Color color,
+            bool raycastTarget)
         {
             RectTransform rectTransform = CreateRect(objectName, parent);
             Image image = rectTransform.gameObject.AddComponent<Image>();
             image.color = color;
-            image.raycastTarget = false;
+            image.raycastTarget = raycastTarget;
             return image;
         }
 
-        private static Text CreateText(string objectName, Transform parent, int fontSize, FontStyle style, TextAnchor alignment)
+        private static Text CreateText(
+            string objectName,
+            Transform parent,
+            int fontSize,
+            FontStyle style,
+            TextAnchor alignment,
+            bool addShadow)
         {
             RectTransform rectTransform = CreateRect(objectName, parent);
             Text text = rectTransform.gameObject.AddComponent<Text>();
@@ -512,6 +815,17 @@ namespace RPGClone.UI
             text.color = Color.white;
             text.raycastTarget = false;
             text.supportRichText = false;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+
+            if (addShadow)
+            {
+                Shadow shadow = rectTransform.gameObject.AddComponent<Shadow>();
+                shadow.effectColor = new Color(0f, 0f, 0f, 0.9f);
+                shadow.effectDistance = new Vector2(1f, -1f);
+                shadow.useGraphicAlpha = true;
+            }
+
             return text;
         }
 
@@ -525,10 +839,22 @@ namespace RPGClone.UI
             cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             if (cachedFont == null)
             {
-                cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Arial", "Segoe UI", "Liberation Sans" }, size);
+                cachedFont = Font.CreateDynamicFontFromOSFont(
+                    new[] { "Arial", "Segoe UI", "Liberation Sans" },
+                    size);
             }
 
             return cachedFont;
+        }
+
+        private static Image GetImage(Transform target)
+        {
+            return target != null ? target.GetComponent<Image>() : null;
+        }
+
+        private static Text GetText(Transform target)
+        {
+            return target != null ? target.GetComponent<Text>() : null;
         }
 
         private static void Stretch(RectTransform rectTransform)
@@ -549,7 +875,13 @@ namespace RPGClone.UI
             public readonly MMOBuffTooltipTrigger Tooltip;
             public Color BorderBaseColor;
 
-            public BuffIconView(RectTransform root, Image icon, Image border, Text initial, Text timer, MMOBuffTooltipTrigger tooltip)
+            public BuffIconView(
+                RectTransform root,
+                Image icon,
+                Image border,
+                Text initial,
+                Text timer,
+                MMOBuffTooltipTrigger tooltip)
             {
                 Root = root;
                 Icon = icon;

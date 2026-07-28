@@ -605,6 +605,10 @@ namespace RPGClone.EditorTools
                 frame = frameObject.AddComponent<MMOUnitFrameView>();
             }
 
+            frame.ConfigureStyle(
+                objectName == "Target Unit Frame"
+                    ? MMOUnitFrameStyle.Target
+                    : MMOUnitFrameStyle.Player);
             RemoveDuplicateGeneratedFrameChildren(frameObject.transform);
             return frame;
         }

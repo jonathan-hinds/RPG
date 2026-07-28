@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58db2aa0314112e4d94774bb99eba6a9, type: 3}
+  m_Name: ClassicUnitFrameTheme
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.UI.MMOUnitFrameTheme
+  backplate: {fileID: 21300000, guid: 5586a766b91adbd478b2faa457ab53f0, type: 3}
+  portraitBezel: {fileID: 21300000, guid: 3de47eb38d94a824a98f70a9ef5bec57, type: 3}
+  portraitMask: {fileID: 21300000, guid: 70f03ce87eaded34497f17fbe1477ffc, type: 3}
+  nameplate: {fileID: 21300000, guid: 59dd322d20a217142886a1931d5e8e2a, type: 3}
+  barWell: {fileID: 21300000, guid: be9437bd75c1a6f41aed29806f99a79a, type: 3}
+  levelMedallion: {fileID: 21300000, guid: ecb2fda7d2205fd4a991ca7bd76ad7e2, type: 3}
+  playerLayout:
+    frameSize: {x: 330, y: 96}
+    portraitSide: 0
+    portraitBezelSize: 88
+    portraitMaskSize: 61
+    portraitEdgeInset: 3
+    portraitVerticalOffset: 0
+    contentPortraitInset: 76
+    contentOuterInset: 10
+    contentTopInset: 10
+    contentBottomInset: 10
+    nameHeight: 24
+    healthHeight: 22
+    resourceHeight: 14
+    elementSpacing: 2
+    levelBadgeSize: 29
+    levelBadgeOffset: {x: 31, y: -31}
+    nameFontSize: 15
+    valueFontSize: 11
+  targetLayout:
+    frameSize: {x: 330, y: 96}
+    portraitSide: 1
+    portraitBezelSize: 88
+    portraitMaskSize: 61
+    portraitEdgeInset: 3
+    portraitVerticalOffset: 0
+    contentPortraitInset: 76
+    contentOuterInset: 10
+    contentTopInset: 10
+    contentBottomInset: 10
+    nameHeight: 24
+    healthHeight: 22
+    resourceHeight: 14
+    elementSpacing: 2
+    levelBadgeSize: 29
+    levelBadgeOffset: {x: 31, y: -31}
+    nameFontSize: 15
+    valueFontSize: 11
+  partyLayout:
+    frameSize: {x: 250, y: 68}
+    portraitSide: 0
+    portraitBezelSize: 62
+    portraitMaskSize: 43
+    portraitEdgeInset: 2
+    portraitVerticalOffset: 0
+    contentPortraitInset: 54
+    contentOuterInset: 8
+    contentTopInset: 6
+    contentBottomInset: 6
+    nameHeight: 18
+    healthHeight: 17
+    resourceHeight: 11
+    elementSpacing: 2
+    levelBadgeSize: 23
+    levelBadgeOffset: {x: 22, y: -21}
+    nameFontSize: 13
+    valueFontSize: 9
+  healthColor: {r: 0.12, g: 0.62, b: 0.15, a: 1}
+  manaColor: {r: 0.08, g: 0.31, b: 0.82, a: 1}
+  textColor: {r: 0.94, g: 0.89, b: 0.76, a: 1}
+  friendlyNameColor: {r: 0.35, g: 0.95, b: 0.35, a: 1}
+  neutralNameColor: {r: 1, g: 0.82, b: 0.18, a: 1}
+  hostileNameColor: {r: 1, g: 0.22, b: 0.16, a: 1}
+  barHighlightColor: {r: 1, g: 1, b: 1, a: 0.16}
+  frameShadowColor: {r: 0, g: 0, b: 0, a: 0.62}

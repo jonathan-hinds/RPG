@@ -8,6 +8,8 @@ namespace RPGClone.UI
 {
     public sealed class MMOUnitFramePresenter : MonoBehaviour
     {
+        private const string ThemeResourcePath = "RPGClone/UI/UnitFrames/ClassicUnitFrameTheme";
+
         [SerializeField] private MMOCharacterIdentity playerIdentity;
         [SerializeField] private MMOTargetSelectionController targetSelectionController;
         [SerializeField] private MMOUnitFrameView playerFrame;
@@ -18,6 +20,7 @@ namespace RPGClone.UI
         private readonly List<MMOUnitFrameView> partyFrames = new();
         private RectTransform partyFrameRoot;
         private MMOUnitFrameCastBarPresenter targetCastBar;
+        private MMOUnitFrameTheme unitFrameTheme;
 
         private void Start()
         {
@@ -69,6 +72,7 @@ namespace RPGClone.UI
             targetSelectionController = newTargetSelectionController;
             playerFrame = newPlayerFrame;
             targetFrame = newTargetFrame;
+            ConfigurePrimaryFrameStyles();
 
             if (isActiveAndEnabled && targetSelectionController != null)
             {
@@ -108,7 +112,15 @@ namespace RPGClone.UI
                 targetFrame = targetFrameTransform != null ? targetFrameTransform.GetComponent<MMOUnitFrameView>() : null;
             }
 
+            ConfigurePrimaryFrameStyles();
             EnsureTargetCastBar();
+        }
+
+        private void ConfigurePrimaryFrameStyles()
+        {
+            MMOUnitFrameTheme resolvedTheme = ResolveTheme();
+            playerFrame?.ConfigureStyle(MMOUnitFrameStyle.Player, resolvedTheme);
+            targetFrame?.ConfigureStyle(MMOUnitFrameStyle.Target, resolvedTheme);
         }
 
         private void BindFrames()
@@ -251,22 +263,47 @@ namespace RPGClone.UI
             partyFrameRoot.anchorMax = playerRect != null ? playerRect.anchorMax : new Vector2(0f, 1f);
             partyFrameRoot.pivot = playerRect != null ? playerRect.pivot : new Vector2(0f, 1f);
             partyFrameRoot.anchoredPosition = playerRect != null
-                ? playerRect.anchoredPosition + new Vector2(0f, -88f)
-                : new Vector2(18f, -108f);
-            partyFrameRoot.sizeDelta = new Vector2(230f, 280f);
+                ? playerRect.anchoredPosition + new Vector2(0f, -108f)
+                : new Vector2(18f, -128f);
+            Vector2 frameSize = GetPartyFrameSize();
+            partyFrameRoot.sizeDelta = new Vector2(frameSize.x, (frameSize.y + 10f) * 4f);
         }
 
         private MMOUnitFrameView CreatePartyFrame(int index)
         {
             GameObject frameObject = new($"Party Frame {index + 1}", typeof(RectTransform));
+            frameObject.SetActive(false);
             RectTransform rect = (RectTransform)frameObject.transform;
             rect.SetParent(partyFrameRoot, false);
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 1f);
-            rect.anchoredPosition = new Vector2(0f, -index * 68f);
-            rect.sizeDelta = new Vector2(230f, 64f);
-            return frameObject.AddComponent<MMOUnitFrameView>();
+            Vector2 frameSize = GetPartyFrameSize();
+            rect.anchoredPosition = new Vector2(0f, -index * (frameSize.y + 10f));
+            rect.sizeDelta = frameSize;
+
+            MMOUnitFrameView frame = frameObject.AddComponent<MMOUnitFrameView>();
+            frame.ConfigureStyle(MMOUnitFrameStyle.Party, ResolveTheme());
+            frameObject.SetActive(true);
+            return frame;
+        }
+
+        private Vector2 GetPartyFrameSize()
+        {
+            MMOUnitFrameTheme resolvedTheme = ResolveTheme();
+            return resolvedTheme != null
+                ? resolvedTheme.GetFrameSize(MMOUnitFrameStyle.Party)
+                : new Vector2(250f, 68f);
+        }
+
+        private MMOUnitFrameTheme ResolveTheme()
+        {
+            if (unitFrameTheme == null)
+            {
+                unitFrameTheme = Resources.Load<MMOUnitFrameTheme>(ThemeResourcePath);
+            }
+
+            return unitFrameTheme;
         }
     }
 }
