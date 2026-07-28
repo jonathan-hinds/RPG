@@ -253,16 +253,32 @@ namespace RPGClone.EditorTools
             identity.Health.SetCurrent(currentHealth);
             identity.Mana.SetCurrent(currentMana);
 
-            GameObject frameObject = new($"{style} Frame", typeof(RectTransform));
-            frameObject.transform.SetParent(canvas, false);
+            string prefabPath = style switch
+            {
+                MMOUnitFrameStyle.Player => MMOUnitFramePrefabAuthoring.PlayerPrefabPath,
+                MMOUnitFrameStyle.Target => MMOUnitFramePrefabAuthoring.TargetPrefabPath,
+                _ => MMOUnitFramePrefabAuthoring.PartyPrefabPath
+            };
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
+            {
+                throw new UnityException($"Unit-frame prefab is missing at '{prefabPath}'.");
+            }
+
+            GameObject frameObject = Object.Instantiate(prefab, canvas, false);
+            frameObject.name = $"{style} Frame";
             RectTransform rect = (RectTransform)frameObject.transform;
             rect.anchorMin = style == MMOUnitFrameStyle.Target ? new Vector2(1f, 1f) : new Vector2(0f, 1f);
             rect.anchorMax = rect.anchorMin;
             rect.pivot = new Vector2(style == MMOUnitFrameStyle.Target ? 1f : 0f, 1f);
             rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = theme.GetFrameSize(style);
 
-            MMOUnitFrameView view = frameObject.AddComponent<MMOUnitFrameView>();
+            MMOUnitFrameView view = frameObject.GetComponent<MMOUnitFrameView>();
+            if (view == null)
+            {
+                throw new UnityException($"Unit-frame prefab '{prefabPath}' has no MMOUnitFrameView.");
+            }
+
             view.ConfigureStyle(style, theme);
             view.Bind(identity);
         }

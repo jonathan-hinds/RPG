@@ -44,6 +44,20 @@ namespace RPGClone.Characters
         private void Awake()
         {
             ClampValues();
+            MMOCharacterCollisionPolicy.ApplyTo(gameObject);
+        }
+
+        private void Start()
+        {
+            MMOCharacterCollisionPolicy.ApplyTo(gameObject);
+        }
+
+        private void OnTransformChildrenChanged()
+        {
+            if (Application.isPlaying)
+            {
+                MMOCharacterCollisionPolicy.ApplyTo(gameObject);
+            }
         }
 
         private void OnValidate()

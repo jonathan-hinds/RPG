@@ -27729,8 +27729,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.UI.MMOBagBarPresenter
   autoBuild: 1
-  windowSpacing: 3
-  columnSpacing: 0
+  windowSpacing: 12
+  columnSpacing: 12
   viewportTopInset: 12
   inventory: {fileID: 0}
   inventoryPanel: {fileID: 0}

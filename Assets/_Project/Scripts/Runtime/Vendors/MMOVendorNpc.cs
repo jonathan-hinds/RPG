@@ -27,6 +27,7 @@ namespace RPGClone.Vendors
 
         private MMOCharacterIdentity identity;
         private MMOStandardNpcIdentity standardIdentity;
+        private MMONpcInteractionFacing interactionFacing;
 
         public string VendorId => string.IsNullOrWhiteSpace(vendorId) ? name : vendorId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayNameOverride) ? name : displayNameOverride;
@@ -38,6 +39,7 @@ namespace RPGClone.Vendors
         private void Awake()
         {
             EnsureIdentity();
+            RegisterInteractionFacing();
         }
 
         private void Start()
@@ -81,6 +83,7 @@ namespace RPGClone.Vendors
             stock = newStock != null ? new List<MMOVendorStockEntry>(newStock) : new List<MMOVendorStockEntry>();
             buysTrash = newBuysTrash;
             EnsureIdentity();
+            RegisterInteractionFacing();
         }
 
         private void EnsureIdentity()
@@ -181,11 +184,23 @@ namespace RPGClone.Vendors
                 return;
             }
 
+            interactionFacing.FaceInteractor(
+                MMONpcInteractionFacing.VendorInteractionKey(VendorId),
+                context.ActorTransform,
+                MMOGameplaySessionService.LocalPlayer.CharacterId);
             MMOVendorPresenter.Open(
                 this,
                 context.Inventory,
                 context.Wallet,
                 screenPosition);
+        }
+
+        private void RegisterInteractionFacing()
+        {
+            interactionFacing = MMONpcInteractionFacing.GetOrAdd(gameObject);
+            interactionFacing.RegisterInteractionKey(
+                MMONpcInteractionFacing.VendorInteractionKey(VendorId),
+                interactionDistance);
         }
 
         private bool IsPointerOverThisVendor(Vector2 pointerPosition)

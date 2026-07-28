@@ -16,8 +16,8 @@ namespace RPGClone.UI
         private const float SlotStride = 46f;
 
         [SerializeField] private bool autoBuild = true;
-        [SerializeField, Min(0f)] private float windowSpacing = 3f;
-        [SerializeField, Min(0f)] private float columnSpacing;
+        [SerializeField, Min(0f)] private float windowSpacing = 12f;
+        [SerializeField, Min(0f)] private float columnSpacing = 12f;
         [SerializeField, Min(0f)] private float viewportTopInset = 12f;
         [SerializeField] private MMOInventoryContainer inventory;
         [SerializeField] private MMOInventoryPresenter inventoryPanel;

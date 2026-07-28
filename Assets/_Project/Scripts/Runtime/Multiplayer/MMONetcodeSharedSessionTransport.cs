@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using RPGClone.CharacterSelection;
+using RPGClone.Characters;
 using RPGClone.Combat;
 using RPGClone.Enemies;
 using RPGClone.Inventory;
@@ -500,6 +501,9 @@ namespace RPGClone.Multiplayer
                     => IsSenderCorpseLootParticipant(senderClientId, operation.corpseLootSnapshot),
                 MMOSharedSessionNetworkOperationKind.PublishWorldObjectInteractionRequest
                     => IsRegisteredSenderParticipant(senderClientId, operation.worldObjectInteractionRequest?.actorCharacterId),
+                MMOSharedSessionNetworkOperationKind.UpsertNpcFacingSnapshot
+                    => IsRegisteredSenderParticipant(senderClientId, operation.npcFacingSnapshot?.actorCharacterId)
+                        && MMONpcInteractionFacing.IsValidRemoteInteraction(operation.npcFacingSnapshot),
                 MMOSharedSessionNetworkOperationKind.RequestConsumableUse
                     => IsRegisteredSenderParticipant(senderClientId, operation.consumableUseRequest?.characterId),
                 _ => false
@@ -585,6 +589,20 @@ namespace RPGClone.Multiplayer
             if (operation.worldObjectSnapshot != null)
             {
                 operation.worldObjectSnapshot.updatedUtcTicks = receivedUtcTicks;
+            }
+
+            if (operation.npcFacingSnapshot != null)
+            {
+                operation.npcFacingSnapshot.updatedUtcTicks = receivedUtcTicks;
+                if (normalizeClientAuthoredState
+                    && MMOGameplaySessionService.Players.TryGetParticipantByCharacterId(
+                        operation.npcFacingSnapshot.actorCharacterId,
+                        out MMOPlayerParticipant facingActor)
+                    && facingActor.GameObject != null)
+                {
+                    operation.npcFacingSnapshot.actorPosition =
+                        new Vector3SaveData(facingActor.GameObject.transform.position);
+                }
             }
 
             if (operation.worldObjectSnapshots != null)

@@ -1,3 +1,4 @@
+using RPGClone.Characters;
 using UnityEngine;
 
 namespace RPGClone.Player
@@ -175,6 +176,12 @@ namespace RPGClone.Player
             }
 
             if (target != null && hitCollider.transform.IsChildOf(target))
+            {
+                return false;
+            }
+
+            int characterLayer = LayerMask.NameToLayer(MMOCharacterCollisionPolicy.CharacterLayerName);
+            if (characterLayer >= 0 && hitCollider.gameObject.layer == characterLayer)
             {
                 return false;
             }

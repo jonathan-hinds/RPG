@@ -33,6 +33,8 @@ namespace RPGClone.Enemies
         [SerializeField] private bool drawDebugGizmos = true;
         [SerializeField, Min(0.02f)] private float chaseRepathInterval = 0.2f;
         [SerializeField, Min(0.01f)] private float chaseRepathDistance = 0.35f;
+        [SerializeField, Range(0.5f, 0.95f)] private float engagementRangeFraction = 0.85f;
+        [SerializeField, Range(0.01f, 0.2f)] private float engagementStoppingDistanceFraction = 0.05f;
         [SerializeField, Min(0.02f)] private float proxyInterpolationSeconds = 0.18f;
         [SerializeField, Min(0.5f)] private float proxySnapDistance = 8f;
         [SerializeField] private MMORewardEligibilitySettings rewardEligibility = new();
@@ -56,7 +58,7 @@ namespace RPGClone.Enemies
         private bool corpseActive;
         private float nextChaseRepathTime;
         private float nextReturnRepathTime;
-        private Vector3 lastChaseDestination;
+        private Vector3 lastChaseTargetPosition;
         private Coroutine despawnRoutine;
         private MMOCombatant lastDamageSource;
         private Renderer[] renderers;
@@ -405,17 +407,48 @@ namespace RPGClone.Enemies
 
             if (CanMoveOnNavMesh())
             {
+                float sanitizedRange = Mathf.Max(0.1f, desiredRange);
                 agent.speed = definition.ChaseSpeed * GetMovementSpeedMultiplier();
-                agent.stoppingDistance = Mathf.Max(0.05f, desiredRange * 0.85f);
+                agent.stoppingDistance = Mathf.Max(
+                    0.01f,
+                    sanitizedRange * Mathf.Clamp(
+                        engagementStoppingDistanceFraction,
+                        0.01f,
+                        0.2f));
                 agent.isStopped = inRange;
 
-                if (!inRange && ShouldRepathToTarget(currentTarget.transform.position))
+                Vector3 targetPosition = currentTarget.transform.position;
+                if (!inRange && ShouldRepathToTarget(targetPosition))
                 {
-                    lastChaseDestination = currentTarget.transform.position;
+                    lastChaseTargetPosition = targetPosition;
                     nextChaseRepathTime = Time.time + chaseRepathInterval;
-                    agent.SetDestination(lastChaseDestination);
+                    agent.SetDestination(CalculateEngagementDestination(
+                        transform.position,
+                        targetPosition,
+                        sanitizedRange,
+                        engagementRangeFraction));
                 }
             }
+        }
+
+        private static Vector3 CalculateEngagementDestination(
+            Vector3 enemyPosition,
+            Vector3 targetPosition,
+            float desiredRange,
+            float rangeFraction)
+        {
+            Vector3 directionFromTarget = enemyPosition - targetPosition;
+            directionFromTarget.y = 0f;
+            if (directionFromTarget.sqrMagnitude <= 0.0001f)
+            {
+                return enemyPosition;
+            }
+
+            float engagementDistance = Mathf.Max(0.1f, desiredRange)
+                * Mathf.Clamp(rangeFraction, 0.5f, 0.95f);
+            Vector3 destination = targetPosition + directionFromTarget.normalized * engagementDistance;
+            destination.y = targetPosition.y;
+            return destination;
         }
 
         private MMOAbilityDefinition FindReadyCombatSpell()
@@ -936,7 +969,7 @@ namespace RPGClone.Enemies
         private bool ShouldRepathToTarget(Vector3 targetPosition)
         {
             return Time.time >= nextChaseRepathTime
-                || (targetPosition - lastChaseDestination).sqrMagnitude >= chaseRepathDistance * chaseRepathDistance;
+                || (targetPosition - lastChaseTargetPosition).sqrMagnitude >= chaseRepathDistance * chaseRepathDistance;
         }
 
         private void StopMoving()

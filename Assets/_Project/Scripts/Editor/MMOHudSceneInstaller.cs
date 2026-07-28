@@ -588,7 +588,31 @@ namespace RPGClone.EditorTools
         private static MMOUnitFrameView EnsureFrame(Transform canvas, string objectName, Vector2 anchor, Vector2 pivot, Vector2 anchoredPosition)
         {
             Transform existing = canvas.Find(objectName);
-            GameObject frameObject = existing != null ? existing.gameObject : new GameObject(objectName, typeof(RectTransform));
+            string prefabPath = objectName == "Target Unit Frame"
+                ? MMOUnitFramePrefabAuthoring.TargetPrefabPath
+                : MMOUnitFramePrefabAuthoring.PlayerPrefabPath;
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
+            {
+                throw new UnityException($"Unit-frame prefab is missing at '{prefabPath}'.");
+            }
+
+            GameObject frameObject;
+            if (existing != null
+                && PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(existing.gameObject) == prefabPath)
+            {
+                frameObject = existing.gameObject;
+            }
+            else
+            {
+                frameObject = (GameObject)PrefabUtility.InstantiatePrefab(prefab, canvas);
+                if (existing != null)
+                {
+                    Object.DestroyImmediate(existing.gameObject);
+                }
+            }
+
+            frameObject.name = objectName;
             frameObject.transform.SetParent(canvas, false);
             frameObject.SetActive(true);
 
@@ -597,19 +621,13 @@ namespace RPGClone.EditorTools
             rectTransform.anchorMax = anchor;
             rectTransform.pivot = pivot;
             rectTransform.anchoredPosition = anchoredPosition;
-            rectTransform.sizeDelta = new Vector2(290f, 82f);
 
             MMOUnitFrameView frame = frameObject.GetComponent<MMOUnitFrameView>();
             if (frame == null)
             {
-                frame = frameObject.AddComponent<MMOUnitFrameView>();
+                throw new UnityException($"Unit-frame prefab '{prefabPath}' has no MMOUnitFrameView.");
             }
 
-            frame.ConfigureStyle(
-                objectName == "Target Unit Frame"
-                    ? MMOUnitFrameStyle.Target
-                    : MMOUnitFrameStyle.Player);
-            RemoveDuplicateGeneratedFrameChildren(frameObject.transform);
             return frame;
         }
 
@@ -653,47 +671,6 @@ namespace RPGClone.EditorTools
             zoneService.Configure(player, starterZone != null ? new[] { starterZone } : null);
             EditorUtility.SetDirty(zoneService);
             return zoneService;
-        }
-
-        private static void RemoveDuplicateGeneratedFrameChildren(Transform frame)
-        {
-            System.Collections.Generic.HashSet<string> seenNames = new();
-            string[] generatedNames =
-            {
-                "Frame Background",
-                "Frame Border",
-                "Portrait",
-                "Content",
-                "Level Badge",
-                "Level"
-            };
-
-            for (int i = frame.childCount - 1; i >= 0; i--)
-            {
-                Transform child = frame.GetChild(i);
-                if (!IsGeneratedFrameChild(child.name, generatedNames))
-                {
-                    continue;
-                }
-
-                if (!seenNames.Add(child.name))
-                {
-                    Object.DestroyImmediate(child.gameObject);
-                }
-            }
-        }
-
-        private static bool IsGeneratedFrameChild(string childName, string[] generatedNames)
-        {
-            foreach (string generatedName in generatedNames)
-            {
-                if (childName == generatedName)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static MMOActionBarPresenter EnsureActionBar(

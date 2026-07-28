@@ -1,3 +1,4 @@
+using RPGClone.Characters;
 using UnityEngine;
 
 namespace RPGClone.Player
@@ -43,6 +44,12 @@ namespace RPGClone.Player
                     mask &= ~(1 << treeTrunkLayer);
                 }
 
+                int characterLayer = LayerMask.NameToLayer(MMOCharacterCollisionPolicy.CharacterLayerName);
+                if (characterLayer >= 0)
+                {
+                    mask &= ~(1 << characterLayer);
+                }
+
                 return mask;
             }
         }
@@ -59,6 +66,12 @@ namespace RPGClone.Player
             if (treeTrunkLayer >= 0)
             {
                 mask &= ~(1 << treeTrunkLayer);
+            }
+
+            int characterLayer = LayerMask.NameToLayer(MMOCharacterCollisionPolicy.CharacterLayerName);
+            if (characterLayer >= 0)
+            {
+                mask &= ~(1 << characterLayer);
             }
 
             return mask;

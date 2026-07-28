@@ -14,8 +14,12 @@ namespace RPGClone.UI
         [SerializeField] private MMOTargetSelectionController targetSelectionController;
         [SerializeField] private MMOUnitFrameView playerFrame;
         [SerializeField] private MMOUnitFrameView targetFrame;
+        [SerializeField] private MMOUnitFrameView partyFramePrefab;
         [SerializeField] private bool autoResolveReferences = true;
         [SerializeField] private bool showPartyFrames = true;
+        [SerializeField, Min(0f)] private float primaryFrameSpacing = 32f;
+        [SerializeField, Min(0f)] private float partyFrameTopSpacing = 32f;
+        [SerializeField, Min(0f)] private float partyFrameSpacing = 16f;
 
         private readonly List<MMOUnitFrameView> partyFrames = new();
         private RectTransform partyFrameRoot;
@@ -25,6 +29,7 @@ namespace RPGClone.UI
         private void Start()
         {
             ResolveReferences();
+            ApplyConfiguredSpacing();
             BindFrames();
             RebuildPartyFrames();
         }
@@ -41,6 +46,7 @@ namespace RPGClone.UI
             MMOGameplaySessionService.Players.Changed += OnPlayersChanged;
             MMOGameplaySessionService.LocalPlayer.Changed -= OnLocalPlayerChanged;
             MMOGameplaySessionService.LocalPlayer.Changed += OnLocalPlayerChanged;
+            ApplyConfiguredSpacing();
             BindFrames();
             RebuildPartyFrames();
         }
@@ -73,6 +79,7 @@ namespace RPGClone.UI
             playerFrame = newPlayerFrame;
             targetFrame = newTargetFrame;
             ConfigurePrimaryFrameStyles();
+            ApplyConfiguredSpacing();
 
             if (isActiveAndEnabled && targetSelectionController != null)
             {
@@ -121,6 +128,33 @@ namespace RPGClone.UI
             MMOUnitFrameTheme resolvedTheme = ResolveTheme();
             playerFrame?.ConfigureStyle(MMOUnitFrameStyle.Player, resolvedTheme);
             targetFrame?.ConfigureStyle(MMOUnitFrameStyle.Target, resolvedTheme);
+        }
+
+        public void ApplyConfiguredSpacing()
+        {
+            if (playerFrame == null || targetFrame == null)
+            {
+                return;
+            }
+
+            RectTransform playerRect = playerFrame.transform as RectTransform;
+            RectTransform targetRect = targetFrame.transform as RectTransform;
+            if (playerRect == null || targetRect == null)
+            {
+                return;
+            }
+
+            targetRect.anchorMin = playerRect.anchorMin;
+            targetRect.anchorMax = playerRect.anchorMax;
+            targetRect.pivot = playerRect.pivot;
+            targetRect.anchoredPosition = new Vector2(
+                playerRect.anchoredPosition.x + playerRect.rect.width + Mathf.Max(0f, primaryFrameSpacing),
+                playerRect.anchoredPosition.y);
+
+            if (partyFrameRoot != null)
+            {
+                ConfigurePartyFrameRoot(playerRect);
+            }
         }
 
         private void BindFrames()
@@ -186,6 +220,14 @@ namespace RPGClone.UI
         {
             if (!showPartyFrames || playerFrame == null)
             {
+                return;
+            }
+
+            if (ResolvePartyFramePrefab() == null)
+            {
+                Debug.LogError(
+                    "Party frames cannot be displayed because the authored PartyUnitFrame prefab is missing.",
+                    this);
                 return;
             }
 
@@ -259,19 +301,29 @@ namespace RPGClone.UI
             GameObject rootObject = existing != null ? existing.gameObject : new GameObject("Party Frames", typeof(RectTransform));
             partyFrameRoot = (RectTransform)rootObject.transform;
             partyFrameRoot.SetParent(parent, false);
+            ConfigurePartyFrameRoot(playerRect);
+        }
+
+        private void ConfigurePartyFrameRoot(RectTransform playerRect)
+        {
             partyFrameRoot.anchorMin = playerRect != null ? playerRect.anchorMin : new Vector2(0f, 1f);
             partyFrameRoot.anchorMax = playerRect != null ? playerRect.anchorMax : new Vector2(0f, 1f);
             partyFrameRoot.pivot = playerRect != null ? playerRect.pivot : new Vector2(0f, 1f);
             partyFrameRoot.anchoredPosition = playerRect != null
-                ? playerRect.anchoredPosition + new Vector2(0f, -108f)
+                ? playerRect.anchoredPosition
+                    + new Vector2(0f, -playerRect.rect.height - Mathf.Max(0f, partyFrameTopSpacing))
                 : new Vector2(18f, -128f);
             Vector2 frameSize = GetPartyFrameSize();
-            partyFrameRoot.sizeDelta = new Vector2(frameSize.x, (frameSize.y + 10f) * 4f);
+            partyFrameRoot.sizeDelta = new Vector2(
+                frameSize.x,
+                frameSize.y * 4f + Mathf.Max(0f, partyFrameSpacing) * 3f);
         }
 
         private MMOUnitFrameView CreatePartyFrame(int index)
         {
-            GameObject frameObject = new($"Party Frame {index + 1}", typeof(RectTransform));
+            MMOUnitFrameView frame = Instantiate(partyFramePrefab, partyFrameRoot, false);
+            GameObject frameObject = frame.gameObject;
+            frameObject.name = $"Party Frame {index + 1}";
             frameObject.SetActive(false);
             RectTransform rect = (RectTransform)frameObject.transform;
             rect.SetParent(partyFrameRoot, false);
@@ -279,21 +331,40 @@ namespace RPGClone.UI
             rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 1f);
             Vector2 frameSize = GetPartyFrameSize();
-            rect.anchoredPosition = new Vector2(0f, -index * (frameSize.y + 10f));
-            rect.sizeDelta = frameSize;
+            rect.anchoredPosition = new Vector2(
+                0f,
+                -index * (frameSize.y + Mathf.Max(0f, partyFrameSpacing)));
 
-            MMOUnitFrameView frame = frameObject.AddComponent<MMOUnitFrameView>();
             frame.ConfigureStyle(MMOUnitFrameStyle.Party, ResolveTheme());
-            frameObject.SetActive(true);
             return frame;
+        }
+
+        private MMOUnitFrameView ResolvePartyFramePrefab()
+        {
+            if (partyFramePrefab == null)
+            {
+                partyFramePrefab = Resources.Load<MMOUnitFrameView>(
+                    "RPGClone/UI/UnitFrames/PartyUnitFrame");
+            }
+
+            return partyFramePrefab;
         }
 
         private Vector2 GetPartyFrameSize()
         {
-            MMOUnitFrameTheme resolvedTheme = ResolveTheme();
-            return resolvedTheme != null
-                ? resolvedTheme.GetFrameSize(MMOUnitFrameStyle.Party)
-                : new Vector2(250f, 68f);
+            RectTransform prefabRect = ResolvePartyFramePrefab()?.transform as RectTransform;
+            if (prefabRect == null)
+            {
+                return new Vector2(250f, 68f);
+            }
+
+            Vector2 authoredSize = prefabRect.rect.size;
+            if (authoredSize.x <= 0f || authoredSize.y <= 0f)
+            {
+                authoredSize = prefabRect.sizeDelta;
+            }
+
+            return authoredSize;
         }
 
         private MMOUnitFrameTheme ResolveTheme()

@@ -2,9 +2,11 @@
 using System.Linq;
 using NUnit.Framework;
 using RPGClone.Inventory;
+using RPGClone.UI;
 using RPGClone.Vendors;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace RPGClone.EditorTests
@@ -14,6 +16,8 @@ namespace RPGClone.EditorTests
         private const string BagPath = "Assets/_Project/Configs/Items/Brown_Leather_Satchel.asset";
         private const string CatalogPath = "Assets/_Project/Configs/Items/Starter_Item_Catalog.asset";
         private const string ScenePath = "Assets/Scenes/OrcishStarterValley.unity";
+        private const string BottomHudPrefabPath =
+            "Assets/Resources/RPGClone/UI/Hud/BottomHUD.prefab";
 
         [Test]
         public void BrownLeatherSatchel_IsConfiguredAsAnEightSlotContainer()
@@ -70,6 +74,23 @@ namespace RPGClone.EditorTests
                     EditorSceneManager.CloseScene(scene, true);
                 }
             }
+        }
+
+        [Test]
+        public void BagWindows_UseVisibleClassicSpacing()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(BottomHudPrefabPath);
+            Assert.That(prefab, Is.Not.Null);
+
+            MMOBagBarPresenter bagBar = prefab.GetComponentInChildren<MMOBagBarPresenter>(true);
+            Assert.That(bagBar, Is.Not.Null);
+            SerializedObject serializedBagBar = new(bagBar);
+            Assert.That(
+                serializedBagBar.FindProperty("windowSpacing").floatValue,
+                Is.GreaterThanOrEqualTo(10f));
+            Assert.That(
+                serializedBagBar.FindProperty("columnSpacing").floatValue,
+                Is.GreaterThanOrEqualTo(10f));
         }
     }
 }

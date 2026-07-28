@@ -27,6 +27,7 @@ namespace RPGClone.Trainers
 
         private readonly List<MMOTrainerOfferEntry> resolvedOffers = new();
         private MMOStandardNpcIdentity standardIdentity;
+        private MMONpcInteractionFacing interactionFacing;
         private bool offersDirty = true;
 
         public string TrainerId => string.IsNullOrWhiteSpace(trainerId) ? name : trainerId;
@@ -46,6 +47,7 @@ namespace RPGClone.Trainers
         private void Awake()
         {
             EnsureIdentity();
+            RegisterInteractionFacing();
         }
 
         private void Start()
@@ -90,6 +92,7 @@ namespace RPGClone.Trainers
             offers = newOffers != null ? new List<MMOTrainerOfferEntry>(newOffers) : new List<MMOTrainerOfferEntry>();
             offersDirty = true;
             EnsureIdentity();
+            RegisterInteractionFacing();
         }
 
         public bool TryTrain(MMOTrainerOfferEntry offer, GameObject player, out string result)
@@ -241,7 +244,19 @@ namespace RPGClone.Trainers
                 return;
             }
 
+            interactionFacing.FaceInteractor(
+                MMONpcInteractionFacing.TrainerInteractionKey(TrainerId),
+                context.ActorTransform,
+                MMOGameplaySessionService.LocalPlayer.CharacterId);
             MMOClassTrainerPresenter.Open(this, context.ActorObject, screenPosition);
+        }
+
+        private void RegisterInteractionFacing()
+        {
+            interactionFacing = MMONpcInteractionFacing.GetOrAdd(gameObject);
+            interactionFacing.RegisterInteractionKey(
+                MMONpcInteractionFacing.TrainerInteractionKey(TrainerId),
+                interactionDistance);
         }
 
         private bool IsPointerOverThisTrainer(Vector2 pointerPosition)

@@ -519,21 +519,42 @@ namespace RPGClone.Tests
 
                 Assert.That(backpackRect.anchoredPosition, Is.EqualTo(new Vector2(-10f, 10f)));
                 Assert.That(
-                    bagOneRect.anchoredPosition,
-                    Is.EqualTo(new Vector2(-10f, 377f)),
+                    bagOneRect.anchoredPosition.x,
+                    Is.EqualTo(backpackRect.anchoredPosition.x),
                     "The first equipped bag should stack above the backpack.");
-                Assert.That(bagTwoRect.anchoredPosition, Is.EqualTo(new Vector2(-310f, 10f)));
-                Assert.That(bagThreeRect.anchoredPosition, Is.EqualTo(new Vector2(-310f, 253f)));
-                Assert.That(bagFourRect.anchoredPosition, Is.EqualTo(new Vector2(-610f, 10f)));
+                Assert.That(
+                    bagOneRect.anchoredPosition.y
+                        - (backpackRect.anchoredPosition.y + backpackRect.rect.height),
+                    Is.GreaterThanOrEqualTo(10f),
+                    "Vertically stacked bag windows should have a visible margin.");
+                Assert.That(bagTwoRect.anchoredPosition.y, Is.EqualTo(backpackRect.anchoredPosition.y));
+                Assert.That(
+                    (backpackRect.anchoredPosition.x - backpackRect.rect.width)
+                        - bagTwoRect.anchoredPosition.x,
+                    Is.GreaterThanOrEqualTo(10f),
+                    "Wrapped bag-window columns should have a visible margin.");
+                Assert.That(
+                    bagThreeRect.anchoredPosition.y
+                        - (bagTwoRect.anchoredPosition.y + bagTwoRect.rect.height),
+                    Is.GreaterThanOrEqualTo(10f));
+                Assert.That(bagFourRect.anchoredPosition.y, Is.EqualTo(backpackRect.anchoredPosition.y));
+                Assert.That(
+                    (bagTwoRect.anchoredPosition.x - bagTwoRect.rect.width)
+                        - bagFourRect.anchoredPosition.x,
+                    Is.GreaterThanOrEqualTo(10f));
 
                 bagBar.ToggleBag(0);
 
                 Assert.That(
                     bagTwoRect.anchoredPosition,
-                    Is.EqualTo(new Vector2(-10f, 377f)),
+                    Is.EqualTo(bagOneRect.anchoredPosition),
                     "Closing a window should collapse the next open bag upward in its place.");
-                Assert.That(bagThreeRect.anchoredPosition, Is.EqualTo(new Vector2(-310f, 10f)));
-                Assert.That(bagFourRect.anchoredPosition, Is.EqualTo(new Vector2(-310f, 253f)));
+                Assert.That(bagThreeRect.anchoredPosition.y, Is.EqualTo(backpackRect.anchoredPosition.y));
+                Assert.That(bagFourRect.anchoredPosition.x, Is.EqualTo(bagThreeRect.anchoredPosition.x));
+                Assert.That(
+                    bagFourRect.anchoredPosition.y
+                        - (bagThreeRect.anchoredPosition.y + bagThreeRect.rect.height),
+                    Is.GreaterThanOrEqualTo(10f));
             }
             finally
             {

@@ -223,6 +223,7 @@ namespace RPGClone.Multiplayer
             ApplyPendingRewardEvents();
             ApplyCorpseLootSnapshots();
             ApplyWorldObjectSnapshots();
+            ApplyNpcFacingSnapshots();
         }
 
         private void PollParticipantRoster()
@@ -725,6 +726,16 @@ namespace RPGClone.Multiplayer
                 }
 
                 interactable.ApplySharedSnapshot(snapshot);
+            }
+        }
+
+        private static void ApplyNpcFacingSnapshots()
+        {
+            IReadOnlyList<MMONpcFacingSnapshot> snapshots =
+                MMOSharedSessionState.GetNpcFacingSnapshots(MMOGameplaySessionService.SessionId);
+            foreach (MMONpcFacingSnapshot snapshot in snapshots)
+            {
+                MMONpcInteractionFacing.TryApplySharedSnapshot(snapshot);
             }
         }
 

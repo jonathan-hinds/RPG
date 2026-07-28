@@ -90,6 +90,16 @@ namespace RPGClone.Multiplayer
         public long updatedUtcTicks;
     }
 
+    [Serializable]
+    public sealed class MMONpcFacingSnapshot
+    {
+        public string sessionId;
+        public string npcInteractionKey;
+        public string actorCharacterId;
+        public Vector3SaveData actorPosition;
+        public long updatedUtcTicks;
+    }
+
     public static class MMOSharedSessionState
     {
         private static readonly TimeSpan ParticipantTimeout = TimeSpan.FromSeconds(60);
@@ -1179,6 +1189,78 @@ namespace RPGClone.Multiplayer
             }
         }
 
+        public static void UpsertNpcFacingSnapshot(MMONpcFacingSnapshot snapshot)
+        {
+            if (snapshot == null
+                || string.IsNullOrWhiteSpace(snapshot.sessionId)
+                || string.IsNullOrWhiteSpace(snapshot.npcInteractionKey)
+                || string.IsNullOrWhiteSpace(snapshot.actorCharacterId))
+            {
+                return;
+            }
+
+            if (MMONetcodeSharedSessionTransport.TrySubmitToHost(new MMOSharedSessionNetworkOperation
+                {
+                    kind = MMOSharedSessionNetworkOperationKind.UpsertNpcFacingSnapshot,
+                    npcFacingSnapshot = snapshot
+                }))
+            {
+                return;
+            }
+
+            using (AcquireStateLease())
+            {
+                MMOSharedSessionStore store = LoadStore();
+                if (Prune(store))
+                {
+                    SaveStore(store);
+                }
+
+                MMONpcFacingSnapshot existing = store.npcFacingSnapshots.Find(candidate =>
+                    candidate != null
+                    && candidate.sessionId == snapshot.sessionId
+                    && candidate.npcInteractionKey == snapshot.npcInteractionKey);
+                if (existing == null)
+                {
+                    store.npcFacingSnapshots.Add(Clone(snapshot));
+                }
+                else
+                {
+                    Copy(snapshot, existing);
+                }
+
+                SaveStore(store);
+            }
+        }
+
+        public static IReadOnlyList<MMONpcFacingSnapshot> GetNpcFacingSnapshots(string sessionId)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId))
+            {
+                return Array.Empty<MMONpcFacingSnapshot>();
+            }
+
+            using (AcquireStateLease())
+            {
+                MMOSharedSessionStore store = LoadStore();
+                if (Prune(store))
+                {
+                    SaveStore(store);
+                }
+
+                List<MMONpcFacingSnapshot> result = new();
+                foreach (MMONpcFacingSnapshot snapshot in store.npcFacingSnapshots)
+                {
+                    if (snapshot != null && snapshot.sessionId == sessionId)
+                    {
+                        result.Add(Clone(snapshot));
+                    }
+                }
+
+                return result;
+            }
+        }
+
         public static void UpsertEnemySnapshot(EnemySnapshot snapshot)
         {
             if (snapshot == null || string.IsNullOrWhiteSpace(snapshot.sessionId) || string.IsNullOrWhiteSpace(snapshot.spawnId))
@@ -1740,6 +1822,9 @@ namespace RPGClone.Multiplayer
                 case MMOSharedSessionNetworkOperationKind.MarkWorldObjectInteractionRequestProcessed:
                     MarkWorldObjectInteractionRequestProcessed(operation.requestId);
                     break;
+                case MMOSharedSessionNetworkOperationKind.UpsertNpcFacingSnapshot:
+                    UpsertNpcFacingSnapshot(operation.npcFacingSnapshot);
+                    break;
                 case MMOSharedSessionNetworkOperationKind.UpsertEnemySnapshot:
                     UpsertEnemySnapshot(operation.enemySnapshot);
                     break;
@@ -2217,6 +2302,29 @@ namespace RPGClone.Multiplayer
             destination.updatedUtcTicks = source.updatedUtcTicks;
         }
 
+        private static MMONpcFacingSnapshot Clone(MMONpcFacingSnapshot source)
+        {
+            return source == null
+                ? null
+                : new MMONpcFacingSnapshot
+                {
+                    sessionId = source.sessionId,
+                    npcInteractionKey = source.npcInteractionKey,
+                    actorCharacterId = source.actorCharacterId,
+                    actorPosition = source.actorPosition,
+                    updatedUtcTicks = source.updatedUtcTicks
+                };
+        }
+
+        private static void Copy(MMONpcFacingSnapshot source, MMONpcFacingSnapshot destination)
+        {
+            destination.sessionId = source.sessionId;
+            destination.npcInteractionKey = source.npcInteractionKey;
+            destination.actorCharacterId = source.actorCharacterId;
+            destination.actorPosition = source.actorPosition;
+            destination.updatedUtcTicks = source.updatedUtcTicks;
+        }
+
         private static MMOSharedWorldObjectInteractionRequest Clone(MMOSharedWorldObjectInteractionRequest source)
         {
             return source == null
@@ -2526,6 +2634,7 @@ namespace RPGClone.Multiplayer
             public List<MMOSharedRewardEvent> rewardEvents = new();
             public List<MMOSharedWorldObjectSnapshot> worldObjectSnapshots = new();
             public List<MMOSharedWorldObjectInteractionRequest> worldObjectInteractionRequests = new();
+            public List<MMONpcFacingSnapshot> npcFacingSnapshots = new();
         }
 
         [Serializable]

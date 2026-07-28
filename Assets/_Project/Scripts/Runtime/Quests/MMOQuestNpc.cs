@@ -27,6 +27,7 @@ namespace RPGClone.Quests
         private MMOQuestLog observedQuestLog;
         private MMOCharacterIdentity identity;
         private MMOStandardNpcIdentity standardIdentity;
+        private MMONpcInteractionFacing interactionFacing;
         private string currentMarkerText = string.Empty;
         private float nextReferenceResolveTime;
 
@@ -38,6 +39,7 @@ namespace RPGClone.Quests
         private void Awake()
         {
             EnsureIdentity();
+            RegisterInteractionFacing();
             EnsureMarker();
             RefreshMarker();
         }
@@ -99,6 +101,7 @@ namespace RPGClone.Quests
             displayNameOverride = newDisplayName;
             offeredQuests = newOfferedQuests != null ? new List<MMOQuestDefinition>(newOfferedQuests) : new List<MMOQuestDefinition>();
             EnsureIdentity();
+            RegisterInteractionFacing();
             RefreshMarker();
         }
 
@@ -125,8 +128,20 @@ namespace RPGClone.Quests
                 return;
             }
 
+            interactionFacing.FaceInteractor(
+                MMONpcInteractionFacing.QuestInteractionKey(NpcId),
+                context.ActorTransform,
+                MMOGameplaySessionService.LocalPlayer.CharacterId);
             context.QuestLog.RecordSpeakToNpc(NpcId);
             MMOQuestDialogPresenter.Open(this, context.QuestLog, screenPosition);
+        }
+
+        private void RegisterInteractionFacing()
+        {
+            interactionFacing = MMONpcInteractionFacing.GetOrAdd(gameObject);
+            interactionFacing.RegisterInteractionKey(
+                MMONpcInteractionFacing.QuestInteractionKey(NpcId),
+                interactionDistance);
         }
 
         private bool IsPointerOverThisNpc(Vector2 pointerPosition)

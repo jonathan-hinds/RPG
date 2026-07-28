@@ -46,7 +46,11 @@ namespace RPGClone.UI
         private void OnEnable()
         {
             Subscribe();
-            VisibilityChanged?.Invoke(this, true);
+            Refresh();
+            if (isActiveAndEnabled)
+            {
+                VisibilityChanged?.Invoke(this, true);
+            }
         }
 
         private void OnDisable()
