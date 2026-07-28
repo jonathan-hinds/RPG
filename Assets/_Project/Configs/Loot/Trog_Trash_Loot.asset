@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Trog_Trash_Loot
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Loot.MMOLootTable
   entries:
-  - item: {fileID: 11400000, guid: e2bc1e4ebc2b53b4b8c2f88b53ac3ddf, type: 2}
+  - item: {fileID: 11400000, guid: b1d172bdf5493d14686e21310ab2ec7c, type: 2}
     dropChance: 0.45
     minQuantity: 1
     maxQuantity: 1

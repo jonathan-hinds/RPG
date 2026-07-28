@@ -25,3 +25,9 @@ MonoBehaviour:
     maxQuantity: 1
     requiredQuest: {fileID: 0}
     onlyDropWhileQuestNeedsItem: 0
+  - item: {fileID: 11400000, guid: c003fc503f097e14babc72f0cd5e3c80, type: 2}
+    dropChance: 0.2
+    minQuantity: 1
+    maxQuantity: 1
+    requiredQuest: {fileID: 0}
+    onlyDropWhileQuestNeedsItem: 0

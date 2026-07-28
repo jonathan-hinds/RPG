@@ -74,6 +74,37 @@ namespace RPGClone.Combat
             return weapon.SpeedSeconds / Mathf.Max(0.1f, multiplier);
         }
 
+        public static MMOAbilityAmountRange CalculateWeaponDamageRange(
+            MMOCharacterIdentity source,
+            MMOAbilityEffectDefinition effect)
+        {
+            if (source == null || effect == null)
+            {
+                return effect != null
+                    ? effect.CalculateAmountRange(source)
+                    : new MMOAbilityAmountRange(0, 0);
+            }
+
+            MMOWeaponSnapshot weapon = GetWeaponSnapshot(source);
+            MMOCharacterStats stats = source.Stats;
+            float attackPowerBonus = stats != null
+                ? stats.AttackPower / AttackPowerDamageDivisor * weapon.SpeedSeconds
+                : 0f;
+            int weaponSkill = GetWeaponSkillForPreview(source, weapon.WeaponType);
+            float skillMultiplier = Mathf.Clamp(
+                weaponSkill / (float)Mathf.Max(1, GetDefenseSkill(source)),
+                0.5f,
+                1.15f);
+            float coefficient = Mathf.Max(0f, effect.Coefficient);
+            int minimum = Mathf.Max(
+                0,
+                Mathf.RoundToInt(effect.FlatAmount + (weapon.MinDamage + attackPowerBonus) * coefficient * skillMultiplier));
+            int maximum = Mathf.Max(
+                minimum,
+                Mathf.RoundToInt(effect.FlatAmount + (weapon.MaxDamage + attackPowerBonus) * coefficient * skillMultiplier));
+            return new MMOAbilityAmountRange(minimum, maximum);
+        }
+
         public static bool CanBlock(MMOCharacterIdentity identity)
         {
             if (identity == null)
@@ -168,6 +199,14 @@ namespace RPGClone.Combat
             }
 
             return skills.GetSkill(weaponType);
+        }
+
+        private static int GetWeaponSkillForPreview(MMOCharacterIdentity identity, MMOWeaponType weaponType)
+        {
+            MMOWeaponSkillController skills = identity != null
+                ? identity.GetComponent<MMOWeaponSkillController>()
+                : null;
+            return skills != null ? skills.GetSkill(weaponType) : GetDefenseSkill(identity);
         }
 
         private static MMOWeaponSkillController GetOrAddWeaponSkills(MMOCharacterIdentity identity)

@@ -40,6 +40,9 @@ namespace RPGClone.Characters
         public int Agility => agility;
         public int Intellect => intellect;
         public int Spirit => spirit;
+        public int BaseArmor => armor;
+        public int BaseAttackPower => attackPower;
+        public int BaseSpellPower => spellPower;
         public int Armor => armor + Agility * 2;
         public int AttackPower => Mathf.RoundToInt((attackPower + Strength * 2 + Mathf.FloorToInt(Agility * 0.5f) + runtimeAttackPowerBonus) * Mathf.Max(0.1f, runtimeAttackPowerMultiplier));
         public int SpellPower => spellPower + Mathf.FloorToInt(Intellect * 0.5f);
@@ -61,6 +64,13 @@ namespace RPGClone.Characters
             float baseDamage = UnityEngine.Random.Range(MeleeMinDamage, MeleeMaxDamage);
             float attackPowerBonus = AttackPower / AttackPowerDamageDivisor * MeleeAttackSpeed;
             return baseDamage + attackPowerBonus;
+        }
+
+        public void GetMeleeWeaponDamageRange(out float minimum, out float maximum)
+        {
+            float attackPowerBonus = AttackPower / AttackPowerDamageDivisor * MeleeAttackSpeed;
+            minimum = MeleeMinDamage + attackPowerBonus;
+            maximum = MeleeMaxDamage + attackPowerBonus;
         }
 
         public void Configure(

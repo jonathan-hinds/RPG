@@ -66,6 +66,37 @@ namespace RPGClone.Abilities
             return Mathf.Max(0, Mathf.RoundToInt(amount));
         }
 
+        public MMOAbilityAmountRange CalculateAmountRange(MMOCharacterIdentity caster)
+        {
+            MMOCharacterStats stats = caster != null ? caster.Stats : null;
+            float minimum = flatAmount;
+            float maximum = flatAmount;
+
+            if (stats != null)
+            {
+                switch (amountSource)
+                {
+                    case MMOAbilityAmountSource.WeaponDamage:
+                        stats.GetMeleeWeaponDamageRange(out float weaponMinimum, out float weaponMaximum);
+                        minimum += weaponMinimum * coefficient;
+                        maximum += weaponMaximum * coefficient;
+                        break;
+                    case MMOAbilityAmountSource.AttackPower:
+                        minimum += stats.AttackPower * coefficient;
+                        maximum = minimum;
+                        break;
+                    case MMOAbilityAmountSource.SpellPower:
+                        minimum += stats.SpellPower * coefficient;
+                        maximum = minimum;
+                        break;
+                }
+            }
+
+            return new MMOAbilityAmountRange(
+                Mathf.Max(0, Mathf.RoundToInt(minimum)),
+                Mathf.Max(0, Mathf.RoundToInt(maximum)));
+        }
+
         public void Configure(
             MMOAbilityEffectType newEffectType,
             MMOAbilityAmountSource newAmountSource,
@@ -208,5 +239,18 @@ namespace RPGClone.Abilities
             chargeStopDistance = Mathf.Max(0.1f, newStopDistance);
             chargeImpactDelaySeconds = Mathf.Max(0f, newImpactDelaySeconds);
         }
+    }
+
+    public readonly struct MMOAbilityAmountRange
+    {
+        public MMOAbilityAmountRange(int minimum, int maximum)
+        {
+            Minimum = Mathf.Max(0, minimum);
+            Maximum = Mathf.Max(Minimum, maximum);
+        }
+
+        public int Minimum { get; }
+        public int Maximum { get; }
+        public bool IsRange => Minimum != Maximum;
     }
 }

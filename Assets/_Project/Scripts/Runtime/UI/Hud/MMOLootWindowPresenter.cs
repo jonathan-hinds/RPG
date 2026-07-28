@@ -85,7 +85,7 @@ namespace RPGClone.UI
             }
 
             lootSource = null;
-            MMOItemTooltipPresenter.HideItem(null);
+            MMOGameTooltipPresenter.HideTooltip();
             gameObject.SetActive(false);
         }
 

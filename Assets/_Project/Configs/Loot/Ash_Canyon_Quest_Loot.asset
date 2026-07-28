@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Ash_Canyon_Quest_Loot
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Loot.MMOLootTable
   entries:
-  - item: {fileID: 11400000, guid: 4789a63672a8c61469ebbb426a145cfe, type: 2}
+  - item: {fileID: 11400000, guid: c003fc503f097e14babc72f0cd5e3c80, type: 2}
     dropChance: 0.18
     minQuantity: 1
     maxQuantity: 1
