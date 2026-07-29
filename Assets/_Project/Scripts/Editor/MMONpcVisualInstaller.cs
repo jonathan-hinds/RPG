@@ -68,6 +68,43 @@ namespace RPGClone.EditorTools
             Debug.Log($"Installed player-compatible idle visuals on {targets.Count} NPCs in {scene.name}.");
         }
 
+        public static bool InstallOnNpc(GameObject target)
+        {
+            if (target == null)
+            {
+                Debug.LogError("A valid NPC GameObject is required to install humanoid visuals.");
+                return false;
+            }
+
+            Scene scene = target.scene;
+            if (!scene.IsValid() || !scene.isLoaded || string.IsNullOrWhiteSpace(scene.path))
+            {
+                Debug.LogError("The NPC must belong to an open, saved gameplay scene.", target);
+                return false;
+            }
+
+            GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
+            GameObject modelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerModelPath);
+            MMOPlayerLocomotionAnimationSet animationSet =
+                AssetDatabase.LoadAssetAtPath<MMOPlayerLocomotionAnimationSet>(AnimationSetPath);
+            MMOCharacterAppearanceCatalog appearanceCatalog =
+                AssetDatabase.LoadAssetAtPath<MMOCharacterAppearanceCatalog>(AppearanceCatalogPath);
+            if (!TryReadPlayerVisualSetup(playerPrefab, modelPrefab, out PlayerVisualSetup playerVisualSetup)
+                || animationSet == null
+                || appearanceCatalog == null)
+            {
+                Debug.LogError(
+                    $"NPC visual installation requires a configured player prefab at {PlayerPrefabPath}, " +
+                    $"plus {PlayerModelPath}, {AnimationSetPath}, and {AppearanceCatalogPath}.",
+                    target);
+                return false;
+            }
+
+            InstallOnNpc(target, playerVisualSetup, animationSet, appearanceCatalog);
+            EditorSceneManager.MarkSceneDirty(scene);
+            return true;
+        }
+
         private static void InstallOnNpc(
             GameObject target,
             PlayerVisualSetup playerVisualSetup,

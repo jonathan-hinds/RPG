@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e7c6418b419fe042ac03a47abbb3689, type: 3}
+  m_Name: The_Horn_That_Calls
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
+  questId: bristleback_encroachment_03
+  displayName: The Horn That Calls
+  questLevel: 4
+  minimumLevel: 4
+  offeredByNpcId: outrider_vesha
+  turnedInToNpcId: outrider_vesha
+  prerequisiteQuests:
+  - {fileID: 11400000, guid: 8078656906613f44fb063baec59063aa, type: 2}
+  offerText: The spearhead moves to horn signals. Take a signal horn from one of
+    their invaders. If we learn the call, we learn where the next attack gathers.
+  progressText: No horn, no proof. Search the next invader you bring down.
+  completionText: This carving is a marching call. Their commander left orders in
+    the command cache below.
+  objectiveSummary: Collect a Bristleback Signal Horn from a Bristleback Invader.
+  objectives:
+  - objectiveId: recover_signal_horn
+    objectiveType: 0
+    summary: Bristleback Signal Horn
+    requiredCount: 1
+    requiredItem: {fileID: 11400000, guid: 588d2f16795baf049ae392e80c57ef73, type: 2}
+    usableItem: {fileID: 0}
+    requiredCreature: {fileID: 11400000, guid: b19f1f59ac5e76545b995dd41bbe9274, type: 2}
+    requiredCreatureId: 
+    requiredWorldObjectId: 
+    requiredNpcId: 
+    partyCreditBehavior: 0
+    consumeRequiredItemsOnTurnIn: 1
+    mapHints: []
+  startItems: []
+  rewards:
+    experience: 760
+    moneyCopper: 120
+    guaranteedItems: []
+    choiceItems: []

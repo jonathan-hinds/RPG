@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e7c6418b419fe042ac03a47abbb3689, type: 3}
+  m_Name: Orders_in_the_Ash
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
+  questId: bristleback_encroachment_04
+  displayName: Orders in the Ash
+  questLevel: 5
+  minimumLevel: 5
+  offeredByNpcId: outrider_vesha
+  turnedInToNpcId: outrider_vesha
+  prerequisiteQuests:
+  - {fileID: 11400000, guid: 9ca7c9a87aca36c4d8b69f1df3ef34b5, type: 2}
+  offerText: The horn points to a command cache inside their line. Recover the march
+    ledger before the bristlebacks move it. We need names, routes, and timing, not
+    another trophy.
+  progressText: The ledger should be inside the bristleback command cache among the
+    invaders.
+  completionText: These routes join the raids Gorrek already broke to a larger push.
+    Razorcrag will be ready before the next tusk crosses the ridge.
+  objectiveSummary: Recover the Bristleback March Ledger from the command cache.
+  objectives:
+  - objectiveId: recover_march_ledger
+    objectiveType: 0
+    summary: Bristleback March Ledger
+    requiredCount: 1
+    requiredItem: {fileID: 11400000, guid: 1d02c547a60221d47b64286b8b3f88c0, type: 2}
+    usableItem: {fileID: 0}
+    requiredCreature: {fileID: 0}
+    requiredCreatureId: 
+    requiredWorldObjectId: bristleback_command_cache
+    requiredNpcId: 
+    partyCreditBehavior: 0
+    consumeRequiredItemsOnTurnIn: 1
+    mapHints: []
+  startItems: []
+  rewards:
+    experience: 1050
+    moneyCopper: 175
+    guaranteedItems: []
+    choiceItems: []

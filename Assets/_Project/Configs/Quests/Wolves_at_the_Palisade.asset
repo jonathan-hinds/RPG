@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e7c6418b419fe042ac03a47abbb3689, type: 3}
+  m_Name: Wolves_at_the_Palisade
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
+  questId: bristleback_encroachment_01
+  displayName: Wolves at the Palisade
+  questLevel: 3
+  minimumLevel: 3
+  offeredByNpcId: beastwarden_torak
+  turnedInToNpcId: beastwarden_torak
+  prerequisiteQuests:
+  - {fileID: 11400000, guid: 7cc3ee4cdbb2f1f4399e5a99514773b4, type: 2}
+  offerText: Gorrek's raids bloodied the bristlebacks, but their new invaders have
+    driven the wolf packs toward our supply trail. Thin the pack before hunger turns
+    the beasts on every runner leaving Razorcrag.
+  progressText: The supply trail is still full of howls.
+  completionText: The road can breathe again. Now we can deal with what drove them
+    here.
+  objectiveSummary: Kill 6 Wolves.
+  objectives:
+  - objectiveId: thin_displaced_wolves
+    objectiveType: 2
+    summary: Wolves slain
+    requiredCount: 6
+    requiredItem: {fileID: 0}
+    usableItem: {fileID: 0}
+    requiredCreature: {fileID: 11400000, guid: 773c66a658830684e997faeb51c21d0e, type: 2}
+    requiredCreatureId: 
+    requiredWorldObjectId: 
+    requiredNpcId: 
+    partyCreditBehavior: 0
+    consumeRequiredItemsOnTurnIn: 1
+    mapHints: []
+  startItems: []
+  rewards:
+    experience: 520
+    moneyCopper: 65
+    guaranteedItems: []
+    choiceItems: []

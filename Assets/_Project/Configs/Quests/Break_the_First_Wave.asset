@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e7c6418b419fe042ac03a47abbb3689, type: 3}
+  m_Name: Break_the_First_Wave
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Quests.MMOQuestDefinition
+  questId: bristleback_encroachment_02
+  displayName: Break the First Wave
+  questLevel: 3
+  minimumLevel: 3
+  offeredByNpcId: beastwarden_torak
+  turnedInToNpcId: outrider_vesha
+  prerequisiteQuests:
+  - {fileID: 11400000, guid: f21a930b5eefbd046843c977a292fd5a, type: 2}
+  offerText: Those wolves were fleeing armored bristlebacks, not hunting on their
+    own. Three invaders are probing the western approach. Break them, then report
+    to Outrider Vesha at the forward watch.
+  progressText: If Torak sent you, the first wave still stands between us.
+  completionText: I watched them fall. Their armor marks them as a spearhead, not
+    common raiders.
+  objectiveSummary: Kill 3 Bristleback Invaders, then report to Outrider Vesha.
+  objectives:
+  - objectiveId: break_bristleback_first_wave
+    objectiveType: 2
+    summary: Bristleback Invaders slain
+    requiredCount: 3
+    requiredItem: {fileID: 0}
+    usableItem: {fileID: 0}
+    requiredCreature: {fileID: 11400000, guid: b19f1f59ac5e76545b995dd41bbe9274, type: 2}
+    requiredCreatureId: 
+    requiredWorldObjectId: 
+    requiredNpcId: 
+    partyCreditBehavior: 0
+    consumeRequiredItemsOnTurnIn: 1
+    mapHints: []
+  startItems: []
+  rewards:
+    experience: 680
+    moneyCopper: 90
+    guaranteedItems: []
+    choiceItems: []
