@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Charge
   description: Charges a hostile target if a valid path exists, then strikes with
     physical force.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 423c8161e30277844b7bb05472825700, type: 3}
   targetType: 2
   autoAttack: 0
   toggled: 0

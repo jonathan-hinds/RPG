@@ -15,7 +15,7 @@ MonoBehaviour:
   abilityId: mage_fireball
   displayName: Fireball
   description: Hurls a fiery projectile at a hostile target.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: f5526f53d7e33544a9380ba820dfec5a, type: 3}
   targetType: 2
   autoAttack: 0
   toggled: 0

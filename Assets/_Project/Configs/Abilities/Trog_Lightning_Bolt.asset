@@ -15,7 +15,7 @@ MonoBehaviour:
   abilityId: trog_lightning_bolt
   displayName: Lightning Bolt
   description: Hurls a bolt of lightning at a hostile target.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 21b60bf1583b410458e644a8ec821545, type: 3}
   targetType: 2
   autoAttack: 0
   toggled: 0

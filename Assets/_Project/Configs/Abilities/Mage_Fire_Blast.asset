@@ -15,7 +15,7 @@ MonoBehaviour:
   abilityId: mage_fire_blast
   displayName: Fire Blast
   description: Blasts a hostile target with instant fire damage.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 0a4469301e10fde4ca981db4f8fa8dd5, type: 3}
   targetType: 2
   autoAttack: 0
   toggled: 0

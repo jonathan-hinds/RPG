@@ -15,7 +15,7 @@ MonoBehaviour:
   abilityId: warrior_berzerkitis
   displayName: Berzerkitis
   description: Increases attack speed by 50%.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 37b4597f89264cc438fb9656ba0c723a, type: 3}
   targetType: 0
   autoAttack: 0
   toggled: 0

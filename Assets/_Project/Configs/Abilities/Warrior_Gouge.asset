@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Gouge
   description: Cuts a hostile target for weapon damage and applies a stacking bleed.
     Critical hits reset Gouge's cooldown.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: cd1ee798f6d3540438e1aed6cbbb99dd, type: 3}
   targetType: 2
   autoAttack: 0
   toggled: 0

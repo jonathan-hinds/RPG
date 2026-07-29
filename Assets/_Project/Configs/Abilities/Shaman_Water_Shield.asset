@@ -15,7 +15,7 @@ MonoBehaviour:
   abilityId: shaman_water_shield
   displayName: Water Shield
   description: Absorbs 20% of incoming damage and restores that amount as mana.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: cfe3e9158d5788441b1a025051dee366, type: 3}
   targetType: 0
   autoAttack: 0
   toggled: 0

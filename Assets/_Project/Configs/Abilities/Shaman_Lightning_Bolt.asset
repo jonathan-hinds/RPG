@@ -15,7 +15,7 @@ MonoBehaviour:
   abilityId: shaman_lightning_bolt
   displayName: Lightning Bolt
   description: Calls down nature damage on a hostile target.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 05d56c0689ba94545b4b4185966368e8, type: 3}
   targetType: 2
   autoAttack: 0
   toggled: 0

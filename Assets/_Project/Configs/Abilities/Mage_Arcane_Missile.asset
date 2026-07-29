@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Arcane Missile
   description: Channels arcane missiles into a hostile target, dealing damage over
     the channel.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 0185558773f925d44ac445c97f4a5aa3, type: 3}
   targetType: 2
   autoAttack: 0
   toggled: 0

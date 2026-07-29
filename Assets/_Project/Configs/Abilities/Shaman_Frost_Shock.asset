@@ -15,7 +15,7 @@ MonoBehaviour:
   abilityId: shaman_frost_shock
   displayName: Frost Shock
   description: Shocks a hostile target with frost damage and reduces movement speed.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: a90aec8377db85e4c96a745547a8a68d, type: 3}
   targetType: 2
   autoAttack: 0
   toggled: 0

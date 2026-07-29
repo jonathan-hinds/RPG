@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Flamestrike
   description: Calls down a pillar of flame at the targeted area, then burns afflicted
     enemies over time.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: f07ebde8f4c97d04ab861d0416f4562b, type: 3}
   targetType: 4
   autoAttack: 0
   toggled: 0

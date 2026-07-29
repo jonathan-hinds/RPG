@@ -15,7 +15,7 @@ MonoBehaviour:
   abilityId: mage_mage_armor
   displayName: Mage Armor
   description: Increases out of combat mana regeneration by 50%.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: f8af59adcfdd3574d8c4fcef16212356, type: 3}
   targetType: 0
   autoAttack: 0
   toggled: 0

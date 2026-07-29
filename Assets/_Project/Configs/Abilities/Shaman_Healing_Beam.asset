@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Healing Beam
   description: Channels restorative energy into a friendly target. Hostile targets
     redirect the heal to self.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: d1c51a85302d0b543b88dcbf32a43dfb, type: 3}
   targetType: 1
   autoAttack: 0
   toggled: 0
