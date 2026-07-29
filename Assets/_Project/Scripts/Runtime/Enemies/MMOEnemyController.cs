@@ -369,22 +369,24 @@ namespace RPGClone.Enemies
                 return;
             }
 
-            MMOAbilityDefinition readySpell = FindReadyCombatSpell();
-            if (readySpell != null)
+            MMOAbilityDefinition readyAbility = FindReadyCombatAbility();
+            if (readyAbility != null)
             {
-                float spellRange = Mathf.Max(0.1f, readySpell.Range);
-                bool inSpellRange = sqrDistance <= spellRange * spellRange;
+                float abilityRange = GetCombatAbilityEngagementRange(readyAbility);
+                bool inAbilityRange = sqrDistance <= abilityRange * abilityRange;
                 autoAttackController.StopAutoAttack();
 
-                if (inSpellRange)
+                if (inAbilityRange)
                 {
                     StopForCasting();
                     FaceCurrentTarget();
-                    abilitySystem.TryUseAbility(readySpell, currentTarget, out _);
+                    MMOCharacterIdentity abilityTarget =
+                        readyAbility.TargetType == MMOAbilityTargetType.Self ? identity : currentTarget;
+                    abilitySystem.TryUseAbility(readyAbility, abilityTarget, out _);
                 }
                 else
                 {
-                    ChaseTarget(spellRange);
+                    ChaseTarget(abilityRange);
                 }
 
                 return;
@@ -451,7 +453,7 @@ namespace RPGClone.Enemies
             return destination;
         }
 
-        private MMOAbilityDefinition FindReadyCombatSpell()
+        private MMOAbilityDefinition FindReadyCombatAbility()
         {
             if (definition == null || identity == null || abilitySystem == null)
             {
@@ -464,7 +466,7 @@ namespace RPGClone.Enemies
                     || ability == definition.AutoAttackAbility
                     || ability.IsAutoAttack
                     || ability.RequiresGroundTarget
-                    || ability.TargetType != MMOAbilityTargetType.Hostile
+                    || !IsSupportedCombatAbility(ability)
                     || ability.ManaCost > identity.Mana.CurrentValue
                     || abilitySystem.IsOnCooldown(ability, out _))
                 {
@@ -475,6 +477,25 @@ namespace RPGClone.Enemies
             }
 
             return null;
+        }
+
+        private static bool IsSupportedCombatAbility(MMOAbilityDefinition ability)
+        {
+            return ability != null
+                && (ability.TargetType == MMOAbilityTargetType.Hostile
+                    || (ability.TargetType == MMOAbilityTargetType.Self
+                        && ability.HasArea
+                        && ability.AreaTargetFilter == MMOAbilityAreaTargetFilter.Hostile));
+        }
+
+        private static float GetCombatAbilityEngagementRange(MMOAbilityDefinition ability)
+        {
+            if (ability != null && ability.TargetType == MMOAbilityTargetType.Self && ability.HasArea)
+            {
+                return Mathf.Max(0.1f, ability.AreaRadius);
+            }
+
+            return Mathf.Max(0.1f, ability != null ? ability.Range : 0f);
         }
 
         private void StopForCasting()

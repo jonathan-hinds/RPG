@@ -16,6 +16,9 @@ namespace RPGClone.EditorTests
         private const string AbilityPath = "Assets/_Project/Configs/Abilities/Warrior_Thunderclap.asset";
         private const string DefinitionPath = "Assets/_Project/VFX/Definitions/Warrior_Thunderclap_VFX.asset";
         private const string PrefabPath = "Assets/_Project/VFX/ThunderClap/Prefabs/ThunderClapVFX.prefab";
+        private const string InvaderAbilityPath = "Assets/_Project/Configs/Abilities/BristlebackInvader_Thunderclap.asset";
+        private const string InvaderDefinitionPath = "Assets/_Project/Configs/Enemies/Bristleback_Invader_Aggressive.asset";
+        private const string InvaderPrefabPath = "Assets/Characters/BristlebackInvader/Prefabs/BristlebackInvaderEnemy.prefab";
 
         [Test]
         public void Package_IsWiredToExistingAbilityDefinition()
@@ -31,7 +34,107 @@ namespace RPGClone.EditorTests
             Assert.That(definition.CastPrefab, Is.SameAs(prefab));
             Assert.That(definition.HitPrefab, Is.Null);
             Assert.That(definition.CastPrefabControlsHitTiming, Is.True);
+            Assert.That(definition.HasCasterBounce, Is.True);
+            Assert.That(definition.CasterBounceHeight, Is.EqualTo(0.32f).Within(0.001f));
+            Assert.That(definition.CasterBounceDuration, Is.EqualTo(0.3f).Within(0.001f));
             Assert.That(prefab.GetComponentsInChildren<ThunderClapTargetReactionVFX>(true), Has.Length.EqualTo(12));
+        }
+
+        [Test]
+        public void CanonicalPlayerAbility_IsSupportedAsEnemySelfAreaCombatAbility()
+        {
+            MMOAbilityDefinition ability = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(AbilityPath);
+            MethodInfo supportedMethod = typeof(RPGClone.Enemies.MMOEnemyController).GetMethod(
+                "IsSupportedCombatAbility",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            MethodInfo rangeMethod = typeof(RPGClone.Enemies.MMOEnemyController).GetMethod(
+                "GetCombatAbilityEngagementRange",
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.That(ability, Is.Not.Null);
+            Assert.That(ability.TargetType, Is.EqualTo(MMOAbilityTargetType.Self));
+            Assert.That(ability.AreaTargetFilter, Is.EqualTo(MMOAbilityAreaTargetFilter.Hostile));
+            Assert.That(supportedMethod, Is.Not.Null);
+            Assert.That(rangeMethod, Is.Not.Null);
+            Assert.That((bool)supportedMethod.Invoke(null, new object[] { ability }), Is.True);
+            Assert.That(
+                (float)rangeMethod.Invoke(null, new object[] { ability }),
+                Is.EqualTo(ability.AreaRadius).Within(0.001f));
+        }
+
+        [Test]
+        public void BristlebackInvader_UsesDedicatedCooldownVariantAndStandardCreatureVfxFallbacks()
+        {
+            MMOAbilityDefinition playerAbility = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(AbilityPath);
+            MMOAbilityDefinition invaderAbility = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(InvaderAbilityPath);
+            RPGClone.Enemies.MMOEnemyDefinition enemyDefinition =
+                AssetDatabase.LoadAssetAtPath<RPGClone.Enemies.MMOEnemyDefinition>(InvaderDefinitionPath);
+            GameObject invaderPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(InvaderPrefabPath);
+
+            Assert.That(playerAbility, Is.Not.Null);
+            Assert.That(invaderAbility, Is.Not.Null);
+            Assert.That(enemyDefinition, Is.Not.Null);
+            Assert.That(invaderPrefab, Is.Not.Null);
+            Assert.That(playerAbility.CooldownSeconds, Is.EqualTo(6f).Within(0.001f));
+            Assert.That(invaderAbility.CooldownSeconds, Is.EqualTo(15f).Within(0.001f));
+            Assert.That(invaderAbility.AbilityId, Is.EqualTo("bristleback_invader_thunderclap"));
+            Assert.That(invaderAbility.VisualEffects, Is.SameAs(playerAbility.VisualEffects));
+            Assert.That(invaderAbility.TargetType, Is.EqualTo(playerAbility.TargetType));
+            Assert.That(invaderAbility.AreaRadius, Is.EqualTo(playerAbility.AreaRadius).Within(0.001f));
+            Assert.That(invaderAbility.AreaTargetFilter, Is.EqualTo(playerAbility.AreaTargetFilter));
+            Assert.That(invaderAbility.Effects.Count, Is.EqualTo(playerAbility.Effects.Count));
+            Assert.That(enemyDefinition.Abilities, Does.Contain(invaderAbility));
+            Assert.That(enemyDefinition.Abilities, Has.No.Member(playerAbility));
+            Assert.That(
+                invaderPrefab.GetComponent<MMOAbilitySystem>().KnownAbilities,
+                Does.Contain(invaderAbility));
+            Assert.That(
+                invaderPrefab.GetComponent<MMOAbilitySystem>().KnownAbilities,
+                Has.No.Member(playerAbility));
+            Assert.That(invaderPrefab.GetComponent<MMOAbilityVfxAnchors>(), Is.Null);
+            Assert.That(invaderPrefab.transform.Find("Spell Cast Origin"), Is.Null);
+        }
+
+        [Test]
+        public void CasterBounce_OffsetsOnlyVisualRootAndRestoresWithoutDrift()
+        {
+            GameObject invaderPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(InvaderPrefabPath);
+            GameObject caster = Object.Instantiate(invaderPrefab);
+            Transform visual = caster.transform.Find("Bristleback Invader Visual");
+            GameObject vfxRoot = new("Ability VFX");
+            vfxRoot.transform.SetParent(caster.transform, false);
+
+            try
+            {
+                MMOAbilityVfxController controller = caster.AddComponent<MMOAbilityVfxController>();
+                MethodInfo ensureReferences = typeof(MMOAbilityVfxController).GetMethod(
+                    "EnsureReferences",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                MethodInfo setOffset = typeof(MMOAbilityVfxController).GetMethod(
+                    "SetCasterBounceOffset",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+
+                Assert.That(ensureReferences, Is.Not.Null);
+                Assert.That(setOffset, Is.Not.Null);
+                ensureReferences.Invoke(controller, null);
+
+                Vector3 gameplayStart = caster.transform.position;
+                Vector3 visualStart = visual.localPosition;
+                setOffset.Invoke(controller, new object[] { 0.32f });
+                Assert.That(caster.transform.position, Is.EqualTo(gameplayStart));
+                Assert.That(visual.localPosition.y, Is.EqualTo(visualStart.y + 0.32f).Within(0.001f));
+
+                setOffset.Invoke(controller, new object[] { 0.1f });
+                Assert.That(visual.localPosition.y, Is.EqualTo(visualStart.y + 0.1f).Within(0.001f));
+
+                setOffset.Invoke(controller, new object[] { 0f });
+                Assert.That(visual.localPosition, Is.EqualTo(visualStart));
+                Assert.That(caster.transform.position, Is.EqualTo(gameplayStart));
+            }
+            finally
+            {
+                Object.DestroyImmediate(caster);
+            }
         }
 
         [Test]

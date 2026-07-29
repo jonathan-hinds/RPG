@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f19b6985de7578844a289965931ed701, type: 3}
   m_Name: Warrior_Thunderclap_VFX
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.MMOAbilityVfxDefinition
+  targetingPrefab: {fileID: 0}
   castingPrefab: {fileID: 0}
   castPrefab: {fileID: 7313511811256741163, guid: 041a432a0a09820459cee13253a7c06e, type: 3}
   hitPrefab: {fileID: 0}
@@ -25,3 +26,5 @@ MonoBehaviour:
   hitLocalOffset: {x: 0, y: 0, z: 0}
   hitDelaySeconds: 0
   castPrefabControlsHitTiming: 1
+  casterBounceHeight: 0.32
+  casterBounceDuration: 0.3

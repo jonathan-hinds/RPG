@@ -12,9 +12,12 @@ namespace RPGClone.Vfx
         [SerializeField] private MMOAbilitySystem abilitySystem;
         [SerializeField] private MMOAbilityVfxAnchors anchors;
         [SerializeField] private Transform vfxRoot;
+        [SerializeField] private Transform casterVisualRoot;
 
         private readonly System.Collections.Generic.List<GameObject> activeCastingInstances = new();
         private Coroutine pendingHitRoutine;
+        private Coroutine casterBounceRoutine;
+        private float appliedCasterBounceOffset;
 
         private void Awake()
         {
@@ -61,6 +64,8 @@ namespace RPGClone.Vfx
                 StopCoroutine(pendingHitRoutine);
                 pendingHitRoutine = null;
             }
+
+            StopCasterBounce();
         }
 
         private void OnCastStarted(MMOAbilitySystem source, MMOAbilityDefinition ability, MMOCharacterIdentity target, float duration)
@@ -119,6 +124,7 @@ namespace RPGClone.Vfx
                 return;
             }
 
+            PlayCasterBounce(ability.VisualEffects);
             PlayRelease(ability, ability.VisualEffects, target, targetPosition, hasGroundTarget, false);
         }
 
@@ -369,6 +375,80 @@ namespace RPGClone.Vfx
             activeCastingInstances.Clear();
         }
 
+        private void PlayCasterBounce(MMOAbilityVfxDefinition definition)
+        {
+            if (definition == null || !definition.HasCasterBounce)
+            {
+                return;
+            }
+
+            ResolveCasterVisualRoot();
+            if (casterVisualRoot == null || casterVisualRoot == transform)
+            {
+                return;
+            }
+
+            StopCasterBounce();
+            casterBounceRoutine = StartCoroutine(AnimateCasterBounce(
+                definition.CasterBounceHeight,
+                definition.CasterBounceDuration));
+        }
+
+        private IEnumerator AnimateCasterBounce(float height, float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                float normalizedTime = Mathf.Clamp01(elapsed / duration);
+                SetCasterBounceOffset(Mathf.Sin(normalizedTime * Mathf.PI) * height);
+                yield return null;
+                elapsed += Time.deltaTime;
+            }
+
+            SetCasterBounceOffset(0f);
+            casterBounceRoutine = null;
+        }
+
+        private void StopCasterBounce()
+        {
+            if (casterBounceRoutine != null)
+            {
+                StopCoroutine(casterBounceRoutine);
+                casterBounceRoutine = null;
+            }
+
+            SetCasterBounceOffset(0f);
+        }
+
+        private void SetCasterBounceOffset(float offset)
+        {
+            if (casterVisualRoot == null)
+            {
+                appliedCasterBounceOffset = 0f;
+                return;
+            }
+
+            Vector3 localPosition = casterVisualRoot.localPosition;
+            localPosition.y -= appliedCasterBounceOffset;
+            appliedCasterBounceOffset = Mathf.Max(0f, offset);
+            localPosition.y += appliedCasterBounceOffset;
+            casterVisualRoot.localPosition = localPosition;
+        }
+
+        private void ResolveCasterVisualRoot()
+        {
+            if (casterVisualRoot != null)
+            {
+                return;
+            }
+
+            Animator casterAnimator = GetComponentInChildren<Animator>(true);
+            if (casterAnimator != null && casterAnimator.transform != transform)
+            {
+                casterVisualRoot = casterAnimator.transform;
+            }
+        }
+
         private void EnsureReferences()
         {
             if (abilitySystem == null)
@@ -397,6 +477,8 @@ namespace RPGClone.Vfx
 
                 vfxRoot = existing;
             }
+
+            ResolveCasterVisualRoot();
         }
 
         private void OnValidate()

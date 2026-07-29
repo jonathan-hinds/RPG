@@ -27,6 +27,10 @@ namespace RPGClone.Vfx
         [SerializeField, Min(0f)] private float hitDelaySeconds = 0.05f;
         [SerializeField] private bool castPrefabControlsHitTiming;
 
+        [Header("Caster Motion")]
+        [SerializeField, Min(0f)] private float casterBounceHeight;
+        [SerializeField, Min(0f)] private float casterBounceDuration;
+
         public GameObject TargetingPrefab => targetingPrefab;
         public GameObject CastingPrefab => castingPrefab;
         public GameObject CastPrefab => castPrefab;
@@ -41,6 +45,9 @@ namespace RPGClone.Vfx
         public Vector3 HitLocalOffset => hitLocalOffset;
         public float HitDelaySeconds => hitDelaySeconds;
         public bool CastPrefabControlsHitTiming => castPrefabControlsHitTiming;
+        public float CasterBounceHeight => casterBounceHeight;
+        public float CasterBounceDuration => casterBounceDuration;
+        public bool HasCasterBounce => casterBounceHeight > 0f && casterBounceDuration > 0f;
 
         public void Configure(
             GameObject newCastingPrefab,
@@ -75,6 +82,12 @@ namespace RPGClone.Vfx
         public void ConfigureTargetingPrefab(GameObject newTargetingPrefab)
         {
             targetingPrefab = newTargetingPrefab;
+        }
+
+        public void ConfigureCasterBounce(float height, float duration)
+        {
+            casterBounceHeight = Mathf.Max(0f, height);
+            casterBounceDuration = Mathf.Max(0f, duration);
         }
     }
 }
