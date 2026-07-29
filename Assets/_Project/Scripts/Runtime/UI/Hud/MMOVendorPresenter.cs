@@ -307,13 +307,12 @@ namespace RPGClone.UI
             iconRect.pivot = new Vector2(0f, 0.5f);
             iconRect.anchoredPosition = new Vector2(6f, 0f);
             iconRect.sizeDelta = new Vector2(IconSize, IconSize);
-            MMOItemIconView.AddToWindowSlot(
+            MMOItemIconView.AddToSlot(
                 iconRect,
                 entry.Item,
                 entry.Quantity,
                 false,
-                false,
-                4f);
+                false);
 
             Text itemName = MMOUiFactory.CreateText("Name", rect, 11, FontStyle.Bold, TextAnchor.MiddleLeft);
             itemName.text = entry.Item.DisplayName;

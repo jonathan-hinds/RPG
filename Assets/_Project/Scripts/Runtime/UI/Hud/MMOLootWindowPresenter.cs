@@ -243,13 +243,12 @@ namespace RPGClone.UI
             Image iconBackground = iconSlot.gameObject.AddComponent<Image>();
             iconBackground.color = MMOItemIconView.GetSlotBackgroundColor(stack.Item);
             iconBackground.raycastTarget = false;
-            MMOItemIconView.AddToWindowSlot(
+            MMOItemIconView.AddToSlot(
                 iconSlot,
                 stack.Item,
                 stack.Quantity,
                 false,
-                false,
-                2f);
+                false);
 
             Text label = MMOUiFactory.CreateText("Item", rowRect, 12, FontStyle.Bold, TextAnchor.MiddleLeft);
             label.text = stack.Item.DisplayName;

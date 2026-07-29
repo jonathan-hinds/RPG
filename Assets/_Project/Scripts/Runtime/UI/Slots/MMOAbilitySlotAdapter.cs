@@ -14,15 +14,21 @@ namespace RPGClone.UI
             bool attention = false,
             bool procGlow = false,
             float cooldownNormalized = 0f,
-            string cooldownText = null)
+            string cooldownText = null,
+            bool selected = false)
         {
             return ability == null
-                ? new MMOSlotPresentation(secondaryText: keybinding)
+                ? new MMOSlotPresentation(
+                    secondaryText: keybinding,
+                    selected: selected,
+                    usable: usable,
+                    inRange: inRange)
                 : new MMOSlotPresentation(
                     icon: ability.Icon,
                     secondaryText: keybinding,
                     centerText: ability.Icon == null ? BuildFallbackLabel(ability.DisplayName) : null,
                     iconTint: Color.white,
+                    selected: selected,
                     active: active,
                     usable: usable,
                     inRange: inRange,

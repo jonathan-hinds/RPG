@@ -287,12 +287,20 @@ namespace RPGClone.Tests
         }
 
         [Test]
-        public void NpcWindowItemSlotsKeepTheirOriginalPresentation()
+        public void NpcWindowItemSlotsUseSharedPresentationWithoutChangingGeometry()
         {
             GameObject slot = new("NPC Window Item", typeof(RectTransform), typeof(Image));
             MMOItemDefinition item = ScriptableObject.CreateInstance<MMOItemDefinition>();
             try
             {
+                RectTransform rect = (RectTransform)slot.transform;
+                rect.anchorMin = new Vector2(0f, 1f);
+                rect.anchorMax = new Vector2(0f, 1f);
+                rect.pivot = new Vector2(0f, 1f);
+                rect.anchoredPosition = new Vector2(17f, -23f);
+                rect.sizeDelta = new Vector2(42f, 42f);
+                RectLayoutState geometryBefore = new(rect);
+
                 item.Configure(
                     "window_test_item",
                     "Window Test Item",
@@ -302,17 +310,21 @@ namespace RPGClone.Tests
                     20,
                     0);
 
-                MMOItemIconView.AddToWindowSlot(
-                    (RectTransform)slot.transform,
+                MMOItemIconView.AddToSlot(
+                    rect,
                     item,
                     3,
                     false,
                     true);
 
-                Assert.That(slot.GetComponent<MMOSlotView>(), Is.Null);
-                Assert.That(slot.GetComponent<Outline>(), Is.Not.Null);
-                Assert.That(slot.transform.Find("Icon Placeholder"), Is.Not.Null);
-                Assert.That(slot.transform.Find("Quantity"), Is.Not.Null);
+                Assert.That(slot.GetComponent<MMOSlotView>(), Is.Not.Null);
+                Assert.That(slot.transform.Find("Slot Visual Layers"), Is.Not.Null);
+                Assert.That(
+                    slot.transform.Find("Slot Visual Layers/Primary Text")
+                        .GetComponent<Text>()
+                        .text,
+                    Is.EqualTo("3"));
+                Assert.That(new RectLayoutState(rect), Is.EqualTo(geometryBefore));
             }
             finally
             {
