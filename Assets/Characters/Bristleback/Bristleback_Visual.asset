@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Animation.MMOCreatureVisualDefinition
   creatureId: Bristleback
   displayName: Bristleback
-  modelPrefab: {fileID: 919132149155446097, guid: 41a04abaed747b54b974e52b91cc7656, type: 3}
-  diffuseTexture: {fileID: 2800000, guid: bd25e59cca30f2e46a9d92d2a2fcd7c9, type: 3}
+  modelPrefab: {fileID: 919132149155446097, guid: 7560462c6db10834aa6f55f4b4f65812, type: 3}
+  diffuseTexture: {fileID: 2800000, guid: 2167823d00b7dc84ca50874bba2fe966, type: 3}
   normalTexture: {fileID: 0}
   animationSet: {fileID: 11400000, guid: 23954168560def346bfc4f0efe1da17c, type: 2}
   defaultEnemyDefinition: {fileID: 11400000, guid: 042f69ea79bc9b64097f4dc93a1aec45, type: 2}
