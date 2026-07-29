@@ -16,8 +16,13 @@ namespace RPGClone.Vfx
 
         private readonly System.Collections.Generic.List<GameObject> activeCastingInstances = new();
         private Coroutine pendingHitRoutine;
-        private Coroutine casterBounceRoutine;
+        private bool casterBounceActive;
+        private float casterBounceStartedAt;
+        private float casterBounceHeight;
+        private float casterBounceDuration;
         private float appliedCasterBounceOffset;
+        private Vector3 casterBounceBaseLocalPosition;
+        private bool casterBounceBaseCaptured;
 
         private void Awake()
         {
@@ -66,6 +71,24 @@ namespace RPGClone.Vfx
             }
 
             StopCasterBounce();
+        }
+
+        private void LateUpdate()
+        {
+            if (!casterBounceActive)
+            {
+                return;
+            }
+
+            float normalizedTime = (Time.time - casterBounceStartedAt) / casterBounceDuration;
+            if (normalizedTime >= 1f)
+            {
+                StopCasterBounce();
+                return;
+            }
+
+            SetCasterBounceOffset(
+                Mathf.Sin(Mathf.Clamp01(normalizedTime) * Mathf.PI) * casterBounceHeight);
         }
 
         private void OnCastStarted(MMOAbilitySystem source, MMOAbilityDefinition ability, MMOCharacterIdentity target, float duration)
@@ -389,35 +412,26 @@ namespace RPGClone.Vfx
             }
 
             StopCasterBounce();
-            casterBounceRoutine = StartCoroutine(AnimateCasterBounce(
-                definition.CasterBounceHeight,
-                definition.CasterBounceDuration));
-        }
-
-        private IEnumerator AnimateCasterBounce(float height, float duration)
-        {
-            float elapsed = 0f;
-            while (elapsed < duration)
-            {
-                float normalizedTime = Mathf.Clamp01(elapsed / duration);
-                SetCasterBounceOffset(Mathf.Sin(normalizedTime * Mathf.PI) * height);
-                yield return null;
-                elapsed += Time.deltaTime;
-            }
-
-            SetCasterBounceOffset(0f);
-            casterBounceRoutine = null;
+            casterBounceBaseLocalPosition = casterVisualRoot.localPosition;
+            casterBounceBaseCaptured = true;
+            casterBounceHeight = definition.CasterBounceHeight;
+            casterBounceDuration = definition.CasterBounceDuration;
+            casterBounceStartedAt = Time.time;
+            casterBounceActive = true;
         }
 
         private void StopCasterBounce()
         {
-            if (casterBounceRoutine != null)
+            casterBounceActive = false;
+            casterBounceHeight = 0f;
+            casterBounceDuration = 0f;
+            if (casterVisualRoot != null && casterBounceBaseCaptured)
             {
-                StopCoroutine(casterBounceRoutine);
-                casterBounceRoutine = null;
+                casterVisualRoot.localPosition = casterBounceBaseLocalPosition;
             }
 
-            SetCasterBounceOffset(0f);
+            appliedCasterBounceOffset = 0f;
+            casterBounceBaseCaptured = false;
         }
 
         private void SetCasterBounceOffset(float offset)
@@ -425,14 +439,19 @@ namespace RPGClone.Vfx
             if (casterVisualRoot == null)
             {
                 appliedCasterBounceOffset = 0f;
+                casterBounceBaseCaptured = false;
                 return;
             }
 
-            Vector3 localPosition = casterVisualRoot.localPosition;
-            localPosition.y -= appliedCasterBounceOffset;
+            if (!casterBounceBaseCaptured)
+            {
+                casterBounceBaseLocalPosition = casterVisualRoot.localPosition;
+                casterBounceBaseCaptured = true;
+            }
+
             appliedCasterBounceOffset = Mathf.Max(0f, offset);
-            localPosition.y += appliedCasterBounceOffset;
-            casterVisualRoot.localPosition = localPosition;
+            casterVisualRoot.localPosition =
+                casterBounceBaseLocalPosition + Vector3.up * appliedCasterBounceOffset;
         }
 
         private void ResolveCasterVisualRoot()

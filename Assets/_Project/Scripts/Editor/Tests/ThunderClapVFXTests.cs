@@ -96,9 +96,11 @@ namespace RPGClone.EditorTests
         }
 
         [Test]
-        public void CasterBounce_OffsetsOnlyVisualRootAndRestoresWithoutDrift()
+        public void CasterBounce_LateUpdateOffsetsOnlyVisualRootAndRestores()
         {
             GameObject invaderPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(InvaderPrefabPath);
+            MMOAbilityVfxDefinition definition = AssetDatabase.LoadAssetAtPath<MMOAbilityVfxDefinition>(DefinitionPath);
+            MMOAbilityDefinition invaderAbility = AssetDatabase.LoadAssetAtPath<MMOAbilityDefinition>(InvaderAbilityPath);
             GameObject caster = Object.Instantiate(invaderPrefab);
             Transform visual = caster.transform.Find("Bristleback Invader Visual");
             GameObject vfxRoot = new("Ability VFX");
@@ -110,24 +112,45 @@ namespace RPGClone.EditorTests
                 MethodInfo ensureReferences = typeof(MMOAbilityVfxController).GetMethod(
                     "EnsureReferences",
                     BindingFlags.Instance | BindingFlags.NonPublic);
-                MethodInfo setOffset = typeof(MMOAbilityVfxController).GetMethod(
-                    "SetCasterBounceOffset",
+                MethodInfo onEnable = typeof(MMOAbilityVfxController).GetMethod(
+                    "OnEnable",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                MethodInfo lateUpdate = typeof(MMOAbilityVfxController).GetMethod(
+                    "LateUpdate",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo startedAt = typeof(MMOAbilityVfxController).GetField(
+                    "casterBounceStartedAt",
                     BindingFlags.Instance | BindingFlags.NonPublic);
 
                 Assert.That(ensureReferences, Is.Not.Null);
-                Assert.That(setOffset, Is.Not.Null);
+                Assert.That(onEnable, Is.Not.Null);
+                Assert.That(lateUpdate, Is.Not.Null);
+                Assert.That(startedAt, Is.Not.Null);
                 ensureReferences.Invoke(controller, null);
+                onEnable.Invoke(controller, null);
 
+                MMOAbilitySystem abilitySystem = caster.GetComponent<MMOAbilitySystem>();
+                RPGClone.Characters.MMOCharacterIdentity identity =
+                    caster.GetComponent<RPGClone.Characters.MMOCharacterIdentity>();
                 Vector3 gameplayStart = caster.transform.position;
                 Vector3 visualStart = visual.localPosition;
-                setOffset.Invoke(controller, new object[] { 0.32f });
+                abilitySystem.PlayReplicatedAbilityReleased(
+                    invaderAbility,
+                    identity,
+                    caster.transform.position,
+                    true);
+                startedAt.SetValue(controller, Time.time - definition.CasterBounceDuration * 0.25f);
+                lateUpdate.Invoke(controller, null);
+                Assert.That(visual.localPosition.y, Is.GreaterThan(visualStart.y + 0.2f));
+
+                visual.localPosition = visualStart;
+                startedAt.SetValue(controller, Time.time - definition.CasterBounceDuration * 0.5f);
+                lateUpdate.Invoke(controller, null);
                 Assert.That(caster.transform.position, Is.EqualTo(gameplayStart));
                 Assert.That(visual.localPosition.y, Is.EqualTo(visualStart.y + 0.32f).Within(0.001f));
 
-                setOffset.Invoke(controller, new object[] { 0.1f });
-                Assert.That(visual.localPosition.y, Is.EqualTo(visualStart.y + 0.1f).Within(0.001f));
-
-                setOffset.Invoke(controller, new object[] { 0f });
+                startedAt.SetValue(controller, Time.time - definition.CasterBounceDuration * 1.1f);
+                lateUpdate.Invoke(controller, null);
                 Assert.That(visual.localPosition, Is.EqualTo(visualStart));
                 Assert.That(caster.transform.position, Is.EqualTo(gameplayStart));
             }
