@@ -17,12 +17,14 @@ MonoBehaviour:
   description: Rough hide maps showing planned bristleback raids.
   itemType: 4
   quality: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 1c4dff90eff7a1649b9c384bd0ced5e0, type: 3}
   maxStackSize: 5
   vendorValueCopper: 0
+  containerSlotCount: 0
   consumableType: 0
   restoreHealthAmount: 0
   restoreManaAmount: 0
+  experienceRewardAmount: 0
   consumeDurationSeconds: 10
   requiresStationary: 1
   equipmentSlot: 4
@@ -40,6 +42,7 @@ MonoBehaviour:
     meleeMaxDamage: 7
     meleeAttackSpeed: 2
     meleeRange: 3
+  equipmentVisual: {fileID: 0}
   weaponType: 0
   weaponMinDamage: 0
   weaponMaxDamage: 0

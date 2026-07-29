@@ -17,9 +17,10 @@ MonoBehaviour:
   description: A lucky coin reserved for testing new abilities and equipment.
   itemType: 2
   quality: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: e0d528aa996ec4c42a9e892499de814a, type: 3}
   maxStackSize: 20
   vendorValueCopper: 0
+  containerSlotCount: 0
   consumableType: 3
   restoreHealthAmount: 0
   restoreManaAmount: 0

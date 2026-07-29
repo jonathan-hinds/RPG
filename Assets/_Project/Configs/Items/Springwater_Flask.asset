@@ -17,12 +17,14 @@ MonoBehaviour:
   description: A stoppered flask of clean valley springwater.
   itemType: 2
   quality: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 51d62e7be76155d4a89a92c2e97c61d7, type: 3}
   maxStackSize: 20
   vendorValueCopper: 8
+  containerSlotCount: 0
   consumableType: 2
   restoreHealthAmount: 0
   restoreManaAmount: 250
+  experienceRewardAmount: 0
   consumeDurationSeconds: 10
   requiresStationary: 1
   equipmentSlot: 4
@@ -40,3 +42,10 @@ MonoBehaviour:
     meleeMaxDamage: 7
     meleeAttackSpeed: 2
     meleeRange: 3
+  equipmentVisual: {fileID: 0}
+  weaponType: 0
+  weaponMinDamage: 0
+  weaponMaxDamage: 0
+  weaponSpeedSeconds: 2
+  shieldBlockValue: 0
+  allowedClasses:

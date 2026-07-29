@@ -18,7 +18,7 @@ MonoBehaviour:
     to equip it.
   itemType: 5
   quality: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b21dc5fa9a8991e4aa73b632d841f4a9, type: 3}
   maxStackSize: 1
   vendorValueCopper: 625
   containerSlotCount: 8

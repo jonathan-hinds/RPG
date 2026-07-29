@@ -17,12 +17,14 @@ MonoBehaviour:
   description: A warm sliver of carved valley stone.
   itemType: 4
   quality: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: c96d6cd7ba088fd42a29771ca0326826, type: 3}
   maxStackSize: 10
   vendorValueCopper: 0
+  containerSlotCount: 0
   consumableType: 0
   restoreHealthAmount: 0
   restoreManaAmount: 0
+  experienceRewardAmount: 0
   consumeDurationSeconds: 10
   requiresStationary: 1
   equipmentSlot: 4
@@ -40,3 +42,10 @@ MonoBehaviour:
     meleeMaxDamage: 7
     meleeAttackSpeed: 2
     meleeRange: 3
+  equipmentVisual: {fileID: 0}
+  weaponType: 0
+  weaponMinDamage: 0
+  weaponMaxDamage: 0
+  weaponSpeedSeconds: 2
+  shieldBlockValue: 0
+  allowedClasses:
