@@ -63,6 +63,15 @@ At runtime, attachment visuals use `Socket Name` and `Model Prefab` while the ch
 | Trailbreaker's Boots (Cloth) | Feet | Body Part | Feet | `EV_Trailbreakers_Boots_Cloth` | Item-specific cloth model, material, and texture |
 | Trailbreaker's Boots (Leather) | Feet | Body Part | Feet | `EV_Trailbreakers_Boots_Leather` | Item-specific leather skinned model and texture |
 | Trailbreaker's Boots (Mail) | Feet | Body Part | Feet | `EV_Trailbreakers_Boots_Mail` | Item-specific mail skinned model and texture |
+| Tribal Seer's Vestments (Cloth) | Chest | Body Part | Torso | `EV_Tribal_Seers_Vestments` | Item-specific Tribal skinned model, material, texture, and icon |
+| Tribal Seer's Legwraps (Cloth) | Legs | Body Part | Legs | `EV_Tribal_Seers_Legwraps` | Item-specific Tribal skinned model, material, texture, and icon |
+| Tribal Mystic's Grips (Leather) | Hands | Body Part | Hands | `EV_Tribal_Mystics_Grips` | Item-specific Tribal skinned model, material, texture, and icon |
+| Tribal Mystic's Treads (Leather) | Feet | Body Part | Feet | `EV_Tribal_Mystics_Treads` | Item-specific Tribal skinned model, material, texture, and icon |
+| Scalehunter Grips (Leather) | Hands | Body Part | Hands | `EV_Scalehunter_Grips` | Item-specific Scale skinned model, material, texture, and icon |
+| Scalehunter Treads (Leather) | Feet | Body Part | Feet | `EV_Scalehunter_Treads` | Item-specific Scale skinned model, material, texture, and icon |
+| Scaleguard Legguards (Mail) | Legs | Body Part | Legs | `EV_Scaleguard_Legguards` | Item-specific Scale skinned model, material, texture, and icon |
+| Scaleguard Hauberk (Mail) | Chest | Body Part | Torso | `EV_Scaleguard_Hauberk` | Item-specific Scale skinned model, material, texture, and icon |
+
 ## Weapon Coverage
 
 Every weapon has an independent visual bundle. Some currently have identical geometry and textures, but no gameplay item references another item's visual assets.

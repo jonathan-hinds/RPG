@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36c86b9860fba74499c875bfa8a887e9, type: 3}
+  m_Name: Scalehunter_Grips
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Inventory.MMOItemDefinition
+  itemId: scalehunter_grips
+  displayName: Scalehunter Grips
+  description: Leather grips plated to reward a quick and forceful hand.
+  itemType: 3
+  quality: 2
+  icon: {fileID: 21300000, guid: d256ddd7c36de084db0871a3d90fa96a, type: 3}
+  maxStackSize: 1
+  vendorValueCopper: 32
+  containerSlotCount: 0
+  consumableType: 0
+  restoreHealthAmount: 0
+  restoreManaAmount: 0
+  experienceRewardAmount: 0
+  consumeDurationSeconds: 10
+  requiresStationary: 1
+  equipmentSlot: 8
+  armorWeight: 1
+  requiredLevel: 4
+  statBonuses:
+    stamina: 0
+    strength: 1
+    agility: 1
+    intellect: 0
+    spirit: 0
+    armor: 4
+    attackPower: 0
+    spellPower: 0
+    meleeMinDamage: 0
+    meleeMaxDamage: 0
+    meleeAttackSpeed: 2
+    meleeRange: 3
+  equipmentVisual: {fileID: 11400000, guid: 959bf984e02b67043beff26976e69bc5, type: 2}
+  weaponType: 0
+  weaponMinDamage: 0
+  weaponMaxDamage: 0
+  weaponSpeedSeconds: 2
+  shieldBlockValue: 0
+  allowedClasses: 

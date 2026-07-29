@@ -61,7 +61,9 @@ namespace RPGClone.UI
                 return false;
             }
 
-            return MMOItemClassCompatibility.IsRestricted(item, customization.CharacterClass);
+            MMOGameplaySessionService.LocalPlayer.TryGetComponent(out MMOCharacterIdentity identity);
+            return MMOItemClassCompatibility.IsRestricted(item, customization.CharacterClass)
+                || identity != null && identity.Level < item.RequiredLevel;
         }
 
         public static Color GetQualityTextColor(MMOItemQuality quality)

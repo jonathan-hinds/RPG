@@ -68,6 +68,12 @@ namespace RPGClone.Inventory
                 return false;
             }
 
+            MMOCharacterIdentity identity = GetComponent<MMOCharacterIdentity>();
+            if (identity != null && identity.Level < item.RequiredLevel)
+            {
+                return false;
+            }
+
             MMOCharacterCustomization customization = GetComponent<MMOCharacterCustomization>();
             MMOPlayableClass characterClass = customization != null ? customization.CharacterClass : MMOPlayableClass.Warrior;
             if (!MMOItemClassCompatibility.CanEquip(item, characterClass))
@@ -176,7 +182,7 @@ namespace RPGClone.Inventory
 
                 if (removeStatBonuses && identity != null && equippedItem.Item != null)
                 {
-                    identity.RemoveStatGains(equippedItem.Item.StatBonuses, true);
+                    identity.RemoveStatGains(equippedItem.Item.StatBonuses, false);
                 }
 
                 equippedItem.Configure(equippedItem.SlotType, null);
@@ -225,7 +231,7 @@ namespace RPGClone.Inventory
             MMOCharacterIdentity identity = GetComponent<MMOCharacterIdentity>();
             if (removeStatBonuses && identity != null)
             {
-                identity.RemoveStatGains(slot.Item.StatBonuses, true);
+                identity.RemoveStatGains(slot.Item.StatBonuses, false);
             }
 
             slot.Configure(slotType, null);
@@ -241,7 +247,7 @@ namespace RPGClone.Inventory
                     MMOEquippedItemSlot displacedSlot = GetOrCreateSlot(displacedSlots[i]);
                     if (identity != null && displacedSlot.Item != null)
                     {
-                        identity.RemoveStatGains(displacedSlot.Item.StatBonuses, true);
+                        identity.RemoveStatGains(displacedSlot.Item.StatBonuses, false);
                     }
 
                     displacedSlot.Configure(displacedSlots[i], null);
@@ -252,7 +258,7 @@ namespace RPGClone.Inventory
             targetSlot.Configure(item.EquipmentSlot, item);
             if (identity != null)
             {
-                identity.ApplyStatGains(item.StatBonuses, true);
+                identity.ApplyStatGains(item.StatBonuses, false);
             }
         }
 

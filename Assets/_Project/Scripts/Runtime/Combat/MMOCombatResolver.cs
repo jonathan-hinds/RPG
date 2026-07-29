@@ -34,6 +34,12 @@ namespace RPGClone.Combat
                 return 0;
             }
 
+            if (RollDodge(target.Identity))
+            {
+                target.NotifyMiss(source, ability);
+                return 0;
+            }
+
             float amount = effect.FlatAmount + CalculateWeaponDamage(source.Identity, weapon, effect.Coefficient, weaponSkill);
             int roundedAmount = Mathf.Max(0, Mathf.RoundToInt(amount));
             bool isCritical = RollCritical(source.Identity);
@@ -51,6 +57,26 @@ namespace RPGClone.Combat
             MMOWeaponSkillController skillController = GetOrAddWeaponSkills(source.Identity);
             skillController?.TryAwardSkillUp(weapon.WeaponType);
             return roundedAmount;
+        }
+
+        public static int ApplyAbilityDamage(
+            MMOCombatant source,
+            MMOCombatant target,
+            MMOAbilityDefinition ability,
+            MMOAbilityEffectDefinition effect,
+            int amount)
+        {
+            if (target == null || amount <= 0)
+            {
+                return 0;
+            }
+
+            bool canSpellCrit = effect != null
+                && effect.EffectType == MMOAbilityEffectType.Damage
+                && effect.DamageSchool != MMODamageSchool.Physical;
+            bool isCritical = canSpellCrit && RollSpellCritical(source != null ? source.Identity : null);
+            target.ApplyDamage(source, ability, amount, isCritical);
+            return amount;
         }
 
         public static MMOWeaponSnapshot GetWeaponSnapshot(MMOCharacterIdentity identity)
@@ -157,6 +183,20 @@ namespace RPGClone.Combat
         {
             float criticalChance = source != null && source.Stats != null ? source.Stats.CriticalStrikeChance : 0f;
             return Random.value < Mathf.Clamp(criticalChance, 0f, 100f) / 100f;
+        }
+
+        private static bool RollSpellCritical(MMOCharacterIdentity source)
+        {
+            float criticalChance = source != null && source.Stats != null
+                ? source.Stats.SpellCriticalStrikeChance
+                : 0f;
+            return Random.value < Mathf.Clamp(criticalChance, 0f, 100f) / 100f;
+        }
+
+        private static bool RollDodge(MMOCharacterIdentity target)
+        {
+            float dodgeChance = target != null && target.Stats != null ? target.Stats.DodgeChance : 0f;
+            return Random.value < Mathf.Clamp(dodgeChance, 0f, 100f) / 100f;
         }
 
         private static float CalculateMissChance(int weaponSkill, int defenseSkill)

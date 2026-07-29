@@ -16,6 +16,11 @@ namespace RPGClone.Characters
         [SerializeField] private MMOCharacterResource health = new(100);
         [SerializeField] private MMOCharacterResource mana = new(100);
 
+        [NonSerialized] private MMOCharacterStats baselineStats;
+        [NonSerialized] private int baselineMaxHealth;
+        [NonSerialized] private int baselineMaxMana;
+        [NonSerialized] private bool baselineInitialized;
+
         public event Action<MMOCharacterIdentity> Changed;
 
         public MMOCharacterProfile Profile => profile;
@@ -78,9 +83,11 @@ namespace RPGClone.Characters
                 selectable = profile.Selectable;
                 stats ??= new MMOCharacterStats();
                 stats.CopyFrom(profile.BaseStats);
+                InitializeStatBaseline(profile.BaseStats, profile.MaxHealth, profile.MaxMana);
+                ApplyDerivedStatContext();
 
-                int maxHealth = CalculateMaxHealth(profile.MaxHealth);
-                int maxMana = CalculateMaxMana(profile.MaxMana);
+                int maxHealth = CalculateMaxHealth();
+                int maxMana = CalculateMaxMana();
                 int healthCurrent = resetResources ? maxHealth : health.CurrentValue;
                 int manaCurrent = resetResources ? maxMana : mana.CurrentValue;
                 health.Configure(maxHealth, healthCurrent, false);
@@ -120,8 +127,10 @@ namespace RPGClone.Characters
                 stats.CopyFrom(newStats);
             }
 
-            int maxHealth = CalculateMaxHealth(Mathf.Max(1, newMaxHealth));
-            int maxMana = CalculateMaxMana(Mathf.Max(0, newMaxMana));
+            InitializeStatBaseline(stats, Mathf.Max(1, newMaxHealth), Mathf.Max(0, newMaxMana));
+            ApplyDerivedStatContext();
+            int maxHealth = CalculateMaxHealth();
+            int maxMana = CalculateMaxMana();
             health.Configure(maxHealth, resetResources ? maxHealth : health.CurrentValue, false);
             mana.Configure(maxMana, resetResources ? maxMana : mana.CurrentValue, false);
             ClampValues();
@@ -143,6 +152,7 @@ namespace RPGClone.Characters
             }
 
             level = clampedLevel;
+            ApplyDerivedStatContext();
             Changed?.Invoke(this);
         }
 
@@ -150,6 +160,7 @@ namespace RPGClone.Characters
         {
             stats ??= new MMOCharacterStats();
             stats.Add(statGains);
+            ApplyDerivedStatContext();
             RecalculateResourceMaximums(restoreResources);
             Changed?.Invoke(this);
         }
@@ -158,6 +169,7 @@ namespace RPGClone.Characters
         {
             stats ??= new MMOCharacterStats();
             stats.Subtract(statGains);
+            ApplyDerivedStatContext();
             RecalculateResourceMaximums(restoreResources);
             Changed?.Invoke(this);
         }
@@ -166,6 +178,7 @@ namespace RPGClone.Characters
         {
             stats ??= new MMOCharacterStats();
             statGrowth?.ApplyTo(stats);
+            ApplyDerivedStatContext();
             RecalculateResourceMaximums(restoreResources);
             Changed?.Invoke(this);
         }
@@ -199,26 +212,82 @@ namespace RPGClone.Characters
             stats ??= new MMOCharacterStats();
             health ??= new MMOCharacterResource(100);
             mana ??= new MMOCharacterResource(100);
+            EnsureStatBaseline();
+            ApplyDerivedStatContext();
             health.Configure(health.MaxValue, health.CurrentValue, false);
             mana.Configure(mana.MaxValue, mana.CurrentValue, false);
         }
 
         private void RecalculateResourceMaximums(bool restoreResources)
         {
-            int maxHealth = CalculateMaxHealth(profile != null ? profile.MaxHealth : health.MaxValue);
-            int maxMana = CalculateMaxMana(profile != null ? profile.MaxMana : mana.MaxValue);
-            health.Configure(maxHealth, restoreResources ? maxHealth : health.CurrentValue, false);
-            mana.Configure(maxMana, restoreResources ? maxMana : mana.CurrentValue, false);
+            EnsureStatBaseline();
+            int maxHealth = CalculateMaxHealth();
+            int maxMana = CalculateMaxMana();
+            float healthPercentage = health.Normalized;
+            float manaPercentage = mana.Normalized;
+            health.Configure(
+                maxHealth,
+                restoreResources ? maxHealth : Mathf.RoundToInt(maxHealth * healthPercentage),
+                false);
+            mana.Configure(
+                maxMana,
+                restoreResources ? maxMana : Mathf.RoundToInt(maxMana * manaPercentage),
+                false);
         }
 
-        private int CalculateMaxHealth(int baseValue)
+        private int CalculateMaxHealth()
         {
-            return Mathf.Max(1, baseValue + (stats != null ? stats.MaxHealthBonus : 0));
+            int staminaDelta = stats != null && baselineStats != null
+                ? stats.Stamina - baselineStats.Stamina
+                : 0;
+            return Mathf.Max(1, baselineMaxHealth + staminaDelta * 10);
         }
 
-        private int CalculateMaxMana(int baseValue)
+        private int CalculateMaxMana()
         {
-            return Mathf.Max(0, baseValue + (stats != null ? stats.MaxManaBonus : 0));
+            if (baselineMaxMana <= 0)
+            {
+                return 0;
+            }
+
+            int intellectDelta = stats != null && baselineStats != null
+                ? stats.Intellect - baselineStats.Intellect
+                : 0;
+            return Mathf.Max(0, baselineMaxMana + intellectDelta * 15);
+        }
+
+        private void EnsureStatBaseline()
+        {
+            if (baselineInitialized)
+            {
+                return;
+            }
+
+            MMOCharacterStats sourceStats = profile != null ? profile.BaseStats : stats;
+            int sourceHealth = profile != null ? profile.MaxHealth : health.MaxValue;
+            int sourceMana = profile != null ? profile.MaxMana : mana.MaxValue;
+            InitializeStatBaseline(sourceStats, sourceHealth, sourceMana);
+        }
+
+        private void InitializeStatBaseline(MMOCharacterStats sourceStats, int maxHealth, int maxMana)
+        {
+            baselineStats ??= new MMOCharacterStats();
+            baselineStats.CopyFrom(sourceStats);
+            baselineMaxHealth = Mathf.Max(1, maxHealth);
+            baselineMaxMana = Mathf.Max(0, maxMana);
+            baselineInitialized = true;
+        }
+
+        private void ApplyDerivedStatContext()
+        {
+            if (stats == null)
+            {
+                return;
+            }
+
+            MMOCharacterCustomization customization = GetComponent<MMOCharacterCustomization>();
+            stats.SetDerivedStatContext(
+                customization != null ? customization.CharacterClass : MMOPlayableClass.Warrior);
         }
     }
 

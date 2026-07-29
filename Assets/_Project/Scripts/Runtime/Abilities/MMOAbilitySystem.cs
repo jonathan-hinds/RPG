@@ -816,7 +816,7 @@ namespace RPGClone.Abilities
                 }
                 else
                 {
-                    target.ApplyDamage(combatant, ability, amount);
+                    MMOCombatResolver.ApplyAbilityDamage(combatant, target, ability, effect, amount);
                 }
             }
 
@@ -888,7 +888,7 @@ namespace RPGClone.Abilities
                 }
                 else
                 {
-                    candidate.ApplyDamage(combatant, ability, amount);
+                    MMOCombatResolver.ApplyAbilityDamage(combatant, candidate, ability, effect, amount);
                 }
             }
         }

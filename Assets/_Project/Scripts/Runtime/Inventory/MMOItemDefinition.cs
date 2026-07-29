@@ -29,6 +29,7 @@ namespace RPGClone.Inventory
         [Header("Equipment")]
         [SerializeField] private MMOEquipmentSlotType equipmentSlot = MMOEquipmentSlotType.Chest;
         [SerializeField] private MMOArmorWeight armorWeight = MMOArmorWeight.Cloth;
+        [SerializeField, Min(1)] private int requiredLevel = 1;
         [SerializeField] private MMOCharacterStats statBonuses = new();
         [SerializeField] private MMOEquipmentVisualDefinition equipmentVisual;
         [Header("Weapon And Shield")]
@@ -57,6 +58,7 @@ namespace RPGClone.Inventory
         public bool RequiresStationary => requiresStationary;
         public MMOEquipmentSlotType EquipmentSlot => equipmentSlot;
         public MMOArmorWeight ArmorWeight => armorWeight;
+        public int RequiredLevel => Mathf.Max(1, requiredLevel);
         public MMOCharacterStats StatBonuses => statBonuses;
         public MMOEquipmentVisualDefinition EquipmentVisual => equipmentVisual;
         public MMOWeaponType WeaponType => weaponType;
@@ -212,6 +214,11 @@ namespace RPGClone.Inventory
         public void SetEquipmentVisual(MMOEquipmentVisualDefinition newEquipmentVisual)
         {
             equipmentVisual = newEquipmentVisual;
+        }
+
+        public void SetRequiredLevel(int newRequiredLevel)
+        {
+            requiredLevel = Mathf.Max(1, newRequiredLevel);
         }
 
         public void ConfigureWeapon(

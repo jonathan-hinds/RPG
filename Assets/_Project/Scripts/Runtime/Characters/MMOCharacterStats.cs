@@ -11,6 +11,11 @@ namespace RPGClone.Characters
         private const int ManaPerIntellect = 15;
         private const float HealthRegenPerSpiritPerSecond = 0.35f;
         private const float ManaRegenPerSpiritPerSecond = 0.18f;
+        private const float AgilityPerMeleeCriticalPercent = 20f;
+        private const float AgilityPerDodgePercent = 20f;
+        private const float BaseMeleeCriticalStrikeChance = 5f;
+        private const float BaseSpellCriticalStrikeChance = 5f;
+        private const float BaseDodgeChance = 3f;
 
         [Header("Primary")]
         [SerializeField, Min(0)] private int stamina = 10;
@@ -34,6 +39,7 @@ namespace RPGClone.Characters
         [NonSerialized] private float runtimeHealthRegenMultiplier = 1f;
         [NonSerialized] private float runtimeManaRegenMultiplier = 1f;
         [NonSerialized] private float runtimeMovementSpeedMultiplier = 1f;
+        [NonSerialized] private MMOPlayableClass derivedStatClass = MMOPlayableClass.Warrior;
 
         public int Stamina => stamina;
         public int Strength => strength;
@@ -44,8 +50,10 @@ namespace RPGClone.Characters
         public int BaseAttackPower => attackPower;
         public int BaseSpellPower => spellPower;
         public int Armor => armor + Agility * 2;
-        public int AttackPower => Mathf.RoundToInt((attackPower + Strength * 2 + Mathf.FloorToInt(Agility * 0.5f) + runtimeAttackPowerBonus) * Mathf.Max(0.1f, runtimeAttackPowerMultiplier));
-        public int SpellPower => spellPower + Mathf.FloorToInt(Intellect * 0.5f);
+        public int AttackPower => Mathf.RoundToInt(
+            (attackPower + Strength * GetAttackPowerPerStrength(derivedStatClass) + runtimeAttackPowerBonus)
+            * Mathf.Max(0.1f, runtimeAttackPowerMultiplier));
+        public int SpellPower => spellPower;
         public float MeleeMinDamage => meleeMinDamage;
         public float MeleeMaxDamage => Mathf.Max(meleeMinDamage, meleeMaxDamage);
         public float MeleeAttackSpeed => meleeAttackSpeed / Mathf.Max(0.1f, runtimeAttackSpeedMultiplier);
@@ -56,8 +64,18 @@ namespace RPGClone.Characters
         public float HealthRegenPerSecond => Spirit * HealthRegenPerSpiritPerSecond * Mathf.Max(0.1f, runtimeHealthRegenMultiplier);
         public float ManaRegenPerSecond => (Spirit * ManaRegenPerSpiritPerSecond + Intellect * 0.03f) * Mathf.Max(0.1f, runtimeManaRegenMultiplier);
         public float MovementSpeedMultiplier => Mathf.Max(0.1f, runtimeMovementSpeedMultiplier);
-        public float CriticalStrikeChance => Mathf.Clamp(5f + Agility * 0.03f, 0f, 75f);
-        public float DodgeChance => Mathf.Clamp(3f + Agility * 0.05f, 0f, 75f);
+        public float CriticalStrikeChance => Mathf.Clamp(
+            BaseMeleeCriticalStrikeChance + Agility / AgilityPerMeleeCriticalPercent,
+            0f,
+            75f);
+        public float SpellCriticalStrikeChance => Mathf.Clamp(
+            BaseSpellCriticalStrikeChance + Intellect / GetIntellectPerSpellCriticalPercent(derivedStatClass),
+            0f,
+            75f);
+        public float DodgeChance => Mathf.Clamp(
+            BaseDodgeChance + Agility / AgilityPerDodgePercent,
+            0f,
+            75f);
 
         public float RollMeleeWeaponDamage()
         {
@@ -87,19 +105,20 @@ namespace RPGClone.Characters
             float newMeleeAttackSpeed,
             float newMeleeRange)
         {
-            stamina = Mathf.Max(0, newStamina);
-            strength = Mathf.Max(0, newStrength);
-            agility = Mathf.Max(0, newAgility);
-            intellect = Mathf.Max(0, newIntellect);
-            spirit = Mathf.Max(0, newSpirit);
-            armor = Mathf.Max(0, newArmor);
-            attackPower = Mathf.Max(0, newAttackPower);
-            spellPower = Mathf.Max(0, newSpellPower);
-            meleeMinDamage = Mathf.Max(0f, newMeleeMinDamage);
-            meleeMaxDamage = Mathf.Max(meleeMinDamage, newMeleeMaxDamage);
-            meleeAttackSpeed = Mathf.Max(0.1f, newMeleeAttackSpeed);
-            meleeRange = Mathf.Max(0.1f, newMeleeRange);
-            SetRuntimeModifiers(0, 1f, 1f, 1f, 1f, 1f);
+            SetValues(
+                newStamina,
+                newStrength,
+                newAgility,
+                newIntellect,
+                newSpirit,
+                newArmor,
+                newAttackPower,
+                newSpellPower,
+                newMeleeMinDamage,
+                newMeleeMaxDamage,
+                newMeleeAttackSpeed,
+                newMeleeRange,
+                true);
         }
 
         public void CopyFrom(MMOCharacterStats source)
@@ -131,7 +150,7 @@ namespace RPGClone.Characters
                 return;
             }
 
-            Configure(
+            SetValues(
                 stamina + source.stamina,
                 strength + source.strength,
                 agility + source.agility,
@@ -143,7 +162,8 @@ namespace RPGClone.Characters
                 meleeMinDamage + source.meleeMinDamage,
                 meleeMaxDamage + source.meleeMaxDamage,
                 meleeAttackSpeed,
-                meleeRange);
+                meleeRange,
+                false);
         }
 
         public void Subtract(MMOCharacterStats source)
@@ -153,7 +173,7 @@ namespace RPGClone.Characters
                 return;
             }
 
-            Configure(
+            SetValues(
                 stamina - source.stamina,
                 strength - source.strength,
                 agility - source.agility,
@@ -165,7 +185,8 @@ namespace RPGClone.Characters
                 meleeMinDamage - source.meleeMinDamage,
                 meleeMaxDamage - source.meleeMaxDamage,
                 meleeAttackSpeed,
-                meleeRange);
+                meleeRange,
+                false);
         }
 
         public void AddValues(
@@ -180,7 +201,7 @@ namespace RPGClone.Characters
             float meleeMinDamageBonus,
             float meleeMaxDamageBonus)
         {
-            Configure(
+            SetValues(
                 stamina + staminaBonus,
                 strength + strengthBonus,
                 agility + agilityBonus,
@@ -192,7 +213,13 @@ namespace RPGClone.Characters
                 meleeMinDamage + meleeMinDamageBonus,
                 meleeMaxDamage + meleeMaxDamageBonus,
                 meleeAttackSpeed,
-                meleeRange);
+                meleeRange,
+                false);
+        }
+
+        public void SetDerivedStatContext(MMOPlayableClass characterClass)
+        {
+            derivedStatClass = characterClass;
         }
 
         public void SetRuntimeModifiers(int attackPowerBonusValue, float attackPowerMultiplierValue, float attackSpeedMultiplierValue, float healthRegenMultiplierValue)
@@ -213,6 +240,54 @@ namespace RPGClone.Characters
             runtimeHealthRegenMultiplier = Mathf.Max(0.1f, healthRegenMultiplierValue);
             runtimeManaRegenMultiplier = Mathf.Max(0.1f, manaRegenMultiplierValue);
             runtimeMovementSpeedMultiplier = Mathf.Max(0.1f, movementSpeedMultiplierValue);
+        }
+
+        private void SetValues(
+            int newStamina,
+            int newStrength,
+            int newAgility,
+            int newIntellect,
+            int newSpirit,
+            int newArmor,
+            int newAttackPower,
+            int newSpellPower,
+            float newMeleeMinDamage,
+            float newMeleeMaxDamage,
+            float newMeleeAttackSpeed,
+            float newMeleeRange,
+            bool resetRuntimeModifiers)
+        {
+            stamina = Mathf.Max(0, newStamina);
+            strength = Mathf.Max(0, newStrength);
+            agility = Mathf.Max(0, newAgility);
+            intellect = Mathf.Max(0, newIntellect);
+            spirit = Mathf.Max(0, newSpirit);
+            armor = Mathf.Max(0, newArmor);
+            attackPower = Mathf.Max(0, newAttackPower);
+            spellPower = Mathf.Max(0, newSpellPower);
+            meleeMinDamage = Mathf.Max(0f, newMeleeMinDamage);
+            meleeMaxDamage = Mathf.Max(meleeMinDamage, newMeleeMaxDamage);
+            meleeAttackSpeed = Mathf.Max(0.1f, newMeleeAttackSpeed);
+            meleeRange = Mathf.Max(0.1f, newMeleeRange);
+            if (resetRuntimeModifiers)
+            {
+                SetRuntimeModifiers(0, 1f, 1f, 1f, 1f, 1f);
+            }
+        }
+
+        private static int GetAttackPowerPerStrength(MMOPlayableClass characterClass)
+        {
+            return characterClass == MMOPlayableClass.Warrior || characterClass == MMOPlayableClass.Shaman ? 2 : 1;
+        }
+
+        private static float GetIntellectPerSpellCriticalPercent(MMOPlayableClass characterClass)
+        {
+            return characterClass switch
+            {
+                MMOPlayableClass.Mage => 59.5f,
+                MMOPlayableClass.Shaman => 59.2f,
+                _ => 60f
+            };
         }
     }
 }

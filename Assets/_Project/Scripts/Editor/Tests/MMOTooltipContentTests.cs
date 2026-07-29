@@ -59,8 +59,8 @@ namespace RPGClone.EditorTests
                     .Lines
                     .Select(line => line.Text));
 
-                Assert.That(firstText, Does.Contain("Deals 18 Fire damage."));
-                Assert.That(secondText, Does.Contain("Deals 35 Fire damage."));
+                Assert.That(firstText, Does.Contain("Deals 15 Fire damage."));
+                Assert.That(secondText, Does.Contain("Deals 30 Fire damage."));
                 Assert.That(secondText, Is.Not.EqualTo(firstText));
             }
             finally

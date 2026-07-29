@@ -216,6 +216,11 @@ namespace RPGClone.UI
                     AddLine(classLine, 11, FontStyle.Normal, Color.white);
                 }
 
+                if (item.RequiredLevel > 1)
+                {
+                    AddLine($"Requires Level {item.RequiredLevel}", 11, FontStyle.Normal, Color.white);
+                }
+
                 foreach (string statLine in BuildStatLines(item.StatBonuses))
                 {
                     AddLine(statLine, 11, FontStyle.Normal, new Color(0.18f, 1f, 0.18f, 1f));
@@ -282,9 +287,9 @@ namespace RPGClone.UI
             if (stats.Agility > 0) yield return $"+{stats.Agility} Agility";
             if (stats.Intellect > 0) yield return $"+{stats.Intellect} Intellect";
             if (stats.Spirit > 0) yield return $"+{stats.Spirit} Spirit";
-            if (stats.Armor > 0) yield return $"+{stats.Armor} Armor";
-            if (stats.AttackPower > 0) yield return $"+{stats.AttackPower} Attack Power";
-            if (stats.SpellPower > 0) yield return $"+{stats.SpellPower} Spell Power";
+            if (stats.BaseArmor > 0) yield return $"+{stats.BaseArmor} Armor";
+            if (stats.BaseAttackPower > 0) yield return $"+{stats.BaseAttackPower} Attack Power";
+            if (stats.BaseSpellPower > 0) yield return $"+{stats.BaseSpellPower} Spell Power";
         }
 
         private static string FormatWeaponHand(MMOItemDefinition item)
