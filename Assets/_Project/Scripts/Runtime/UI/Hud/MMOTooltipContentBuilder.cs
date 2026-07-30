@@ -16,7 +16,8 @@ namespace RPGClone.UI
         public static MMOTooltipContent BuildItem(
             MMOItemDefinition item,
             MMOQuestLog questLog = null,
-            MMOTooltipTheme theme = null)
+            MMOTooltipTheme theme = null,
+            int? viewerLevel = null)
         {
             if (item == null)
             {
@@ -28,7 +29,7 @@ namespace RPGClone.UI
 
             if (item.IsEquipment)
             {
-                AddEquipmentDetails(content, item, theme);
+                AddEquipmentDetails(content, item, theme, viewerLevel);
             }
             else
             {
@@ -185,7 +186,8 @@ namespace RPGClone.UI
         private static void AddEquipmentDetails(
             MMOTooltipContent content,
             MMOItemDefinition item,
-            MMOTooltipTheme theme)
+            MMOTooltipTheme theme,
+            int? viewerLevel)
         {
             if (item.IsWeapon)
             {
@@ -232,6 +234,18 @@ namespace RPGClone.UI
             if (!string.IsNullOrWhiteSpace(classLine))
             {
                 content.Add(classLine, theme.BodyFontSize, FontStyle.Normal, theme.PrimaryText, theme.SectionSpacing);
+            }
+
+            if (item.RequiredLevel > 1)
+            {
+                bool requirementMet = !viewerLevel.HasValue
+                    || viewerLevel.Value >= item.RequiredLevel;
+                content.Add(
+                    $"Requires Level {item.RequiredLevel}",
+                    theme.BodyFontSize,
+                    FontStyle.Normal,
+                    requirementMet ? theme.PrimaryText : theme.NegativeText,
+                    string.IsNullOrWhiteSpace(classLine) ? theme.SectionSpacing : theme.LineSpacing);
             }
 
             bool hasStats = false;

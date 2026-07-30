@@ -209,6 +209,44 @@ namespace RPGClone.EditorTests
                 Object.DestroyImmediate(item);
             }
         }
+
+        [Test]
+        public void EquipmentTooltip_ShowsRequiredLevelAndHighlightsUnmetRequirement()
+        {
+            MMOItemDefinition item = ScriptableObject.CreateInstance<MMOItemDefinition>();
+            MMOCharacterStats bonuses = new();
+
+            try
+            {
+                item.ConfigureEquipment(
+                    "test_level_robe",
+                    "Aspirant Robe",
+                    string.Empty,
+                    MMOItemQuality.Uncommon,
+                    MMOEquipmentSlotType.Chest,
+                    MMOArmorWeight.Cloth,
+                    bonuses,
+                    10);
+                item.SetRequiredLevel(8);
+
+                MMOTooltipTheme theme = MMOTooltipTheme.LoadDefault();
+                MMOTooltipLine belowLevel = MMOTooltipContentBuilder
+                    .BuildItem(item, theme: theme, viewerLevel: 7)
+                    .Lines
+                    .Single(line => line.Text == "Requires Level 8");
+                MMOTooltipLine atLevel = MMOTooltipContentBuilder
+                    .BuildItem(item, theme: theme, viewerLevel: 8)
+                    .Lines
+                    .Single(line => line.Text == "Requires Level 8");
+
+                Assert.That(belowLevel.Color, Is.EqualTo(theme.NegativeText));
+                Assert.That(atLevel.Color, Is.EqualTo(theme.PrimaryText));
+            }
+            finally
+            {
+                Object.DestroyImmediate(item);
+            }
+        }
     }
 }
 #endif

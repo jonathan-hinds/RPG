@@ -85,10 +85,15 @@ namespace RPGClone.UI
         {
             MMOQuestLog questLog = null;
             MMOGameplaySessionService.LocalPlayer.TryGetComponent(out questLog);
+            MMOCharacterIdentity viewer = MMOGameplaySessionService.LocalPlayer.Identity;
+            Func<MMOTooltipContent> provider = () => MMOTooltipContentBuilder.BuildItem(
+                item,
+                questLog,
+                viewerLevel: viewer != null ? viewer.Level : null);
             ResolvePresenter()?.Show(
-                MMOTooltipContentBuilder.BuildItem(item, questLog),
+                provider.Invoke(),
                 screenPosition,
-                null);
+                provider);
         }
 
         public static void ShowAbility(MMOAbilityDefinition ability, Vector2 screenPosition)
