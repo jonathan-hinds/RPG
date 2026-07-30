@@ -20,6 +20,8 @@ namespace RPGClone.Buffs
         public float ManaRegenMultiplier = 1f;
         public float MovementSpeedMultiplier = 1f;
         public float DamageTakenAsManaPercent;
+        public float MeleeDamageFromMaximumManaPercent;
+        public bool PreventsMovement;
         public int RestoreHealthTotal;
         public int RestoreManaTotal;
         public int PeriodicDamageTotal;
@@ -50,6 +52,8 @@ namespace RPGClone.Buffs
                 ManaRegenMultiplier = effect.ManaRegenMultiplier,
                 MovementSpeedMultiplier = effect.MovementSpeedMultiplier,
                 DamageTakenAsManaPercent = effect.DamageTakenAsManaPercent,
+                MeleeDamageFromMaximumManaPercent = effect.MeleeDamageFromMaximumManaPercent,
+                PreventsMovement = effect.PreventsMovement,
                 PeriodicDamageTotal = effect.EffectType == MMOAbilityEffectType.PeriodicDamage && source != null ? effect.CalculateAmount(source.Identity) : 0,
                 TickSeconds = effect.TickSeconds,
                 MaxStacks = effect.StackLimit,

@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a4c6e6fb7e37634a9d9ad2a12dc7533, type: 3}
+  m_Name: Warrior_Press_The_Attack
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Abilities.MMOAbilityDefinition
+  abilityId: warrior_press_the_attack
+  displayName: Press the Attack
+  description: Enter an aggressive stance for 6 sec, increasing your movement speed
+    by 20% and your attack speed by 15%.
+  icon: {fileID: 21300000, guid: 345046ed6d3379f49bb1a818ca181f12, type: 3}
+  targetType: 0
+  autoAttack: 0
+  toggled: 0
+  range: 0
+  cooldownSeconds: 30
+  manaCost: 0
+  manaCostSource: 0
+  maximumManaCostPercent: 0
+  castTimeSeconds: 0
+  channeled: 0
+  interruptOnMovement: 0
+  castOnSelfWhenFriendlyTargetInvalid: 0
+  resetCooldownOnCriticalHit: 0
+  animationStyle: 2
+  visualEffects: {fileID: 0}
+  areaRadius: 0
+  areaTargetFilter: 0
+  effects:
+  - effectType: 2
+    amountSource: 0
+    damageSchool: 0
+    flatAmount: 0
+    coefficient: 0
+    durationSeconds: 6
+    attackPowerBonus: 0
+    attackPowerMultiplier: 1
+    attackSpeedMultiplier: 1.15
+    healthRegenMultiplier: 1
+    manaRegenMultiplier: 1
+    movementSpeedMultiplier: 1.2
+    damageTakenAsManaPercent: 0
+    meleeDamageFromMaximumManaPercent: 0
+    preventsMovement: 0
+    harmfulEffect: 0
+    tickSeconds: 1
+    stackLimit: 1
+    chargeSpeed: 18
+    chargeStopDistance: 2.5
+    chargeImpactDelaySeconds: 0.18

@@ -26,6 +26,12 @@ namespace RPGClone.Abilities
         SpellPower = 3
     }
 
+    public enum MMOAbilityManaCostSource
+    {
+        Flat = 0,
+        MaximumManaPercentage = 1
+    }
+
     public enum MMODamageSchool
     {
         Physical = 0,

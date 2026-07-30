@@ -22,6 +22,21 @@ namespace RPGClone.Buffs
         public event Action<MMOCharacterBuffController> BuffsUpdated;
         public event Action<MMOCharacterBuffController, int> DamageAbsorbedAsMana;
         public IReadOnlyList<MMOActiveBuff> ActiveBuffs => activeBuffs;
+        public bool IsMovementPrevented
+        {
+            get
+            {
+                foreach (MMOActiveBuff buff in activeBuffs)
+                {
+                    if (buff.PreventsMovement)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
 
         private void Awake()
         {
@@ -150,6 +165,27 @@ namespace RPGClone.Buffs
             {
                 DamageAbsorbedAsMana?.Invoke(this, absorbedAmount);
             }
+        }
+
+        public int CalculateMeleeAttackBonusDamage()
+        {
+            if (identity == null)
+            {
+                EnsureReferences();
+            }
+
+            if (identity == null || identity.Mana.MaxValue <= 0)
+            {
+                return 0;
+            }
+
+            float maximumManaPercent = 0f;
+            foreach (MMOActiveBuff buff in activeBuffs)
+            {
+                maximumManaPercent += buff.MeleeDamageFromMaximumManaPercent;
+            }
+
+            return Mathf.Max(0, Mathf.RoundToInt(identity.Mana.MaxValue * maximumManaPercent));
         }
 
         private bool RemoveBuff(string buffId, bool stopAfterFirst)

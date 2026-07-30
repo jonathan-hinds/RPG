@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RPGClone.Characters;
 using RPGClone.Vfx;
 using UnityEngine;
 
@@ -17,6 +18,8 @@ namespace RPGClone.Abilities
         [SerializeField, Min(0f)] private float range = 3f;
         [SerializeField, Min(0f)] private float cooldownSeconds;
         [SerializeField, Min(0)] private int manaCost;
+        [SerializeField] private MMOAbilityManaCostSource manaCostSource = MMOAbilityManaCostSource.Flat;
+        [SerializeField, Range(0f, 1f)] private float maximumManaCostPercent;
         [SerializeField, Min(0f)] private float castTimeSeconds;
         [SerializeField] private bool channeled;
         [SerializeField] private bool interruptOnMovement;
@@ -39,6 +42,8 @@ namespace RPGClone.Abilities
         public float Range => range;
         public float CooldownSeconds => cooldownSeconds;
         public int ManaCost => manaCost;
+        public MMOAbilityManaCostSource ManaCostSource => manaCostSource;
+        public float MaximumManaCostPercent => Mathf.Clamp01(maximumManaCostPercent);
         public float CastTimeSeconds => castTimeSeconds;
         public bool IsChanneled => channeled && castTimeSeconds > 0f;
         public bool InterruptOnMovement => interruptOnMovement;
@@ -51,6 +56,17 @@ namespace RPGClone.Abilities
         public bool HasArea => areaRadius > 0f;
         public bool RequiresGroundTarget => targetType == MMOAbilityTargetType.GroundArea;
         public IReadOnlyList<MMOAbilityEffectDefinition> Effects => effects;
+
+        public int CalculateManaCost(MMOCharacterIdentity caster)
+        {
+            if (manaCostSource != MMOAbilityManaCostSource.MaximumManaPercentage)
+            {
+                return Mathf.Max(0, manaCost);
+            }
+
+            int maximumMana = caster != null ? caster.Mana.MaxValue : 0;
+            return Mathf.Max(0, Mathf.CeilToInt(maximumMana * MaximumManaCostPercent));
+        }
 
         public void Configure(
             string newAbilityId,
@@ -184,6 +200,8 @@ namespace RPGClone.Abilities
             range = Mathf.Max(0f, newRange);
             cooldownSeconds = Mathf.Max(0f, newCooldownSeconds);
             manaCost = Mathf.Max(0, newManaCost);
+            manaCostSource = MMOAbilityManaCostSource.Flat;
+            maximumManaCostPercent = 0f;
             castTimeSeconds = Mathf.Max(0f, newCastTimeSeconds);
             channeled = newChanneled;
             interruptOnMovement = newInterruptOnMovement;
@@ -197,6 +215,18 @@ namespace RPGClone.Abilities
         public void SetAnimationStyle(MMOAbilityAnimationStyle newAnimationStyle)
         {
             animationStyle = newAnimationStyle;
+        }
+
+        public void SetMaximumManaCost(float newMaximumManaCostPercent)
+        {
+            manaCost = 0;
+            manaCostSource = MMOAbilityManaCostSource.MaximumManaPercentage;
+            maximumManaCostPercent = Mathf.Clamp01(newMaximumManaCostPercent);
+        }
+
+        public void SetIcon(Sprite newIcon)
+        {
+            icon = newIcon;
         }
 
         public void SetVisualEffects(MMOAbilityVfxDefinition newVisualEffects)

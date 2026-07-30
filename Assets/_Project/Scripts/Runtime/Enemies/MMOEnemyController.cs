@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System;
 using RPGClone.Abilities;
 using RPGClone.Animation;
+using RPGClone.Buffs;
 using RPGClone.CharacterSelection;
 using RPGClone.Characters;
 using RPGClone.Combat;
@@ -46,6 +47,7 @@ namespace RPGClone.Enemies
         private MMOAbilitySystem abilitySystem;
         private MMOAutoAttackController autoAttackController;
         private MMOCreatureAnimator creatureAnimator;
+        private MMOCharacterBuffController buffController;
         private NavMeshAgent agent;
         private MMOLootableCorpse lootableCorpse;
         private MMOCharacterIdentity currentTarget;
@@ -151,6 +153,10 @@ namespace RPGClone.Enemies
             }
 
             EnsureAgentOnNavMesh();
+            if (IsMovementPrevented())
+            {
+                StopMoving();
+            }
 
             if (leashState.IsReturningHome)
             {
@@ -984,7 +990,7 @@ namespace RPGClone.Enemies
 
         private bool CanMoveOnNavMesh()
         {
-            return agent != null && agent.enabled && agent.isOnNavMesh;
+            return agent != null && agent.enabled && agent.isOnNavMesh && !IsMovementPrevented();
         }
 
         private bool ShouldRepathToTarget(Vector3 targetPosition)
@@ -995,11 +1001,21 @@ namespace RPGClone.Enemies
 
         private void StopMoving()
         {
-            if (CanMoveOnNavMesh())
+            if (agent != null && agent.enabled && agent.isOnNavMesh)
             {
                 agent.isStopped = true;
                 agent.ResetPath();
             }
+        }
+
+        private bool IsMovementPrevented()
+        {
+            if (buffController == null)
+            {
+                buffController = GetComponent<MMOCharacterBuffController>();
+            }
+
+            return buffController != null && buffController.IsMovementPrevented;
         }
 
         private void EnsureReferences()
@@ -1027,6 +1043,11 @@ namespace RPGClone.Enemies
             if (creatureAnimator == null)
             {
                 creatureAnimator = GetComponent<MMOCreatureAnimator>();
+            }
+
+            if (buffController == null)
+            {
+                buffController = GetComponent<MMOCharacterBuffController>();
             }
 
             if (agent == null)

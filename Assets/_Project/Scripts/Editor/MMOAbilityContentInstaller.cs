@@ -15,6 +15,10 @@ namespace RPGClone.EditorTools
         private const string ResourcesFolder = "Assets/Resources";
         private const string TrainerOfferFolder = ResourcesFolder + "/RPGClone";
         private const string TrainerOfferCatalogPath = TrainerOfferFolder + "/Starter_Trainer_Offer_Catalog.asset";
+        private const string AbilityIconFolder = RootFolder + "/UI/Icons/Abilities";
+        private const string EmpowerWeaponIconPath = AbilityIconFolder + "/Buffs/buffs_shaman_empower_weapon_256.png";
+        private const string FrostWaveIconPath = AbilityIconFolder + "/Active/abilities_mage_frost_wave_256.png";
+        private const string PressTheAttackIconPath = AbilityIconFolder + "/Buffs/buffs_warrior_press_the_attack_256.png";
 
         [MenuItem("Tools/RPG Clone/Abilities/Install Starter Ability Content")]
         public static void InstallStarterAbilityContent()
@@ -27,9 +31,32 @@ namespace RPGClone.EditorTools
             MMOAbilityDefinition gouge = GetOrCreateGouge();
             MMOAbilityDefinition arcaneMissile = GetOrCreateArcaneMissile();
             MMOAbilityDefinition earthquake = GetOrCreateEarthquake();
+            MMOAbilityDefinition empowerWeapon = GetOrCreateEmpowerWeapon();
+            MMOAbilityDefinition frostWave = GetOrCreateFrostWave();
+            MMOAbilityDefinition pressTheAttack = GetOrCreatePressTheAttack();
 
-            UpdateAbilityCatalog(new[] { thunderclap, flamestrike, frostShock, gouge, arcaneMissile, earthquake });
-            UpdateTrainerOfferCatalog(thunderclap, flamestrike, frostShock, gouge, arcaneMissile, earthquake);
+            UpdateAbilityCatalog(new[]
+            {
+                thunderclap,
+                flamestrike,
+                frostShock,
+                gouge,
+                arcaneMissile,
+                earthquake,
+                empowerWeapon,
+                frostWave,
+                pressTheAttack
+            });
+            UpdateTrainerOfferCatalog(
+                thunderclap,
+                flamestrike,
+                frostShock,
+                gouge,
+                arcaneMissile,
+                earthquake,
+                empowerWeapon,
+                frostWave,
+                pressTheAttack);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -214,6 +241,109 @@ namespace RPGClone.EditorTools
             return ability;
         }
 
+        private static MMOAbilityDefinition GetOrCreateEmpowerWeapon()
+        {
+            MMOAbilityDefinition ability = GetOrCreateAbility("Shaman_Empower_Weapon");
+            MMOAbilityEffectDefinition empowerment = new();
+            empowerment.ConfigureWeaponEmpowerment(300f, 0.10f);
+
+            ability.Configure(
+                "shaman_empower_weapon",
+                "Empower Weapon",
+                "Empowers your weapon with elemental energy, causing your melee attacks to deal additional damage equal to 10% of your maximum Mana.",
+                MMOAbilityTargetType.Self,
+                false,
+                false,
+                0f,
+                0f,
+                0,
+                0f,
+                false,
+                false,
+                new[] { empowerment });
+            ability.SetMaximumManaCost(0.20f);
+            ability.SetAnimationStyle(MMOAbilityAnimationStyle.SpellCast);
+            ability.SetVisualEffects(null);
+            ability.SetIcon(AssetDatabase.LoadAssetAtPath<Sprite>(EmpowerWeaponIconPath));
+            EditorUtility.SetDirty(ability);
+            return ability;
+        }
+
+        private static MMOAbilityDefinition GetOrCreateFrostWave()
+        {
+            MMOAbilityDefinition ability = GetOrCreateAbility("Mage_Frost_Wave");
+            MMOAbilityEffectDefinition damage = new();
+            damage.Configure(
+                MMOAbilityEffectType.Damage,
+                MMOAbilityAmountSource.SpellPower,
+                MMODamageSchool.Frost,
+                34f,
+                0.42f);
+
+            MMOAbilityEffectDefinition freeze = new();
+            freeze.ConfigureMovementPrevention(3f);
+
+            ability.Configure(
+                "mage_frost_wave",
+                "Frost Wave",
+                "Unleashes a wave of frost from beneath the caster, striking all enemies within 8 yards for 34 + 42% of Spell Power Frost damage and freezing them in place for 3 sec.",
+                MMOAbilityTargetType.Self,
+                false,
+                false,
+                0f,
+                20f,
+                0,
+                0f,
+                false,
+                false,
+                false,
+                false,
+                8f,
+                MMOAbilityAreaTargetFilter.Hostile,
+                new[] { damage, freeze });
+            ability.SetAnimationStyle(MMOAbilityAnimationStyle.SpellCast);
+            ability.SetVisualEffects(null);
+            ability.SetIcon(AssetDatabase.LoadAssetAtPath<Sprite>(FrostWaveIconPath));
+            EditorUtility.SetDirty(ability);
+            return ability;
+        }
+
+        private static MMOAbilityDefinition GetOrCreatePressTheAttack()
+        {
+            MMOAbilityDefinition ability = GetOrCreateAbility("Warrior_Press_The_Attack");
+            MMOAbilityEffectDefinition aggressiveStance = new();
+            aggressiveStance.ConfigureTemporaryStatModifier(
+                6f,
+                0,
+                1f,
+                1.15f,
+                1f,
+                1f,
+                0f,
+                1.20f,
+                false);
+
+            ability.Configure(
+                "warrior_press_the_attack",
+                "Press the Attack",
+                "Enter an aggressive stance for 6 sec, increasing your movement speed by 20% and your attack speed by 15%.",
+                MMOAbilityTargetType.Self,
+                false,
+                false,
+                0f,
+                30f,
+                0,
+                0f,
+                false,
+                false,
+                new[] { aggressiveStance });
+            ability.SetAnimationStyle(MMOAbilityAnimationStyle.WeaponAttack);
+            ability.SetVisualEffects(null);
+            ability.SetIcon(AssetDatabase.LoadAssetAtPath<Sprite>(PressTheAttackIconPath));
+            EditorUtility.SetDirty(ability);
+            return ability;
+        }
+
         private static MMOAbilityDefinition GetOrCreateAbility(string assetName)
         {
             string path = $"{AbilityFolder}/{assetName}.asset";
@@ -267,7 +397,10 @@ namespace RPGClone.EditorTools
             MMOAbilityDefinition frostShock,
             MMOAbilityDefinition gouge,
             MMOAbilityDefinition arcaneMissile,
-            MMOAbilityDefinition earthquake)
+            MMOAbilityDefinition earthquake,
+            MMOAbilityDefinition empowerWeapon,
+            MMOAbilityDefinition frostWave,
+            MMOAbilityDefinition pressTheAttack)
         {
             MMOTrainerOfferCatalog catalog = AssetDatabase.LoadAssetAtPath<MMOTrainerOfferCatalog>(TrainerOfferCatalogPath);
             if (catalog == null)
@@ -281,14 +414,17 @@ namespace RPGClone.EditorTools
             AddOffer(offers, "Warrior_Charge", MMOPlayableClass.Warrior, 3, 75);
             AddOffer(offers, thunderclap, MMOPlayableClass.Warrior, 5, 125);
             AddOffer(offers, gouge, MMOPlayableClass.Warrior, 7, 200);
+            AddOffer(offers, pressTheAttack, MMOPlayableClass.Warrior, 8, 250);
             AddOffer(offers, "Mage_Mage_Armor", MMOPlayableClass.Mage, 3, 75);
             AddOffer(offers, "Mage_Fire_Blast", MMOPlayableClass.Mage, 3, 75);
             AddOffer(offers, flamestrike, MMOPlayableClass.Mage, 5, 125);
             AddOffer(offers, arcaneMissile, MMOPlayableClass.Mage, 7, 200);
+            AddOffer(offers, frostWave, MMOPlayableClass.Mage, 8, 250);
             AddOffer(offers, "Shaman_Water_Shield", MMOPlayableClass.Shaman, 3, 75);
             AddOffer(offers, "Shaman_Lightning_Bolt", MMOPlayableClass.Shaman, 3, 75);
             AddOffer(offers, frostShock, MMOPlayableClass.Shaman, 5, 125);
             AddOffer(offers, earthquake, MMOPlayableClass.Shaman, 7, 200);
+            AddOffer(offers, empowerWeapon, MMOPlayableClass.Shaman, 8, 250);
 
             catalog.Configure(offers);
             EditorUtility.SetDirty(catalog);

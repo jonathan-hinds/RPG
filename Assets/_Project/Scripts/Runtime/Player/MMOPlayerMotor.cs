@@ -1,3 +1,4 @@
+using RPGClone.Buffs;
 using RPGClone.Characters;
 using RPGClone.Services;
 using System;
@@ -15,6 +16,7 @@ namespace RPGClone.Player
         private CharacterController characterController;
         private MMOInputReader inputReader;
         private MMOCharacterIdentity identity;
+        private MMOCharacterBuffController buffController;
         private readonly RaycastHit[] groundProbeHits = new RaycastHit[8];
         private Vector3 horizontalVelocity;
         private float verticalVelocity;
@@ -50,6 +52,7 @@ namespace RPGClone.Player
             characterController = GetComponent<CharacterController>();
             inputReader = GetComponent<MMOInputReader>();
             identity = GetComponent<MMOCharacterIdentity>();
+            buffController = GetComponent<MMOCharacterBuffController>();
             isGrounded = characterController.isGrounded;
             hasGroundContact = isGrounded;
             wasGrounded = isGrounded;
@@ -74,9 +77,14 @@ namespace RPGClone.Player
                 return;
             }
 
-            if (input.JumpPressed)
+            bool movementPrevented = IsMovementPrevented();
+            if (input.JumpPressed && !movementPrevented)
             {
                 jumpBufferedUntil = Time.time + config.jumpInputBufferSeconds;
+            }
+            else if (movementPrevented)
+            {
+                jumpBufferedUntil = float.NegativeInfinity;
             }
 
             bool canUseContactForMovement = Time.time >= ignoreGroundingUntil && verticalVelocity <= 0f;
@@ -88,8 +96,8 @@ namespace RPGClone.Player
             }
 
             UpdateFacing(input, config);
-            UpdateHorizontalVelocity(input, config, groundedForMovement);
-            bool jumpedThisFrame = UpdateVerticalVelocity(config, groundedForMovement);
+            UpdateHorizontalVelocity(input, config, groundedForMovement, movementPrevented);
+            bool jumpedThisFrame = UpdateVerticalVelocity(config, groundedForMovement, movementPrevented);
 
             Vector3 motion = horizontalVelocity;
             motion.y = verticalVelocity;
@@ -115,8 +123,18 @@ namespace RPGClone.Player
             }
         }
 
-        private void UpdateHorizontalVelocity(MMOInputState input, MMOPlayerMovementConfig config, bool groundedForMovement)
+        private void UpdateHorizontalVelocity(
+            MMOInputState input,
+            MMOPlayerMovementConfig config,
+            bool groundedForMovement,
+            bool movementPrevented)
         {
+            if (movementPrevented)
+            {
+                horizontalVelocity = Vector3.zero;
+                return;
+            }
+
             Vector3 desiredVelocity = Vector3.zero;
 
             if (!Mathf.Approximately(input.Forward, 0f))
@@ -140,7 +158,10 @@ namespace RPGClone.Player
                 moveRate * Time.deltaTime);
         }
 
-        private bool UpdateVerticalVelocity(MMOPlayerMovementConfig config, bool groundedForMovement)
+        private bool UpdateVerticalVelocity(
+            MMOPlayerMovementConfig config,
+            bool groundedForMovement,
+            bool movementPrevented)
         {
             if (groundedForMovement && verticalVelocity < 0f)
             {
@@ -152,7 +173,9 @@ namespace RPGClone.Player
             }
 
             bool jumpedThisFrame = false;
-            if (Time.time <= jumpBufferedUntil && Time.time <= lastGroundedTime + config.jumpCoyoteSeconds)
+            if (!movementPrevented
+                && Time.time <= jumpBufferedUntil
+                && Time.time <= lastGroundedTime + config.jumpCoyoteSeconds)
             {
                 verticalVelocity = Mathf.Sqrt(2f * config.gravity * config.jumpHeight);
                 jumpBufferedUntil = float.NegativeInfinity;
@@ -252,6 +275,16 @@ namespace RPGClone.Player
         private float GetMovementSpeedMultiplier()
         {
             return identity != null && identity.Stats != null ? identity.Stats.MovementSpeedMultiplier : 1f;
+        }
+
+        private bool IsMovementPrevented()
+        {
+            if (buffController == null)
+            {
+                buffController = GetComponent<MMOCharacterBuffController>();
+            }
+
+            return buffController != null && buffController.IsMovementPrevented;
         }
     }
 }

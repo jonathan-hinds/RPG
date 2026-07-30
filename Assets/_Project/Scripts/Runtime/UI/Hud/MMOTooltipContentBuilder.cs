@@ -77,8 +77,9 @@ namespace RPGClone.UI
 
             theme ??= MMOTooltipTheme.LoadDefault();
             MMOTooltipContent content = new(ability.DisplayName, theme.PrimaryText);
+            int manaCost = ability.CalculateManaCost(caster);
             content.AddDouble(
-                ability.ManaCost > 0 ? $"{ability.ManaCost} Mana" : string.Empty,
+                manaCost > 0 ? $"{manaCost} Mana" : string.Empty,
                 ability.Range > 0f ? $"{ability.Range:0.#} yd range" : string.Empty,
                 theme.BodyFontSize,
                 FontStyle.Normal,
@@ -291,6 +292,16 @@ namespace RPGClone.UI
             if (effect.DamageTakenAsManaPercent > 0f)
             {
                 clauses.Add($"converts {effect.DamageTakenAsManaPercent * 100f:0.#}% of damage taken into mana");
+            }
+
+            if (effect.MeleeDamageFromMaximumManaPercent > 0f)
+            {
+                clauses.Add($"causes melee attacks to deal additional damage equal to {effect.MeleeDamageFromMaximumManaPercent * 100f:0.#}% of maximum Mana");
+            }
+
+            if (effect.PreventsMovement)
+            {
+                clauses.Add("prevents movement");
             }
 
             if (clauses.Count == 0)

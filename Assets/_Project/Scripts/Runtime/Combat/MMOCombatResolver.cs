@@ -1,4 +1,5 @@
 using RPGClone.Abilities;
+using RPGClone.Buffs;
 using RPGClone.Characters;
 using RPGClone.Inventory;
 using UnityEngine;
@@ -48,6 +49,9 @@ namespace RPGClone.Combat
             {
                 target.NotifyBlock(source, ability, blockedAmount);
             }
+
+            MMOCharacterBuffController sourceBuffs = source.GetComponent<MMOCharacterBuffController>();
+            roundedAmount += sourceBuffs != null ? sourceBuffs.CalculateMeleeAttackBonusDamage() : 0;
 
             if (roundedAmount > 0)
             {

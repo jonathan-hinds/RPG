@@ -349,7 +349,7 @@ namespace RPGClone.Abilities
                 return Fail(ability, resolvedTarget, $"{ability.DisplayName} is not ready yet.", out failureReason);
             }
 
-            if (ability.ManaCost > identity.Mana.CurrentValue)
+            if (ability.CalculateManaCost(identity) > identity.Mana.CurrentValue)
             {
                 return Fail(ability, resolvedTarget, "Not enough mana.", out failureReason);
             }
@@ -370,7 +370,7 @@ namespace RPGClone.Abilities
                 return Fail(ability, null, $"{ability.DisplayName} is not ready yet.", out failureReason);
             }
 
-            if (ability.ManaCost > identity.Mana.CurrentValue)
+            if (ability.CalculateManaCost(identity) > identity.Mana.CurrentValue)
             {
                 return Fail(ability, null, "Not enough mana.", out failureReason);
             }
@@ -731,9 +731,10 @@ namespace RPGClone.Abilities
 
         private void SpendResourceCost(MMOAbilityDefinition ability)
         {
-            if (ability != null && ability.ManaCost > 0)
+            int manaCost = ability != null ? ability.CalculateManaCost(identity) : 0;
+            if (manaCost > 0)
             {
-                identity.Mana.SetCurrent(identity.Mana.CurrentValue - ability.ManaCost);
+                identity.Mana.SetCurrent(identity.Mana.CurrentValue - manaCost);
             }
         }
 

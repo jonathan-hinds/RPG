@@ -20,6 +20,8 @@ namespace RPGClone.Abilities
         [SerializeField, Min(0.1f)] private float manaRegenMultiplier = 1f;
         [SerializeField, Min(0.1f)] private float movementSpeedMultiplier = 1f;
         [SerializeField, Range(0f, 1f)] private float damageTakenAsManaPercent;
+        [SerializeField, Range(0f, 1f)] private float meleeDamageFromMaximumManaPercent;
+        [SerializeField] private bool preventsMovement;
         [SerializeField] private bool harmfulEffect;
         [SerializeField, Min(0.1f)] private float tickSeconds = 1f;
         [SerializeField, Min(1)] private int stackLimit = 1;
@@ -40,6 +42,8 @@ namespace RPGClone.Abilities
         public float ManaRegenMultiplier => Mathf.Max(0.1f, manaRegenMultiplier);
         public float MovementSpeedMultiplier => Mathf.Max(0.1f, movementSpeedMultiplier);
         public float DamageTakenAsManaPercent => Mathf.Clamp01(damageTakenAsManaPercent);
+        public float MeleeDamageFromMaximumManaPercent => Mathf.Clamp01(meleeDamageFromMaximumManaPercent);
+        public bool PreventsMovement => preventsMovement;
         public bool HarmfulEffect => harmfulEffect;
         public float TickSeconds => Mathf.Max(0.1f, tickSeconds);
         public int StackLimit => Mathf.Max(1, stackLimit);
@@ -109,6 +113,8 @@ namespace RPGClone.Abilities
             damageSchool = newDamageSchool;
             flatAmount = Mathf.Max(0f, newFlatAmount);
             coefficient = Mathf.Max(0f, newCoefficient);
+            meleeDamageFromMaximumManaPercent = 0f;
+            preventsMovement = false;
             harmfulEffect = effectType == MMOAbilityEffectType.Damage || effectType == MMOAbilityEffectType.PeriodicDamage;
             stackLimit = 1;
         }
@@ -174,10 +180,42 @@ namespace RPGClone.Abilities
             healthRegenMultiplier = Mathf.Max(0.1f, newHealthRegenMultiplier);
             manaRegenMultiplier = Mathf.Max(0.1f, newManaRegenMultiplier);
             damageTakenAsManaPercent = Mathf.Clamp01(newDamageTakenAsManaPercent);
+            meleeDamageFromMaximumManaPercent = 0f;
+            preventsMovement = false;
             movementSpeedMultiplier = Mathf.Max(0.1f, newMovementSpeedMultiplier);
             harmfulEffect = newHarmfulEffect;
             tickSeconds = 1f;
             stackLimit = 1;
+        }
+
+        public void ConfigureWeaponEmpowerment(float newDurationSeconds, float newMaximumManaDamagePercent)
+        {
+            ConfigureTemporaryStatModifier(
+                newDurationSeconds,
+                0,
+                1f,
+                1f,
+                1f,
+                1f,
+                0f,
+                1f,
+                false);
+            meleeDamageFromMaximumManaPercent = Mathf.Clamp01(newMaximumManaDamagePercent);
+        }
+
+        public void ConfigureMovementPrevention(float newDurationSeconds)
+        {
+            ConfigureTemporaryStatModifier(
+                newDurationSeconds,
+                0,
+                1f,
+                1f,
+                1f,
+                1f,
+                0f,
+                1f,
+                true);
+            preventsMovement = true;
         }
 
         public void ConfigurePeriodicDamage(

@@ -27,6 +27,8 @@ namespace RPGClone.Buffs
         public float ManaRegenMultiplier { get; }
         public float MovementSpeedMultiplier { get; }
         public float DamageTakenAsManaPercent { get; }
+        public float MeleeDamageFromMaximumManaPercent { get; }
+        public bool PreventsMovement { get; }
         public int RestoreHealthTotal { get; }
         public int RestoreManaTotal { get; }
         public int PeriodicDamageTotal => periodicDamagePerStackTotal * StackCount;
@@ -59,6 +61,8 @@ namespace RPGClone.Buffs
             ManaRegenMultiplier = Mathf.Max(0.1f, application.ManaRegenMultiplier);
             MovementSpeedMultiplier = Mathf.Max(0.1f, application.MovementSpeedMultiplier);
             DamageTakenAsManaPercent = Mathf.Clamp01(application.DamageTakenAsManaPercent);
+            MeleeDamageFromMaximumManaPercent = Mathf.Clamp01(application.MeleeDamageFromMaximumManaPercent);
+            PreventsMovement = application.PreventsMovement;
             RestoreHealthTotal = Mathf.Max(0, application.RestoreHealthTotal);
             RestoreManaTotal = Mathf.Max(0, application.RestoreManaTotal);
             periodicDamagePerStackTotal = Mathf.Max(0, application.PeriodicDamageTotal);
