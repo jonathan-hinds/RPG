@@ -53,7 +53,12 @@ namespace RPGClone.EditorTests
                 Assert.That(buffs.ApplyTemporaryModifiers(ability, null), Is.True);
                 Assert.That(buffs.CalculateMeleeAttackBonusDamage(), Is.EqualTo(14));
                 Assert.That(ability.Effects.Single().DurationSeconds, Is.EqualTo(300f).Within(0.001f));
-                Assert.That(ability.VisualEffects, Is.Null);
+                Assert.That(ability.VisualEffects, Is.Not.Null);
+                Assert.That(ability.VisualEffects.CastPrefab, Is.Not.Null);
+                Assert.That(
+                    ability.VisualEffects.CastPrefab.GetComponent<RPGClone.Vfx.Shaman.EmpowerWeaponVFX>(),
+                    Is.Not.Null,
+                    "Empower Weapon must use the replicated ability-release VFX path.");
                 Assert.That(ability.Icon, Is.Not.Null);
             }
             finally

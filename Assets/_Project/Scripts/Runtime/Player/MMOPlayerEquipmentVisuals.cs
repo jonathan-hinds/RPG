@@ -32,6 +32,8 @@ namespace RPGClone.Player
         private readonly HashSet<MMOCharacterBodyPart> equipmentHiddenBodyParts = new();
         private readonly List<MMOEquipmentVisualDefinition> directVisualDefinitions = new();
 
+        public event Action<MMOPlayerEquipmentVisuals> VisualsRebuilt;
+
         private void Awake()
         {
             EnsureReferences();
@@ -174,6 +176,21 @@ namespace RPGClone.Player
             RebuildEquipmentVisuals();
         }
 
+        public MMOEquipmentVisualInstanceMarker FindActiveEquipmentVisual(MMOEquipmentSlotType slotType)
+        {
+            foreach (GameObject instance in activeVisualInstances)
+            {
+                if (instance == null) continue;
+                MMOEquipmentVisualInstanceMarker marker = instance.GetComponent<MMOEquipmentVisualInstanceMarker>();
+                if (marker != null && marker.EquipmentSlot == slotType)
+                {
+                    return marker;
+                }
+            }
+
+            return null;
+        }
+
         private void OnEquipmentChanged(MMOCharacterEquipment changedEquipment)
         {
             if (changedEquipment == equipment)
@@ -202,6 +219,7 @@ namespace RPGClone.Player
 
             if (equipment == null && directVisualDefinitions.Count == 0)
             {
+                VisualsRebuilt?.Invoke(this);
                 return;
             }
 
@@ -227,6 +245,8 @@ namespace RPGClone.Player
                     ApplyVisualDefinition(visualDefinition, liveSkeleton);
                 }
             }
+
+            VisualsRebuilt?.Invoke(this);
         }
 
         private void ApplyVisualDefinition(
@@ -263,7 +283,7 @@ namespace RPGClone.Player
             instance.transform.localPosition = visualDefinition.LocalPosition;
             instance.transform.localRotation = Quaternion.Euler(visualDefinition.LocalEulerAngles);
             instance.transform.localScale = visualDefinition.LocalScale;
-            MarkRuntimeVisual(instance);
+            MarkRuntimeVisual(instance, visualDefinition, default);
             StripEditorOnlyChildren(instance);
 
             if (!PrepareSkinnedBodyPartVisual(instance, liveSkeleton, visualDefinition))
@@ -387,7 +407,7 @@ namespace RPGClone.Player
             instance.transform.localPosition = visualDefinition.LocalPosition;
             instance.transform.localRotation = Quaternion.Euler(visualDefinition.LocalEulerAngles);
             instance.transform.localScale = visualDefinition.LocalScale;
-            MarkRuntimeVisual(instance);
+            MarkRuntimeVisual(instance, visualDefinition, presentationState);
             StripEditorOnlyChildren(instance);
             ApplyAttachmentSurfacePolicy(instance);
             activeVisualInstances.Add(instance);
@@ -405,14 +425,24 @@ namespace RPGClone.Player
             MMOCharacterUnlitMaterialUtility.ApplyVisibleMeshSurfaces(instance.transform);
         }
 
-        private static void MarkRuntimeVisual(GameObject instance)
+        private static void MarkRuntimeVisual(
+            GameObject instance,
+            MMOEquipmentVisualDefinition visualDefinition,
+            MMOEquipmentAttachmentPresentationState presentationState)
         {
-            if (instance != null && instance.GetComponent<MMOEquipmentVisualInstanceMarker>() == null)
+            if (instance == null)
             {
-                instance.AddComponent<MMOEquipmentVisualInstanceMarker>();
+                return;
             }
 
-            if (instance != null && !Application.isPlaying)
+            MMOEquipmentVisualInstanceMarker marker = instance.GetComponent<MMOEquipmentVisualInstanceMarker>();
+            if (marker == null)
+            {
+                marker = instance.AddComponent<MMOEquipmentVisualInstanceMarker>();
+            }
+
+            marker.Configure(visualDefinition, presentationState);
+            if (!Application.isPlaying)
             {
                 instance.hideFlags |= HideFlags.DontSaveInEditor;
             }

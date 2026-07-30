@@ -466,6 +466,8 @@ namespace RPGClone.UI
         private Text descriptionText;
         private Canvas canvas;
         private Vector2 lastScreenPosition;
+        private MMOAbilityDefinition displayedAbility;
+        private float nextContentRefreshTime;
 
         public static MMOAbilityTooltipPresenter Instance { get; private set; }
 
@@ -490,6 +492,17 @@ namespace RPGClone.UI
             if (gameObject.activeSelf)
             {
                 FollowCursor();
+                if (displayedAbility != null && Time.unscaledTime >= nextContentRefreshTime)
+                {
+                    nextContentRefreshTime = Time.unscaledTime + 0.1f;
+                    string refreshedDetails = BuildDetails(displayedAbility);
+                    if (detailText.text != refreshedDetails)
+                    {
+                        detailText.text = refreshedDetails;
+                        ResizeToContent();
+                        SetPosition(lastScreenPosition);
+                    }
+                }
             }
         }
 
@@ -514,6 +527,8 @@ namespace RPGClone.UI
             }
 
             BuildIfNeeded();
+            displayedAbility = ability;
+            nextContentRefreshTime = Time.unscaledTime + 0.1f;
             lastScreenPosition = screenPosition;
             gameObject.SetActive(true);
             nameText.text = ability.DisplayName;
@@ -526,6 +541,7 @@ namespace RPGClone.UI
 
         public void Hide()
         {
+            displayedAbility = null;
             gameObject.SetActive(false);
         }
 
@@ -642,9 +658,11 @@ namespace RPGClone.UI
         private static string BuildDetails(MMOAbilityDefinition ability)
         {
             string details = MMOUiFactory.FormatEnumLabel(ability.TargetType);
-            if (ability.ManaCost > 0)
+            MMOCharacterIdentity caster = MMOGameplaySessionService.LocalPlayer.Identity;
+            int manaCost = ability.CalculateManaCost(caster);
+            if (manaCost > 0)
             {
-                details += $"\nMana: {ability.ManaCost}";
+                details += $"\nMana: {manaCost}";
             }
 
             if (ability.Range > 0f)
