@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61ea05cc13218ba44ae667c9f4065f2f, type: 3}
+  m_Name: FrostWaveVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.Mage.FrostWaveVFXProfile
+  effectRadius: 8
+  ringExpansionDuration: 0.38
+  primaryRingDelay: 0.03
+  secondaryRingDelay: 0.06
+  overallIntensity: 1
+  radialCloudDensity: 56
+  radialCloudSize: 2.75
+  radialCloudLifetime: 0.72
+  radialCloudDrift: 1.8
+  radialCloudLift: 1.15
+  iceBreakerDensity: 16
+  iceBreakerSize: 2.1
+  iceBreakerLifetime: 0.58
+  groundFrostDuration: 1.15
+  groundRevealDelay: 0.1
+  groundOffset: 0.035
+  particleAmount: 1
+  openingSnowAmount: 28
+  outwardShardAmount: 24
+  waveSnowAmount: 46
+  frostStreakAmount: 22
+  mistAmount: 26
+  lightIntensity: 2.2
+  lightRadius: 5
+  lightDuration: 0.22
+  enemyImpactScale: 1.12
+  impactDuration: 0.72
+  rootIndicatorDuration: 3
+  impactSnowAmount: 15
+  impactShardAmount: 8
+  impactMistAmount: 7
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  groundProbeHeight: 2.5
+  groundProbeDistance: 8
+  particleQuality: 2
+  targetReactionPoolSize: 16
+  distantReductionStart: 24
+  cullDistance: 55
+  optionalCameraImpulse: 0
+  whiteHot: {r: 1, g: 1.15, b: 1.3, a: 1}
+  paleCyan: {r: 0.48, g: 1, b: 1.25, a: 1}
+  saturatedBlue: {r: 0.08, g: 0.48, b: 1, a: 1}
+  deepBlue: {r: 0.015, g: 0.12, b: 0.55, a: 1}
+  mistTint: {r: 0.42, g: 0.78, b: 1, a: 0.68}

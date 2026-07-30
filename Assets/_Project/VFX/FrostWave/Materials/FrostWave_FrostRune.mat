@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: FrostWave_FrostRune
+  m_Shader: {fileID: 4800000, guid: e47e34f7deea9bb47a131193274e8b36, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: bf91fad1ef1220044b0a4a815deccee1, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NoiseMap:
+        m_Texture: {fileID: 2800000, guid: 2956597a0e5a9904dbd75ceae96712eb, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Brightness: 1
+    - _Dissolve: 0
+    - _DistortionStrength: 0.012
+    - _DstBlend: 1
+    - _EdgeSoftness: 0.08
+    - _Opacity: 1
+    - _Reveal: 1.5
+    - _RevealSoftness: 0.12
+    - _SoftIntersection: 0
+    - _SrcBlend: 5
+    - _ZWrite: 0
+    m_Colors:
+    - _AtlasRect: {r: 0.25, g: 0.25, b: 0.75, a: 0.5}
+    - _Scroll: {r: 0, g: 0, b: 0, a: 0}
+    - _Tint: {r: 0.42, g: 0.85, b: 1.15, a: 0.65}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

@@ -88,7 +88,8 @@ namespace RPGClone.EditorTests
                 Assert.That(freeze.PreventsMovement, Is.True);
                 Assert.That(buffs.ApplyTemporaryModifiers(ability, null), Is.True);
                 Assert.That(buffs.IsMovementPrevented, Is.True);
-                Assert.That(ability.VisualEffects, Is.Null);
+                Assert.That(ability.VisualEffects, Is.Not.Null);
+                Assert.That(ability.VisualEffects.CastPrefab, Is.Not.Null);
                 Assert.That(ability.Icon, Is.Not.Null);
             }
             finally
