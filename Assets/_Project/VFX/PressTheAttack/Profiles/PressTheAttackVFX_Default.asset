@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed76ec4f5982b3e4baa99540e2972870, type: 3}
+  m_Name: PressTheAttackVFX_Default
+  m_EditorClassIdentifier: Assembly-CSharp::RPGClone.Vfx.PressTheAttackVFXProfile
+  mainCrimson: {r: 1, g: 0.006, b: 0.012, a: 1}
+  darkRed: {r: 0.18, g: 0, b: 0.006, a: 1}
+  highlight: {r: 1, g: 0.22, b: 0.16, a: 1}
+  activationIntensity: 7.2
+  persistentOverlayIntensity: 4.6
+  lightningFrequency: 4.4
+  lightningThickness: 0.115
+  lightningSpeed: 2.25
+  lightningDistortion: 0.062
+  edgeGlowWidth: 3.4
+  edgeGlowIntensity: 3.15
+  surfaceStreakSpeed: 1.85
+  surfaceLift: 0.0028
+  surfacePatternScale: 2.05
+  surfacePulseSpeed: 4.25
+  travellingPulseSpeed: 0.82
+  rageUndercoatIntensity: 0.4
+  movementResponse: 1.35
+  attackResponse: 1.9
+  finalSecondInstability: 1.15
+  movementSpeedForFullResponse: 4.5
+  attackResponseDuration: 0.32
+  surfaceSparkAmount: 12
+  movementStreakAmount: 9
+  attackAccentAmount: 6
+  activationDuration: 0.95
+  fadeInDuration: 0.2
+  fadeOutDuration: 0.22
+  authoritativeBuffHandshakeTimeout: 2
+  optionalLightIntensity: 3.4
+  optionalLightDuration: 0.18
+  optionalCameraImpulse: 0

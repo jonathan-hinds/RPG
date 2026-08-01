@@ -114,7 +114,12 @@ namespace RPGClone.EditorTests
             Assert.That(stance.DurationSeconds, Is.EqualTo(6f).Within(0.001f));
             Assert.That(stance.MovementSpeedMultiplier, Is.EqualTo(1.20f).Within(0.001f));
             Assert.That(stance.AttackSpeedMultiplier, Is.EqualTo(1.15f).Within(0.001f));
-            Assert.That(ability.VisualEffects, Is.Null);
+            Assert.That(ability.VisualEffects, Is.Not.Null);
+            Assert.That(ability.VisualEffects.CastPrefab, Is.Not.Null);
+            Assert.That(
+                ability.VisualEffects.CastPrefab.GetComponent<RPGClone.Vfx.PressTheAttackVFX>(),
+                Is.Not.Null,
+                "Press the Attack must use the replicated ability-release VFX path.");
             Assert.That(ability.Icon, Is.Not.Null);
         }
 

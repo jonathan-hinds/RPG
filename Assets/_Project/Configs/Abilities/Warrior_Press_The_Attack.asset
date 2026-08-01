@@ -31,7 +31,7 @@ MonoBehaviour:
   castOnSelfWhenFriendlyTargetInvalid: 0
   resetCooldownOnCriticalHit: 0
   animationStyle: 2
-  visualEffects: {fileID: 0}
+  visualEffects: {fileID: 11400000, guid: de9d33a1e9da1204bbf09a2f8ad6ea01, type: 2}
   areaRadius: 0
   areaTargetFilter: 0
   effects:

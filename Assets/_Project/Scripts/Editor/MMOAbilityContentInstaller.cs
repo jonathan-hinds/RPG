@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using RPGClone.Abilities;
 using RPGClone.Characters;
 using RPGClone.Trainers;
+using RPGClone.Vfx;
 using UnityEditor;
 using UnityEngine;
 
@@ -19,6 +20,7 @@ namespace RPGClone.EditorTools
         private const string EmpowerWeaponIconPath = AbilityIconFolder + "/Buffs/buffs_shaman_empower_weapon_256.png";
         private const string FrostWaveIconPath = AbilityIconFolder + "/Active/abilities_mage_frost_wave_256.png";
         private const string PressTheAttackIconPath = AbilityIconFolder + "/Buffs/buffs_warrior_press_the_attack_256.png";
+        private const string PressTheAttackVfxDefinitionPath = RootFolder + "/VFX/PressTheAttack/PressTheAttack_VFX.asset";
 
         [MenuItem("Tools/RPG Clone/Abilities/Install Starter Ability Content")]
         public static void InstallStarterAbilityContent()
@@ -338,7 +340,7 @@ namespace RPGClone.EditorTools
                 false,
                 new[] { aggressiveStance });
             ability.SetAnimationStyle(MMOAbilityAnimationStyle.WeaponAttack);
-            ability.SetVisualEffects(null);
+            ability.SetVisualEffects(AssetDatabase.LoadAssetAtPath<MMOAbilityVfxDefinition>(PressTheAttackVfxDefinitionPath));
             ability.SetIcon(AssetDatabase.LoadAssetAtPath<Sprite>(PressTheAttackIconPath));
             EditorUtility.SetDirty(ability);
             return ability;

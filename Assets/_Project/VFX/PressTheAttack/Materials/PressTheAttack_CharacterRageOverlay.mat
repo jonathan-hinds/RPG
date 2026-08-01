@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: PressTheAttack_CharacterRageOverlay
+  m_Shader: {fileID: 4800000, guid: 1eebd259a0baf454286e9ba5fab022aa, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BreakupMask:
+        m_Texture: {fileID: 2800000, guid: 88ae3ff6b844f8a40a199ab672d39dc9, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ChargeColorTex:
+        m_Texture: {fileID: 2800000, guid: 19508d2b4ce4bf44a9b812d6de5ed638, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _CrackMask:
+        m_Texture: {fileID: 2800000, guid: 7d84ec8725afca044aa9ef43d6d964e5, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DissolveMap:
+        m_Texture: {fileID: 2800000, guid: 63ad1a04f29c8584ea416ffb73e5d281, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DistortionMap:
+        m_Texture: {fileID: 2800000, guid: b50c258771a3d7e4bb95f2574b93db3f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FlowMask:
+        m_Texture: {fileID: 2800000, guid: e1fb1392e8224204ea6a17f4e64b6132, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RageMask:
+        m_Texture: {fileID: 2800000, guid: 899b90845970ff949adb09110e3b2070, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _VeinMask:
+        m_Texture: {fileID: 2800000, guid: 36fed9d6cdc04fc41888484874a7b4d0, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AttackResponse: 0
+    - _EmissionIntensity: 4.6
+    - _FinalInstability: 0
+    - _MovementResponse: 0
+    - _Opacity: 1
+    - _PatternScale: 2.05
+    - _PulseSpeed: 4.25
+    - _RevealProgress: 1
+    - _SurfaceLift: 0.0028
+    - _TravelSpeed: 0.82
+    - _UndercoatIntensity: 0.4
+    m_Colors:
+    - _BoundsMin: {r: 0, g: 0, b: 0, a: 0}
+    - _BoundsSize: {r: 1, g: 1, b: 1, a: 0}
+    - _DarkTint: {r: 0.18, g: 0, b: 0.006, a: 1}
+    - _FlowAxis: {r: 0, g: 1, b: 0, a: 0}
+    - _HighlightTint: {r: 1, g: 0.22, b: 0.16, a: 1}
+    - _MainTint: {r: 1, g: 0.006, b: 0.012, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
