@@ -28,7 +28,8 @@ namespace RPGClone.Characters
                 return false;
             }
 
-            return AreHostile(source.Faction, target.Faction);
+            return AreHostile(source.Faction, target.Faction)
+                || RPGClone.PlayerInteraction.MMOPlayerInteractionService.CanPlayersDamageEachOther(source, target);
         }
 
         public static bool CanAssist(MMOCharacterIdentity source, MMOCharacterIdentity target)
@@ -38,7 +39,9 @@ namespace RPGClone.Characters
                 return false;
             }
 
-            return source == target || !AreHostile(source.Faction, target.Faction);
+            return source == target
+                || (!RPGClone.PlayerInteraction.MMOPlayerInteractionService.CanPlayersDamageEachOther(source, target)
+                    && !AreHostile(source.Faction, target.Faction));
         }
 
         public static bool AreHostile(MMOEntityFaction left, MMOEntityFaction right)

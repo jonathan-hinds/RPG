@@ -2,6 +2,7 @@ using RPGClone.CharacterSelection;
 using RPGClone.Characters;
 using RPGClone.Inventory;
 using RPGClone.Player;
+using RPGClone.PlayerInteraction;
 using RPGClone.Quests;
 using RPGClone.Services;
 using RPGClone.Targeting;
@@ -13,6 +14,8 @@ namespace RPGClone.Multiplayer
     public sealed class MMORemotePlayerAvatar : MonoBehaviour
     {
         private const string NameplateObjectName = "Remote Player Nameplate";
+        private static readonly Color FriendlyNameColor = new(0.45f, 0.95f, 0.45f, 1f);
+        private static readonly Color HostileNameColor = new(1f, 0.24f, 0.18f, 1f);
 
         private MMOCharacterIdentity identity;
         private MMOCharacterPersistenceAgent persistenceAgent;
@@ -27,6 +30,13 @@ namespace RPGClone.Multiplayer
         public string ParticipantId { get; private set; }
         public string CharacterId { get; private set; }
 
+        private void OnEnable()
+        {
+            MMOPlayerInteractionState.Changed -= OnPlayerInteractionStateChanged;
+            MMOPlayerInteractionState.Changed += OnPlayerInteractionStateChanged;
+            RefreshNameplate();
+        }
+
         public void Configure(MMOSessionParticipantSnapshot snapshot)
         {
             if (snapshot == null || snapshot.characterData == null)
@@ -40,6 +50,7 @@ namespace RPGClone.Multiplayer
             ApplySnapshot(snapshot);
             EnsureNameplate();
             MMOGameplaySessionService.RegisterPlayerCharacter(identity, ParticipantId, CharacterId, false, false);
+            RefreshNameplate();
         }
 
         public void ApplySnapshot(MMOSessionParticipantSnapshot snapshot)
@@ -121,10 +132,16 @@ namespace RPGClone.Multiplayer
 
         private void OnDisable()
         {
+            MMOPlayerInteractionState.Changed -= OnPlayerInteractionStateChanged;
             if (identity != null)
             {
                 MMOGameplaySessionService.UnregisterPlayerCharacter(identity);
             }
+        }
+
+        private void OnPlayerInteractionStateChanged()
+        {
+            RefreshNameplate();
         }
 
         private void PrepareAsRemoteReplica()
@@ -319,7 +336,7 @@ namespace RPGClone.Multiplayer
             nameplate.alignment = TextAlignment.Center;
             nameplate.characterSize = 0.08f;
             nameplate.fontSize = 42;
-            nameplate.color = new Color(0.45f, 0.95f, 0.45f, 1f);
+            nameplate.color = FriendlyNameColor;
             nameplateReady = true;
             RefreshNameplate();
         }
@@ -334,6 +351,10 @@ namespace RPGClone.Multiplayer
             if (nameplateReady && identity != null)
             {
                 nameplate.text = identity.DisplayName;
+                MMOCharacterIdentity localPlayer = MMOGameplaySessionService.LocalPlayer.Identity;
+                nameplate.color = localPlayer != null && MMOFactionRules.CanDamage(localPlayer, identity)
+                    ? HostileNameColor
+                    : FriendlyNameColor;
             }
         }
     }

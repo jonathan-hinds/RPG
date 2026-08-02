@@ -136,7 +136,20 @@ namespace RPGClone.Combat
             MMOCombatant targetCombatant = currentTarget != null ? currentTarget.GetComponent<MMOCombatant>() : null;
             combatant?.DisengageCombatWith(targetCombatant);
             currentTarget = null;
+            hasSwingTimer = false;
+            nextSwingTime = 0f;
             swingWindupStarted = false;
+        }
+
+        public bool StopAutoAttackAgainst(MMOCharacterIdentity target)
+        {
+            if (target == null || currentTarget != target)
+            {
+                return false;
+            }
+
+            StopAutoAttack();
+            return true;
         }
 
         public float GetAutoAttackCooldownRemaining()

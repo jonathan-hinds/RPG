@@ -5,6 +5,7 @@ using RPGClone.Enemies;
 using RPGClone.Inventory;
 using RPGClone.Loot;
 using RPGClone.Quests;
+using RPGClone.PlayerInteraction;
 
 namespace RPGClone.Multiplayer
 {
@@ -31,6 +32,9 @@ namespace RPGClone.Multiplayer
         public List<MMOSharedWorldObjectSnapshot> worldObjectSnapshots = new();
         public List<EnemySnapshot> enemySnapshots = new();
         public MMOSharedAbilityEvent abilityEvent;
+        public MMOPlayerInteractionRequest playerInteractionRequest;
+        public MMODuelSessionSnapshot duelSession;
+        public MMOTradeSessionSnapshot tradeSession;
     }
 
     public static class MMOSharedSessionNetworkOperationKind
@@ -55,5 +59,8 @@ namespace RPGClone.Multiplayer
         public const string UpsertEnemySnapshots = "upsert_enemy_snapshots";
         public const string UpsertCorpseLootSnapshot = "upsert_corpse_loot_snapshot";
         public const string RequestSnapshot = "request_snapshot";
+        public const string SubmitPlayerInteractionRequest = "submit_player_interaction_request";
+        public const string UpsertDuelSession = "upsert_duel_session";
+        public const string UpsertTradeSession = "upsert_trade_session";
     }
 }

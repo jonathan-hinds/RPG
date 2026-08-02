@@ -1,4 +1,5 @@
 using RPGClone.Characters;
+using RPGClone.PlayerInteraction;
 using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -62,6 +63,8 @@ namespace RPGClone.Targeting
 
             targetSelectionController.TargetChanged -= OnTargetChanged;
             targetSelectionController.TargetChanged += OnTargetChanged;
+            MMOPlayerInteractionState.Changed -= OnPlayerInteractionStateChanged;
+            MMOPlayerInteractionState.Changed += OnPlayerInteractionStateChanged;
             OnTargetChanged(targetSelectionController.CurrentTarget);
         }
 
@@ -72,6 +75,7 @@ namespace RPGClone.Targeting
                 targetSelectionController.TargetChanged -= OnTargetChanged;
             }
 
+            MMOPlayerInteractionState.Changed -= OnPlayerInteractionStateChanged;
             UnsubscribeFromTarget();
             target = null;
             SetVisible(false);
@@ -137,6 +141,11 @@ namespace RPGClone.Targeting
 
             RefreshTint();
             SetVisible(ShouldShow());
+        }
+
+        private void OnPlayerInteractionStateChanged()
+        {
+            RefreshTint();
         }
 
         private void ResolveDependencies()
@@ -374,12 +383,17 @@ namespace RPGClone.Targeting
 
         private Color ResolveTargetColor(MMOCharacterIdentity selectedTarget)
         {
+            MMOCharacterIdentity localPlayer = MMOGameplaySessionService.LocalPlayer.Identity;
+            if (localPlayer != null && MMOFactionRules.CanDamage(localPlayer, selectedTarget))
+            {
+                return style.HostileColor;
+            }
+
             if (MMOGameplaySessionService.Players.Contains(selectedTarget))
             {
                 return style.PlayerColor;
             }
 
-            MMOCharacterIdentity localPlayer = MMOGameplaySessionService.LocalPlayer.Identity;
             bool isHostile = localPlayer != null
                 ? MMOFactionRules.CanDamage(localPlayer, selectedTarget)
                 : selectedTarget.Faction == MMOEntityFaction.Hostile;

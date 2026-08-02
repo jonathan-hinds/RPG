@@ -8,6 +8,7 @@ using RPGClone.Enemies;
 using RPGClone.Inventory;
 using RPGClone.Loot;
 using RPGClone.Services;
+using RPGClone.PlayerInteraction;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -334,6 +335,22 @@ namespace RPGClone.Multiplayer
                 }
 
                 if (operation != null
+                    && operation.kind == MMOSharedSessionNetworkOperationKind.SubmitPlayerInteractionRequest)
+                {
+                    MMOPlayerInteractionRequest interactionRequest = operation.playerInteractionRequest;
+                    string interactionFailure = string.Empty;
+                    if (interactionRequest == null
+                        || string.IsNullOrWhiteSpace(interactionRequest.requestId)
+                        || interactionRequest.requestId.Length > MaximumRuntimeIdentifierLength
+                        || !MMOPlayerInteractionAuthority.TryProcessHostRequest(interactionRequest, out interactionFailure))
+                    {
+                        Debug.LogWarning($"Rejected player interaction request from client {senderClientId}: {interactionFailure}");
+                    }
+
+                    return;
+                }
+
+                if (operation != null
                     && operation.kind == MMOSharedSessionNetworkOperationKind.UpsertCorpseLootSnapshot)
                 {
                     if (!HostCharacterIdsByClientId.TryGetValue(senderClientId, out string characterId)
@@ -506,6 +523,8 @@ namespace RPGClone.Multiplayer
                         && MMONpcInteractionFacing.IsValidRemoteInteraction(operation.npcFacingSnapshot),
                 MMOSharedSessionNetworkOperationKind.RequestConsumableUse
                     => IsRegisteredSenderParticipant(senderClientId, operation.consumableUseRequest?.characterId),
+                MMOSharedSessionNetworkOperationKind.SubmitPlayerInteractionRequest
+                    => IsRegisteredSenderParticipant(senderClientId, operation.playerInteractionRequest?.actorCharacterId),
                 _ => false
             };
         }
@@ -581,6 +600,11 @@ namespace RPGClone.Multiplayer
                 operation.rewardEvent.createdUtcTicks = receivedUtcTicks;
             }
 
+            if (operation.playerInteractionRequest != null)
+            {
+                operation.playerInteractionRequest.requestedUtcTicks = receivedUtcTicks;
+            }
+
             if (operation.worldObjectInteractionRequest != null)
             {
                 operation.worldObjectInteractionRequest.requestedUtcTicks = receivedUtcTicks;
@@ -649,6 +673,7 @@ namespace RPGClone.Multiplayer
                 ?? operation?.combatRequest?.casterCharacterId
                 ?? operation?.abilityEvent?.casterCharacterId
                 ?? operation?.worldObjectInteractionRequest?.actorCharacterId
+                ?? operation?.playerInteractionRequest?.actorCharacterId
                 ?? operation?.characterId;
             if (!string.IsNullOrWhiteSpace(characterId))
             {

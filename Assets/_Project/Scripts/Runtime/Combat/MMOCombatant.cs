@@ -6,6 +6,7 @@ using RPGClone.CharacterSelection;
 using RPGClone.Characters;
 using RPGClone.Enemies;
 using RPGClone.Services;
+using RPGClone.PlayerInteraction;
 using UnityEngine;
 
 namespace RPGClone.Combat
@@ -100,7 +101,8 @@ namespace RPGClone.Combat
 
         public void ApplyDamage(MMOCombatant source, MMOAbilityDefinition ability, int amount, bool isCritical = false, bool publishToCombatEventStream = true)
         {
-            if (!IsAlive || amount <= 0 || !CanReceiveHostileActions())
+            if (!IsAlive || amount <= 0 || !CanReceiveHostileActions()
+                || (source != null && !MMOFactionRules.CanDamage(source.Identity, Identity)))
             {
                 return;
             }
@@ -114,6 +116,10 @@ namespace RPGClone.Combat
             MMOCharacterBuffController buffController = GetComponent<MMOCharacterBuffController>();
             int absorbedAmount = buffController != null ? buffController.AbsorbDamageAsMana(mitigatedAmount) : 0;
             int appliedAmount = Mathf.Max(0, mitigatedAmount - absorbedAmount);
+            if (MMOPlayerInteractionAuthority.TryResolveDuelDamage(source, this, appliedAmount, out int duelAmount))
+            {
+                appliedAmount = duelAmount;
+            }
             identity.Health.SetCurrent(identity.Health.CurrentValue - appliedAmount);
             source?.RegisterCombatActivity(this);
             RegisterCombatActivity(source);
@@ -134,6 +140,8 @@ namespace RPGClone.Combat
                 PublishDamageEvent(source, ability, appliedAmount, absorbedAmount, isCritical, identity.Health.CurrentValue <= 0);
             }
 
+            MMOPlayerInteractionAuthority.CompleteDuelAfterDamage(source, this);
+
             if (identity.Health.CurrentValue <= 0)
             {
                 ForceLeaveCombat();
@@ -147,14 +155,27 @@ namespace RPGClone.Combat
 
         public void ApplyResolvedDamage(MMOCombatant source, MMOAbilityDefinition ability, int appliedAmount, bool isCritical = false, bool publishToCombatEventStream = true)
         {
+            // This method replays a result already validated by the host. Local faction
+            // state must not discard an in-flight authoritative event.
             if (!IsAlive || appliedAmount < 0 || !CanReceiveHostileActions())
             {
                 return;
             }
 
+            if (MMOPlayerInteractionAuthority.TryResolveDuelDamage(source, this, appliedAmount, out int duelAmount))
+            {
+                appliedAmount = duelAmount;
+            }
+
             identity.Health.SetCurrent(identity.Health.CurrentValue - appliedAmount);
-            source?.RegisterCombatActivity(this);
-            RegisterCombatActivity(source);
+            // Replicated results remain authoritative even when their local playback is
+            // delayed, but a queued hit must not recreate combat after a duel has ended.
+            bool shouldRegisterCombat = source == null || MMOFactionRules.CanDamage(source.Identity, Identity);
+            if (shouldRegisterCombat)
+            {
+                source?.RegisterCombatActivity(this);
+                RegisterCombatActivity(source);
+            }
             Damaged?.Invoke(source, this, ability, appliedAmount);
             if (appliedAmount > 0)
             {
@@ -171,6 +192,8 @@ namespace RPGClone.Combat
             {
                 PublishDamageEvent(source, ability, appliedAmount, 0, isCritical, identity.Health.CurrentValue <= 0);
             }
+
+            MMOPlayerInteractionAuthority.CompleteDuelAfterDamage(source, this);
 
             if (identity.Health.CurrentValue <= 0)
             {
@@ -274,6 +297,15 @@ namespace RPGClone.Combat
             opponent.combatOpponents.Remove(this);
             lastCombatActivityTime = Time.time;
             opponent.lastCombatActivityTime = Time.time;
+            if (combatOpponents.Count == 0)
+            {
+                SetInCombat(false);
+            }
+
+            if (opponent.combatOpponents.Count == 0)
+            {
+                opponent.SetInCombat(false);
+            }
         }
 
         public void DisengageFromAllCombat()

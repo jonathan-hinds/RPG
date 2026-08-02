@@ -7,6 +7,7 @@ using RPGClone.Combat;
 using RPGClone.Loot;
 using RPGClone.Quests;
 using RPGClone.Services;
+using RPGClone.PlayerInteraction;
 using UnityEngine;
 
 namespace RPGClone.Multiplayer
@@ -121,7 +122,69 @@ namespace RPGClone.Multiplayer
                 sharedState = new MMOSharedSessionStore();
                 participantRuntimeState = new MMOSharedSessionRuntimeStore();
                 worldRuntimeState = new MMOSharedEnemyRuntimeStore();
+                MMOPlayerInteractionState.Reset();
             }
+        }
+
+        public static void ApplyAuthoritativeTradeSettlement(
+            string firstCharacterId,
+            List<MMOInventorySlotSaveData> firstInventory,
+            int firstCopper,
+            string secondCharacterId,
+            List<MMOInventorySlotSaveData> secondInventory,
+            int secondCopper)
+        {
+            using (AcquireStateLease())
+            {
+                MMOSharedSessionStore store = LoadStore();
+                ApplyParticipantTradeState(store, firstCharacterId, firstInventory, firstCopper);
+                ApplyParticipantTradeState(store, secondCharacterId, secondInventory, secondCopper);
+                SaveStore(store);
+            }
+        }
+
+        private static void ApplyParticipantTradeState(
+            MMOSharedSessionStore store,
+            string characterId,
+            List<MMOInventorySlotSaveData> inventory,
+            int copper)
+        {
+            MMOSessionParticipantSnapshot participant = store?.participants.Find(candidate =>
+                candidate != null && candidate.characterId == characterId);
+            if (participant?.characterData == null)
+            {
+                return;
+            }
+
+            participant.characterData.inventory = CloneInventory(inventory);
+            participant.characterData.copper = Mathf.Max(0, copper);
+            participant.updatedUtcTicks = DateTime.UtcNow.Ticks;
+        }
+
+        private static List<MMOInventorySlotSaveData> CloneInventory(List<MMOInventorySlotSaveData> inventory)
+        {
+            List<MMOInventorySlotSaveData> clone = new();
+            if (inventory == null)
+            {
+                return clone;
+            }
+
+            foreach (MMOInventorySlotSaveData slot in inventory)
+            {
+                if (slot == null)
+                {
+                    continue;
+                }
+
+                clone.Add(new MMOInventorySlotSaveData
+                {
+                    slotIndex = slot.slotIndex,
+                    itemId = slot.itemId,
+                    quantity = slot.quantity
+                });
+            }
+
+            return clone;
         }
 
         public static void UpsertParticipant(MMOSessionParticipantSnapshot snapshot)
@@ -1545,7 +1608,8 @@ namespace RPGClone.Multiplayer
             {
                 sharedStoreJson = JsonUtility.ToJson(LoadStore(), false),
                 runtimeStoreJson = JsonUtility.ToJson(LoadRuntimeStore(), false),
-                enemyRuntimeStoreJson = JsonUtility.ToJson(LoadEnemyRuntimeStore(), false)
+                enemyRuntimeStoreJson = JsonUtility.ToJson(LoadEnemyRuntimeStore(), false),
+                playerInteractionStoreJson = MMOPlayerInteractionState.CreateNetworkSnapshotJson()
             };
             return JsonUtility.ToJson(snapshot, false);
         }
@@ -1586,6 +1650,7 @@ namespace RPGClone.Multiplayer
                 sharedState = sharedStore;
                 participantRuntimeState = runtimeStore;
                 worldRuntimeState = worldRuntimeStore;
+                MMOPlayerInteractionState.ApplyNetworkSnapshotJson(snapshot.playerInteractionStoreJson);
             }
         }
 
@@ -1833,6 +1898,12 @@ namespace RPGClone.Multiplayer
                     break;
                 case MMOSharedSessionNetworkOperationKind.UpsertCorpseLootSnapshot:
                     UpsertCorpseLootSnapshot(operation.corpseLootSnapshot);
+                    break;
+                case MMOSharedSessionNetworkOperationKind.UpsertDuelSession:
+                    MMOPlayerInteractionState.Upsert(operation.duelSession);
+                    break;
+                case MMOSharedSessionNetworkOperationKind.UpsertTradeSession:
+                    MMOPlayerInteractionState.Upsert(operation.tradeSession);
                     break;
             }
         }
@@ -2663,6 +2734,7 @@ namespace RPGClone.Multiplayer
             public string sharedStoreJson;
             public string runtimeStoreJson;
             public string enemyRuntimeStoreJson;
+            public string playerInteractionStoreJson;
         }
     }
 }

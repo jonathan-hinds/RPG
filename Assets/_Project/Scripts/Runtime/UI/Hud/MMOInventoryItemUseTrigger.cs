@@ -1,4 +1,5 @@
 using RPGClone.Inventory;
+using RPGClone.PlayerInteraction;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -18,6 +19,11 @@ namespace RPGClone.UI
         public void OnPointerClick(PointerEventData eventData)
         {
             if (eventData == null || eventData.button != PointerEventData.InputButton.Right || inventory == null)
+            {
+                return;
+            }
+
+            if (MMOPlayerInteractionService.TryHandleInventoryRightClickForTrade(inventory, slotIndex))
             {
                 return;
             }

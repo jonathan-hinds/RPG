@@ -159,6 +159,30 @@ namespace RPGClone.Buffs
             return absorbed;
         }
 
+        public int RemoveHarmfulEffectsFrom(MMOCombatant source)
+        {
+            int removed = 0;
+            for (int i = activeBuffs.Count - 1; i >= 0; i--)
+            {
+                MMOActiveBuff buff = activeBuffs[i];
+                if (!buff.IsHarmful || buff.Source != source)
+                {
+                    continue;
+                }
+
+                activeBuffs.RemoveAt(i);
+                removed++;
+            }
+
+            if (removed > 0)
+            {
+                RecalculateRuntimeModifiers();
+                BuffsChanged?.Invoke(this);
+            }
+
+            return removed;
+        }
+
         public void NotifyReplicatedDamageAbsorbedAsMana(int absorbedAmount)
         {
             if (absorbedAmount > 0)

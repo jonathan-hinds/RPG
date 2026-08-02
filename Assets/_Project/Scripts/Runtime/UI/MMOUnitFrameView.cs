@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using RPGClone.Buffs;
 using RPGClone.Characters;
+using RPGClone.PlayerInteraction;
+using RPGClone.Services;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
@@ -50,6 +52,7 @@ namespace RPGClone.UI
         private static Font cachedFont;
 
         public event Action<MMOUnitFrameView, MMOCharacterIdentity> Clicked;
+        public event Action<MMOUnitFrameView, MMOCharacterIdentity, Vector2> RightClicked;
 
         public MMOCharacterIdentity BoundCharacter => boundCharacter;
         public MMOUnitFrameStyle FrameStyle => frameStyle;
@@ -67,10 +70,13 @@ namespace RPGClone.UI
         private void OnEnable()
         {
             SubscribeToBoundCharacter();
+            MMOPlayerInteractionState.Changed -= OnPlayerInteractionStateChanged;
+            MMOPlayerInteractionState.Changed += OnPlayerInteractionStateChanged;
         }
 
         private void OnDisable()
         {
+            MMOPlayerInteractionState.Changed -= OnPlayerInteractionStateChanged;
             UnsubscribeFromBoundCharacter();
         }
 
@@ -122,14 +128,19 @@ namespace RPGClone.UI
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (eventData == null
-                || eventData.button != PointerEventData.InputButton.Left
-                || boundCharacter == null)
+            if (eventData == null || boundCharacter == null)
             {
                 return;
             }
 
-            Clicked?.Invoke(this, boundCharacter);
+            if (eventData.button == PointerEventData.InputButton.Left)
+            {
+                Clicked?.Invoke(this, boundCharacter);
+            }
+            else if (eventData.button == PointerEventData.InputButton.Right)
+            {
+                RightClicked?.Invoke(this, boundCharacter, eventData.position);
+            }
         }
 
         private void OnCharacterChanged(MMOCharacterIdentity character)
@@ -150,6 +161,16 @@ namespace RPGClone.UI
         private void OnBuffsUpdated(MMOCharacterBuffController controller)
         {
             RefreshBuffTimers();
+        }
+
+        private void OnPlayerInteractionStateChanged()
+        {
+            if (boundCharacter == null || nameText == null)
+            {
+                return;
+            }
+
+            nameText.color = ResolveNameColor(boundCharacter, ResolveTheme());
         }
 
         private void SubscribeToBoundCharacter()
@@ -390,7 +411,7 @@ namespace RPGClone.UI
 
             MMOUnitFrameTheme resolvedTheme = ResolveTheme();
             nameText.text = boundCharacter.DisplayName;
-            nameText.color = ResolveNameColor(boundCharacter.Faction, resolvedTheme);
+            nameText.color = ResolveNameColor(boundCharacter, resolvedTheme);
             levelText.text = boundCharacter.Level.ToString();
 
             portraitImage.sprite = boundCharacter.Portrait;
@@ -406,14 +427,25 @@ namespace RPGClone.UI
             RefreshBuffs();
         }
 
-        private static Color ResolveNameColor(MMOEntityFaction faction, MMOUnitFrameTheme resolvedTheme)
+        private static Color ResolveNameColor(MMOCharacterIdentity character, MMOUnitFrameTheme resolvedTheme)
         {
-            if (resolvedTheme == null)
+            if (resolvedTheme == null || character == null)
             {
                 return Color.white;
             }
 
-            return faction switch
+            MMOCharacterIdentity localPlayer = MMOGameplaySessionService.LocalPlayer.Identity;
+            if (localPlayer != null && MMOFactionRules.CanDamage(localPlayer, character))
+            {
+                return resolvedTheme.HostileNameColor;
+            }
+
+            if (character != localPlayer && MMOGameplaySessionService.Players.Contains(character))
+            {
+                return resolvedTheme.FriendlyNameColor;
+            }
+
+            return character.Faction switch
             {
                 MMOEntityFaction.Friendly => resolvedTheme.FriendlyNameColor,
                 MMOEntityFaction.Hostile => resolvedTheme.HostileNameColor,
